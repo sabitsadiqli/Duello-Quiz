@@ -33,7 +33,7 @@ unsigned unless you pass a keystore (see "Signing" below).
 | --- | --- | --- |
 | `ci-android.yml` | PR + push to `main`, paths `android/**` | `./gradlew lint test assembleDebug`; lint/test reports uploaded as artifact on failure |
 | `security.yml` | PR + push to `main` | gitleaks secret scan |
-| `release-android.yml` | tag `vX.Y.Z` / `vX.Y.Z-closed`, or manual run on a tag | signed `bundleRelease`, AAB to GitHub Release, upload to Play testing track |
+| `release-android.yml` | tag `vX.Y.Z` / `vX.Y.Z-closed`, or manual run on a tag | signed `bundleRelease`, AAB + mapping as workflow artifact, upload to Play testing track |
 | `dependabot.yml` | weekly | GitHub Actions and Gradle (`/android`) updates |
 
 `ci-backend.yml` and `deploy-backend.yml` are added together with `backend/`.
@@ -54,12 +54,13 @@ written only from `main`).
    `versionCode = github.run_number + 100`, passed as `-PversionName` / `-PversionCode`.
 3. It decodes the keystore (and `google-services.json` if that secret exists), runs
    `./gradlew bundleRelease`, keeps AAB + R8 `mapping.txt` as a 90-day workflow
-   artifact, attaches the AAB to a GitHub pre-release and uploads AAB + mapping to Play
+   artifact and uploads AAB + mapping to Play
    with the Azerbaijani notes from `android/release-notes/az-AZ.txt` (max 500 chars).
 4. Production is **never** automated. Sabit promotes a release in Play Console.
 
-Note: the repository is public, so the AAB attached to the GitHub Release is public too.
-The mapping file is only kept as a workflow artifact.
+Note: the repository is public, so the AAB is **not** attached to a GitHub Release (every
+test build would be public). AAB and mapping are only kept as a workflow artifact,
+downloadable by repo collaborators from the run page.
 
 ### First release (manual, once)
 
@@ -70,8 +71,8 @@ hand. So:
    **Play App Signing** (Google keeps the app signing key, our keystore is the
    *upload* key).
 2. Push the first tag **without** `PLAY_SERVICE_ACCOUNT_JSON` set. The workflow skips
-   the Play step with a warning and attaches the AAB to the GitHub Release.
-3. Download that AAB and upload it manually to the internal testing track.
+   the Play step with a warning.
+3. Download the AAB from the run's artifacts (Actions → the run → Artifacts) and upload it manually to the internal testing track.
 4. Create `PLAY_SERVICE_ACCOUNT_JSON`. From the next tag on, uploads are automatic.
 5. While the app has never passed review, Play only accepts `draft` releases via the
    API: set the repository **variable** `PLAY_RELEASE_STATUS=draft`, remove it (default
