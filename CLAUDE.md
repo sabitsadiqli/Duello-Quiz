@@ -131,10 +131,14 @@ Play developer account needs a closed test with at least 12 testers opted in for
 ## Common commands
 
 ```
-docker compose -f infra/docker-compose.yml up -d     # Postgres, backend
+cp infra/.env.example infra/.env                     # once; set POSTGRES_PASSWORD
+docker compose -f infra/docker-compose.yml up -d     # Postgres
+docker compose -f infra/docker-compose.yml --profile backend up -d --build  # + backend (once backend/ exists)
 cd backend && ./gradlew test build
 cd android && ./gradlew lint test assembleDebug
 ```
+Release: push tag `vX.Y.Z` (internal) or `vX.Y.Z-closed` (closed track); secrets and
+first-release steps in `infra/README.md`.
 (Keep this list updated when commands change.)
 
 ## Definition of done

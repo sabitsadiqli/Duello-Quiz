@@ -1,0 +1,61 @@
+name: CI Android
+
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - ".github/workflows/ci-android.yml"
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/ci-android.yml"
+
+# One run per PR; a new push cancels the previous PR run. Runs on main are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint, test, assemble
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v7
+
+      # JDK 17 is the project's bytecode target; JDK 25 is required by the Gradle
+      # daemon toolchain (android/gradle/gradle-daemon-jvm.properties). The last
+      # version listed becomes JAVA_HOME, so Gradle starts on 25 and needs no
+      # toolchain download.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            25
+
+      # Caches Gradle (written on main only, read-only on PRs) and validates the
+      # wrapper checksum.
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Lint, unit tests, debug build
+        run: ./gradlew lint test assembleDebug
+
+      - name: Upload lint and test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-reports
+          path: |
+            android/**/build/reports/lint-results-*.html
+            android/**/build/reports/lint-results-*.xml
+            android/**/build/reports/tests/
+          retention-days: 7
+          if-no-files-found: ignore

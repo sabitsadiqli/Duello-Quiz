@@ -28,5 +28,6 @@ keystore.properties
 # Private question bank (separate private repo, see content/README.md)
 content/bank/
 
-# Claude Code local settings
+# Claude Code local settings and agent worktrees
 .claude/settings.local.json
+.claude/worktrees/
