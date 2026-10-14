@@ -76,7 +76,6 @@ it matters.
 | `common_password_hide_cd` | Şifrəni gizlət | Content description, eye-off icon. |
 | `common_offline_banner` | İnternet yoxdur. Məlumatlar yenilənməyib. | `wrap`. Offline banner over cached data (HOME-05). |
 | `common_deleted_player` | Silinmiş oyunçu | Shown for anonymized players (OQ-014). Duel history, later. |
-| `common_new_badge_cd` | Yeni | Reserved; not used in MVP screens. |
 
 ### error_ (shared errors, server error codes)
 
