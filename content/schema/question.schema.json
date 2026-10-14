@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sabitsadiqli/Duello-Quiz/content/schema/question.schema.json",
+  "title": "Duello Quiz question",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "category", "difficulty", "status", "text", "options", "sources", "author"],
+  "$defs": {
+    "i18n": {
+      "type": "object",
+      "required": ["az"],
+      "properties": { "az": { "type": "string", "minLength": 1 } },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "correct"],
+      "properties": {
+        "text": { "$ref": "#/$defs/i18n" },
+        "correct": { "type": "boolean" }
+      }
+    }
+  },
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z]+-[0-9]{4}$" },
+    "category": { "type": "string", "pattern": "^[a-z]+$" },
+    "difficulty": { "type": "integer", "enum": [1, 2, 3] },
+    "status": { "type": "string", "enum": ["draft", "reviewed", "retired"] },
+    "text": { "$ref": "#/$defs/i18n" },
+    "options": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/option" },
+      "contains": { "properties": { "correct": { "const": true } } },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "explanation": { "$ref": "#/$defs/i18n" },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "format": "uri" }
+    },
+    "image": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "licence", "author", "alt"],
+          "properties": {
+            "file": { "type": "string", "pattern": "^images/[a-z0-9._-]+\\.(jpg|jpeg|png|webp)$" },
+            "licence": { "type": "string" },
+            "author": { "type": "string" },
+            "sourceUrl": { "type": "string", "format": "uri" },
+            "alt": { "$ref": "#/$defs/i18n" }
+          }
+        }
+      ]
+    },
+    "author": { "type": "string" },
+    "reviewedBy": { "type": ["string", "null"] }
+  }
+}

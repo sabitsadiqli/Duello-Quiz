@@ -1,0 +1,18 @@
+{
+  "id": "cografiya-0001",
+  "category": "cografiya",
+  "difficulty": 1,
+  "status": "draft",
+  "text": {"az": "Azərbaycanın paytaxtı hansı şəhərdir?"},
+  "options": [
+    {"text": {"az": "Bakı"}, "correct": true},
+    {"text": {"az": "Gəncə"}, "correct": false},
+    {"text": {"az": "Sumqayıt"}, "correct": false},
+    {"text": {"az": "Şəki"}, "correct": false}
+  ],
+  "explanation": {"az": "Bakı Azərbaycanın paytaxtı və ən böyük şəhəridir; Xəzər dənizinin sahilində, Abşeron yarımadasında yerləşir."},
+  "sources": ["https://az.wikipedia.org/wiki/Bakı"],
+  "image": null,
+  "author": "content-writer",
+  "reviewedBy": null
+}

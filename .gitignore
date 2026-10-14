@@ -1,0 +1,32 @@
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Gradle / build output (all modules)
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# Secrets — never commit (see CLAUDE.md)
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pem
+google-services.json
+*service-account*.json
+keystore.properties
+
+# Private question bank (separate private repo, see content/README.md)
+content/bank/
+
+# Claude Code local settings
+.claude/settings.local.json
