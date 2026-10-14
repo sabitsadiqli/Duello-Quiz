@@ -25,6 +25,8 @@ In scope:
 4. Light and dark theme (System default, manual override in settings).
 5. Azerbaijani UI only, fully i18n-ready (a new language = configuration, no refactor).
 6. Optional image per question, stored compressed.
+7. Google Play requirements: in-app account deletion, deletion web page and privacy
+   policy (static pages on GitHub Pages, `docs/mvp-spec.md` §3a).
 
 Out of scope for MVP (do not build, do not block): in-app purchases, ads, ghost
 duels, friends/invites, extra languages, leaderboards beyond a basic Elo rating.
