@@ -3,7 +3,7 @@
 Story: AUTH-04.
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
 - Assumption: the 60 s resend countdown is kept only while this screen is alive
   (in the ViewModel, survives rotation). Leaving and re-entering resets it; Firebase's

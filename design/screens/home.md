@@ -4,13 +4,13 @@ Stories: HOME-01 … HOME-06, AUTH-06 (profile load), AUTH-08 (banner), QUIZ-01 
 QUIZ-09 (start from a category). Decisions: OQ-011, OQ-013, OQ-020.
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
-- **OQ-D3 (backend-dev, via `docs/api/`): `icon_key` values.** The bundled icon map
+- **OQ-D3 — decided as proposed (OQ-044): `icon_key` values.** The bundled icon map
   in `components.md` §5 uses the proposal `geography`, `history`, `biology`,
   `physics`, `sports`. The backend must use the same keys; unknown keys fall back to
   the generic icon (HOME-01), so a mismatch is never a crash, only a worse icon.
-- **OQ-D4 (business-analyst / backend-dev): maximum length of a category name.**
+- **OQ-D4 — decided as proposed (OQ-045): maximum length of a category name.**
   Proposal ≤ 20 characters per language so names fit the card in 2 lines at font
   scale 1.3 (see `az.md` truncation risks).
 - Assumption: the question count on the card ("10 sual") is the fixed session size

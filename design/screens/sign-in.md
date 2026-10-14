@@ -3,7 +3,7 @@
 Stories: AUTH-03, AUTH-06 (runs after success), AUTH-09 (arrival).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
 - None blocking. Assumption: Google sign-in is offered only on welcome, not repeated
   here (keeps this screen focused; welcome is one back press away).

@@ -4,9 +4,9 @@ Story: AUTH-08. Decision: OQ-010 (send a verification email, show a banner, neve
 block play). Placement: top of home (`home.md`).
 Tokens: `design/tokens.json`. Components: `components.md` §8. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
-- **OQ-D2 (needs Sabit): how long does "dismiss" last?** AUTH-08 says the banner is
+- **OQ-D2 — decided as proposed (OQ-043): how long does "dismiss" last?** AUTH-08 says the banner is
   dismissible but not for how long. Proposal: dismissed until the next cold start of
   the app (in-memory flag), so it comes back as a gentle reminder but never nags
   within one session. Alternative: dismissed for 7 days (DataStore timestamp).

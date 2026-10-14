@@ -3,6 +3,9 @@
 Spec: `docs/mvp-spec.md` §3, §4. Terms: `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 Settings give the player control over how the app looks and over their account:
@@ -89,13 +92,13 @@ Recommended flow (blocked by OQ-014 for data handling details):
   client calls `DELETE /v1/me` with the current ID token; the backend deletes or
   anonymizes the user's data per OQ-014 and deletes the Firebase user with the
   Admin SDK; the client then clears all local data (AUTH-07 cleanup) and shows the
-  welcome screen with "Hesabınız silindi.".
+  welcome screen with "Hesabın silindi.".
 - Given the request is running, When the user taps again or presses back, Then no
   second request is sent and the screen shows progress.
 - Given the device is offline, When the user confirms, Then "Hesabı silmək üçün
   internet lazımdır." is shown and nothing is deleted.
 - Given the server fails (5xx, timeout 15 s), When the request ends, Then "Hesabı
-  silmək alınmadı. Yenidən cəhd edin." is shown; the user stays signed in. The server
+  silmək alınmadı. Yenidən cəhd et." is shown; the user stays signed in. The server
   operation is idempotent: a retry after a partial failure completes the deletion.
 - Given the server deleted the data but the response was lost, When the client
   retries, Then the server returns success (404 for the profile is treated as

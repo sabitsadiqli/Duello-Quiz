@@ -4,7 +4,7 @@ Stories: SET-01 … SET-05, AUTH-07 (sign-out). Decisions: OQ-014, OQ-015.
 SET-06 (web deletion page) is a document, not a screen; out of this spec.
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
 - Assumption: the account section shows who is signed in (email for email accounts,
   Google display name + email for Google) as supporting text. Useful before

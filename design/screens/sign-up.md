@@ -4,14 +4,13 @@ Stories: AUTH-02, AUTH-06, AUTH-08 (verification email after success). Decisions
 OQ-011 (name 2–20 chars), OQ-018 (password ≥ 8), OQ-019 (one account per email).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
-- **OQ-D1 (needs Sabit / business-analyst): which characters are allowed in "Ad"?**
+- **OQ-D1 — decided as proposed (OQ-042): which characters are allowed in "Ad"?**
   OQ-011 fixes only the length. Proposal: letters of any script (incl. Ə ə Ğ ğ I ı
   İ i Ö ö Ü ü Ç ç Ş ş), digits, space, hyphen, apostrophe and dot; trimmed; inner
   runs of spaces collapsed to one; no emoji. The length counts Unicode code points
   after trimming. The server must apply the same rule (it is the authority).
-  Until decided the client validates length only.
 - Assumption: field order is Ad → E-poçt → Şifrə (name first feels personal and
   matches "who are you, how do you sign in").
 

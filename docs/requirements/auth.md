@@ -3,6 +3,9 @@
 Spec: `docs/mvp-spec.md` §3. Terms: `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 Every player needs an account so that the duel can match real people, store an Elo
@@ -59,15 +62,15 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 - Given the password is shorter than the policy minimum, When the user submits, Then
   "Şifrə ən azı N simvol olmalıdır." is shown (N from OQ-018) and no request is sent.
 - Given an account with this email already exists (any provider), When the user
-  submits, Then "Bu e-poçtla artıq hesab var. Daxil olun və ya şifrəni bərpa edin."
+  submits, Then "Bu e-poçtla artıq hesab var. Daxil ol və ya şifrəni bərpa et."
   is shown with a link to sign-in, and the typed email is kept.
 - Given the device is offline, When the user submits, Then "İnternet bağlantısı
-  yoxdur. Yenidən cəhd edin." is shown and the form keeps its values.
+  yoxdur. Yenidən cəhd et." is shown and the form keeps its values.
 - Given the network is slow, When the request runs, Then the button shows a progress
   indicator, the form is disabled, and a second tap does nothing (no double account,
   no double request).
 - Given the request takes more than 15 s, When it times out, Then a generic error
-  "Xəta baş verdi. Yenidən cəhd edin." is shown and the form is enabled again.
+  "Xəta baş verdi. Yenidən cəhd et." is shown and the form is enabled again.
 - Given the app is backgrounded while the request runs, When the user returns, Then
   the outcome (success → home, failure → message) is shown; the form is not reset.
 - Given Firebase answers "too many requests", When the user submits, Then "Çox sayda
@@ -90,7 +93,7 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 - Given the email belongs to a Google-only account, When the user tries a password,
   Then the generic wrong-credentials message is shown (behaviour per OQ-019).
 - Offline, slow network, double tap, timeout and backgrounding: same as AUTH-02.
-- Given the sign-in screen, When the user taps "Şifrəni unutmusunuz?", Then the
+- Given the sign-in screen, When the user taps "Şifrəni unutmusan?", Then the
   reset screen (AUTH-04) opens with the typed email pre-filled.
 
 ### AUTH-04 Password reset
@@ -126,7 +129,7 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 - Given the device is offline, When the user taps the button, Then the offline
   message is shown.
 - Given any other Credential Manager or Firebase error, When it occurs, Then "Google
-  ilə daxil olmaq alınmadı. Yenidən cəhd edin." is shown and the error code is
+  ilə daxil olmaq alınmadı. Yenidən cəhd et." is shown and the error code is
   logged to Crashlytics as a non-fatal (no email, no token).
 - Given a sign-in is already running, When the user taps the button again, Then
   nothing happens.
@@ -174,7 +177,7 @@ Written for the recommended option (send a verification email, do not block play
 - Given a new email/password account, When sign-up succeeds, Then Firebase sends a
   verification email and the user goes to home.
 - Given an unverified account, When home is shown, Then a dismissible banner
-  "E-poçtunuzu təsdiqləyin" with "Yenidən göndər" is shown; play is not blocked.
+  "E-poçtunu təsdiqlə" with "Yenidən göndər" is shown; play is not blocked.
 - Given the user taps "Yenidən göndər", When less than 60 s passed since the last
   send, Then the button is disabled with a countdown.
 - Given the user verified in the browser, When the app returns to the foreground,
@@ -187,7 +190,7 @@ Written for the recommended option (send a verification email, do not block play
   token refresh once and retries the call once.
 - Given the refresh fails because the account was deleted or disabled, When the
   retry fails, Then the client signs out locally (AUTH-07 cleanup) and shows the
-  welcome screen with "Giriş müddəti bitib. Yenidən daxil olun.".
+  welcome screen with "Giriş müddəti bitib. Yenidən daxil ol.".
 - Given the refresh fails because of the network, When it fails, Then the user is
   not signed out; the screen shows its offline state.
 

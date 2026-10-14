@@ -5,21 +5,18 @@ Stories: QUIZ-01 (loading), QUIZ-02, QUIZ-03, QUIZ-04, QUIZ-07, QUIZ-08, QUIZ-10
 auto-advance, explanations only in the review).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
-- **OQ-D5 (business-analyst): when does "Bağlantı bərpa olunur…" appear?** QUIZ-03
+- **OQ-D5 — decided as proposed (OQ-046): when does "Bağlantı bərpa olunur…" appear?** QUIZ-03
   says it is shown when the answer request fails. Proposal: the option shows its
   pending state for the first 2 s; if no response by then (or on the first network
   failure), `quiz_reconnecting` appears under the options. The 1.5 s reveal starts
   only when the server result arrives.
-- **OQ-D6 (business-analyst): what does the user see for a queued answer?**
+- **OQ-D6 — decided as proposed (OQ-047): what does the user see for a queued answer?**
   QUIZ-08 lets the user continue after 10 s offline, but the result of a queued
   answer is unknown. Proposal: the tapped option switches to the "Queued" state
   (`components.md` §3) with `quiz_answer_saved` for 1.5 s, then the next question
   opens. Correct/wrong is not shown for that question; it appears in the review.
-- Note for business-analyst: `quiz.md` §3 still says "deadline = start + 10 × 20 s +
-  30 s grace"; `docs/mvp-spec.md` §1 and OQ-023 say 245 s (incl. 1.5 s reveal).
-  The design follows 245 s. The OQ-016 details also still mention 230 s.
 
 ## Purpose
 

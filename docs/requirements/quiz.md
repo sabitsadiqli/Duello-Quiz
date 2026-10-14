@@ -5,6 +5,9 @@ Decided: OQ-004 (`elapsedMs` is display only, session deadline).
 Terms: `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 The category quiz is the low-pressure way to play alone: pick a topic, answer 10
@@ -49,7 +52,7 @@ API: `POST /v1/quiz/sessions {categoryId}`.
 - Given the user double-taps the category, When a start request is running, Then no
   second session is requested (HOME-02).
 - Given the server rate limit is hit (OQ-022), When the user starts a quiz, Then
-  "Çox sayda quiz başladıldı. Bir az sonra yenidən cəhd edin." is shown.
+  "Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd edin." is shown.
 
 ### QUIZ-02 Question screen and timer
 
@@ -147,7 +150,7 @@ review list (QUIZ-06).
 - Given a question has no explanation, When it is listed, Then no empty explanation
   block is shown.
 - Given all 10 answers were correct, When the result screen is shown, Then the review
-  entry is hidden and "Bütün suallara düzgün cavab verdiniz!" is shown instead.
+  entry is hidden and "Bütün suallara düzgün cavab verdin!" is shown instead.
 - Given the review is open, When the user leaves the result screen, Then the review
   is gone; there is no quiz history screen in the MVP.
 - Given the review data, When it is returned, Then it is returned only after the
@@ -156,7 +159,7 @@ review list (QUIZ-06).
 ### QUIZ-07 Leave a quiz
 
 - Given a quiz is running, When the user presses back or the close icon, Then the
-  timer keeps running and a dialog "Quizdən çıxmaq istəyirsiniz? Bu quiz yarımçıq
+  timer keeps running and a dialog "Quizdən çıxmaq istəyirsən? Bu quiz yarımçıq
   qalacaq." with "Çıx" / "Davam et" is shown.
 - Given the user confirms "Çıx", When home is shown, Then the session is abandoned
   (no result screen); the server finalizes it at the deadline (§3).
@@ -227,7 +230,7 @@ Recommended behaviour, blocked by OQ-016 and OQ-017:
 ## 3. Business rules
 
 - 10 questions per session, 4 options each, 20 s per question, deadline =
-  start + 10 × 20 s + 30 s grace: `docs/mvp-spec.md` §1 (do not copy the numbers
+  start + 10 × (20 s + 1.5 s reveal) + 30 s grace = 245 s: `docs/mvp-spec.md` §1 (do not copy the numbers
   elsewhere in code; one config value each on the server).
 - The server is authoritative for correctness and the deadline; the client timer is
   a display aid (OQ-004). `elapsedMs` never changes correctness or score.

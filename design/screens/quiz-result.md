@@ -4,7 +4,7 @@ Stories: QUIZ-05, QUIZ-06, QUIZ-03/QUIZ-08 (expired and unsynced cases).
 Decision: OQ-012 (score = correct count, shown "7 / 10").
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
 - Assumption: the review is a separate screen opened from an entry card on the
   result screen (QUIZ-06 "opens"). Back from the review returns to the result;

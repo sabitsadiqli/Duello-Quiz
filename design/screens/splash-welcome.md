@@ -4,7 +4,7 @@ Stories: AUTH-01, AUTH-05 (Google button), AUTH-07/AUTH-09/SET-05 (arrival
 messages), SET-01 (theme from the first frame).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
-## Open questions
+## Questions and decisions
 
 - None blocking. Assumption: the welcome screen is the root of the signed-out graph;
   back on welcome exits the app.
