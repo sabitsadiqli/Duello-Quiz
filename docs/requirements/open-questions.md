@@ -9,24 +9,29 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-010 | Is email verification required for email/password accounts? | Send a verification email, show a banner, do not block play | Sabit |
-| OQ-011 | Display name for email/password users (no Google profile) | Ask for a name at sign-up (2–20 chars); never derive it from the email | Sabit |
-| OQ-012 | Single-player quiz score formula | Score = number of correct answers (0–10); no time component | Sabit |
-| OQ-013 | Categories with fewer than 10 active questions | Server omits them from `GET /categories`; `POST /quiz/sessions` returns 409 | Sabit |
-| OQ-014 | Account deletion: what is deleted, what is kept, how long | Delete profile, quiz data and Firebase user; anonymize the user in opponents' matches; immediate, backups roll off within 30 days | Sabit |
-| OQ-015 | Where are the privacy policy and the deletion-request page hosted (zero cost)? | GitHub Pages from this public repo (`docs/legal/`) | Sabit |
-| OQ-016 | Quiz: how is a question timeout sent, and does the timer pause in the background? | Send `optionId = null`; timer never pauses (wall clock) | Sabit |
-| OQ-017 | Quiz: resume after process death or app relaunch? | No resume in the MVP; server finalizes at the deadline | Sabit |
-| OQ-018 | Password policy for email sign-up | Minimum 8 characters, no composition rules (Firebase password policy) | Sabit |
-| OQ-019 | Same email used with Google and with password | Keep Firebase default "one account per email"; no linking UI in the MVP | Sabit |
-| OQ-020 | Duel entry on home before the duel ships | Hide the entry until the duel is released (build flag); no "coming soon" | Sabit |
-| OQ-021 | Question selection and repetition across quiz sessions | Random 10 distinct active questions per session; least-recently-seen later | Sabit |
-| OQ-022 | Rate limit for starting quiz sessions | 30 sessions per user per hour, then 429 | Sabit |
-| OQ-023 | Reveal/explanation time counts against the 230 s session deadline | Auto-advance after 1.5 s; explanations only in the end review | Sabit |
 
-## Details for open items
+## Decided by Sabit (2026-10-14) — accepted as recommended
 
-Added by `business-analyst` on 2026-10-14 while writing `auth.md`, `home.md`,
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-010 | Is email verification required for email/password accounts? | Send a verification email, show a banner, do not block play |
+| OQ-011 | Display name for email/password users (no Google profile) | Ask for a name at sign-up (2–20 chars); never derive it from the email |
+| OQ-012 | Single-player quiz score formula | Score = number of correct answers (0–10); no time component |
+| OQ-013 | Categories with fewer than 10 active questions | Server omits them from `GET /categories`; `POST /quiz/sessions` returns 409 |
+| OQ-014 | Account deletion: what is deleted, what is kept, how long | Delete profile, quiz data and Firebase user; anonymize the user in opponents' matches; immediate, backups roll off within 30 days |
+| OQ-015 | Where are the privacy policy and the deletion-request page hosted (zero cost)? | GitHub Pages from this public repo (`docs/legal/`) |
+| OQ-016 | Quiz: how is a question timeout sent, and does the timer pause in the background? | Send `optionId = null`; timer never pauses (wall clock) |
+| OQ-017 | Quiz: resume after process death or app relaunch? | No resume in the MVP; server finalizes at the deadline |
+| OQ-018 | Password policy for email sign-up | Minimum 8 characters, no composition rules (Firebase password policy) |
+| OQ-019 | Same email used with Google and with password | Keep Firebase default "one account per email"; no linking UI in the MVP |
+| OQ-020 | Duel entry on home before the duel ships | Hide the entry until the duel is released (build flag); no "coming soon" |
+| OQ-021 | Question selection and repetition across quiz sessions | Random 10 distinct active questions per session; least-recently-seen later |
+| OQ-022 | Rate limit for starting quiz sessions | 30 sessions per user per hour, then 429 |
+| OQ-023 | Reveal/explanation time counts against the 230 s session deadline | Auto-advance after 1.5 s; explanations only in the end review; deadline becomes 245 s (10 × 21.5 s + 30 s) |
+
+## Details (background for OQ-010 … OQ-023)
+
+All items below are decided (see the table above). Added by `business-analyst` on 2026-10-14 while writing `auth.md`, `home.md`,
 `quiz.md` and `settings.md`. Each item lists options, trade-offs and the
 recommendation; the row above is the short form.
 
@@ -162,6 +167,8 @@ can use up the 30 s grace and later questions get cut off.
 - Recommendation: A (the designer may tune the reveal within 1–2 s). Decides: Sabit.
 
 ## Decided (provisional — set by the tech lead on 2026-10-14, Sabit may change)
+
+OQ-004 is refined by OQ-023: the session deadline includes the 1.5 s reveal, see `docs/mvp-spec.md` §1.
 
 | ID | Question | Decision |
 | --- | --- | --- |

@@ -15,7 +15,7 @@ robust on weak networks and low-end phones, without ever affecting the Elo ratin
 
 ## 2. User stories
 
-| ID | Story | Blocked by |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | QUIZ-01 | As a player, I want to start a quiz in a category and get 10 questions, so that I can play a round on that topic. | OQ-021 (selection), OQ-022 (rate limit) |
 | QUIZ-02 | As a player, I want to see one question at a time with 4 options, an optional image and a 20 s timer, so that I know how long I have. | — |
@@ -34,7 +34,7 @@ API: `POST /v1/quiz/sessions {categoryId}`.
 
 - Given an active category with at least 10 active (reviewed) questions, When the
   user taps it on home (HOME-02), Then the server creates a `quiz_sessions` row and
-  returns the session ID, the server deadline (`deadlineEpochMs` = start + 230 s,
+  returns the session ID, the server deadline (`deadlineEpochMs` = start + 245 s,
   see §3) and 10 distinct questions, each with 4 options in server order.
 - Given the response, When the client inspects it, Then it contains no `is_correct`,
   no correct option ID and no explanation for any question.
@@ -101,7 +101,7 @@ API: `POST /v1/quiz/sessions/{id}/answers {questionId, optionId, elapsedMs}` →
 
 ### QUIZ-04 Question timeout
 
-Blocked by OQ-016 for the API shape. Recommended behaviour:
+Decided in OQ-016:
 
 - Given the 20 s timer reaches 0 without a tap, When it expires, Then options are
   disabled, "Vaxt bitdi" is shown, the client sends the answer with `optionId = null`
@@ -211,7 +211,7 @@ Recommended behaviour, blocked by OQ-016 and OQ-017:
   server returns 400 `invalid_option`.
 - Given a session of another user, When any session endpoint is called, Then the
   server returns 404 (do not reveal that the session exists).
-- Given an answer arrives after the session deadline (start + 230 s, server clock),
+- Given an answer arrives after the session deadline (start + 245 s, server clock),
   When the server receives it, Then it returns 409 `session_expired` and does not
   store it.
 - Given an already answered question with a different option, When it arrives, Then
@@ -262,7 +262,10 @@ questions, resume after process death (unless OQ-017 decides otherwise).
 Do not send question text or option text to analytics; use the question ID only on
 the backend side if needed.
 
-## 6. Open questions
+## 6. Decisions
+
+All questions below were decided by Sabit on 2026-10-14 as recommended; the
+final wording is in `open-questions.md` (Decided).
 
 OQ-012 (score formula), OQ-013 (categories with < 10 questions), OQ-016 (timeout and
 backgrounding), OQ-017 (resume after process death), OQ-021 (question selection and

@@ -14,7 +14,7 @@ a change there must be mirrored here. "—" means the term never appears in the 
 | Category | Kateqoriya | A topic of questions (e.g. Coğrafiya, Tarix). A row in `categories`, not code. Shown only when `is_active = true`, ordered by `sort_order`. |
 | Category quiz (single-player quiz) | Kateqoriya quiz-i | Single-player mode: one user answers 10 questions of one category. See `docs/mvp-spec.md` §1. Never affects Elo. |
 | Session (quiz session) | — | One play-through of a category quiz, from `POST /quiz/sessions` to finish or deadline. Row in `quiz_sessions`. A session has exactly one deadline. Never use "session" for an auth sign-in session; say "sign-in state" instead. |
-| Session deadline | — | Server time after which a quiz session accepts no answers: start + 10 × 20 s + 30 s grace = start + 230 s (`docs/mvp-spec.md` §1). |
+| Session deadline | — | Server time after which a quiz session accepts no answers: start + 10 × (20 s + 1.5 s reveal) + 30 s grace = start + 245 s (`docs/mvp-spec.md` §1). |
 | Question timer | — | The 20 s countdown per question in the category quiz, shown by the client. Display aid; the server enforces only the session deadline (OQ-004). |
 | Timeout (quiz) | Vaxt bitdi | The question timer reached 0 before the user picked an option. Counts as not correct. |
 | Score (quiz) | Xal | The result number of a quiz session. Formula: see OQ-012. |

@@ -2,13 +2,24 @@
 
 ## 1. Category quiz (single player)
 
-- User picks a category, gets 10 questions, 4 options each, 20 s per question.
+- User picks a category, gets 10 distinct random active questions, 4 options each,
+  20 s per question. Only categories with at least 10 active questions are listed;
+  starting another returns 409 `category_not_playable` (OQ-013, OQ-021).
+- Max 30 sessions started per user per hour, then 429 `rate_limited` (OQ-022).
 - Questions are served without the correct answer; the client submits each answer
   and the server returns `correct` + `correctOptionId` + optional explanation.
-- `elapsedMs` from the client is used only for display. The server rejects answers
-  to a question already answered and answers after the session deadline
-  (10 × 20 s + 30 s grace). Single-player scores never affect the Elo rating.
-- End screen: score, correct/total, review of wrong answers with explanations.
+- After an answer the result (correct/wrong) is shown for 1.5 s, then the next
+  question opens automatically; explanations appear only in the end review (OQ-023).
+- A timeout is sent as `optionId = null`. The timer runs on wall-clock time and
+  never pauses in the background (OQ-016). No resume after process death; the
+  server finalizes the session at its deadline (OQ-017).
+- `elapsedMs` from the client is used only for display. The server stores one answer
+  per question: a retry of the same answer returns the stored result, a different
+  second answer is rejected (409). Answers after the session deadline are rejected.
+  Deadline = 10 × (20 s + 1.5 s reveal) + 30 s grace = 245 s from session start.
+  Single-player scores never affect the Elo rating.
+- Score = number of correct answers, shown as "7 / 10" (OQ-012).
+- End screen: score, review of wrong answers with correct answer and explanation.
 
 ## 2. Confidence duel (1v1, real time)
 
@@ -17,9 +28,12 @@ Match = 7 rounds. Each round has four phases, all timed by the server:
 | Phase | Duration | What happens |
 | --- | --- | --- |
 | Question | 3 s | Only the question text (and image, if any) is shown |
-| Bet | 5 s | Player picks confidence 1, 2 or 3 (hidden from opponent). Timeout = 1 |
+| Confidence ("Əminlik") | 5 s | Player picks confidence 1, 2 or 3 (hidden from opponent). Timeout = 1 |
 | Answer | 10 s | Server sends the 4 options only after both bets are locked |
 | Result | 3 s | Both bets, answers and points revealed at the same time |
+
+"Bet" below and in protocol names (`round.bet`) is internal only; the UI never uses
+it (see `docs/requirements/glossary.md`).
 
 Scoring:
 
@@ -53,8 +67,23 @@ Matchmaking (MVP): single global queue, first come first served; if no opponent 
 
 - Email/password sign-up and sign-in, Google sign-in (Credential Manager on Android).
 - Password reset via Firebase.
+- Email accounts are not blocked until verified: a verification email is sent and a
+  banner reminds the user (OQ-010). Password: at least 8 characters (OQ-018). One
+  account per email, no account linking in the MVP (OQ-019).
+- Email sign-up asks for a display name ("Ad", 2–20 characters); it is never derived
+  from the email (OQ-011). Google accounts use the Google profile name.
 - On first authenticated API call the backend creates the user row
-  (`firebase_uid`, display name, avatar URL, created_at).
+  (`firebase_uid`, display name, avatar URL nullable, created_at); a missing name
+  falls back to "Oyunçu NNNN".
+
+## 3a. Account deletion and privacy (Google Play requirement)
+
+- In-app "Hesabı sil" in settings and a public web page explaining how to request
+  deletion; a public privacy policy URL. Both pages are static files on GitHub Pages
+  from `docs/legal/` (zero cost, OQ-015).
+- `DELETE /v1/me` deletes immediately: user row, quiz sessions and answers, the
+  Firebase user. In past matches the player is anonymized (`player_* = NULL`, shown
+  as "Silinmiş oyunçu"). Backups roll off within 30 days (OQ-014).
 
 ## 4. Theme and language
 
@@ -103,8 +132,13 @@ images(id, storage_key, thumb_key, width, height, bytes, dominant_color, licence
 questions(id, external_id UNIQUE, category_id, difficulty SMALLINT, text_i18n JSONB,
           explanation_i18n JSONB, image_id NULL, is_active, created_at, updated_at)
 options(id, question_id, text_i18n JSONB, is_correct BOOL, position SMALLINT)
-quiz_sessions(id, user_id, category_id, score, started_at, finished_at)
-matches(id, player_a, player_b, score_a, score_b, winner, status, started_at, finished_at)
+quiz_sessions(id, user_id, category_id, status, correct_count, started_at, deadline_at,
+              finished_at)        -- status: active | finished | expired
+quiz_session_questions(session_id, question_id, position, PRIMARY KEY(session_id, position))
+quiz_answers(id, session_id, question_id, option_id NULL, is_correct BOOL, answered_at,
+             elapsed_ms INT, UNIQUE(session_id, question_id))
+matches(id, player_a NULL, player_b NULL, score_a, score_b, winner NULL, status,
+        started_at, finished_at)   -- players set NULL on account deletion
 match_rounds(id, match_id, round_no, question_id, all_in BOOL, sudden_death BOOL,
              UNIQUE(match_id, round_no))
 match_answers(id, round_id, user_id, bet SMALLINT, option_id NULL, answered_ms INT, points INT,
@@ -115,10 +149,12 @@ match_answers(id, round_id, user_id, bet SMALLINT, option_id NULL, answered_ms I
 
 REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 
-- `GET /me`, `PATCH /me`
-- `GET /categories`
-- `POST /quiz/sessions` `{categoryId}` → session + 10 questions (no answers)
-- `POST /quiz/sessions/{id}/answers` `{questionId, optionId, elapsedMs}` → result
+- `GET /me`, `PATCH /me`, `DELETE /me`
+- `GET /categories` (only playable categories)
+- `POST /quiz/sessions` `{categoryId}` → session id, `deadlineEpochMs`, 10 questions
+  (no answers)
+- `POST /quiz/sessions/{id}/answers` `{questionId, optionId | null, elapsedMs}` →
+  result (idempotent for the same answer)
 - `POST /quiz/sessions/{id}/finish`
 - Admin (custom claim `admin=true`): `POST /admin/questions/import` (JSON), `POST /admin/images`
 

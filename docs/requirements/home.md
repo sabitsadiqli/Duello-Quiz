@@ -13,7 +13,7 @@ explaining what is not available instead of showing a blank screen.
 
 ## 2. User stories
 
-| ID | Story | Blocked by |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | HOME-01 | As a player, I want to see the list of playable categories, so that I can choose what to play. | OQ-013 (filter rule) |
 | HOME-02 | As a player, I want to tap a category to start its quiz, so that I can play immediately. | — |
@@ -145,7 +145,10 @@ notifications, profile editing, ads or purchases.
 | `categories_load_failed` | `error_type`: `offline` \| `timeout` \| `server` | Category request failed |
 | `settings_opened` | — | Settings entry tapped |
 
-## 6. Open questions
+## 6. Decisions
+
+All questions below were decided by Sabit on 2026-10-14 as recommended; the
+final wording is in `open-questions.md` (Decided).
 
 OQ-011 (display name), OQ-013 (categories with fewer than 10 active questions),
 OQ-020 (duel entry before the duel ships).

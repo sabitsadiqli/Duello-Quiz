@@ -14,7 +14,7 @@ authenticated call, so there is no separate "create profile" step for the user.
 
 ## 2. User stories
 
-| ID | Story | Blocked by |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | AUTH-01 | As a new or returning user, I want the app to open on the right screen at launch, so that I do not sign in again when I already have. | — |
 | AUTH-02 | As a new user, I want to create an account with email and password, so that I can play without a Google account. | OQ-011, OQ-018 (rules only) |
@@ -221,7 +221,10 @@ the display name (profile feature, later), account deletion (SET-05, SET-06).
 Set the Firebase Analytics user ID to the backend `users.id` (never email or
 `firebase_uid` shown to others); clear it on sign-out.
 
-## 6. Open questions
+## 6. Decisions
+
+All questions below were decided by Sabit on 2026-10-14 as recommended; the
+final wording is in `open-questions.md` (Decided).
 
 OQ-010 (email verification), OQ-011 (display name for email users), OQ-018
 (password policy), OQ-019 (same email with Google and password).

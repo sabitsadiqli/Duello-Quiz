@@ -13,7 +13,7 @@ account, so it must ship before the first public (closed-test) release.
 
 ## 2. User stories
 
-| ID | Story | Blocked by |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | SET-01 | As a player, I want to choose System, Light or Dark theme and have it remembered, so that the app is comfortable to use. | — |
 | SET-02 | As a player, I want to see the app language, so that I know which languages exist; as the team, we want adding a language to need configuration only. | — |
@@ -149,7 +149,10 @@ Also set the user property `app_theme` (`system` \| `light` \| `dark`) so crash 
 usage data can be split by theme. `account_deleted` is logged on the backend (user
 ID only), because the Analytics user ID is cleared right after deletion.
 
-## 6. Open questions
+## 6. Decisions
+
+All questions below were decided by Sabit on 2026-10-14 as recommended; the
+final wording is in `open-questions.md` (Decided).
 
 OQ-014 (account deletion scope and retention), OQ-015 (privacy policy and deletion
 page hosting).
