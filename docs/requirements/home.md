@@ -95,8 +95,8 @@ Data: `GET /v1/me` (creates the profile on first call, AUTH-06).
   the error is handled together with HOME-05.
 - Given the user returns from a finished duel, When home is shown again, Then the
   rating is refreshed.
-- The header is a summary only in the MVP; tapping it does nothing or opens a
-  read-only profile if a profile feature is approved later (not in this file).
+- Given the header, When the user taps it, Then the profile screen opens (PROF-01 in
+  `profile.md`); the header itself stays a summary.
 
 ### HOME-05 Offline and cached state
 
@@ -133,7 +133,7 @@ Data: `GET /v1/me` (creates the profile on first call, AUTH-06).
 ## 4. Out of scope
 
 Leaderboards, friends, daily challenges, per-category progress or best scores,
-notifications, profile editing, ads or purchases.
+notifications, ads or purchases. Profile editing lives in `profile.md` (PROF-06).
 
 ## 5. Analytics events
 

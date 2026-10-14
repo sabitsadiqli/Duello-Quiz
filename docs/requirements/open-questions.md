@@ -10,6 +10,193 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 
+## Decided by Sabit (2026-10-14) — duel and profile
+
+All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead of none).
+
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-024 | What does a player see about the opponent before, during and after a match? | Name, avatar, rating at match found; "opponent locked/answered" without values during rounds; name in history |
+| OQ-025 | Rematch with the same opponent after a match? | Out of scope for the MVP; "Yenidən oyna" re-joins the global queue |
+| OQ-026 | Do forfeited matches keep their points, and how do forfeits and abandoned matches appear in history and stats? | Forfeit: stored with current scores, counted as win/loss with a label; abandoned: shown as "Ləğv edildi", not counted |
+| OQ-027 | Which rounds count for the calibration card and profile stats? | Rounds 1–7 with an actively locked Əminlik; exclude defaulted picks, missed rounds and sudden death |
+| OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers |
+| OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Tətbiqi yeniləyin" |
+| OQ-030 | Offensive or impersonating display names | Small server-side blocklist (az/tr/ru/en, normalized) on sign-up, Google name and edit; no reporting in the MVP |
+| OQ-031 | How many recent matches does the profile show? | Last 20, newest first, no pagination |
+| OQ-032 | What does the 10 s reconnect window mean when the player is not back after 10 s? | Seat is held and rejoin allowed until the match ends; only the 2-missed-rounds rule decides the outcome |
+| OQ-033 | Both players miss their 2nd round in a row in the same round, or the server loses the match (restart) | Match "abandoned": no winner, no Elo change, scores stored |
+| OQ-034 | Can a player leave a running match on purpose, and what does it count as? | Yes, with a confirmation dialog; immediate forfeit (Elo loss) |
+| OQ-035 | Do the confidence and answer phases end early when both players have acted? | Yes, both end early; the fixed lengths stay the maximum |
+| OQ-036 | Latency grace at deadlines (pick or answer sent in time but received late) | 250 ms server-side grace: a pick or answer received at or before deadline + 250 ms (server clock) counts; the speed bonus uses the receive time clamped to the deadline (bonus ≥ 0); the client still disables input at its displayed 0 |
+| OQ-037 | Match intro length and leaving between match found and round 1 | 3 s intro, no "ready" tap; a queue leave that crosses the pairing cancels the match without Elo and re-queues the opponent first |
+| OQ-038 | Rounding of the speed bonus and of the Elo change | Speed bonus `floor(50 × remainingMs / 10000)`; Elo change rounded half away from zero, equal and opposite for both players |
+| OQ-039 | Elo floor (minimum rating) | No floor in the MVP; revisit after the closed test |
+| OQ-040 | Assumptions written into `duel.md` without an OQ | Confirmed: newest connection wins (`session_replaced` for the older one); backgrounding while searching sends `queue.leave`; sudden death "missed" = no answer and the 2-in-a-row count continues from round 7; both correct in sudden death → earlier server receive time wins, identical time → next question; duel needs ≥ 10 active questions in total (`duel_unavailable`); after process death the app rejoins via saved `activeMatchId` |
+
+## Details (background for OQ-024 … OQ-039, all decided — see above)
+
+Added by `business-analyst` on 2026-10-14 while writing `duel.md` and `profile.md`.
+All open. Stories marked as blocked are written for the recommendation.
+
+### OQ-024 What the opponent sees
+The opponent's data leaves the server in `match.found`, during rounds and in history.
+- A. Display name, avatar, rating at match found; during rounds only "opponent
+  locked" / "opponent answered" without values; in history the current name.
+  Personal enough to feel real; no private data.
+- B. Same as A without the rating. Less pressure for new players; the rating is the
+  only skill signal before the match.
+- C. Hide "opponent answered" during the answer phase. Removes time pressure from
+  seeing the opponent answer; less tension.
+- Recommendation: A. Never email, `firebase_uid` or user ID in the UI. Blocks
+  DUEL-05, DUEL-08 (indicator only), PROF-04. Decides: Sabit.
+
+### OQ-025 Rematch
+- A. Out of scope: "Yenidən oyna" re-joins the global queue. No extra protocol.
+- B. "Revanş" button: both must accept within N s. New messages, timers, states
+  (one accepts, the other leaves), and an easy Elo-farming loop between two friends.
+- Recommendation: A for the MVP (`CLAUDE.md` lists friends/invites as out of scope).
+  Decides: Sabit.
+
+### OQ-026 Forfeited and abandoned matches in history and stats
+`docs/mvp-spec.md` §2 stores current scores on a forfeit, but does not say how the
+match is shown or counted.
+- A. Forfeit: counted as win/loss in the record, listed with a label ("Rəqib tərk
+  etdi" / "Texniki məğlubiyyət") and its scores; rounds played count for
+  calibration (per OQ-027). Abandoned: listed as "Ləğv edildi", not in the record.
+  Cancelled (before round 1): not listed.
+- B. Hide forfeits from history entirely. Cleaner list; but Elo changed, so the
+  history would not explain the rating.
+- C. Discard the forfeiting player's points (score shown as 0). Simpler message;
+  contradicts §2 ("current scores stored").
+- Recommendation: A. Blocks DUEL-20, PROF-03, PROF-04. Decides: Sabit.
+
+### OQ-027 Calibration counting rule
+"Accuracy per bet level" (§2) needs a rule for rounds without an active choice.
+- A. Count only rounds 1–7 with an actively locked Əminlik (a timeout after an active
+  pick counts as wrong at that level). Exclude defaulted picks, missed rounds and
+  sudden death (fixed at 1). Measures real judgement.
+- B. Count every regular round including defaults. Simpler; defaults inflate level 1
+  with disconnects and slow tappers.
+- Recommendation: A, same rule for the card (DUEL-21) and the profile (PROF-05).
+  Decides: Sabit.
+
+### OQ-028 Empty or odd queue
+With 15–20 closed-test testers, most searches will find nobody, and an odd player
+always waits.
+- A. Keep 30 s + retry, measure `duel_queue_timeout`, agree fixed "duel hours" with
+  testers. Zero cost, honest.
+- B. Bot or ghost opponents. Out of scope (`CLAUDE.md`: no ghost duels).
+- C. Longer timeout (e.g. 60 s). Changes a game number; more waiting.
+- D. Show "N players searching". Small extra endpoint; with tiny numbers it shows "0"
+  and discourages.
+- Recommendation: A; revisit after the closed test. Decides: Sabit.
+
+### OQ-029 Minimum app version for the duel protocol
+An old app talking to a changed protocol can break a match for both players.
+- A. Client sends `protocolVersion` in the handshake; the server has a minimum and
+  answers `upgrade_required`; the app shows "Duel üçün tətbiqi yeniləyin." with a Play
+  link. Both players in a match always speak a supported version.
+- B. Play in-app updates API (forced update) for the whole app. Heavier; blocks the
+  quiz too.
+- Recommendation: A now; B only if needed later. Blocks DUEL-01. Decides: Sabit.
+
+### OQ-030 Offensive or impersonating display names
+Opponents see the name (OQ-011 deferred this to the profile feature).
+- A. No check. Zero work; offensive names reach other players (Play policy on
+  user-generated content may then expect reporting tools).
+- B. Server-side blocklist (Azerbaijani, Turkish, Russian, English; case-folded,
+  common letter swaps like 0→o, ə→e) plus reserved words ("admin", "duello",
+  "moderator"); applied at sign-up, Google name creation (fallback "Oyunçu NNNN") and
+  edit. Cheap; misses creative spellings.
+- C. B plus "report player" and manual review. Better moderation; new UI and admin
+  work.
+- Also: a limit on name changes (e.g. once per day) — recommendation: none in the MVP.
+- Recommendation: B; Sabit maintains the list in the private content repo (it is
+  not public). Blocks PROF-06. Decides: Sabit.
+
+### OQ-031 Number of recent matches on the profile
+- A. Last 20, no pagination. One query, fits one screen scroll.
+- B. Paginated full history. More API and UI states; little value in the MVP.
+- Recommendation: A. Decides: Sabit.
+
+### OQ-032 Meaning of the 10 s reconnect window
+§2 gives 10 s to reconnect but also says missed picks default and that only 2 missed
+rounds in a row forfeit. A round is about 21 s, so it is unclear what changes after
+10 s.
+- A. The window is informational: the opponent sees a 10 s countdown, the client
+  auto-reconnects silently for 10 s and then shows "Yenidən qoşul"; the seat is held
+  until the match ends; only the missed-round rule decides the outcome.
+- B. After 10 s without reconnect the player cannot rejoin; remaining rounds are
+  missed until the forfeit (≈ 1–2 rounds later). Same result, less flexibility.
+- C. Forfeit immediately after 10 s. Harsh on weak networks; contradicts the
+  missed-round rule.
+- Recommendation: A. Blocks DUEL-13, DUEL-16. Decides: Sabit.
+
+### OQ-033 Both players gone, or the server loses the match
+- A. "Abandoned": no winner, no Elo change, scores stored, shown as "Ləğv edildi".
+  Also used when a server restart loses an in-memory match.
+- B. Draw (Elo 0.5 each). Moves ratings for a match nobody finished.
+- C. Higher score wins. Rewards leaving when ahead.
+- Recommendation: A. Rule: whoever reaches 2 missed rounds in a row first forfeits;
+  A applies only when both reach it in the same round. Blocks DUEL-14. Decides: Sabit.
+
+### OQ-034 Leaving a running match on purpose
+§2 has no explicit leave; today a player who closes the screen waits out 2 missed
+rounds (≈ 40 s) and the opponent waits too.
+- A. "Oyundan çıx" with a confirmation that says it counts as a loss; the server
+  forfeits at once (`match.leave`). Fast and honest for both.
+- B. No leave button; back is blocked during a match. Annoying, and users kill the
+  app anyway.
+- C. Leave = disconnect; the missed-round rule decides. No new message; the opponent
+  waits ≈ 40 s.
+- Recommendation: A. Blocks DUEL-15. Decides: Sabit.
+
+### OQ-035 Phases ending early
+§2 says options are sent "only after both bets are locked"; it does not say whether
+the confidence phase (5 s) and the answer phase (10 s) end early.
+- A. Both end early when both players have acted; durations are maximums. Faster
+  matches, less idle waiting; match length varies.
+- B. Fixed lengths; options always at 5 s. Predictable rhythm, simpler tests; idle
+  time on every round.
+- C. Only the confidence phase ends early.
+- Recommendation: A. The speed bonus is unaffected (it uses each player's own
+  remaining time). Blocks DUEL-07, DUEL-08. Decides: Sabit.
+
+### OQ-036 Latency grace at deadlines
+A tap at 9.9 s with 200 ms latency arrives after the deadline.
+- A. No grace: received ≤ deadline counts. Simple, the countdown already shows server
+  time (clock offset); players on slow networks lose the last ~100–300 ms.
+- B. Fixed grace (e.g. 300 ms) after the deadline. Kinder; changes a game timer and
+  gives fast networks a hidden extra window.
+- C. Per-player latency compensation (RTT/2). Fairest; complex and spoofable.
+- Recommendation: A. Blocks DUEL-07, DUEL-08, DUEL-12 edge cases. Decides: Sabit.
+
+### OQ-037 Match intro and cancellation before round 1
+§2 does not define the time between `match.found` and round 1.
+- A. 3 s intro, no "ready" tap; a `queue.leave` that crossed the pairing cancels the
+  match (no Elo) and puts the opponent back at the front of the queue. After the
+  intro normal rules apply.
+- B. Both tap "Hazıram" within 10 s. Confirms presence; one more step and a new
+  timeout path.
+- C. No intro, round 1 at once. Players do not see who they play.
+- Recommendation: A. Blocks DUEL-03, DUEL-05. Decides: Sabit.
+
+### OQ-038 Rounding of the speed bonus and the Elo change
+The numbers are fixed by §2; the rounding is not.
+- Speed bonus — A. `floor(50 × remainingMs / 10000)` with remaining = answer
+  deadline − server receive time: 0 at the deadline, 50 only for an instant answer.
+  B. `round(...)`. Tiny difference; floor never exceeds 50.
+- Elo — A. Compute the winner's change, round half away from zero, give the loser the
+  exact negative: ratings stay zero-sum. B. Round each player separately: can drift
+  by 1 point.
+- Recommendation: A for both. Blocks DUEL-09, DUEL-22. Decides: Sabit.
+
+### OQ-039 Elo floor
+- A. No floor. Pure Elo, zero-sum; a rating far below 1000 can discourage.
+- B. Floor at a fixed value (e.g. 100). Breaks zero-sum slightly; rare in practice.
+- Recommendation: A for the MVP; revisit with closed-test data. Decides: Sabit.
+
 ## Decided by Sabit (2026-10-14) — accepted as recommended
 
 | ID | Question | Decision |

@@ -36,17 +36,43 @@ a change there must be mirrored here. "—" means the term never appears in the 
 | Draw | Heç-heçə | Match result with no winner; Elo 0.5 for both. |
 | Missed round | — | A round in which a player sent neither an Əminlik pick nor an answer. |
 | Forfeit | Məğlubiyyət (texniki) | Match end after a player has 2 missed rounds in a row. That player loses (also for Elo); the opponent wins; current scores are stored. |
-| Reconnect window | — | 10 s after a disconnect in which a player may rejoin the running match. |
-| Calibration card | Əminlik kartı | Post-match card with the player's accuracy per Əminlik level. |
+| Reconnect window | — | 10 s after a disconnect in which a player may rejoin the running match; the server timers keep running. What happens after 10 s: OQ-032. |
+| Calibration | — | How well a player's Əminlik matches their real accuracy: ideally higher Əminlik → higher share of correct answers. Counted rounds: OQ-027. |
+| Calibration card | Əminlik kartı | Post-match card with the player's accuracy per Əminlik level (DUEL-21). |
+| Calibration stats | Əminlik statistikası | Calibration over all counted matches, shown on the profile (PROF-05). Same counting rule as the card. |
 | Matchmaking queue | Rəqib axtarılır | Single global first-come-first-served queue; 30 s without opponent → "no opponent found" with retry. |
+| Queue entry | — | One user's place in the matchmaking queue. At most one per user; a newer connection of the same user replaces the older one (DUEL-04). |
+| Queue timeout | Rəqib tapılmadı | The queue deadline (join + 30 s, server clock) passed without a match; the server removes the entry. |
+| Match intro | Rəqib tapıldı | Short screen after `match.found` showing both players before round 1. Duration and cancellation: OQ-037. |
+| Server deadline (`deadlineEpochMs`) | — | Server-clock time at which a phase, queue wait or reconnect window ends. Carried by every timed server message; the only deadline that counts. |
+| Clock offset | — | Difference between server clock and device clock, estimated by the client from `serverNowEpochMs`; countdown = `deadlineEpochMs` − (device now + offset) on a monotonic clock (DUEL-12). |
+| Locked Əminlik | Seçiminiz qeydə alındı | An Əminlik pick the server has accepted for a round. Final; never changes. |
+| Defaulted Əminlik | Vaxt bitdi — Əminlik 1 | Əminlik 1 set by the server because no valid pick arrived before the confidence deadline. Not an active pick (calibration, OQ-027). |
+| Reveal | — | The result phase moment when both players' Əminlik, answers, the correct option and points are shown at the same time. |
+| Answer time (`answered_ms`) | — | Server receive time of the answer minus server send time of the options. Basis of the speed bonus and the sudden-death tie-break. |
+| Too late | Vaxt bitdi | A pick or answer the server received more than 250 ms after the phase deadline; treated as not sent (OQ-036). |
+| Disconnect | Bağlantı kəsildi | The server lost a player's WebSocket (closed or no heartbeat). The match keeps running. |
+| Rejoin (resync) | Bağlantı bərpa olunur | A reconnecting player gets a full match snapshot (`match.state`, proposed) and continues from the current phase (DUEL-13). |
+| Leave (match) | Oyundan çıx | Leaving a running match on purpose; recommended to count as an immediate forfeit (OQ-034). |
+| Abandoned match | Ləğv edildi | A match ended without a result (both players gone at the same time, server restart; OQ-033). No winner, no Elo change, not counted in profile stats. |
+| Cancelled match | — | A match ended before round 1 because a queue leave crossed the pairing (OQ-037). No Elo change, not shown in history. |
+| End reason | — | Why a match ended: `normal`, `sudden_death`, `draw`, `forfeit` (proposed field, `match.result.endReason`). |
+| Protocol version | — | Version of the duel WebSocket protocol sent by the client in the handshake; the server rejects versions below its minimum (OQ-029). |
+| Duel build flag | — | Build-time switch that hides every duel entry until the duel is released (OQ-020). |
 
 ## Rating and profile
 
 | Term | UI (az) | Meaning |
 | --- | --- | --- |
 | Elo rating | Reytinq | Per-user number, start 1000, K = 32. Changed only by finished duels (win, loss, draw, forfeit). Never by the category quiz. |
+| Rating change | — | Elo difference caused by one match, e.g. "+16"; stored per match (before/after ratings) and shown on the result screen and in history. Rounding: OQ-038; floor: OQ-039. |
 | Profile | Profil | The user's backend row (`users`): display name, avatar URL, rating. Created on the first authenticated API call. |
-| Display name | Ad | Name shown to the user and to duel opponents. Source per sign-in method: see OQ-011. |
+| Profile screen | Profil | Screen opened from the home header: name, avatar, rating, duel record, recent matches, calibration stats, name editing (`profile.md`). |
+| Duel record | — | Counts of wins, losses and draws over counted matches (finished, including forfeits; OQ-026). |
+| Recent matches | Son oyunlar | The last N finished matches on the profile, newest first (OQ-031). |
+| Deleted player | Silinmiş oyunçu | How an opponent whose account was deleted is shown in matches and history (`docs/mvp-spec.md` §3a). |
+| Avatar | — | Profile picture: the Google photo URL, or a placeholder circle with the first letter of the display name. No upload in the MVP. |
+| Display name | Ad | Name shown to the user and to duel opponents. 2–20 characters, not unique. Source per sign-in method: OQ-011; editing: PROF-06; offensive names: OQ-030. |
 
 ## Accounts and auth
 

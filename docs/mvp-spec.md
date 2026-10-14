@@ -29,7 +29,7 @@ Match = 7 rounds. Each round has four phases, all timed by the server:
 | --- | --- | --- |
 | Question | 3 s | Only the question text (and image, if any) is shown |
 | Confidence ("Əminlik") | 5 s | Player picks confidence 1, 2 or 3 (hidden from opponent). Timeout = 1 |
-| Answer | 10 s | Server sends the 4 options only after both bets are locked |
+| Answer | 10 s | Server sends the 4 options only after both bets are locked or the confidence deadline has passed |
 | Result | 3 s | Both bets, answers and points revealed at the same time |
 
 "Bet" below and in protocol names (`round.bet`) is internal only; the UI never uses
@@ -58,10 +58,24 @@ Scoring:
   correct answer wins. If neither is correct (or both time out), another
   sudden-death question follows, at most 3. Still tied after 3 → draw.
 - After the match: result screen + calibration card (accuracy per bet level).
+- Deadlines: a pick or answer received by the server at or before the phase
+  deadline + 250 ms counts (network grace, OQ-036); the speed bonus is
+  `floor(50 × remainingMs / 10000)` with the receive time clamped to the deadline.
+  The confidence and answer phases end early once both players have acted (OQ-035).
+- The duel needs at least 10 active questions in total; otherwise the server
+  answers `duel_unavailable`.
+- Leaving a running match on purpose is an immediate forfeit (OQ-034). Both players
+  gone, or the match lost by a server restart → "abandoned": no winner, no Elo
+  change (OQ-033). Elo change is rounded half away from zero, equal and opposite;
+  no rating floor (OQ-038, OQ-039).
+- Full rules and edge cases: `docs/requirements/duel.md`.
 
 Matchmaking (MVP): single global queue, first come first served; if no opponent in
 30 s, show "no opponent found" with retry. Rating is a simple Elo (K = 32, start
 1000), stored per user; a draw is scored 0.5 for both.
+
+User stories and acceptance criteria: `docs/requirements/duel.md` (DUEL-01 …) and
+`docs/requirements/profile.md` (PROF-01 …); open points OQ-024 … OQ-039.
 
 ## 3. Auth
 
