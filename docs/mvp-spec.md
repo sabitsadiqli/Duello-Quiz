@@ -29,7 +29,7 @@ Match = 7 rounds. Each round has four phases, all timed by the server:
 | --- | --- | --- |
 | Question | 3 s | Only the question text (and image, if any) is shown |
 | Confidence ("Əminlik") | 5 s | Player picks confidence 1, 2 or 3 (hidden from opponent). Timeout = 1 |
-| Answer | 10 s | Server sends the 4 options only after both bets are locked |
+| Answer | 10 s | Server sends the 4 options only after both bets are locked or the confidence deadline has passed |
 | Result | 3 s | Both bets, answers and points revealed at the same time |
 
 "Bet" below and in protocol names (`round.bet`) is internal only; the UI never uses
@@ -62,6 +62,9 @@ Scoring:
 Matchmaking (MVP): single global queue, first come first served; if no opponent in
 30 s, show "no opponent found" with retry. Rating is a simple Elo (K = 32, start
 1000), stored per user; a draw is scored 0.5 for both.
+
+User stories and acceptance criteria: `docs/requirements/duel.md` (DUEL-01 …) and
+`docs/requirements/profile.md` (PROF-01 …); open points OQ-024 … OQ-039.
 
 ## 3. Auth
 
