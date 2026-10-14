@@ -3,6 +3,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Release signing is configured only when a keystore is provided (CI release job or a local
+// keystore). A Gradle property wins over the env var; without both, release stays unsigned.
+fun signingValue(property: String, env: String): String? =
+    providers.gradleProperty(property).orElse(providers.environmentVariable(env)).orNull
+val releaseStoreFile = signingValue("releaseStoreFile", "ANDROID_KEYSTORE_PATH")
+
 android {
     namespace = "com.sabit.duelloquiz"
     compileSdk {
@@ -20,8 +26,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    if (releaseStoreFile != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("releaseStorePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("releaseKeyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("releaseKeyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseStoreFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             optimization {
                 enable = true
             }
