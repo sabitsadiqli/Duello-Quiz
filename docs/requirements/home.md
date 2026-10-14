@@ -3,6 +3,9 @@
 Spec: `docs/mvp-spec.md` §1, §2, §6, §7. Terms: `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 Home is the hub a signed-in player returns to after every quiz and duel. It must

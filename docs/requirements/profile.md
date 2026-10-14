@@ -6,6 +6,9 @@ DUEL-20 … DUEL-22 (match result, calibration, Elo). Terms:
 `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 The profile is where a player sees who they are in Duello Quiz: name, picture,
@@ -148,7 +151,7 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 - Given the device is offline, When the user submits, Then "Adı dəyişmək üçün internet
   lazımdır." is shown and the field keeps its value.
 - Given the request is running, When the user taps again, Then no second request is
-  sent; a timeout after 15 s shows "Adı dəyişmək alınmadı. Yenidən cəhd edin.".
+  sent; a timeout after 15 s shows "Adı dəyişmək alınmadı. Yenidən cəhd et.".
 - Given the user is in a duel queue or match, When the name changes on another device,
   Then the running match keeps the name sent in `match.found`; the new name applies
   from the next match.

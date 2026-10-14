@@ -34,6 +34,20 @@ All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead o
 | OQ-039 | Elo floor (minimum rating) | No floor in the MVP; revisit after the closed test |
 | OQ-040 | Assumptions written into `duel.md` without an OQ | Confirmed: newest connection wins (`session_replaced` for the older one); backgrounding while searching sends `queue.leave`; sudden death "missed" = no answer and the 2-in-a-row count continues from round 7; both correct in sudden death → earlier server receive time wins, identical time → next question; duel needs ≥ 10 active questions in total (`duel_unavailable`); after process death the app rejoins via saved `activeMatchId` |
 
+## Decided by Sabit (2026-10-14) — design questions
+
+Raised by `designer` in `design/screens/*.md` (OQ-D1 … OQ-D6); accepted as proposed.
+
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-041 | UI tone: "sən" or "siz"? | "sən" everywhere in the UI (game, peer contest, shorter on 360dp). Final copy: `design/copy/az.md` |
+| OQ-042 | Allowed characters in the display name (OQ-D1) | Letters of any script, digits, space, `-`, `'`, `.`; trimmed, inner spaces collapsed, no emoji; length 2–20 code points after trimming; the server enforces the same rule |
+| OQ-043 | How long does dismissing the email-verification banner last? (OQ-D2) | Until the next cold start of the app (in-memory flag) |
+| OQ-044 | Category `icon_key` values (OQ-D3) | `geography`, `history`, `biology`, `physics`, `sports`; unknown keys show the generic icon |
+| OQ-045 | Maximum category name length (OQ-D4) | 20 characters per language (validated by the importer/admin) |
+| OQ-046 | When does "Bağlantı bərpa olunur…" appear in the quiz? (OQ-D5) | After an answer has been pending for 2 s or on the first network failure; the 1.5 s reveal starts when the server result arrives |
+| OQ-047 | What does a queued (offline) answer show? (OQ-D6) | "Queued" option state with "Cavab yadda saxlanıldı" for 1.5 s, no correct/wrong; the result appears in the review |
+
 ## Details (background for OQ-024 … OQ-039, all decided — see above)
 
 Added by `business-analyst` on 2026-10-14 while writing `duel.md` and `profile.md`.
@@ -283,7 +297,7 @@ Play requires a privacy policy URL and a deletion URL; zero cost is a goal.
 
 ### OQ-016 Quiz timeout and backgrounding
 `POST /quiz/sessions/{id}/answers` requires `optionId`; a timeout has none. The
-session deadline is absolute (start + 230 s).
+session deadline is absolute (start + 230 s at the time of writing; 245 s since OQ-023).
 - Timeout — A. Send `optionId = null`; the server stores "not answered" and returns
   `correctOptionId` (one endpoint, immediate reveal). B. Send nothing; the server
   treats missing answers as not answered at finish (no immediate reveal).

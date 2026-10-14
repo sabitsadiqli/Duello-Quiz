@@ -8,6 +8,9 @@ Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and to
 The UI never says "bet", "stake" or "mərc"; the mechanic is "Əminlik". Protocol names
 (`round.bet`, `betLocked`) are internal only.
 
+> UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
+> copy and string keys are in `design/copy/az.md`.
+
 ## 1. Goal
 
 The duel is the heart of Duello Quiz: two players answer the same 7 questions at the
