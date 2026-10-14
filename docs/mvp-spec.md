@@ -58,6 +58,17 @@ Scoring:
   correct answer wins. If neither is correct (or both time out), another
   sudden-death question follows, at most 3. Still tied after 3 → draw.
 - After the match: result screen + calibration card (accuracy per bet level).
+- Deadlines: a pick or answer received by the server at or before the phase
+  deadline + 250 ms counts (network grace, OQ-036); the speed bonus is
+  `floor(50 × remainingMs / 10000)` with the receive time clamped to the deadline.
+  The confidence and answer phases end early once both players have acted (OQ-035).
+- The duel needs at least 10 active questions in total; otherwise the server
+  answers `duel_unavailable`.
+- Leaving a running match on purpose is an immediate forfeit (OQ-034). Both players
+  gone, or the match lost by a server restart → "abandoned": no winner, no Elo
+  change (OQ-033). Elo change is rounded half away from zero, equal and opposite;
+  no rating floor (OQ-038, OQ-039).
+- Full rules and edge cases: `docs/requirements/duel.md`.
 
 Matchmaking (MVP): single global queue, first come first served; if no opponent in
 30 s, show "no opponent found" with retry. Rating is a simple Elo (K = 32, start

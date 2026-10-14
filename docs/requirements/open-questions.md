@@ -9,24 +9,32 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-024 | What does a player see about the opponent before, during and after a match? | Name, avatar, rating at match found; "opponent locked/answered" without values during rounds; name in history | Sabit |
-| OQ-025 | Rematch with the same opponent after a match? | Out of scope for the MVP; "Yenidən oyna" re-joins the global queue | Sabit |
-| OQ-026 | Do forfeited matches keep their points, and how do forfeits and abandoned matches appear in history and stats? | Forfeit: stored with current scores, counted as win/loss with a label; abandoned: shown as "Ləğv edildi", not counted | Sabit |
-| OQ-027 | Which rounds count for the calibration card and profile stats? | Rounds 1–7 with an actively locked Əminlik; exclude defaulted picks, missed rounds and sudden death | Sabit |
-| OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers | Sabit |
-| OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Tətbiqi yeniləyin" | Sabit |
-| OQ-030 | Offensive or impersonating display names | Small server-side blocklist (az/tr/ru/en, normalized) on sign-up, Google name and edit; no reporting in the MVP | Sabit |
-| OQ-031 | How many recent matches does the profile show? | Last 20, newest first, no pagination | Sabit |
-| OQ-032 | What does the 10 s reconnect window mean when the player is not back after 10 s? | Seat is held and rejoin allowed until the match ends; only the 2-missed-rounds rule decides the outcome | Sabit |
-| OQ-033 | Both players miss their 2nd round in a row in the same round, or the server loses the match (restart) | Match "abandoned": no winner, no Elo change, scores stored | Sabit |
-| OQ-034 | Can a player leave a running match on purpose, and what does it count as? | Yes, with a confirmation dialog; immediate forfeit (Elo loss) | Sabit |
-| OQ-035 | Do the confidence and answer phases end early when both players have acted? | Yes, both end early; the fixed lengths stay the maximum | Sabit |
-| OQ-036 | Latency grace at deadlines (pick or answer sent in time but received late) | No grace: server receive time ≤ deadline counts; client disables input at its displayed 0 | Sabit |
-| OQ-037 | Match intro length and leaving between match found and round 1 | 3 s intro, no "ready" tap; a queue leave that crosses the pairing cancels the match without Elo and re-queues the opponent first | Sabit |
-| OQ-038 | Rounding of the speed bonus and of the Elo change | Speed bonus `floor(50 × remainingMs / 10000)`; Elo change rounded half away from zero, equal and opposite for both players | Sabit |
-| OQ-039 | Elo floor (minimum rating) | No floor in the MVP; revisit after the closed test | Sabit |
 
-## Details (background for OQ-024 … OQ-039)
+## Decided by Sabit (2026-10-14) — duel and profile
+
+All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead of none).
+
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-024 | What does a player see about the opponent before, during and after a match? | Name, avatar, rating at match found; "opponent locked/answered" without values during rounds; name in history |
+| OQ-025 | Rematch with the same opponent after a match? | Out of scope for the MVP; "Yenidən oyna" re-joins the global queue |
+| OQ-026 | Do forfeited matches keep their points, and how do forfeits and abandoned matches appear in history and stats? | Forfeit: stored with current scores, counted as win/loss with a label; abandoned: shown as "Ləğv edildi", not counted |
+| OQ-027 | Which rounds count for the calibration card and profile stats? | Rounds 1–7 with an actively locked Əminlik; exclude defaulted picks, missed rounds and sudden death |
+| OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers |
+| OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Tətbiqi yeniləyin" |
+| OQ-030 | Offensive or impersonating display names | Small server-side blocklist (az/tr/ru/en, normalized) on sign-up, Google name and edit; no reporting in the MVP |
+| OQ-031 | How many recent matches does the profile show? | Last 20, newest first, no pagination |
+| OQ-032 | What does the 10 s reconnect window mean when the player is not back after 10 s? | Seat is held and rejoin allowed until the match ends; only the 2-missed-rounds rule decides the outcome |
+| OQ-033 | Both players miss their 2nd round in a row in the same round, or the server loses the match (restart) | Match "abandoned": no winner, no Elo change, scores stored |
+| OQ-034 | Can a player leave a running match on purpose, and what does it count as? | Yes, with a confirmation dialog; immediate forfeit (Elo loss) |
+| OQ-035 | Do the confidence and answer phases end early when both players have acted? | Yes, both end early; the fixed lengths stay the maximum |
+| OQ-036 | Latency grace at deadlines (pick or answer sent in time but received late) | 250 ms server-side grace: a pick or answer received at or before deadline + 250 ms (server clock) counts; the speed bonus uses the receive time clamped to the deadline (bonus ≥ 0); the client still disables input at its displayed 0 |
+| OQ-037 | Match intro length and leaving between match found and round 1 | 3 s intro, no "ready" tap; a queue leave that crosses the pairing cancels the match without Elo and re-queues the opponent first |
+| OQ-038 | Rounding of the speed bonus and of the Elo change | Speed bonus `floor(50 × remainingMs / 10000)`; Elo change rounded half away from zero, equal and opposite for both players |
+| OQ-039 | Elo floor (minimum rating) | No floor in the MVP; revisit after the closed test |
+| OQ-040 | Assumptions written into `duel.md` without an OQ | Confirmed: newest connection wins (`session_replaced` for the older one); backgrounding while searching sends `queue.leave`; sudden death "missed" = no answer and the 2-in-a-row count continues from round 7; both correct in sudden death → earlier server receive time wins, identical time → next question; duel needs ≥ 10 active questions in total (`duel_unavailable`); after process death the app rejoins via saved `activeMatchId` |
+
+## Details (background for OQ-024 … OQ-039, all decided — see above)
 
 Added by `business-analyst` on 2026-10-14 while writing `duel.md` and `profile.md`.
 All open. Stories marked as blocked are written for the recommendation.

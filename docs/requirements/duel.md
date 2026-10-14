@@ -20,7 +20,7 @@ or a phone call must never decide a match silently or unpredictably.
 
 ## 2. User stories
 
-| ID | Story | Blocked by / decisions |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | DUEL-01 | As a player, I want a duel entry on home that only appears when the duel is released and tells me when I cannot play, so that I never hit a dead end. | OQ-020, OQ-029 |
 | DUEL-02 | As a player, I want to join a matchmaking queue and see that the app is searching, so that I know an opponent is being found. | — |
@@ -204,10 +204,9 @@ opponent).
   reached, Then the server sets Əminlik 1 (`docs/mvp-spec.md` §2) and the client shows
   "Vaxt bitdi — Əminlik 1"; the default does not count as an active pick for the
   calibration card (OQ-027) and does not use up anything.
-- Given a `round.bet` arrives at the server exactly at the deadline (receive time ==
-  `deadlineEpochMs`), When it is evaluated, Then it is accepted; one that arrives
-  after the deadline is rejected with `error too_late` and the default 1 stands
-  (OQ-036, recommended: no grace).
+- Given a `round.bet` arrives at the server at or before `deadlineEpochMs` + 250 ms
+  (server clock), When it is evaluated, Then it is accepted; one that arrives later
+  is rejected with `error too_late` and the default 1 stands (OQ-036: 250 ms grace).
 - Given the player tapped in time but the message is delayed past the deadline by
   the network, When the server rejects it, Then the result phase shows Əminlik 1 for
   that player; the client shows the server's value, never its own local choice.
@@ -245,8 +244,8 @@ client `round.answer {matchId, roundNo, optionId}`.
 - Given the client countdown reaches 0 without a tap, When it expires, Then options
   are disabled and "Vaxt bitdi" is shown; the client sends nothing (the server
   resolves the timeout itself).
-- Given the player taps in the last 100 ms, When the network delays the message past
-  the deadline, Then it counts as a timeout (OQ-036); the result phase shows "Vaxt
+- Given the player taps in the last 100 ms, When the network delays the message
+  past the deadline + 250 ms grace, Then it counts as a timeout (OQ-036); the result phase shows "Vaxt
   bitdi" for that player, and the client never shows a local "answered in time".
 - Given both players answered before 10 s, When the second answer arrives, Then the
   phase ends early or runs to 10 s per OQ-035 (recommended: end early).
@@ -587,8 +586,9 @@ proposed).
   the clock offset (DUEL-12).
 - Phase start of the answer phase: after both Əminlik are locked or the confidence
   deadline has passed. Whether phases end early: OQ-035.
-- Deadline comparison: received at or before `deadlineEpochMs` (server clock) is in
-  time; later is too late (OQ-036).
+- Deadline comparison: received at or before `deadlineEpochMs` + 250 ms grace
+  (server clock) is in time; later is too late (OQ-036). The speed bonus uses the
+  receive time clamped to the deadline, so the grace never yields a negative bonus.
 - Missed round: no Əminlik pick and no answer; in sudden death: no answer. Counting
   continues across round 7 into sudden death. 2 in a row → forfeit (OQ-002).
 - Minimum pool: at least 10 active questions in total (7 rounds + 3 sudden death).
@@ -640,14 +640,14 @@ forfeits, rejected messages by error code, clock offset outliers (> 2 s), reconn
 - android-dev: clock offset, `seq` handling, `activeMatchId` persistence and resync
   are the critical paths; test with a fake server.
 
-## 7. Open questions
+## 7. Decisions
 
-OQ-024 (what the opponent sees), OQ-025 (rematch), OQ-026 (forfeited matches in
+All decided by Sabit on 2026-10-14 (see `open-questions.md`): OQ-024 (what the opponent sees), OQ-025 (rematch), OQ-026 (forfeited matches in
 history and stats), OQ-027 (calibration rules), OQ-028 (empty queue),
 OQ-029 (minimum protocol version), OQ-032 (meaning of the 10 s reconnect window),
 OQ-033 (both players gone / server restart), OQ-034 (leaving on purpose), OQ-035
 (phases ending early), OQ-036 (latency grace at deadlines), OQ-037 (intro and
 cancellation before round 1), OQ-038 (rounding of speed bonus and Elo), OQ-039
-(Elo floor). Also relevant and still open: OQ-007 (questions per category before the
+(Elo floor), OQ-040 (assumptions in this file confirmed). Still open: OQ-007 (questions per category before the
 closed test; the duel draws from all categories).
 Decided and used here: OQ-001, OQ-002, OQ-003, OQ-020, OQ-021.

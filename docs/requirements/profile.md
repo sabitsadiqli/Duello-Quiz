@@ -17,7 +17,7 @@ personal data of other players beyond their display name.
 
 ## 2. User stories
 
-| ID | Story | Blocked by / decisions |
+| ID | Story | Decisions |
 | --- | --- | --- |
 | PROF-01 | As a player, I want to open my profile from the home header, so that I can see my details and progress. | — |
 | PROF-02 | As a player, I want to see my display name, avatar and Elo rating on the profile, so that I know how others see me and where I stand. | OQ-011 |
@@ -220,7 +220,9 @@ rating history chart, sharing the profile, reporting players, unique usernames.
 Also update the user property `rating_bucket` (100-point buckets) when the profile or
 home loads, so usage can be split by skill level.
 
-## 6. Open questions
+## 6. Decisions
+
+All decided by Sabit on 2026-10-14 as recommended (see `open-questions.md`).
 
 OQ-026 (forfeited and abandoned matches in record and stats), OQ-027 (which rounds
 count for calibration), OQ-030 (offensive display names), OQ-031 (number of recent

@@ -50,7 +50,7 @@ a change there must be mirrored here. "—" means the term never appears in the 
 | Defaulted Əminlik | Vaxt bitdi — Əminlik 1 | Əminlik 1 set by the server because no valid pick arrived before the confidence deadline. Not an active pick (calibration, OQ-027). |
 | Reveal | — | The result phase moment when both players' Əminlik, answers, the correct option and points are shown at the same time. |
 | Answer time (`answered_ms`) | — | Server receive time of the answer minus server send time of the options. Basis of the speed bonus and the sudden-death tie-break. |
-| Too late | Vaxt bitdi | A pick or answer the server received after the phase deadline; treated as not sent (OQ-036). |
+| Too late | Vaxt bitdi | A pick or answer the server received more than 250 ms after the phase deadline; treated as not sent (OQ-036). |
 | Disconnect | Bağlantı kəsildi | The server lost a player's WebSocket (closed or no heartbeat). The match keeps running. |
 | Rejoin (resync) | Bağlantı bərpa olunur | A reconnecting player gets a full match snapshot (`match.state`, proposed) and continues from the current phase (DUEL-13). |
 | Leave (match) | Oyundan çıx | Leaving a running match on purpose; recommended to count as an immediate forfeit (OQ-034). |
