@@ -204,7 +204,7 @@ Written for the recommended option (send a verification email, do not block play
 
 Phone/SMS sign-in, Apple/Facebook sign-in, anonymous play, multi-factor auth,
 in-app handling of reset links, changing email or password inside the app, editing
-the display name (profile feature, later), account deletion (SET-06).
+the display name (profile feature, later), account deletion (SET-05, SET-06).
 
 ## 5. Analytics events
 
