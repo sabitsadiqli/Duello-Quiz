@@ -1,0 +1,54 @@
+# Local development stack for Duello Quiz.
+#   cp infra/.env.example infra/.env   # then edit infra/.env
+#   docker compose -f infra/docker-compose.yml up -d
+# Today this starts PostgreSQL only. The backend service is prepared under the
+# "backend" profile and becomes usable once backend/ (and its Dockerfile) exist:
+#   docker compose -f infra/docker-compose.yml --profile backend up -d
+# Images live on local disk in the `media` volume (docs/mvp-spec.md §5) — no MinIO.
+name: duello-quiz
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-duello}
+      POSTGRES_USER: ${POSTGRES_USER:-duello}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Placeholder: backend/ does not exist yet. Only started with `--profile backend`.
+  # backend-dev + devops finalize the Dockerfile, env names and /health endpoint.
+  backend:
+    profiles: ["backend"]
+    build:
+      context: ../backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-duello}
+      DB_USER: ${POSTGRES_USER:-duello}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+      MEDIA_DIR: /var/lib/duello/media
+      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-http://localhost:8080/media}
+      FIREBASE_SERVICE_ACCOUNT_FILE: ${FIREBASE_SERVICE_ACCOUNT_FILE:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - media:/var/lib/duello/media
+
+volumes:
+  pgdata:
+  # Question images (WebP + thumbnails), written by the backend's ImageStorage.
+  media:
