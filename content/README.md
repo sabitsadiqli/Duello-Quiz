@@ -29,7 +29,12 @@ npx --yes -p ajv-cli@5 -p ajv-formats@3 ajv validate --spec=draft2020 -c ajv-for
 ```
 
 The schema checks structure (4 options, exactly 1 correct, at least 1 source).
-Duplicate IDs and near-duplicate questions are checked by the backend importer.
+File names, unique IDs, duplicate texts, images and reviewers are checked by the
+private repo's own script, which its CI also runs on every push:
+
+```bash
+python3 content/bank/scripts/check.py
+```
 
 ## Review workflow
 

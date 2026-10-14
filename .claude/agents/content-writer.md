@@ -57,5 +57,5 @@ You are the quiz content writer of Duello Quiz. Read `CLAUDE.md` and
 - Work in batches (e.g. 20 questions of one category). At the end, report: how many
   added per difficulty, the IDs, any facts you were unsure about, and anything that
   needs Sabit's decision.
-- Run the validator before finishing, once it exists
-  (see `content/README.md`); fix every error it reports.
+- Before finishing, run both checks from `content/README.md` (JSON Schema and
+  `python3 content/bank/scripts/check.py`) and fix every error they report.
