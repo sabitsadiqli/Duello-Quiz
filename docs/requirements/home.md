@@ -46,7 +46,7 @@ Data: `GET /v1/categories` with `Accept-Language` from the app locale (`az`).
 - Loading: Given no cached list and the request is running, When home is shown, Then
   skeleton placeholders are shown (no spinner-only blank screen).
 - Empty: Given the server returns an empty list, When home loads, Then "Hələ ki
-  kateqoriya yoxdur. Bir az sonra yenidən yoxlayın." is shown with "Yenilə".
+  kateqoriya yoxdur. Bir az sonra yenidən yoxla." is shown with "Yenilə".
 - Error: Given the request fails with 5xx or times out after 15 s and there is no
   cache, When home loads, Then "Kateqoriyaları yükləmək alınmadı." with "Yenidən
   cəhd et" is shown.

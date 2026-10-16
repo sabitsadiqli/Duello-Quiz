@@ -45,14 +45,14 @@ API: `POST /v1/quiz/sessions {categoryId}`.
   prefetches the first 2 images (Coil disk cache); the first question is shown
   without waiting for later images.
 - Given the request is slow, When it runs longer than 1 s, Then a loading state
-  "Suallar hazırlanır..." is shown on a quiz loading screen; no timer is running.
+  "Suallar hazırlanır…" is shown on a quiz loading screen; no timer is running.
 - Given the request fails (offline, timeout 15 s, 5xx), When the user is on the
   loading screen, Then "Quizi başlatmaq alınmadı." with "Yenidən cəhd et" and
   "Geri" is shown; no partial quiz is shown.
 - Given the user double-taps the category, When a start request is running, Then no
   second session is requested (HOME-02).
 - Given the server rate limit is hit (OQ-022), When the user starts a quiz, Then
-  "Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd edin." is shown.
+  "Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et." is shown.
 
 ### QUIZ-02 Question screen and timer
 
@@ -91,7 +91,7 @@ API: `POST /v1/quiz/sessions/{id}/answers {questionId, optionId, elapsedMs}` →
 - Given the user taps two options very fast, When the first tap is registered, Then
   only that option is sent; the second tap is ignored.
 - Given the answer request fails because of the network, When it fails, Then the
-  client shows "Bağlantı bərpa olunur..." and retries the same request (same
+  client shows "Bağlantı bərpa olunur…" and retries the same request (same
   `questionId` and `optionId`) with backoff until the session deadline; the timer
   stays stopped for this question because the choice was made in time.
 - Given a retried request reaches the server after the first one was already stored
