@@ -26,12 +26,12 @@ which keep text pairs above 4.5:1; this script confirms every pair actually used
 
 ## Summary
 
-Pairs checked: 126, failures: 0.
+Pairs checked: 152, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
-| light | 5.02 | 3.67 |
-| dark | 5.02 | 4.56 |
+| light | 5.02 | 3.48 |
+| dark | 5.02 | 3.90 |
 
 ## Full tables
 
@@ -102,6 +102,19 @@ Pairs checked: 126, failures: 0.
 | wrong | wrongContainer | #B3261E | #F9DEDC | 5.14 | 3.0 | pass | cross icon / border on wrong card |
 | confidenceSelectedOutline | surface | #00105C | #FBF8FF | 16.26 | 3.0 | pass | selected Əminlik chip ring vs page |
 | confidence3Container | surface | #293CA0 | #FBF8FF | 8.88 | 3.0 | pass | Əminlik 3 chip boundary vs page |
+| confidenceSelectedOutline | surfaceContainerHigh | #00105C | #E9E7EF | 13.95 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
+| confidence3Container | surfaceContainerHigh | #293CA0 | #E9E7EF | 7.62 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
+| outline | surfaceContainerHighest | #767680 | #E4E1E9 | 3.48 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
+| tertiary | surface | #7A5368 | #FBF8FF | 6.12 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
+| tertiary | surfaceContainerLow | #7A5368 | #F5F2FA | 5.81 | 3.0 | pass | duel: opponent accent ring in the player panel |
+| primary | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
+| onSurfaceVariant | timerTrack | #46464F | #E4E1E9 | 7.22 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
+| timerNormal | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 4.5 | pass | duel: search countdown digits on the search card |
+| correct | surfaceContainer | #1E6B30 | #EFEDF4 | 5.65 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
+| wrong | surfaceContainer | #B3261E | #EFEDF4 | 5.63 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
+| onSurfaceVariant | surfaceContainer | #46464F | #EFEDF4 | 8.04 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
+| correct | correctContainer | #1E6B30 | #B7F1BC | 5.10 | 4.5 | pass | duel reveal: points text on a correct player panel |
+| wrong | wrongContainer | #B3261E | #F9DEDC | 5.14 | 4.5 | pass | duel reveal: points text on a wrong player panel |
 
 ### Dark theme
 
@@ -170,3 +183,16 @@ Pairs checked: 126, failures: 0.
 | wrong | wrongContainer | #F2B8B5 | #8C1D18 | 5.34 | 3.0 | pass | cross icon / border on wrong card |
 | confidenceSelectedOutline | surface | #FFFFFF | #131318 | 18.52 | 3.0 | pass | selected Əminlik chip ring vs page |
 | confidence3Container | surface | #BAC3FF | #131318 | 10.88 | 3.0 | pass | Əminlik 3 chip boundary vs page |
+| confidenceSelectedOutline | surfaceContainerHigh | #FFFFFF | #2A292F | 14.42 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
+| confidence3Container | surfaceContainerHigh | #BAC3FF | #2A292F | 8.47 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
+| outline | surfaceContainerHighest | #90909A | #35343A | 3.90 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
+| tertiary | surface | #EAB9D2 | #131318 | 10.91 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
+| tertiary | surfaceContainerLow | #EAB9D2 | #1B1B21 | 10.09 | 3.0 | pass | duel: opponent accent ring in the player panel |
+| primary | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
+| onSurfaceVariant | timerTrack | #C6C5D0 | #35343A | 7.22 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
+| timerNormal | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 4.5 | pass | duel: search countdown digits on the search card |
+| correct | surfaceContainer | #8DD898 | #1F1F25 | 9.69 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
+| wrong | surfaceContainer | #F2B8B5 | #1F1F25 | 9.60 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
+| onSurfaceVariant | surfaceContainer | #C6C5D0 | #1F1F25 | 9.60 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
+| correct | correctContainer | #8DD898 | #06531F | 5.48 | 4.5 | pass | duel reveal: points text on a correct player panel |
+| wrong | wrongContainer | #F2B8B5 | #8C1D18 | 5.34 | 4.5 | pass | duel reveal: points text on a wrong player panel |

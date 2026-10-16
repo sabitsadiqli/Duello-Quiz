@@ -73,6 +73,20 @@ GAME = [
     ("wrong", "wrongContainer", UI, "cross icon / border on wrong card"),
     ("confidenceSelectedOutline", "surface", UI, "selected Əminlik chip ring vs page"),
     ("confidence3Container", "surface", UI, "Əminlik 3 chip boundary vs page"),
+    # Duel and profile (design/screens/duel-*.md, profile.md)
+    ("confidenceSelectedOutline", "surfaceContainerHigh", UI, "duel: selected Əminlik chip ring on the confidence panel"),
+    ("confidence3Container", "surfaceContainerHigh", UI, "duel: Əminlik 3 chip boundary on the confidence panel"),
+    ("outline", "surfaceContainerHighest", UI, "duel: neutral reveal panel border (timeout / missed)"),
+    ("tertiary", "surface", UI, "duel: opponent avatar accent ring (intro, result)"),
+    ("tertiary", "surfaceContainerLow", UI, "duel: opponent accent ring in the player panel"),
+    ("primary", "surfaceContainerLow", UI, "duel: own accent ring in the player panel, calibration bar"),
+    ("onSurfaceVariant", "timerTrack", UI, "duel: timer ring in the result phase / frozen after own answer"),
+    ("timerNormal", "surfaceContainerLow", TEXT, "duel: search countdown digits on the search card"),
+    ("correct", "surfaceContainer", TEXT, "duel result / profile: positive rating change on the rating card"),
+    ("wrong", "surfaceContainer", TEXT, "duel result / profile: negative rating change on the rating card"),
+    ("onSurfaceVariant", "surfaceContainer", TEXT, "duel result / profile: zero rating change, captions on the rating card"),
+    ("correct", "correctContainer", TEXT, "duel reveal: points text on a correct player panel"),
+    ("wrong", "wrongContainer", TEXT, "duel reveal: points text on a wrong player panel"),
 ]
 
 
