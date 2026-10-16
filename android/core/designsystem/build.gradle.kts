@@ -15,6 +15,7 @@ dependencies {
     api(libs.androidx.compose.ui.graphics)
     // ObserveAsEvents (lifecycle-aware one-off UI events).
     api(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.coroutines.core)
 
     // The tokens -> ColorScheme test parses design/tokens.json.
     testImplementation(libs.kotlinx.serialization.json)

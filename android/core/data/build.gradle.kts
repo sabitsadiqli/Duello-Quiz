@@ -9,6 +9,8 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    // Repository interfaces expose Flow/StateFlow.
+    api(libs.kotlinx.coroutines.core)
     implementation(project(":core:datastore"))
 
     testImplementation(libs.kotlinx.coroutines.test)

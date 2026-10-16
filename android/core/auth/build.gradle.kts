@@ -9,6 +9,8 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    // AuthRepository exposes Flow/StateFlow.
+    api(libs.kotlinx.coroutines.core)
     implementation(project(":core:common"))
 
     // Firebase Auth compiles without google-services.json. It is only used at runtime when a
