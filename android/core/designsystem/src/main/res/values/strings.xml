@@ -192,4 +192,226 @@
     <string name="settings_delete_in_progress">Hesab silinir…</string>
     <string name="settings_delete_offline">Hesabı silmək üçün internet lazımdır.</string>
     <string name="settings_delete_failed">Hesabı silmək alınmadı. Yenidən cəhd et.</string>
+
+    <!-- Duel and profile (design/copy/az.md) -->
+    <string name="common_ok">Oldu</string>
+    <string name="common_continue">Davam et</string>
+    <string name="common_deleted_player">Silinmiş oyunçu</string>
+    <string name="common_home">Əsas səhifə</string>
+    <string name="error_already_answered">Bu suala artıq cavab vermisən.</string>
+    <string name="error_upgrade_required">Duel üçün tətbiqi yenilə.</string>
+    <string name="error_duel_unavailable">Duel hazırda əlçatan deyil. Bir az sonra yenidən cəhd et.</string>
+    <string name="error_duel_connect_failed">Duelə qoşulmaq alınmadı.</string>
+    <string name="error_session_replaced">Bu hesabla başqa cihazda duelə qoşuldun.</string>
+    <string name="error_match_not_found">Oyun texniki səbəbdən dayandırıldı. Reytinq dəyişmədi.</string>
+    <string name="error_already_in_match">Artıq oyundasan. Oyuna qayıdırsan…</string>
+    <string name="error_confidence_limit_reached">Əminlik 3 limiti bitib. 1 və ya 2 seç.</string>
+    <string name="error_display_name_not_allowed">Bu ad istifadə edilə bilməz.</string>
+    <string name="error_invalid_display_name">Bu ad uyğun deyil. Ad 2–20 simvol olmalı, yalnız hərf, rəqəm, boşluq, «-», «\'» və «.» ola bilər.</string>
+    <string name="home_duel_title">Duel</string>
+    <string name="home_duel_hint">Əminliyini sına, reytinq qazan</string>
+    <string name="home_duel_needs_internet">Duel üçün internet lazımdır.</string>
+    <string name="duel_you">Sən</string>
+    <string name="duel_delta_positive">+%1$d</string>
+    <string name="duel_delta_negative">−%1$d</string>
+    <string name="duel_delta_zero">0</string>
+    <string name="duel_score_pair">%1$s : %2$s</string>
+    <string name="duel_search_close_cd">Axtarışı ləğv et</string>
+    <string name="duel_search_connecting">Qoşulur…</string>
+    <string name="duel_search_title">Rəqib axtarılır…</string>
+    <string name="duel_search_countdown">%1$d san.</string>
+    <string name="duel_search_countdown_cd">Axtarışın bitməsinə %1$d saniyə qalıb</string>
+    <string name="duel_search_tip_label">Bilirsən?</string>
+    <string name="duel_search_tip_1">Variantları görməzdən əvvəl Əminliyini seç: 1, 2 və ya 3.</string>
+    <string name="duel_search_tip_2">Əminlik 3 ən çox xal gətirir, səhv olsa isə xal itirirsən. Onu bir oyunda 2 dəfə seçə bilərsən.</string>
+    <string name="duel_search_tip_3">7-ci raund həlledicidir: Əminlik xalları ikiqat olur.</string>
+    <string name="duel_search_cancel">Ləğv et</string>
+    <string name="duel_search_timeout_title">Rəqib tapılmadı</string>
+    <string name="duel_search_timeout_body">Hazırda başqa oyunçu axtarmır. Bir az sonra yenidən cəhd et.</string>
+    <string name="duel_search_retry">Yenidən axtar</string>
+    <string name="duel_search_stopped_title">Axtarış dayandırıldı</string>
+    <string name="duel_search_stopped_body">Tətbiqdən çıxdığın üçün axtarışı dayandırdıq.</string>
+    <string name="duel_search_disconnected_title">Bağlantı kəsildi</string>
+    <string name="duel_search_disconnected_body">İnternet bağlantını yoxla və yenidən axtar.</string>
+    <string name="duel_search_opponent_left">Rəqib ayrıldı. Axtarış davam edir.</string>
+    <string name="duel_intro_title">Rəqib tapıldı!</string>
+    <string name="duel_intro_starting">Oyun başlayır</string>
+    <string name="duel_intro_rules">7 raund. Əminlik 3-ü bir oyunda 2 dəfə seçə bilərsən.</string>
+    <string name="duel_intro_cd">Rəqib tapıldı: %1$s, reytinq %2$d. Oyun başlayır.</string>
+    <string name="duel_leave_cd">Oyundan çıx</string>
+    <string name="duel_round_label">Raund %1$d / %2$d</string>
+    <string name="duel_round_label_cd">Raund %1$d, cəmi %2$d</string>
+    <string name="duel_round_label_sudden_death">Əlavə sual %1$d / %2$d</string>
+    <string name="duel_round_label_sudden_death_cd">Əlavə sual %1$d, cəmi %2$d</string>
+    <string name="duel_all_in_pill">×2</string>
+    <string name="duel_all_in_pill_cd">Həlledici raund, xallar ikiqat</string>
+    <string name="duel_phase_question">Sual</string>
+    <string name="duel_phase_confidence">Əminlik</string>
+    <string name="duel_phase_answer">Cavab</string>
+    <string name="duel_phase_result">Nəticə</string>
+    <string name="duel_phase_cd">%1$s mərhələsi</string>
+    <string name="duel_player_score_cd">%1$s: %2$s xal</string>
+    <string name="duel_status_choosing">Seçir…</string>
+    <string name="duel_status_answering">Düşünür…</string>
+    <string name="duel_status_sending">Göndərilir…</string>
+    <string name="duel_status_locked_opponent">Seçdi</string>
+    <string name="duel_status_locked_self">Əminlik %1$d</string>
+    <string name="duel_status_answered_opponent">Cavabladı</string>
+    <string name="duel_status_answered_self">Cavabladın</string>
+    <string name="duel_status_disconnected">Bağlantı kəsildi</string>
+    <string name="duel_status_returned">Qayıtdı</string>
+    <string name="duel_question_hint">Variantlar hələ gizlidir. Nə qədər əmin olduğunu düşün.</string>
+    <string name="duel_question_hint_sudden_death">Əminlik 1-dir. Ən tez düzgün cavab verən qalib gəlir.</string>
+    <string name="duel_confidence_title">Nə qədər əminsən?</string>
+    <string name="duel_confidence_chip_1_cd">Əminlik 1. Düzgün olsa %1$d xal qazanırsan, səhv olsa xal itirmirsən.</string>
+    <string name="duel_confidence_chip_cd">Əminlik %1$d. Düzgün olsa %2$d xal qazanırsan, səhv olsa %3$d xal itirirsən.</string>
+    <string name="duel_confidence_selected_cd">seçildi</string>
+    <plurals name="duel_confidence_three_left">
+        <item quantity="one">Əminlik 3: %1$d dəfə qalıb</item>
+        <item quantity="other">Əminlik 3: %1$d dəfə qalıb</item>
+    </plurals>
+    <string name="duel_confidence_three_none">Əminlik 3 limiti bitdi</string>
+    <string name="duel_confidence_locked">Seçimin qeydə alındı</string>
+    <string name="duel_confidence_waiting_opponent">Rəqib hələ seçir…</string>
+    <string name="duel_confidence_defaulted">Vaxt bitdi — Əminlik 1</string>
+    <string name="duel_confidence_too_late">Seçimin gec çatdı — Əminlik 1 sayıldı.</string>
+    <string name="duel_answer_your_confidence">Əminliyin: %1$d</string>
+    <string name="duel_answer_sent">Cavabın göndərildi. Nəticə hər ikiniz üçün eyni anda açılacaq.</string>
+    <string name="duel_answer_too_late">Cavabın gec çatdı — cavabsız sayıldı.</string>
+    <string name="duel_option_picked_by_you_cd">sən seçdin</string>
+    <string name="duel_option_picked_by_opponent_cd">rəqib seçdi</string>
+    <string name="duel_reveal_correct">Düzgün</string>
+    <string name="duel_reveal_wrong">Səhv</string>
+    <string name="duel_reveal_missed">Raund buraxıldı</string>
+    <string name="duel_reveal_bonus_cd">sürət bonusu %1$d xal</string>
+    <string name="duel_reveal_summary_cd">%1$s. Sən %2$s, rəqib %3$s. Hesab %4$s.</string>
+    <string name="duel_all_in_title">Həlledici raund: xallar ikiqat!</string>
+    <string name="duel_all_in_body">Əminlik xalları ikiqat olur, sürət bonusu dəyişmir.</string>
+    <string name="duel_sudden_death_title">Hesab bərabərdir!</string>
+    <string name="duel_sudden_death_body">Əlavə sual %1$d / %2$d. Ən tez düzgün cavab verən qalib gəlir.</string>
+    <string name="duel_sudden_death_you_won">Daha tez düzgün cavab verdin!</string>
+    <string name="duel_sudden_death_opponent_won">Rəqib daha tez düzgün cavab verdi.</string>
+    <string name="duel_sudden_death_none">Heç kim düzgün cavab vermədi. Növbəti əlavə sual.</string>
+    <string name="duel_sudden_death_same_time">Eyni anda cavab verdiniz. Növbəti əlavə sual.</string>
+    <string name="duel_sudden_death_none_last">Heç kim düzgün cavab vermədi. Oyun heç-heçə bitdi.</string>
+    <string name="duel_reconnecting_title">Bağlantı bərpa olunur…</string>
+    <string name="duel_reconnecting_body">Oyun davam edir, vaxt dayanmır.</string>
+    <string name="duel_offline_title">Bağlantı yoxdur</string>
+    <string name="duel_offline_body">Oyun davam edir. Ardıcıl 2 raund buraxsan, oyun məğlubiyyətlə bitəcək.</string>
+    <string name="duel_reconnect_button">Yenidən qoşul</string>
+    <string name="duel_leave_button">Oyundan çıx</string>
+    <string name="duel_rejoining">Oyuna qayıdırsan…</string>
+    <string name="duel_opponent_disconnected">Rəqibin bağlantısı kəsildi. %1$d san. gözləyirik.</string>
+    <string name="duel_opponent_still_away">Rəqib hələ qayıtmayıb. Oyun davam edir: rəqib ardıcıl 2 raund buraxsa, qalib sən olacaqsan.</string>
+    <string name="duel_opponent_returned">Rəqib qayıtdı.</string>
+    <string name="duel_leave_title">Oyundan çıxmaq istəyirsən?</string>
+    <string name="duel_leave_body">Bu, məğlubiyyət sayılacaq və reytinqin azalacaq. Vaxt bu arada dayanmır.</string>
+    <string name="duel_leave_confirm">Çıx</string>
+    <string name="duel_left_snackbar">Oyundan çıxdın. Məğlubiyyət sayıldı.</string>
+    <string name="duel_result_win">Qələbə!</string>
+    <string name="duel_result_loss">Məğlubiyyət</string>
+    <string name="duel_result_draw">Heç-heçə</string>
+    <string name="duel_result_abandoned">Ləğv edildi</string>
+    <string name="duel_result_reason_sudden_death_win">Əlavə sualda qalib gəldin.</string>
+    <string name="duel_result_reason_sudden_death_loss">Əlavə sualda uduzdun.</string>
+    <string name="duel_result_reason_draw">3 əlavə sualdan sonra da hesab bərabər qaldı.</string>
+    <string name="duel_result_reason_opponent_forfeit">Rəqib oyunu tərk etdi. Qələbə sənindir!</string>
+    <string name="duel_result_reason_self_forfeit">Ardıcıl 2 raund buraxdığın üçün oyun başa çatdı.</string>
+    <string name="duel_result_reason_abandoned">Oyun texniki səbəbdən dayandırıldı.</string>
+    <string name="duel_result_message_loss">Növbəti dəfə alınacaq. Əminlik kartına bax.</string>
+    <string name="duel_result_winner_badge">Qalib</string>
+    <string name="duel_result_score_cd">Hesab: sən %1$s, %2$s %3$s</string>
+    <string name="duel_result_rating_unchanged">Reytinq dəyişmədi</string>
+    <string name="duel_result_rating_cd">Reytinq %1$d, dəyişiklik %2$s</string>
+    <string name="duel_result_play_again">Yenidən oyna</string>
+    <string name="duel_calibration_title">Əminlik kartı</string>
+    <string name="duel_calibration_subtitle">Bu oyunda hər Əminlik səviyyəsində neçə düzgün cavab verdin</string>
+    <string name="duel_calibration_level">Əminlik %1$d</string>
+    <string name="duel_calibration_value">%1$d / %2$d düzgün</string>
+    <string name="duel_calibration_unused">—</string>
+    <string name="duel_calibration_unused_cd">Əminlik %1$d: bu oyunda seçilməyib</string>
+    <string name="duel_calibration_row_cd">Əminlik %1$d: %3$d raunddan %2$d düzgün</string>
+    <string name="duel_calibration_footnote">Vaxt bitəndə verilən Əminlik 1, buraxılan raundlar və əlavə suallar sayılmır.</string>
+    <string name="duel_calibration_hint_good">Əla! Əmin olanda daha çox düz tapırsan.</string>
+    <string name="duel_calibration_hint_overconfident">Yüksək əminlikdə tez-tez yanılırsan. Şübhə edəndə 1 seç.</string>
+    <string name="duel_calibration_hint_underconfident">Bildiyin suallarda daha cəsarətli ol: 2 və ya 3 seçməkdən çəkinmə.</string>
+    <string name="duel_calibration_hint_few_data">Daha çox raund oyna ki, nəticə dəqiqləşsin.</string>
+    <string name="duel_calibration_hint_neutral">Əminliyini bildiklərinə uyğun seçməyə çalış.</string>
+    <string name="duel_upgrade_title">Duel üçün tətbiqi yenilə</string>
+    <string name="duel_upgrade_body">Bu versiya duel üçün köhnədir. Kateqoriya quizləri əvvəlki kimi işləyir.</string>
+    <string name="duel_upgrade_button">Yenilə</string>
+    <string name="duel_upgrade_store_failed">Play Store-u açmaq mümkün olmadı.</string>
+    <string name="duel_unavailable_title">Duel hazırda əlçatan deyil</string>
+    <string name="duel_unavailable_body">Bir az sonra yenidən cəhd et.</string>
+    <string name="duel_connect_failed_title">Duelə qoşulmaq alınmadı</string>
+    <string name="duel_connect_failed_body">Bağlantını yoxla və yenidən cəhd et.</string>
+    <string name="profile_title">Profil</string>
+    <string name="profile_open_cd">Profili aç</string>
+    <string name="profile_edit_name_cd">Adı dəyiş</string>
+    <string name="profile_joined">Qoşulub: %1$s %2$d</string>
+    <string-array name="profile_months">
+        <item>yanvar</item>
+        <item>fevral</item>
+        <item>mart</item>
+        <item>aprel</item>
+        <item>may</item>
+        <item>iyun</item>
+        <item>iyul</item>
+        <item>avqust</item>
+        <item>sentyabr</item>
+        <item>oktyabr</item>
+        <item>noyabr</item>
+        <item>dekabr</item>
+    </string-array>
+    <string-array name="profile_months_short">
+        <item>yan</item>
+        <item>fev</item>
+        <item>mar</item>
+        <item>apr</item>
+        <item>may</item>
+        <item>iyn</item>
+        <item>iyl</item>
+        <item>avq</item>
+        <item>sen</item>
+        <item>okt</item>
+        <item>noy</item>
+        <item>dek</item>
+    </string-array>
+    <string name="profile_record_title">Duel nəticələri</string>
+    <plurals name="profile_record_total">
+        <item quantity="one">%1$d oyun</item>
+        <item quantity="other">%1$d oyun</item>
+    </plurals>
+    <string name="profile_record_cd">%1$d qələbə, %2$d məğlubiyyət, %3$d heç-heçə, cəmi %4$d oyun</string>
+    <string name="profile_match_win">Qələbə</string>
+    <string name="profile_match_loss">Məğlubiyyət</string>
+    <string name="profile_match_draw">Heç-heçə</string>
+    <string name="profile_match_abandoned">Ləğv edildi</string>
+    <string name="profile_matches_title">Son oyunlar</string>
+    <string name="profile_match_supporting">%1$s · %2$s</string>
+    <string name="profile_match_label_opponent_forfeit">Rəqib tərk etdi</string>
+    <string name="profile_match_label_self_forfeit">Texniki məğlubiyyət</string>
+    <string name="profile_match_label_sudden_death">Əlavə sualda</string>
+    <string name="profile_match_today">bu gün</string>
+    <string name="profile_match_yesterday">dünən</string>
+    <string name="profile_match_date">%1$d %2$s</string>
+    <string name="profile_match_date_year">%1$d %2$s %3$d</string>
+    <string name="profile_match_cd">%1$s ilə oyun, %2$s, hesab %3$s, reytinq %4$s, %5$s</string>
+    <string name="profile_calibration_title">Əminlik statistikası</string>
+    <string name="profile_calibration_subtitle">Bütün oyunlarda hər Əminlik səviyyəsində düzgün cavab payın</string>
+    <string name="profile_calibration_value">%1$d dəfə · %2$d%% düzgün</string>
+    <string name="profile_calibration_few">%1$d dəfə · Az məlumat</string>
+    <string name="profile_calibration_never">Hələ seçilməyib</string>
+    <string name="profile_calibration_row_cd">Əminlik %1$d: %2$d dəfə seçilib, %3$d faiz düzgün</string>
+    <string name="profile_calibration_row_few_cd">Əminlik %1$d: %2$d dəfə seçilib, az məlumat</string>
+    <string name="profile_calibration_footnote">1–7-ci raundlar sayılır. Vaxt bitəndə verilən Əminlik 1, buraxılan raundlar və əlavə suallar sayılmır.</string>
+    <string name="profile_empty_title">Hələ duel oynamamısan</string>
+    <string name="profile_empty_body">İlk duelini oyna və Əminlik statistikanı gör.</string>
+    <string name="profile_empty_cta">Duelə başla</string>
+    <string name="profile_section_error">Yükləmək alınmadı</string>
+    <string name="profile_edit_title">Adı dəyiş</string>
+    <string name="profile_edit_save">Yadda saxla</string>
+    <string name="profile_edit_saved">Adın dəyişdirildi.</string>
+    <string name="profile_edit_offline">Adı dəyişmək üçün internet lazımdır.</string>
+    <string name="profile_edit_failed">Adı dəyişmək alınmadı. Yenidən cəhd et.</string>
 </resources>

@@ -22,6 +22,16 @@ class AvatarLetterTest {
     fun leadingSpacesAreIgnored() = assertEquals("A", avatarLetter("  aysel"))
 
     @Test
+    fun leadingPunctuationIsSkipped() {
+        assertEquals("A", avatarLetter("'Aysel"))
+        assertEquals("7", avatarLetter(".7 Ulduz"))
+        assertEquals("M", avatarLetter("-murad"))
+    }
+
+    @Test
+    fun aNameWithoutLetterOrDigitGivesEmptyLetter() = assertEquals("", avatarLetter("'.-"))
+
+    @Test
     fun blankOrMissingNameGivesEmptyLetter() {
         assertEquals("", avatarLetter("   "))
         assertEquals("", avatarLetter(null))

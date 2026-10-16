@@ -31,6 +31,30 @@ object DuelloIcons {
     @DrawableRes val VisibilityOff = R.drawable.ic_visibility_off
     @DrawableRes val Warning = R.drawable.ic_warning
 
+    // Duel and profile (components.md §11–§23).
+    @DrawableRes val Block = R.drawable.ic_block
+    @DrawableRes val Bolt = R.drawable.ic_bolt
+    @DrawableRes val CheckCircle = R.drawable.ic_check_circle
+    @DrawableRes val Devices = R.drawable.ic_devices
+    @DrawableRes val DoubleArrowUp = R.drawable.ic_keyboard_double_arrow_up
+    @DrawableRes val DragHandle = R.drawable.ic_drag_handle
+    @DrawableRes val Edit = R.drawable.ic_edit
+    @DrawableRes val EmojiEvents = R.drawable.ic_emoji_events
+    @DrawableRes val Flag = R.drawable.ic_flag
+    @DrawableRes val Handshake = R.drawable.ic_handshake
+    @DrawableRes val HourglassEmpty = R.drawable.ic_hourglass_empty
+    @DrawableRes val Lightbulb = R.drawable.ic_lightbulb
+    @DrawableRes val Lock = R.drawable.ic_lock
+    @DrawableRes val PauseCircle = R.drawable.ic_pause_circle
+    @DrawableRes val Person = R.drawable.ic_person
+    @DrawableRes val PersonOff = R.drawable.ic_person_off
+    @DrawableRes val PersonSearch = R.drawable.ic_person_search
+    @DrawableRes val SystemUpdate = R.drawable.ic_system_update
+    @DrawableRes val TrendingDown = R.drawable.ic_trending_down
+    @DrawableRes val TrendingFlat = R.drawable.ic_trending_flat
+    @DrawableRes val TrendingUp = R.drawable.ic_trending_up
+    @DrawableRes val Wifi = R.drawable.ic_wifi
+
     /**
      * Category icon by the server `iconKey` (OQ-044, components.md §5). Unknown keys get the
      * generic `category` icon, so a new server category never needs an app update (HOME-01).
