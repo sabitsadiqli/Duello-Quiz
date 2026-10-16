@@ -9,7 +9,6 @@ android {
 
 dependencies {
     api(project(":core:model"))
-    implementation(project(":core:common"))
     implementation(project(":core:datastore"))
 
     testImplementation(libs.kotlinx.coroutines.test)
