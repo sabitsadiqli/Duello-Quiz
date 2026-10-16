@@ -104,8 +104,8 @@ are the MVP values. Every timed server message carries `deadlineEpochMs`.
 
 - **Grace (OQ-036):** a `round.bet` or `round.answer` received by the server at or
   before `deadlineEpochMs + 250 ms` counts; later is `too_late`. The server
-  therefore closes the confidence and answer phases at deadline + 250 ms unless both
-  players acted earlier. The client still disables input when its countdown reaches 0.
+  therefore closes the confidence and answer phases only once that moment has passed
+  (deadline + 251 ms, millisecond clock) unless both players acted earlier. The client still disables input when its countdown reaches 0.
 - **Answer time:** `answeredMs = serverReceiveTime − optionsSentTime` (the moment the
   server sent `round.options`, = answer `deadlineEpochMs` − 10 000).
 - **Speed bonus:** correct answers only,
@@ -300,7 +300,8 @@ that the opponent locked (`bet` is `null`, DUEL-18).
 
 ### `round.options`
 Answer phase start, sent to both players at the same server time once both picks are
-locked or the confidence deadline + 250 ms has passed. Options are in stored order
+locked or the confidence deadline + 250 ms has passed (then at deadline + 251 ms, so
+`deadlineEpochMs` = that moment + 10 000). Options are in stored order
 (the importer's shuffled position, same for both players), without any correctness
 flag. `bet`/`betDefaulted` are the player's **own** final pick (`betDefaulted = true`
 → "Vaxt bitdi — Əminlik 1"); in sudden death `bet = 1`, `betDefaulted = false`.

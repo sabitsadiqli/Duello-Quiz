@@ -184,7 +184,7 @@ class DuelMatch(
                     ServerMessage.RoundConfidence(id.toString(), roundNo, round.allIn, seat.bet3Left(), round.deadline),
                 )
             }
-            waitUntil(round.deadline + config.graceMs) { over || round.players.values.all { it.bet != null } }
+            waitUntil(lateFrom(round.deadline)) { over || round.players.values.all { it.bet != null } }
             if (over) return
             round.players.values.filter { it.bet == null }.forEach {
                 it.bet = 1
@@ -207,7 +207,7 @@ class DuelMatch(
                 ServerMessage.RoundOptions(id.toString(), roundNo, options.getValue(seat.side), own.bet!!, own.betDefaulted, round.deadline),
             )
         }
-        waitUntil(round.deadline + config.graceMs) { over || round.players.values.all { it.optionId != null } }
+        waitUntil(lateFrom(round.deadline)) { over || round.players.values.all { it.optionId != null } }
         if (over) return
 
         resolve(round)
@@ -609,6 +609,12 @@ class DuelMatch(
     // -----------------------------------------------------------------------
 
     private fun now() = clock.nowMs()
+
+    /**
+     * First instant at which a pick or answer is too late: received at or before
+     * deadline + grace counts (OQ-036), so the phase closes 1 ms after that.
+     */
+    private fun lateFrom(deadline: Long) = deadline + config.graceMs + 1
 
     private fun emit(seat: Seat, message: ServerMessage): Outgoing {
         seat.seq++
