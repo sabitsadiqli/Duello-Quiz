@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    All user-facing strings of the app, default locale Azerbaijani (app/src/main/res/resources.properties:
+    unqualifiedResLocale=az). Source of truth: design/copy/az.md. Keys are copied 1:1; never edit the
+    Azerbaijani text here without the designer updating az.md first.
+    A new language = a new values-xx/strings.xml next to this file.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="az">
+
+    <!-- app_ / common_ -->
+    <string name="app_name" translatable="false">Duello Quiz</string>
+    <string name="common_retry">Yenidən cəhd et</string>
+    <string name="common_cancel">Ləğv et</string>
+    <string name="common_back">Geri</string>
+    <string name="common_close">Bağla</string>
+    <string name="common_ok">Oldu</string>
+    <string name="common_continue">Davam et</string>
+    <string name="common_refresh">Yenilə</string>
+    <string name="common_loading">Yüklənir…</string>
+    <string name="common_password_show_cd">Şifrəni göstər</string>
+    <string name="common_password_hide_cd">Şifrəni gizlət</string>
+    <string name="common_offline_banner">İnternet yoxdur. Məlumatlar yenilənməyib.</string>
+
+    <!-- error_ -->
+    <string name="error_offline">İnternet bağlantısı yoxdur. Yenidən cəhd et.</string>
+    <string name="error_generic">Xəta baş verdi. Yenidən cəhd et.</string>
+    <string name="error_sign_in_expired">Giriş müddəti bitib. Yenidən daxil ol.</string>
+
+    <!-- auth_ : welcome -->
+    <string name="auth_welcome_tagline">Biliyini sına, yeni şeylər öyrən.</string>
+    <string name="auth_google_sign_in">Google ilə daxil ol</string>
+    <string name="auth_email_sign_in">E-poçtla daxil ol</string>
+    <string name="auth_sign_up_cta">Qeydiyyatdan keç</string>
+    <string name="auth_privacy_link">Məxfilik siyasəti</string>
+    <string name="auth_account_deleted">Hesabın silindi.</string>
+
+    <!-- auth_ : sign-in -->
+    <string name="auth_sign_in_title">Daxil ol</string>
+    <string name="auth_email_label">E-poçt</string>
+    <string name="auth_password_label">Şifrə</string>
+    <string name="auth_sign_in_button">Daxil ol</string>
+    <string name="auth_forgot_password">Şifrəni unutmusan?</string>
+    <string name="auth_no_account_prompt">Hesabın yoxdur?</string>
+    <string name="auth_sign_up_link">Qeydiyyatdan keç</string>
+    <string name="auth_error_email_required">E-poçt ünvanını yaz.</string>
+    <string name="auth_error_email_invalid">E-poçt ünvanı düzgün deyil.</string>
+    <string name="auth_error_password_required">Şifrəni yaz.</string>
+    <string name="auth_error_wrong_credentials">E-poçt və ya şifrə yanlışdır.</string>
+    <string name="auth_error_user_disabled">Bu hesab deaktiv edilib.</string>
+    <string name="auth_error_too_many_attempts">Çox sayda uğursuz cəhd. Bir az sonra yenidən cəhd et.</string>
+    <string name="auth_error_too_many_requests">Çox sayda cəhd edildi. Bir az sonra yenidən cəhd et.</string>
+
+    <!-- auth_ : sign-up -->
+    <string name="auth_sign_up_title">Qeydiyyat</string>
+    <string name="auth_name_label">Ad</string>
+    <string name="auth_name_supporting">Bu ad digər oyunçulara görünəcək.</string>
+    <string name="auth_name_counter">%1$d/%2$d</string>
+    <string name="auth_error_name_required">Adını yaz.</string>
+    <string name="auth_error_name_length">Ad %1$d–%2$d simvol olmalıdır.</string>
+    <!-- NOT in design/copy/az.md yet (OQ-042 character rule has no copy). Proposed text; designer to confirm. -->
+    <string name="auth_error_name_characters">Adda yalnız hərf, rəqəm, boşluq, «-», «\'» və «.» ola bilər.</string>
+    <string name="auth_password_supporting">Ən azı %1$d simvol.</string>
+    <string name="auth_error_password_short">Şifrə ən azı %1$d simvol olmalıdır.</string>
+    <string name="auth_error_email_in_use">Bu e-poçtla artıq hesab var. Daxil ol və ya şifrəni bərpa et.</string>
+    <string name="auth_go_to_sign_in">Daxil ol</string>
+    <string name="auth_have_account_prompt">Artıq hesabın var?</string>
+    <string name="auth_sign_in_link">Daxil ol</string>
+
+    <!-- auth_ : password reset -->
+    <string name="auth_reset_title">Şifrəni bərpa et</string>
+    <string name="auth_reset_body">E-poçt ünvanını yaz, şifrəni bərpa etmək üçün sənə link göndərək.</string>
+    <string name="auth_reset_send">Link göndər</string>
+    <string name="auth_reset_send_countdown">Yenidən göndər (%1$d san.)</string>
+    <string name="auth_reset_sent">Əgər bu e-poçtla hesab varsa, şifrəni bərpa etmək üçün link göndərdik. Poçt qutunu, həmçinin spam qovluğunu yoxla.</string>
+    <string name="auth_reset_back_to_sign_in">Daxil olmağa qayıt</string>
+
+    <!-- auth_ : Google sign-in -->
+    <string name="auth_error_google_no_account">Bu cihazda Google hesabı tapılmadı.</string>
+    <string name="auth_error_google_unavailable">Google ilə daxil olmaq mümkün olmadı. E-poçtla daxil ol.</string>
+    <string name="auth_error_google_failed">Google ilə daxil olmaq alınmadı. Yenidən cəhd et.</string>
+
+    <!-- auth_ : email verification banner -->
+    <string name="auth_verify_banner_title">E-poçtunu təsdiqlə</string>
+    <string name="auth_verify_banner_body">Təsdiq linkini %1$s ünvanına göndərdik.</string>
+    <string name="auth_verify_resend">Yenidən göndər</string>
+    <string name="auth_verify_resend_countdown">Yenidən göndər (%1$d san.)</string>
+    <string name="auth_verify_sent">Təsdiq linki göndərildi.</string>
+    <string name="auth_verify_done">E-poçtun təsdiqləndi.</string>
+    <string name="auth_verify_dismiss_cd">Bildirişi bağla</string>
+
+    <!-- home_ (placeholder home; categories come with the quiz feature) -->
+    <string name="home_settings_cd">Parametrlər</string>
+
+    <!-- settings_ -->
+    <string name="settings_title">Parametrlər</string>
+    <string name="settings_section_theme">Tema</string>
+    <string name="settings_theme_system">Sistem</string>
+    <string name="settings_theme_system_supporting">Telefonun ayarına uyğun</string>
+    <string name="settings_theme_light">İşıqlı</string>
+    <string name="settings_theme_dark">Qaranlıq</string>
+    <string name="settings_section_language">Dil</string>
+    <string name="settings_language_value">Azərbaycan dili</string>
+    <string name="settings_section_account">Hesab</string>
+    <string name="settings_signed_in_as">%1$s</string>
+    <string name="settings_sign_out">Hesabdan çıx</string>
+    <string name="settings_sign_out_title">Hesabdan çıxmaq istəyirsən?</string>
+    <string name="settings_sign_out_body">Nəticələrin və reytinqin hesabında qalır. İstədiyin vaxt yenidən daxil ola bilərsən.</string>
+    <string name="settings_sign_out_confirm">Çıx</string>
+    <string name="settings_delete_account">Hesabı sil</string>
+    <string name="settings_section_about">Haqqında</string>
+    <string name="settings_version">Versiya %1$s (%2$d)</string>
+    <string name="settings_privacy_policy">Məxfilik siyasəti</string>
+    <string name="settings_link_open_failed">Səhifəni açmaq mümkün olmadı.</string>
+    <string name="settings_delete_title">Hesabı sil</string>
+    <string name="settings_delete_body">Profilin, reytinqin və quiz nəticələrin həmişəlik silinəcək. Bu əməliyyatı geri qaytarmaq olmaz.</string>
+    <string name="settings_delete_body_matches">Keçmiş duellərdə rəqiblərin səni «Silinmiş oyunçu» kimi görəcək.</string>
+    <string name="settings_delete_body_backups">Ehtiyat nüsxələrdən məlumatlar 30 gün ərzində silinir.</string>
+    <string name="settings_delete_confirm_button">Hesabı həmişəlik sil</string>
+    <string name="settings_delete_dialog_title">Hesab həmişəlik silinsin?</string>
+    <string name="settings_delete_dialog_body">Bu əməliyyatı geri qaytarmaq olmaz.</string>
+    <string name="settings_delete_dialog_confirm">Sil</string>
+    <string name="settings_delete_in_progress">Hesab silinir…</string>
+    <string name="settings_delete_offline">Hesabı silmək üçün internet lazımdır.</string>
+    <string name="settings_delete_failed">Hesabı silmək alınmadı. Yenidən cəhd et.</string>
+</resources>
