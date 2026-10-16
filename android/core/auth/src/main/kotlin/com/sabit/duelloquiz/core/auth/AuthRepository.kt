@@ -47,6 +47,15 @@ interface AuthRepository {
     suspend fun deleteAccount(): AuthResult<Unit>
 }
 
+/** Which [AuthRepository] implementation this build runs with. */
+enum class AuthBackend {
+    /** A configured Firebase project (google-services.json present). */
+    Firebase,
+
+    /** No Firebase: in-memory accounts; the backend cannot verify its tokens. */
+    InMemoryFake,
+}
+
 sealed interface AuthState {
     data class SignedIn(val user: AuthUser) : AuthState
 

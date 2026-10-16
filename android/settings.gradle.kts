@@ -39,6 +39,7 @@ include(":core:data")
 include(":core:datastore")
 include(":core:designsystem")
 include(":core:model")
+include(":core:network")
 include(":core:testing")
 
 include(":feature:auth")
