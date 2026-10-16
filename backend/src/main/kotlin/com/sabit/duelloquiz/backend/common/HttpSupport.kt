@@ -29,7 +29,8 @@ fun Application.configureErrorHandling() {
             call.respondError(e.status, e.code, e.message)
         }
         exception<BadRequestException> { call, e ->
-            val code = if (e.causes().any { it is MissingFieldException || it is IllegalArgumentException }) {
+            // A missing required field is a validation error; malformed JSON or a wrong type is a bad request.
+            val code = if (e.causes().any { it is MissingFieldException }) {
                 ErrorCodes.VALIDATION_FAILED
             } else {
                 ErrorCodes.BAD_REQUEST
