@@ -13,6 +13,10 @@ import com.sabit.duelloquiz.core.model.QuizQuestion
 import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSession
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
+import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
+import com.sabit.duelloquiz.core.model.duel.DuelRecord
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +57,21 @@ internal class FakeNetworkDataSource : DuelloNetworkDataSource {
     override suspend fun updateDisplayName(displayName: String): DataResult<Profile> {
         calls += "updateDisplayName:$displayName"
         return patchResults.removeFirstOrNull() ?: DataResult.Success(profile(displayName))
+    }
+
+    var stats: DataResult<DuelStats> = DataResult.Success(
+        DuelStats(DuelRecord(0, 0, 0, 0), (1..3).map { CalibrationLevel(it, 0, 0) }),
+    )
+    var matches: DataResult<List<MatchSummary>> = DataResult.Success(emptyList())
+
+    override suspend fun getStats(): DataResult<DuelStats> {
+        calls += "getStats"
+        return stats
+    }
+
+    override suspend fun getMatches(limit: Int): DataResult<List<MatchSummary>> {
+        calls += "getMatches:$limit"
+        return matches
     }
 
     override suspend fun deleteAccount(): DataResult<Unit> {

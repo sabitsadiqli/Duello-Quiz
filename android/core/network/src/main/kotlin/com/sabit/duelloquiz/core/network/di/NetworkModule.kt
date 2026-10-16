@@ -10,6 +10,8 @@ import com.sabit.duelloquiz.core.network.BuildConfig
 import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
 import com.sabit.duelloquiz.core.network.auth.AuthRepositoryIdTokenProvider
 import com.sabit.duelloquiz.core.network.auth.IdTokenProvider
+import com.sabit.duelloquiz.core.network.duel.DuelSocketFactory
+import com.sabit.duelloquiz.core.network.duel.KtorDuelSocketFactory
 import com.sabit.duelloquiz.core.network.fake.DebugNetworkFakes
 import com.sabit.duelloquiz.core.network.ktor.KtorDuelloNetworkDataSource
 import com.sabit.duelloquiz.core.network.ktor.createDuelloHttpClient
@@ -77,4 +79,32 @@ internal object NetworkModule {
         ),
         clock = clock,
     )
+
+    /**
+     * The duel WebSocket (docs/api/duel-protocol.md). Like the REST source, a debug build without
+     * Firebase plays against a scripted bot on a fake server ([DebugNetworkFakes]).
+     */
+    @Provides
+    @Singleton
+    fun provideDuelSocketFactory(
+        authBackend: AuthBackend,
+        authRepository: AuthRepository,
+        clock: WallClock,
+        tokenProvider: IdTokenProvider,
+        languageProvider: AcceptLanguageProvider,
+    ): DuelSocketFactory {
+        if (authBackend == AuthBackend.InMemoryFake) {
+            val fake = DebugNetworkFakes.createDuel(authRepository, clock)
+            if (fake != null) {
+                Log.w(TAG, "Firebase is not configured; the duel plays against a fake bot server")
+                return fake
+            }
+        }
+        return KtorDuelSocketFactory(
+            engine = OkHttp.create(),
+            baseUrl = BuildConfig.API_BASE_URL,
+            tokenProvider = tokenProvider,
+            languageProvider = languageProvider,
+        )
+    }
 }

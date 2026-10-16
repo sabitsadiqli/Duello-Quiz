@@ -8,4 +8,8 @@ data class AppConfig(
     val versionName: String,
     val versionCode: Long,
     val privacyPolicyUrl: String,
+    /** OQ-020: duel entry points exist only when true (debug on, release off by default). */
+    val duelEnabled: Boolean = false,
+    /** Play Store listing for "Yenilə" on the upgrade-required screen (duel-availability.md). */
+    val applicationId: String = "",
 )
