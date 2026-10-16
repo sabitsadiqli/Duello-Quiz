@@ -137,6 +137,7 @@ cp infra/.env.example infra/.env                     # once; set POSTGRES_PASSWO
 docker compose -f infra/docker-compose.yml up -d     # Postgres
 docker compose -f infra/docker-compose.yml --profile backend up -d --build  # + backend (once backend/ exists)
 cd backend && ./gradlew test build
+cd backend && ./gradlew run --args="import ../content/bank"   # import the question bank
 cd android && ./gradlew lint test assembleDebug
 ```
 Release: push tag `vX.Y.Z` (internal) or `vX.Y.Z-closed` (closed track); secrets and

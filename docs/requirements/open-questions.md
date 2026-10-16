@@ -11,6 +11,18 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 | OQ-073 | What does the app do when a `queue.leave` reaches the server after the intro and gets `already_in_match {matchId}` (the user tapped "Ləğv et" but round 1 already started)? A. Rejoin and show the running match; the user can still leave through the DUEL-15 dialog. B. Send `match.leave` automatically (forfeit, Elo loss, without a confirmation). C. Go home silently; the missed-round rule ends the match (≈ 40 s, forfeit). | A: a forfeit always needs an explicit confirmation; the case is rare (the leave must arrive > 3 s after `match.found`). Blocks one criterion of DUEL-03 | Sabit |
 
+## Decided by Sabit (2026-10-16) — backend foundation
+
+Made by `backend-dev` while building `backend/` (PR `feat/backend-foundation`); accepted by Sabit.
+
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-048 | How is a match outcome stored so it survives account deletion? | Per side: `winner_side`, `forfeited_side` (`'a'`/`'b'`), not a user id; `match_answers` has `side` and `is_correct`; a question never repeats in a match (UNIQUE(match_id, question_id)) |
+| OQ-049 | Extra import rules | Import is all-or-nothing (422 `import_invalid` lists every issue); `reviewed` needs a non-empty `reviewedBy`; the 4 option texts must be distinct; questions with an image are imported without it (`image_not_imported` warning) until the image pipeline exists; categories come from an optional `categories.json`, upserted by slug |
+| OQ-050 | Quiz session lifecycle | Early `finish` allowed → `finished`; after the deadline → `expired` with `finishedAt` = deadline; overdue sessions closed lazily and by a 60 s job; a retry of a stored answer succeeds even after the deadline; an answer exactly at the deadline is accepted; rate limit counts only sessions actually started; missing `elapsedMs` is stored as 20000 |
+| OQ-051 | Display names from Google and reserved names | An invalid Google name or one longer than 20 characters is replaced by "Oyunçu NNNN" (never truncated); reserved: admin, administrator, moderator, duello; the offensive-word list is a file in the private content repo; only `https` avatar URLs are stored |
+| OQ-052 | Account deletion order | Database first, then the Firebase user; if Firebase fails → 502 `auth_provider_error`, a retry completes it and returns 204 |
+
 ## Decided by Sabit (2026-10-14) — duel and profile
 
 All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead of none).
