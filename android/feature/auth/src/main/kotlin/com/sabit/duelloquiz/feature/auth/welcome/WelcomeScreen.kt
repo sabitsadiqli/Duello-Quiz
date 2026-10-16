@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
-internal interface GoogleCredentialEntryPoint {
+interface GoogleCredentialEntryPoint {
     fun googleCredentialClient(): GoogleCredentialClient
 }
 

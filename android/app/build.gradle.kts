@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.duelloquiz.android.application)
     alias(libs.plugins.duelloquiz.android.compose)
     alias(libs.plugins.duelloquiz.hilt)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 // Firebase is configured only when android/app/google-services.json exists (git-ignored; CI
@@ -85,7 +84,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(project(":core:testing"))
 
