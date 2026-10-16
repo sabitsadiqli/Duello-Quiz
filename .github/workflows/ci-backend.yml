@@ -1,0 +1,66 @@
+name: CI Backend
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "docs/api/**"
+      # Importer tests read the public question samples and the JSON Schema.
+      - "content/samples/**"
+      - "content/schema/**"
+      - ".github/workflows/ci-backend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "docs/api/**"
+      - "content/samples/**"
+      - "content/schema/**"
+      - ".github/workflows/ci-backend.yml"
+
+# One run per PR; a new push cancels the previous PR run. Runs on main are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Database tests use Testcontainers (Docker is available on ubuntu-latest);
+      # fail instead of silently skipping them if Docker is missing.
+      REQUIRE_DB_TESTS: "true"
+    steps:
+      - uses: actions/checkout@v7
+
+      # The backend compiles with the JVM toolchain 21 (backend/build.gradle.kts).
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Caches Gradle (written on main only, read-only on PRs) and validates the
+      # wrapper checksum.
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Tests and build
+        run: ./gradlew test build
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-reports
+          path: |
+            backend/build/reports/tests/
+            backend/build/test-results/
+          retention-days: 7
+          if-no-files-found: ignore

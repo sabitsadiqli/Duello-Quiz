@@ -1,0 +1,16 @@
+<configuration>
+    <!-- Structured JSON logs to stdout (CLAUDE.md: monitoring). Never log tokens, emails or names. -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    </appender>
+
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.flywaydb" level="INFO"/>
+    <logger name="Exposed" level="WARN"/>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="JSON"/>
+    </root>
+</configuration>

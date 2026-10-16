@@ -1,0 +1,969 @@
+openapi: 3.1.0
+info:
+  title: Duello Quiz API
+  version: 0.1.0
+  summary: REST API of the Duello Quiz backend (MVP).
+  description: |
+    Contract for the Android app and admin tooling. Owner: `backend-dev`.
+    Product rules: `docs/mvp-spec.md`; user stories: `docs/requirements/`.
+    The real-time duel runs over a WebSocket and is described in
+    `docs/api/duel-protocol.md` (added together with the duel engine).
+
+    ## Conventions
+    - All `/v1` endpoints need `Authorization: Bearer <Firebase ID token>`.
+      The backend verifies the token with the Firebase Admin SDK and never accepts a
+      user id from the request body. The user row is created on the first
+      authenticated call to any `/v1/me*`, `/v1/categories` or `/v1/quiz/*` endpoint
+      (AUTH-06); concurrent first calls create exactly one row.
+    - Localized content (category names, question and option texts, explanations,
+      image alt texts) is resolved from `Accept-Language` (first supported language
+      wins); missing translations fall back to `az`. The MVP only stores `az`.
+    - Timestamps are ISO-8601 UTC strings (`date-time`) unless the field name ends in
+      `EpochMs` (milliseconds since the Unix epoch, server clock).
+    - Errors always have the body `{ "code": "...", "message": "..." }`. `code` is
+      stable and is what clients map to localized UI text; `message` is a short
+      English hint for developers and logs and must never be shown to users.
+    - Unknown JSON fields in requests are ignored; a missing or wrongly typed
+      required field returns 400 `validation_failed`, malformed JSON 400 `bad_request`.
+    - Image URLs are `mediaBaseUrl + storage key` (immutable files served by Caddy).
+      In the MVP no question has an image yet, so `image` is always `null` until the
+      image pipeline ships; clients must already handle a non-null value.
+
+    ## Error codes
+    | HTTP | code | When |
+    | --- | --- | --- |
+    | 400 | `bad_request` | Malformed JSON or parameters |
+    | 400 | `validation_failed` | Missing or invalid field |
+    | 400 | `invalid_display_name` | Display name breaks OQ-042 (length/characters) |
+    | 400 | `display_name_not_allowed` | Display name on the blocklist (OQ-030) |
+    | 400 | `question_not_in_session` | Answer for a question outside the session |
+    | 400 | `invalid_option` | `optionId` does not belong to the question |
+    | 401 | `unauthorized` | Missing, invalid, expired or revoked token |
+    | 403 | `forbidden` | Admin endpoint without the `admin=true` claim |
+    | 404 | `not_found` | Unknown route |
+    | 404 | `category_not_found` | Category missing or inactive |
+    | 404 | `session_not_found` | Session missing or owned by another user |
+    | 409 | `category_not_playable` | Category has fewer than 10 active questions |
+    | 409 | `already_answered` | A different answer for this question is stored |
+    | 409 | `session_expired` | Answer after the session deadline (server clock) |
+    | 409 | `session_closed` | Answer for a finished or expired session |
+    | 413 | `payload_too_large` | Request body above the limit |
+    | 415 | `unsupported_media_type` | Body is not `application/json` |
+    | 422 | `import_invalid` | Import payload failed validation; nothing was written |
+    | 429 | `rate_limited` | More than 30 quiz sessions started in the last hour (OQ-022) |
+    | 500 | `internal_error` | Unexpected server error |
+    | 502 | `auth_provider_error` | Firebase could not be reached while deleting the account |
+    | 503 | `service_unavailable` | Health check failed (database unreachable) |
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:8080
+    description: Local development (infra/docker-compose.yml)
+security:
+  - firebaseIdToken: []
+tags:
+  - name: system
+    description: Health and operations.
+  - name: me
+    description: The signed-in user's profile, stats and match history.
+  - name: categories
+    description: Playable quiz categories.
+  - name: quiz
+    description: Single-player category quiz sessions.
+  - name: admin
+    description: Content administration (custom claim `admin=true`).
+
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Liveness and database check
+      description: Used by Docker, Caddy and the deploy job. No authentication.
+      security: []
+      responses:
+        "200":
+          description: Service and database are up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: Database unreachable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/me:
+    get:
+      tags: [me]
+      operationId: getMe
+      summary: Current user's profile (creates it on the first call)
+      description: |
+        Creates the user row on the first authenticated call (AUTH-06). The display
+        name comes from the token's `name` claim if it satisfies OQ-042 and the
+        blocklist (OQ-030), otherwise it is "Oyunçu NNNN" (random 4 digits). The
+        avatar comes from the `picture` claim. Later token claims never overwrite a
+        stored name or avatar.
+
+        Email sign-up: the token of a freshly created email account usually has no
+        `name` claim yet, so the app calls `PATCH /v1/me` with the name entered at
+        sign-up right after the account is created.
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: The profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      tags: [me]
+      operationId: updateMe
+      summary: Change the display name
+      description: |
+        Rules (OQ-042, PROF-06): Unicode NFC; leading/trailing whitespace trimmed and
+        inner whitespace runs collapsed to one space; then 2–20 code points; allowed
+        characters are letters of any script (incl. combining marks), digits, space,
+        `-`, `'` and `.`. Control characters, line breaks and emoji are rejected.
+        The normalized name is checked against the blocklist (OQ-030). Names are not
+        unique. Creates the profile if it does not exist yet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: |
+            `invalid_display_name`, `display_name_not_allowed`, `validation_failed`
+            or `bad_request`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalid:
+                  value: { code: invalid_display_name, message: "Display name must be 2-20 allowed characters" }
+                blocked:
+                  value: { code: display_name_not_allowed, message: "Display name is not allowed" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [me]
+      operationId: deleteMe
+      summary: Delete the account immediately (OQ-014, SET-05)
+      description: |
+        Deletes the user row, all quiz sessions, session questions and quiz answers,
+        anonymizes the user in matches (`player_a`/`player_b`/`winner`/
+        `forfeited_by`/`match_answers.user_id` set to NULL, shown to opponents as
+        "Silinmiş oyunçu") and then deletes the Firebase user with the Admin SDK.
+        Idempotent: a retry after a partial failure completes the deletion and
+        still returns 204, also when the profile row is already gone. A user is
+        never created by this endpoint. A running duel is ended as a forfeit first
+        (once the duel engine exists).
+      responses:
+        "204":
+          description: Account deleted (or already deleted).
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          description: |
+            `auth_provider_error`: database data is deleted but the Firebase user
+            could not be deleted. The client retries the same call.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/me/stats:
+    get:
+      tags: [me]
+      operationId: getMyStats
+      summary: Duel record and calibration (PROF-03, PROF-05)
+      description: |
+        Computed on the server from matches with status `finished` (normal, sudden
+        death, draw, forfeit); `abandoned` and `cancelled` matches are not counted
+        (OQ-026). Calibration counts rounds 1–7 with an actively locked Əminlik;
+        defaulted picks, missed rounds and sudden-death questions are excluded
+        (OQ-027). Before the duel ships every number is 0. The client shows
+        "Az məlumat" for a level with fewer than 5 picks.
+      responses:
+        "200":
+          description: Stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/matches:
+    get:
+      tags: [me]
+      operationId: getMyMatches
+      summary: Recent duels, newest first (PROF-04, OQ-031)
+      description: |
+        Matches with status `finished` or `abandoned`, newest first (by
+        `finishedAt`). `cancelled` matches are not listed. No pagination in the MVP.
+        Empty until the duel ships.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Number of matches, 1–20.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 20
+      responses:
+        "200":
+          description: Recent matches.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchHistory"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/categories:
+    get:
+      tags: [categories]
+      operationId: listCategories
+      summary: Playable categories (HOME-01, OQ-013)
+      description: |
+        Only categories with `is_active = true` and at least 10 active questions
+        (the number of questions per session). Ordered by `sortOrder` ascending,
+        ties by `slug`. Clients keep this order. Unknown `iconKey` values are shown
+        with a generic icon (OQ-044).
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Category list (may be empty).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/quiz/sessions:
+    post:
+      tags: [quiz]
+      operationId: startQuizSession
+      summary: Start a category quiz (QUIZ-01)
+      description: |
+        Picks 10 distinct random active questions of the category (OQ-021) and
+        shuffles the option order per session. The response never contains the
+        correct option, `isCorrect` or explanations. The session deadline is
+        `startedAt + 10 × (20 s + 1.5 s) + 30 s = 245 s` (server clock). After the
+        deadline the server finalizes the session as `expired`, lazily on the next
+        access and by a periodic job. Max 30 sessions started per user per hour
+        (sliding window, per server instance), then 429 with `Retry-After`.
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartSessionRequest"
+      responses:
+        "201":
+          description: Session created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: "`category_not_found`: category missing or inactive."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: "`category_not_playable`: fewer than 10 active questions."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "`rate_limited` (OQ-022)."
+          headers:
+            Retry-After:
+              description: Seconds until a new session can be started.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/quiz/sessions/{sessionId}/answers:
+    post:
+      tags: [quiz]
+      operationId: submitQuizAnswer
+      summary: Answer one question (QUIZ-03, QUIZ-04)
+      description: |
+        One answer per question. `optionId = null` is a timeout (OQ-016) and counts
+        as wrong. Checks in this order:
+        1. Session must belong to the caller (else 404 `session_not_found`) and the
+           question must be in it (400 `question_not_in_session`); a non-null
+           `optionId` must belong to the question (400 `invalid_option`).
+        2. If an answer for this question is already stored: the same `optionId`
+           (including `null`) returns the stored result with 200 (safe retry);
+           a different one returns 409 `already_answered` and keeps the stored one.
+        3. A finished or expired session returns 409 `session_closed`.
+        4. Received after the deadline (server clock) returns 409
+           `session_expired`; nothing is stored and the session is expired.
+        `elapsedMs` is display data only: it is clamped to 0–20000 for storage and
+        never affects correctness or score (OQ-004).
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerRequest"
+      responses:
+        "200":
+          description: Answer stored (or the stored result for a retry).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResult"
+        "400":
+          description: "`question_not_in_session`, `invalid_option`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+        "409":
+          description: "`already_answered`, `session_closed`, `session_expired`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/quiz/sessions/{sessionId}/finish:
+    post:
+      tags: [quiz]
+      operationId: finishQuizSession
+      summary: Finish the session and get the result with the review (QUIZ-05, QUIZ-06)
+      description: |
+        Idempotent: a second call returns the same result. Called before the
+        deadline the session becomes `finished`; called after the deadline it is
+        finalized as `expired` (if the server did not already do so) and the result
+        is returned anyway. Unanswered questions count as not answered. Score =
+        correct count (OQ-012); single-player never changes the rating. The review
+        lists every wrong or unanswered question in session order; it is only ever
+        returned here, after the session is closed.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Final result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+
+  /v1/admin/questions/import:
+    post:
+      tags: [admin]
+      operationId: importQuestions
+      summary: Import categories and questions (admin only)
+      description: |
+        Requires the Firebase custom claim `admin=true` (else 403 `forbidden`).
+        Same importer as the CLI (`backend/README.md`). The whole payload is
+        validated first (`docs/mvp-spec.md` §8, `content/schema/question.schema.json`,
+        category names ≤ 20 characters per language, OQ-045); on any error nothing
+        is written and 422 `import_invalid` lists all problems. Otherwise one
+        transaction upserts categories by `slug` and questions by `id`
+        (`questions.external_id`). Only `status = reviewed` questions are active;
+        `draft` and `retired` are stored inactive. Option positions are shuffled
+        deterministically per question id, so running the same import twice
+        changes nothing. Question images are not imported yet (image pipeline
+        pending): such questions are imported without an image and reported as a
+        warning. Body limit: 10 MB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRequest"
+      responses:
+        "200":
+          description: Import applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "`forbidden`: the token has no `admin=true` claim."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: "`payload_too_large`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: "`import_invalid`: nothing was written."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportError"
+
+components:
+  securitySchemes:
+    firebaseIdToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase Authentication ID token of the signed-in user.
+
+  parameters:
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      description: Preferred content language; unsupported or missing → `az`.
+      schema:
+        type: string
+        example: az
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: "`bad_request` or `validation_failed`."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: "`unauthorized`: missing, invalid or expired Firebase ID token."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: unauthorized
+            message: Missing or invalid bearer token
+    SessionNotFound:
+      description: "`session_not_found`: unknown session or owned by another user."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable code (see the table in the description).
+          examples: [category_not_playable]
+        message:
+          type: string
+          description: Developer hint in English; never shown to users.
+
+    Health:
+      type: object
+      required: [status, database]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        database:
+          type: string
+          enum: [ok]
+
+    Profile:
+      type: object
+      required: [id, displayName, avatarUrl, rating, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Backend user id (also the Analytics user id; never shown in the UI).
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 20
+        avatarUrl:
+          type: [string, "null"]
+          format: uri
+        rating:
+          type: integer
+          description: Elo rating, starts at 1000; changed only by duels.
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      required: [displayName]
+      properties:
+        displayName:
+          type: string
+          examples: ["Əli Məmmədov"]
+
+    Stats:
+      type: object
+      required: [record, calibration]
+      properties:
+        record:
+          type: object
+          required: [wins, losses, draws, total]
+          properties:
+            wins: { type: integer, minimum: 0 }
+            losses: { type: integer, minimum: 0 }
+            draws: { type: integer, minimum: 0 }
+            total: { type: integer, minimum: 0 }
+        calibration:
+          type: array
+          description: Always three entries, levels 1, 2, 3 in this order.
+          minItems: 3
+          maxItems: 3
+          items:
+            type: object
+            required: [level, picks, correct]
+            properties:
+              level: { type: integer, enum: [1, 2, 3] }
+              picks: { type: integer, minimum: 0, description: "Counted rounds with this level" }
+              correct: { type: integer, minimum: 0, description: "Of those, answered correctly" }
+
+    MatchHistory:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/MatchSummary"
+
+    MatchSummary:
+      type: object
+      required: [id, opponent, result, endReason, scoreOwn, scoreOpponent, ratingChange, finishedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        opponent:
+          type: object
+          required: [displayName, avatarUrl, deleted]
+          description: |
+            Current name of the opponent (names are not copied into matches). A
+            deleted opponent has `deleted = true` and null name/avatar; the app
+            shows "Silinmiş oyunçu".
+          properties:
+            displayName: { type: [string, "null"] }
+            avatarUrl: { type: [string, "null"], format: uri }
+            deleted: { type: boolean }
+        result:
+          type: string
+          enum: [win, loss, draw, abandoned]
+        endReason:
+          type: string
+          enum: [normal, sudden_death, draw, forfeit, abandoned]
+          description: |
+            With `forfeit` the app labels a win "Rəqib tərk etdi" and a loss
+            "Texniki məğlubiyyət"; with `sudden_death` "Əlavə sual".
+        scoreOwn: { type: integer }
+        scoreOpponent: { type: integer }
+        ratingChange:
+          type: integer
+          description: Own rating after − before; 0 for abandoned matches.
+        finishedAt:
+          type: string
+          format: date-time
+
+    CategoryList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+
+    Category:
+      type: object
+      required: [id, slug, name, iconKey]
+      properties:
+        id:
+          type: integer
+          format: int32
+        slug:
+          type: string
+          examples: [cografiya]
+        name:
+          type: string
+          maxLength: 20
+          description: Localized name (Accept-Language, fallback az).
+          examples: ["Coğrafiya"]
+        iconKey:
+          type: string
+          description: "Known values (OQ-044): geography, history, biology, physics, sports."
+          examples: [geography]
+
+    StartSessionRequest:
+      type: object
+      required: [categoryId]
+      properties:
+        categoryId:
+          type: integer
+          format: int32
+
+    QuizSession:
+      type: object
+      required: [id, categoryId, startedAtEpochMs, deadlineEpochMs, serverNowEpochMs, questionTimeLimitMs, questions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        categoryId:
+          type: integer
+          format: int32
+        startedAtEpochMs:
+          type: integer
+          format: int64
+        deadlineEpochMs:
+          type: integer
+          format: int64
+          description: Server deadline for all answers (start + 245 s).
+        serverNowEpochMs:
+          type: integer
+          format: int64
+          description: Server clock when the response was built; lets the client compute its clock offset.
+        questionTimeLimitMs:
+          type: integer
+          description: Display timer per question (20000).
+        questions:
+          type: array
+          minItems: 10
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/SessionQuestion"
+
+    SessionQuestion:
+      type: object
+      required: [id, position, text, image, options]
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 1
+          maximum: 10
+        text:
+          type: string
+        image:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Image"
+        options:
+          type: array
+          minItems: 4
+          maxItems: 4
+          description: Shuffled per session; no correctness information.
+          items:
+            $ref: "#/components/schemas/Option"
+
+    Option:
+      type: object
+      required: [id, text]
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+
+    Image:
+      type: object
+      required: [url, thumbUrl, width, height, dominantColor, alt]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: WebP, long side ≤ 1024 px.
+        thumbUrl:
+          type: string
+          format: uri
+          description: WebP thumbnail, 400 px.
+        width: { type: integer }
+        height: { type: integer }
+        dominantColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        alt:
+          type: [string, "null"]
+          description: Localized alt text for accessibility.
+
+    SubmitAnswerRequest:
+      type: object
+      required: [questionId, optionId]
+      properties:
+        questionId:
+          type: string
+          format: uuid
+        optionId:
+          type: [string, "null"]
+          format: uuid
+          description: "`null` = the 20 s timer ran out (OQ-016)."
+        elapsedMs:
+          type: integer
+          description: Client-measured time to answer; display only, clamped to 0–20000.
+
+    AnswerResult:
+      type: object
+      required: [questionId, optionId, correct, correctOptionId, explanation]
+      properties:
+        questionId:
+          type: string
+          format: uuid
+        optionId:
+          type: [string, "null"]
+          format: uuid
+          description: The stored answer.
+        correct:
+          type: boolean
+        correctOptionId:
+          type: string
+          format: uuid
+        explanation:
+          type: [string, "null"]
+          description: Localized explanation; the app shows it only in the end review (OQ-023).
+
+    QuizResult:
+      type: object
+      required: [sessionId, status, score, correctCount, total, finishedAt, review]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [finished, expired]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Equals `correctCount` (OQ-012).
+        correctCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+        total:
+          type: integer
+          description: Questions in the session (10).
+        finishedAt:
+          type: string
+          format: date-time
+        review:
+          type: array
+          description: Wrong and unanswered questions in session order; empty for 10/10.
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+
+    ReviewItem:
+      type: object
+      required: [questionId, position, text, image, selectedOption, correctOption, explanation]
+      properties:
+        questionId:
+          type: string
+          format: uuid
+        position:
+          type: integer
+        text:
+          type: string
+        image:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Image"
+        selectedOption:
+          description: "`null` = not answered (timeout or never sent): \"Cavab verilməyib\"."
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Option"
+        correctOption:
+          $ref: "#/components/schemas/Option"
+        explanation:
+          type: [string, "null"]
+
+    ImportRequest:
+      type: object
+      required: [questions]
+      properties:
+        categories:
+          type: array
+          description: Optional category upserts by `slug` (e.g. from `content/bank/categories.json`).
+          items:
+            $ref: "#/components/schemas/ImportCategory"
+        questions:
+          type: array
+          description: Question files exactly as in `docs/mvp-spec.md` §8.
+          items:
+            $ref: "#/components/schemas/ImportQuestion"
+
+    ImportCategory:
+      type: object
+      required: [slug, name, iconKey, sortOrder]
+      properties:
+        slug:
+          type: string
+          pattern: "^[a-z]+$"
+        name:
+          type: object
+          description: i18n map, `az` required, each value 1–20 characters (OQ-045).
+          required: [az]
+          properties:
+            az: { type: string, minLength: 1, maxLength: 20 }
+          additionalProperties:
+            type: string
+            minLength: 1
+            maxLength: 20
+        iconKey:
+          type: string
+          pattern: "^[a-z][a-z0-9_]*$"
+        sortOrder:
+          type: integer
+        active:
+          type: boolean
+          default: true
+
+    ImportQuestion:
+      description: |
+        One question file; authoritative schema:
+        `content/schema/question.schema.json` (JSON Schema 2020-12).
+        Additional backend rules: `status = reviewed` requires a non-empty
+        `reviewedBy`; the four option texts (`az`) must be distinct.
+      type: object
+      required: [id, category, difficulty, status, text, options, sources, author]
+      properties:
+        id: { type: string, pattern: "^[a-z]+-[0-9]{4}$" }
+        category: { type: string, pattern: "^[a-z]+$" }
+        difficulty: { type: integer, enum: [1, 2, 3] }
+        status: { type: string, enum: [draft, reviewed, retired] }
+        text: { $ref: "#/components/schemas/I18n" }
+        options:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: object
+            required: [text, correct]
+            properties:
+              text: { $ref: "#/components/schemas/I18n" }
+              correct: { type: boolean }
+        explanation: { $ref: "#/components/schemas/I18n" }
+        sources:
+          type: array
+          minItems: 1
+          items: { type: string, format: uri }
+        image:
+          type: [object, "null"]
+        author: { type: string }
+        reviewedBy: { type: [string, "null"] }
+
+    I18n:
+      type: object
+      required: [az]
+      properties:
+        az: { type: string, minLength: 1 }
+      additionalProperties:
+        type: string
+        minLength: 1
+
+    ImportReport:
+      type: object
+      required: [categoriesCreated, categoriesUpdated, created, updated, unchanged, active, inactive, warnings]
+      properties:
+        categoriesCreated: { type: integer }
+        categoriesUpdated: { type: integer }
+        created: { type: integer, description: New questions }
+        updated: { type: integer, description: Existing questions whose content or status changed }
+        unchanged: { type: integer }
+        active: { type: integer, description: Imported questions that are active (reviewed) }
+        inactive: { type: integer, description: Imported questions stored inactive (draft/retired) }
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportIssue"
+
+    ImportError:
+      type: object
+      required: [code, message, issues]
+      properties:
+        code:
+          type: string
+          const: import_invalid
+        message:
+          type: string
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportIssue"
+
+    ImportIssue:
+      type: object
+      required: [ref, code, message]
+      properties:
+        ref:
+          type: string
+          description: Question id, `category:<slug>` or the array index when no id is readable.
+        code:
+          type: string
+          examples: [invalid_field, unknown_category, duplicate_id, category_name_too_long, image_not_imported]
+        message:
+          type: string
