@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "android/**"
+      # ColorTokensTest reads the design tokens.
+      - "design/tokens.json"
       - ".github/workflows/ci-android.yml"
   push:
     branches: [main]
     paths:
       - "android/**"
+      # ColorTokensTest reads the design tokens.
+      - "design/tokens.json"
       - ".github/workflows/ci-android.yml"
 
 # One run per PR; a new push cancels the previous PR run. Runs on main are never cancelled.
