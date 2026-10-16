@@ -6,8 +6,8 @@ info:
   description: |
     Contract for the Android app and admin tooling. Owner: `backend-dev`.
     Product rules: `docs/mvp-spec.md`; user stories: `docs/requirements/`.
-    The real-time duel runs over a WebSocket and is described in
-    `docs/api/duel-protocol.md` (added together with the duel engine).
+    The real-time duel runs over a WebSocket (`GET /v1/duel`) and is described in
+    `docs/api/duel-protocol.md`.
 
     ## Conventions
     - All `/v1` endpoints need `Authorization: Bearer <Firebase ID token>`.
@@ -172,8 +172,8 @@ paths:
         "Silinmiş oyunçu") and then deletes the Firebase user with the Admin SDK.
         Idempotent: a retry after a partial failure completes the deletion and
         still returns 204, also when the profile row is already gone. A user is
-        never created by this endpoint. A running duel is ended as a forfeit first
-        (once the duel engine exists).
+        never created by this endpoint. A running duel is ended first as a forfeit
+        by this user (`forfeitCause = left`), and a queue entry is removed.
       responses:
         "204":
           description: Account deleted (or already deleted).
@@ -198,7 +198,7 @@ paths:
         death, draw, forfeit); `abandoned` and `cancelled` matches are not counted
         (OQ-026). Calibration counts rounds 1–7 with an actively locked Əminlik;
         defaulted picks, missed rounds and sudden-death questions are excluded
-        (OQ-027). Before the duel ships every number is 0. The client shows
+        (OQ-027). The client shows
         "Az məlumat" for a level with fewer than 5 picks.
       responses:
         "200":
@@ -218,7 +218,6 @@ paths:
       description: |
         Matches with status `finished` or `abandoned`, newest first (by
         `finishedAt`). `cancelled` matches are not listed. No pagination in the MVP.
-        Empty until the duel ships.
       parameters:
         - name: limit
           in: query
