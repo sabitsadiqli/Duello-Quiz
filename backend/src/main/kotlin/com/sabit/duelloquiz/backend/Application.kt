@@ -20,6 +20,13 @@ import com.sabit.duelloquiz.backend.common.notFoundFallback
 import com.sabit.duelloquiz.backend.content.ContentImporter
 import com.sabit.duelloquiz.backend.content.ContentRepository
 import com.sabit.duelloquiz.backend.content.adminContentRoutes
+import com.sabit.duelloquiz.backend.duel.DbDuelStore
+import com.sabit.duelloquiz.backend.duel.DuelClock
+import com.sabit.duelloquiz.backend.duel.DuelService
+import com.sabit.duelloquiz.backend.duel.DuelStore
+import com.sabit.duelloquiz.backend.duel.InMemoryMatchmakingQueue
+import com.sabit.duelloquiz.backend.duel.MatchmakingQueue
+import com.sabit.duelloquiz.backend.duel.duelRoutes
 import com.sabit.duelloquiz.backend.image.ImageStorage
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
 import com.sabit.duelloquiz.backend.image.MediaUrls
@@ -42,6 +49,11 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.path
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -79,6 +91,8 @@ fun infrastructureModule(config: AppConfig) = module {
     single { config }
     single { config.quiz }
     single<Clock> { Clock.systemUTC() }
+    // Duel timers use their own clock so tests can run them on virtual or real time.
+    single<DuelClock> { DuelClock.System }
     // Closed by Koin when the application stops.
     single { Db(Db.dataSource(config.db).also(Db::migrate)) } withOptions { onClose { it?.close() } }
     single { FirebaseHolder(createFirebaseAuth(config.firebase)) }
@@ -94,15 +108,23 @@ fun featureModule(config: AppConfig) = module {
     single { MediaUrls(config.media.baseUrl) }
     single { DisplayNamePolicy(DisplayNamePolicy.loadBlocklist(config.displayNameBlocklistFile?.let(Path::of))) }
     single<RateLimiter> { InMemorySlidingWindowRateLimiter(config.quiz.sessionsPerHour, Duration.ofHours(1)) }
+    single { config.duel }
     single { UserRepository(get()) }
-    single { UserService(get(), get(), get(), get()) }
+    single { UserService(get(), get(), get(), get(), listOf(get<DuelService>())) }
     single { CategoryRepository(get()) }
     single { CategoryService(get(), get()) }
     single { QuizRepository() }
     single { QuizService(get(), get(), get(), get(), get(), get(), get()) }
     single { ContentRepository() }
     single { ContentImporter(get(), get(), get()) }
+    single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK) }
+    single<MatchmakingQueue> { InMemoryMatchmakingQueue() }
+    single { DuelScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) } withOptions { onClose { it?.scope?.cancel() } }
+    single { DuelService(get<DuelScope>().scope, config.duel, get(), get(), get(), get()) }
 }
+
+/** Scope of duel matches and queue timers; cancelled when the application stops. */
+class DuelScope(val scope: CoroutineScope)
 
 /** Plugins, routes and background jobs; expects Koin to be installed. */
 fun Application.configureApp() {
@@ -116,6 +138,11 @@ fun Application.configureApp() {
         filter { it.request.path() != "/health" }
     }
     configureErrorHandling()
+    install(WebSockets) {
+        // Protocol limit is 4096 bytes (checked per message); larger frames close the socket.
+        // Heartbeat is the protocol's own ping/pong (15 s timeout in DuelRoutes).
+        maxFrameSize = 65_536
+    }
     install(Authentication) {
         firebase { verifier = this@configureApp.get() }
     }
@@ -129,12 +156,22 @@ fun Application.configureApp() {
                 categoryRoutes(get(), users)
                 quizRoutes(get(), users)
                 adminContentRoutes(get(), config.importMaxBodyBytes)
+                duelRoutes(get(), users, config.duel, get())
             }
         }
         notFoundFallback()
     }
 
     startSessionExpiryJob(get(), config.quiz.expirySweepIntervalMs)
+    val duel = get<DuelService>()
+    launch {
+        try {
+            duel.abandonLostMatches()
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            LoggerFactory.getLogger(DuelService::class.java).error("duel_abandon_on_startup_failed", e)
+        }
+    }
 }
 
 private fun Application.startSessionExpiryJob(service: QuizService, intervalMs: Long) {

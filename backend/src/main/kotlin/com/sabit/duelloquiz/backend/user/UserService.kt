@@ -8,12 +8,19 @@ import com.sabit.duelloquiz.backend.common.ErrorCodes
 import io.ktor.http.HttpStatusCode
 import org.slf4j.LoggerFactory
 import java.time.Clock
+import java.util.UUID
+
+/** Runs before an account is deleted (e.g. the duel forfeits a running match). */
+fun interface AccountDeletionListener {
+    suspend fun beforeAccountDeletion(userId: UUID)
+}
 
 class UserService(
     private val repository: UserRepository,
     private val namePolicy: DisplayNamePolicy,
     private val accountDeleter: AuthAccountDeleter,
     private val clock: Clock,
+    private val deletionListeners: List<AccountDeletionListener> = emptyList(),
 ) {
     private val log = LoggerFactory.getLogger(UserService::class.java)
 
@@ -49,6 +56,7 @@ class UserService(
      */
     suspend fun deleteAccount(auth: AuthUser) {
         val user = repository.findByFirebaseUid(auth.firebaseUid)
+        if (user != null) deletionListeners.forEach { it.beforeAccountDeletion(user.id) }
         repository.deleteByFirebaseUid(auth.firebaseUid)
         try {
             accountDeleter.deleteAccount(auth.firebaseUid)
