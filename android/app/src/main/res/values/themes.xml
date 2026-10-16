@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Window theme before Compose draws; colours come from :core:designsystem (tokens). -->
+    <style name="Theme.DuelloQuiz" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ds_window_background</item>
+    </style>
 
-    <style name="Theme.DuelloQuiz" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- AndroidX SplashScreen (also backports the API 31 splash to older versions). -->
+    <style name="Theme.DuelloQuiz.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ds_window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.DuelloQuiz</item>
+    </style>
 </resources>

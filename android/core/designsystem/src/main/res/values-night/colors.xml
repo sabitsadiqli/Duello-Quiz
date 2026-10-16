@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window and splash background before Compose draws: color.dark.scheme.surface. -->
+    <color name="ds_window_background">#FF131318</color>
+</resources>

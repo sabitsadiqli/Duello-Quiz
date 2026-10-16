@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -17,11 +18,29 @@ plugins {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
         mavenCentral()
     }
 }
 
 rootProject.name = "Duello Quiz"
+
 include(":app")
- 
+
+include(":core:auth")
+include(":core:common")
+include(":core:data")
+include(":core:datastore")
+include(":core:designsystem")
+include(":core:model")
+include(":core:testing")
+
+include(":feature:auth")
+include(":feature:home")
+include(":feature:settings")
