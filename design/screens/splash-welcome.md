@@ -38,7 +38,7 @@ Google in one tap, email sign-in, or sign-up.
 
 1. Status bar inset, edge-to-edge, background `scheme.surface`.
 2. Flexible top space (weight 1).
-3. Logo mark 96dp (`size.splashLogo`), centred.
+3. Logo mark 96dp (`size.splashLogo`), centred (`design/brand.md`, light/dark file).
 4. `space.lg`, `app_name` in `type.headlineMedium` `scheme.onSurface`, centred.
 5. `space.sm`, `auth_welcome_tagline` `type.bodyLarge` `scheme.onSurfaceVariant`,
    centred, max 2 lines.
