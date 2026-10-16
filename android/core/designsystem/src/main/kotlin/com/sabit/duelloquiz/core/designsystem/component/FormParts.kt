@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,9 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -83,6 +86,27 @@ fun FormError(
             }
             if (action != null) action()
         }
+    }
+}
+
+/** 20dp progress indicator used inside buttons, cards and banners (components.md). */
+@Composable
+fun InlineProgress(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
+    val loading = stringResource(R.string.common_loading)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(Sizes.minTouchTarget)
+            .semantics { contentDescription = loading },
+    ) {
+        CircularProgressIndicator(
+            color = color,
+            strokeWidth = Sizes.progressStroke,
+            modifier = Modifier.size(Sizes.inlineProgress),
+        )
     }
 }
 
