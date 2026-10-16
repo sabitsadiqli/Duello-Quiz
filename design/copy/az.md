@@ -327,10 +327,10 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_round_label_sudden_death_cd` | Əlavə sual %1$d, cəmi %2$d | |
 | `duel_all_in_pill` | ×2 | Round 7 pill next to the round label (U+00D7). |
 | `duel_all_in_pill_cd` | Həlledici raund, xallar ikiqat | |
-| `duel_phase_question` | Sual | Stepper label, labelMedium. |
-| `duel_phase_confidence` | Əminlik | Stepper label. |
-| `duel_phase_answer` | Cavab | Stepper label. |
-| `duel_phase_result` | Nəticə | Stepper label. |
+| `duel_phase_question` | Sual | Phase name under the round label in the duel top bar, labelMedium. |
+| `duel_phase_confidence` | Əminlik | Phase name (top bar). |
+| `duel_phase_answer` | Cavab | Phase name (top bar). |
+| `duel_phase_result` | Nəticə | Phase name (top bar). |
 | `duel_phase_cd` | %1$s mərhələsi | Announced on phase change: "Əminlik mərhələsi". |
 | `duel_player_score_cd` | %1$s: %2$s xal | "Sən: 340 xal". |
 | `duel_status_choosing` | Seçir… | Opponent pill, confidence phase. |
@@ -354,7 +354,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_confidence_waiting_opponent` | Rəqib hələ seçir… | Status line after own lock while the opponent has not locked. |
 | `duel_confidence_defaulted` | Vaxt bitdi — Əminlik 1 | Status line when the server default applied. |
 | `duel_confidence_too_late` | Seçimin gec çatdı — Əminlik 1 sayıldı. | Code `too_late` in the confidence phase (OQ-036). |
-| `duel_answer_your_confidence` | Əminliyin: %1$d | Pill above the options in the answer phase. |
+| `duel_answer_your_confidence` | Əminliyin: %1$d | Content description of the own mini Əminlik badge in the player panel (answer phase). |
 | `duel_answer_sent` | Cavabın göndərildi. Nəticə hər ikiniz üçün eyni anda açılacaq. | Status line after the own answer, `wrap` (2 lines). |
 | `duel_answer_too_late` | Cavabın gec çatdı — cavabsız sayıldı. | Code `too_late` in the answer phase. |
 | `duel_option_picked_by_you_cd` | sən seçdin | Option state description in the result phase. |
@@ -512,7 +512,7 @@ Estimated with the method above. "Used" = which form the specs use.
 | Status pills "Bağlantı kəsildi", "Cavabladın", "Göndərilir…" | pill in the panel, labelMedium + 16dp icon | "Bağlantı kəsildi" ~107 / ~139dp | ~100dp | **Wraps** to 2 lines at 1.3 (allowed, never truncated; both panels keep equal height). Shorter verbs chosen on purpose: "Cavabladı" instead of "Cavab verdi", "Düşünür…" instead of "Cavab verir…". |
 | Əminlik chip stakes "+600" / "−400" | chip ~101dp wide, labelLarge | ~34 / ~44dp | ~85dp | Fits. Stakes are on two lines inside the chip, never as "+300 / −200" on one line (~96dp at 1.3 would not fit). |
 | "Əminlik 3: 2 dəfə qalıb" | caption under the chip row, `wrap` | ~150 / ~195dp | 328dp | Fits. A per-chip caption (~101dp) would truncate, so the count is a badge on the chip plus this full-width caption. |
-| Phase stepper "Əminlik", "Nəticə" | 4 segments ~78dp each, labelMedium | "Əminlik" ~47 / ~61dp | ~78dp | Fits. |
+| Phase name "Əminlik", "Nəticə" | second line of the duel top bar, labelMedium | "Əminlik" ~47 / ~61dp | ~230dp | Fits. |
 | `duel_round_label_sudden_death` "Əlavə sual 3 / 3" | top bar centre between two 48dp icons, titleMedium | ~150 / ~195dp | ~230dp | Fits. |
 | `duel_result_loss` "Məğlubiyyət" | displaySmall headline | ~231 / ~300dp | 328dp | Fits, tight. Never put it next to an icon in the same row (icon sits above). |
 | `duel_search_title` "Rəqib axtarılır…" | headlineSmall | ~224 / ~291dp | 328dp | Fits (wraps if a later language is longer). |

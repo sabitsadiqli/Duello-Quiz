@@ -329,35 +329,33 @@ They reuse existing colour roles only; every new colour combination is listed in
 
 ## 15. Duel top bar and phase stepper
 
-Pinned at the top of the match screen (never scrolls).
+Pinned at the top of the match screen (never scrolls). Kept as low as possible so
+the body keeps room for the question and four options on a 360 × 640dp phone.
 
 **Top bar** (custom, `scheme.surface`, height `size.topAppBarHeight`):
 - Leading: close icon button 48dp, content description `duel_leave_cd` (opens the
   leave dialog, `duel-interruptions.md`).
-- Centre-start: round label `duel_round_label` ("Raund 3 / 7") or
-  `duel_round_label_sudden_death` ("Əlavə sual 1 / 3") in `type.titleMedium`
-  `scheme.onSurface`, tabular figures, 1 line; content description
-  `duel_round_label_cd` / `duel_round_label_sudden_death_cd`. In round 7 an All-in
-  pill follows the label with `space.sm` gap: `shape.full`,
-  `scheme.tertiaryContainer` / `scheme.onTertiaryContainer`, padding `space.sm` ×
-  `space.xxs`, text `duel_all_in_pill` ("×2") `type.labelLarge`, content
-  description `duel_all_in_pill_cd`.
+- Centre-start, two lines:
+  - Round label `duel_round_label` ("Raund 3 / 7") or
+    `duel_round_label_sudden_death` ("Əlavə sual 1 / 3") in `type.titleMedium`
+    `scheme.onSurface`, tabular figures, 1 line; content description
+    `duel_round_label_cd` / `duel_round_label_sudden_death_cd`. In round 7 an
+    All-in pill follows the label with `space.sm` gap: `shape.full`,
+    `scheme.tertiaryContainer` / `scheme.onTertiaryContainer`, padding `space.sm` ×
+    `space.xxs`, text `duel_all_in_pill` ("×2") `type.labelLarge`, content
+    description `duel_all_in_pill_cd`.
+  - Phase name `duel_phase_question` / `duel_phase_confidence` /
+    `duel_phase_answer` / `duel_phase_result` in `type.labelMedium`
+    `scheme.onSurfaceVariant`, cross-fades on change.
 - Trailing: timer ring (§4 ring variant), 48dp, `space.xs` end padding.
 
-**Phase stepper** directly below, gutters `space.layout.screenGutter`, height
-reserved 28dp: 4 equal segments (3 in sudden death: no Əminlik), gap `space.xs`.
-Each segment = a bar of `size.phaseSegmentHeight`, `shape.full`, with its label
-centred under it in `type.labelMedium`:
-
-| Segment state | Bar | Label |
-| --- | --- | --- |
-| Done | `scheme.primary` | `scheme.onSurfaceVariant` |
-| Current | `scheme.primary`, label weight 600 | `scheme.onSurface` |
-| Upcoming | `game.timerTrack` | `scheme.onSurfaceVariant` |
-
-Labels: `duel_phase_question`, `duel_phase_confidence`, `duel_phase_answer`,
-`duel_phase_result`. The stepper is decorative for TalkBack; the current phase is
-announced once per phase change as `duel_phase_cd` (polite).
+**Phase stepper** directly below: gutters `space.layout.screenGutter`, padding
+`space.xxs` top / `space.sm` bottom; 4 equal segments (3 in sudden death: no
+Əminlik), gap `space.xs`, each a bar of `size.phaseSegmentHeight`, `shape.full`:
+done and current `scheme.primary`, upcoming `game.timerTrack`. The current
+segment fills from start to end over `motion.duration.short4` when its phase
+begins. Decorative for TalkBack; the phase change is announced once as
+`duel_phase_cd` (polite).
 
 ## 16. Duel player panel
 
@@ -365,18 +363,24 @@ Two panels side by side under the stepper (self at the start, opponent at the en
 gap `space.sm`, gutters `space.layout.screenGutter`, always the same height
 (`IntrinsicSize.Max`), min height `size.duelPlayerPanelMinHeight`. Pinned with the
 top bar. Container `scheme.surfaceContainerLow`, shape
-`shape.component.duelPlayerPanel`, padding `space.md`, no border outside the result
-phase (self/opponent are told apart by the avatar accent ring, §13, and the name).
+`shape.component.duelPlayerPanel`, padding `space.sm`, no border outside the result
+phase (self and opponent are told apart by the avatar accent ring, §13, and the
+name).
 
 Content, top to bottom:
-1. Row: avatar `size.avatar` with accent ring, `space.sm`, name in `type.labelLarge`
-   `scheme.onSurface`, 1 line, ellipsis. Self shows `duel_you` ("Sən"); opponent
-   shows the display name (truncation accepted, DUEL-05; the full name is on the
-   intro and the result screen).
-2. `space.xs`, score `type.titleLarge` `scheme.onSurface`, tabular figures, U+2212
-   for negatives. Content description `duel_player_score_cd`.
-3. `space.sm`, **status slot** (min 28dp): a status pill (§17) or, in the result
-   phase, the reveal face (below).
+1. Row: avatar `size.avatar` with accent ring, `space.sm`, column:
+   - name `type.labelLarge` `scheme.onSurface`, 1 line, ellipsis. Self shows
+     `duel_you` ("Sən"); the opponent shows the display name (truncation accepted,
+     DUEL-05; the full name is on the intro and the result screen);
+   - score `type.titleLarge` `scheme.onSurface`, tabular figures, U+2212 for
+     negatives. Content description `duel_player_score_cd`.
+2. `space.sm`, **status slot** (min 28dp): a status pill (§17) or, in the result
+   phase, the reveal face (below). In the own panel, from the moment the own
+   Əminlik is locked (or defaulted) until the reveal, the slot starts with the mini
+   Əminlik badge of that level (`size.duelBadge`, see below; content description
+   `duel_answer_your_confidence`) followed by the pill — so the player always sees
+   what is at stake while answering. The opponent slot never shows a level before
+   the reveal.
 
 **Reveal face** (result phase, after the flip, `motion.duel.revealFlip`): the panel
 switches container and gets a 2dp border:
