@@ -166,13 +166,8 @@ quiz_sessions(id, user_id, category_id, status, correct_count, started_at, deadl
 quiz_session_questions(session_id, question_id, position, PRIMARY KEY(session_id, position))
 quiz_answers(id, session_id, question_id, option_id NULL, is_correct BOOL, answered_at,
              elapsed_ms INT, UNIQUE(session_id, question_id))
-matches(id, player_a NULL, player_b NULL, score_a, score_b, winner_side NULL,
-        forfeited_side NULL, status, end_reason, rating_*_before/after,
-        started_at, finished_at)   -- players set NULL on account deletion (OQ-048)
-match_rounds(id, match_id, round_no, question_id, all_in BOOL, sudden_death BOOL,
-             UNIQUE(match_id, round_no))
-match_answers(id, round_id, user_id, bet SMALLINT, option_id NULL, answered_ms INT, points INT,
-              UNIQUE(round_id, user_id))
+matches, match_rounds, match_answers   -- duel tables: see docs/api/duel-protocol.md §8
+                                       -- and the Flyway migrations (OQ-048)
 ```
 
 ## 7. API outline (details in docs/api/)

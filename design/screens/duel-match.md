@@ -11,13 +11,10 @@ Tokens: `design/tokens.json` (`motion.duel`). Components: `components.md`
 
 ## Questions and decisions
 
-- **OQ-D8 — dependency on `docs/api/duel-protocol.md`: the start of the Əminlik
-  phase.** The UI needs the Əminlik deadline the moment the question phase ends.
-  Proposal (from `duel-protocol-gaps.md`): either a `round.confidence
-  {deadlineEpochMs}` message or `confidenceDeadlineEpochMs` inside
-  `round.question`. Until then, the client switches to the Əminlik phase when the
-  question deadline passes and shows the chips with the ring "full" until the
-  deadline arrives. backend-dev decides.
+- **OQ-D8 — resolved (OQ-056): the start of the Əminlik phase.** The server sends
+  an explicit `round.confidence {deadlineEpochMs, bet3Left}` message
+  (`docs/api/duel-protocol.md`); the UI switches to the Əminlik phase on it. Not sent
+  in sudden death.
 - Decided by this spec: one screen for all phases (one navigation destination,
   phases are UI states). The pinned header (top bar, stepper, player panels)
   never moves; only the body changes per phase — this is what makes the four

@@ -764,8 +764,6 @@ limit, clock offset outliers (> 2 s), reconnects, matches abandoned at startup.
   the "left while offline" marker of DUEL-15), `hello`/`match.state` resync and the
   close-code handling (`4000`/`4001` never auto-reconnect) are the critical paths;
   test with a fake server against `duel-protocol.md`.
-- designer: `design/screens/duel-match.md` still points to the deleted
-  `duel-protocol-gaps.md` in OQ-D8; replace it with `round.confidence` (OQ-056).
 
 ## 7. Decisions
 

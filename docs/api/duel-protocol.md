@@ -25,7 +25,7 @@ Upgrade: websocket
   minimum supported: **1**. A missing, malformed or lower version is accepted at
   the HTTP level, then the server sends `error upgrade_required` (with
   `minProtocolVersion`) and closes the socket with close code `4000` (OQ-029). The
-  app shows "Duel üçün tətbiqi yeniləyin.".
+  app shows "Duel üçün tətbiqi yenilə.".
 - Frames are UTF-8 JSON text frames, one message per frame, at most 4096 bytes.
   Binary frames are a `bad_message`.
 - Every message is an object with a `type` string. Unknown fields are ignored on both
