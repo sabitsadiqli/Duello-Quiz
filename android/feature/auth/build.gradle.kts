@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(project(":core:auth"))
+    implementation(project(":core:data"))
 }

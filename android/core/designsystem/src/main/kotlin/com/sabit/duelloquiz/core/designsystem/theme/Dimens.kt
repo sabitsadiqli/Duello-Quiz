@@ -61,6 +61,24 @@ object Sizes {
 
     /** Glyph inside the placeholder logo mark (splashLogo circle). */
     val logoGlyph = 56.dp
+
+    /** components.md §11: loading state indicator. */
+    val stateLoadingIndicator = 48.dp
+
+    /** components.md §5: full-width category card (the 112dp tile token is for a grid). */
+    val categoryCardMinHeight = 72.dp
+
+    /** components.md §3: A–D letter badge of an option card. */
+    val optionLetterBadge = 32.dp
+
+    /** quiz-question.md: reserved status line under the options, and its 16dp indicator. */
+    val statusLineHeight = 24.dp
+    val statusIndicator = 16.dp
+
+    /** Skeleton text bars (home header, category card). */
+    val skeletonLineHeight = 12.dp
+    val skeletonLineWidth = 120.dp
+    val skeletonLineWidthShort = 64.dp
 }
 
 /** elevation from design/tokens.json (Material 3 tonal elevation levels). */

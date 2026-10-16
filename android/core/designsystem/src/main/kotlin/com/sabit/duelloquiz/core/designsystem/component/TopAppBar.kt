@@ -21,7 +21,8 @@ import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 
 /**
  * Small top app bar (components.md §12). [title] is optional: auth screens show only the back
- * icon and put their title in the content as headlineSmall.
+ * icon and put their title in the content as headlineSmall. [navigationIcon] replaces the back
+ * arrow (e.g. the quiz close icon).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +30,7 @@ fun DuelloTopAppBar(
     title: String? = null,
     onBack: (() -> Unit)? = null,
     backEnabled: Boolean = true,
+    navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
@@ -38,7 +40,9 @@ fun DuelloTopAppBar(
             }
         },
         navigationIcon = {
-            if (onBack != null) {
+            if (navigationIcon != null) {
+                navigationIcon()
+            } else if (onBack != null) {
                 IconButton(onClick = onBack, enabled = backEnabled) {
                     Icon(
                         painter = painterResource(DuelloIcons.ArrowBack),

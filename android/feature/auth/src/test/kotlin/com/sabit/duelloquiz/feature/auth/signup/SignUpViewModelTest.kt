@@ -8,11 +8,13 @@ import com.sabit.duelloquiz.core.auth.AuthResult
 import com.sabit.duelloquiz.core.auth.DisplayNameError
 import com.sabit.duelloquiz.core.auth.EmailError
 import com.sabit.duelloquiz.core.auth.PasswordError
+import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.feature.auth.common.AuthFormError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -30,8 +32,9 @@ class SignUpViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val authRepository: AuthRepository = mockk()
+    private val profileRepository: ProfileRepository = mockk(relaxUnitFun = true)
 
-    private fun viewModel() = SignUpViewModel(authRepository, SavedStateHandle())
+    private fun viewModel() = SignUpViewModel(authRepository, profileRepository, SavedStateHandle())
 
     private fun SignUpViewModel.fill(name: String, email: String, password: String) {
         onAction(SignUpAction.NameChanged(name))
@@ -137,7 +140,22 @@ class SignUpViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { authRepository.signUpWithEmail("Aysel Məmmədova", "aysel@example.com", "password1") }
+        // OQ-011: the normalized name goes to PATCH /v1/me once the account exists.
+        verify(exactly = 1) { profileRepository.applySignUpDisplayName("Aysel Məmmədova") }
+        verify(exactly = 0) { profileRepository.clearPending() }
         assertTrue(vm.uiState.value.isLoading)
+    }
+
+    @Test
+    fun failedSignUpDropsThePendingDisplayName() = runTest {
+        coEvery { authRepository.signUpWithEmail(any(), any(), any()) } returns AuthResult.Failure(AuthError.Network)
+        val vm = viewModel()
+        vm.fill(name = "Aysel", email = "aysel@example.com", password = "password1")
+
+        vm.onAction(SignUpAction.Submit)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { profileRepository.clearPending() }
     }
 
     @Test

@@ -12,9 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
+import coil3.compose.AsyncImage
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
@@ -35,14 +38,16 @@ fun avatarLetter(name: String?): String {
 }
 
 /**
- * Avatar (components.md §13), letter fallback only: tertiaryContainer circle with the first
- * letter of the display name. Decorative for TalkBack (the surrounding header is merged).
- * Image loading (Coil 3, Google photo URL) comes with the profile feature.
+ * Avatar (components.md §13): the image from [imageUrl] (Coil, centre crop) over a
+ * tertiaryContainer circle with the first letter of the display name, which stays visible while
+ * loading and when there is no URL or the image fails. Decorative for TalkBack (the surrounding
+ * header is merged).
  */
 @Composable
 fun DuelloAvatar(
     name: String?,
     modifier: Modifier = Modifier,
+    imageUrl: String? = null,
     size: Dp = Sizes.avatar,
 ) {
     val letter = remember(name) { avatarLetter(name) }
@@ -50,6 +55,7 @@ fun DuelloAvatar(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(size)
+            .clip(FullShape)
             .background(MaterialTheme.colorScheme.tertiaryContainer, FullShape)
             .clearAndSetSemantics {},
     ) {
@@ -58,6 +64,14 @@ fun DuelloAvatar(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
         )
+        if (!imageUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
 }
 

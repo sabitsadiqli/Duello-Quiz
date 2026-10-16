@@ -43,8 +43,21 @@ interface AuthRepository {
     /** Local sign-out, works offline (AUTH-07). Also clears the Credential Manager state. */
     suspend fun signOut(reason: SignOutReason = SignOutReason.UserRequested)
 
-    /** Deletes the account (SET-05, `DELETE /v1/me`), then signs out locally. */
-    suspend fun deleteAccount(): AuthResult<Unit>
+    /**
+     * Local part of account deletion (SET-05). The backend (`DELETE /v1/me`, called by
+     * `AccountRepository` in :core:data) deletes the data and the Firebase user with the Admin
+     * SDK; this only drops the local session and signs out with [SignOutReason.AccountDeleted].
+     */
+    suspend fun onAccountDeleted()
+}
+
+/** Which [AuthRepository] implementation this build runs with. */
+enum class AuthBackend {
+    /** A configured Firebase project (google-services.json present). */
+    Firebase,
+
+    /** No Firebase: in-memory accounts; the backend cannot verify its tokens. */
+    InMemoryFake,
 }
 
 sealed interface AuthState {

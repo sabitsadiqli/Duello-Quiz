@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.sabit.duelloquiz.core.auth.AuthBackend
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.auth.GoogleCredentialClient
 import com.sabit.duelloquiz.core.auth.fake.FakeGoogleCredentialClient
@@ -38,6 +39,11 @@ internal object AuthModule {
             Log.w(TAG, "Firebase is not configured; using InMemoryAuthRepository")
             InMemoryAuthRepository()
         }
+
+    @Provides
+    @Singleton
+    fun provideAuthBackend(@ApplicationContext context: Context): AuthBackend =
+        if (isFirebaseConfigured(context)) AuthBackend.Firebase else AuthBackend.InMemoryFake
 
     @Provides
     @Singleton

@@ -16,6 +16,8 @@ dependencies {
     // ObserveAsEvents (lifecycle-aware one-off UI events).
     api(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.core)
+    // Question images, review thumbnails and avatars (docs/mvp-spec.md §5).
+    implementation(libs.coil.compose)
 
     // The tokens -> ColorScheme test parses design/tokens.json.
     testImplementation(libs.kotlinx.serialization.json)

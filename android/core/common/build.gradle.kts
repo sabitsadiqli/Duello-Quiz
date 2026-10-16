@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.duelloquiz.android.library)
+    alias(libs.plugins.duelloquiz.hilt)
 }
 
 android {

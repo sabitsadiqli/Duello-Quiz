@@ -13,12 +13,16 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.sabit.duelloquiz.core.auth.AuthState
+import com.sabit.duelloquiz.core.common.HomeNotice
+import com.sabit.duelloquiz.core.common.NavResults
 import com.sabit.duelloquiz.feature.auth.navigation.AuthGraph
 import com.sabit.duelloquiz.feature.auth.navigation.authGraph
 import com.sabit.duelloquiz.feature.auth.navigation.navigateToAuth
 import com.sabit.duelloquiz.feature.home.navigation.HomeDestination
 import com.sabit.duelloquiz.feature.home.navigation.homeScreen
 import com.sabit.duelloquiz.feature.home.navigation.navigateToHome
+import com.sabit.duelloquiz.feature.quiz.navigation.navigateToQuiz
+import com.sabit.duelloquiz.feature.quiz.navigation.quizScreens
 import com.sabit.duelloquiz.feature.settings.navigation.navigateToSettings
 import com.sabit.duelloquiz.feature.settings.navigation.settingsScreens
 
@@ -44,7 +48,11 @@ fun DuelloNavHost(authState: AuthState) {
             .background(MaterialTheme.colorScheme.surface),
     ) {
         authGraph(navController)
-        homeScreen(onOpenSettings = navController::navigateToSettings)
+        homeScreen(
+            onOpenSettings = navController::navigateToSettings,
+            onOpenQuiz = navController::navigateToQuiz,
+        )
+        quizScreens(navController, onNavigateHome = navController::popBackToHome)
         settingsScreens(navController)
     }
 
@@ -55,6 +63,17 @@ fun DuelloNavHost(authState: AuthState) {
             is AuthState.SignedOut -> if (!inAuthGraph) navController.navigateToAuth(authState.reason)
         }
     }
+}
+
+/** Back to home, handing [notice] to its ViewModel through the entry's SavedStateHandle. */
+private fun NavController.popBackToHome(notice: HomeNotice?) {
+    val home = runCatching { getBackStackEntry<HomeDestination>() }.getOrNull()
+    if (home == null) {
+        navigateToHome()
+        return
+    }
+    notice?.let { home.savedStateHandle[NavResults.HOME_NOTICE] = it.name }
+    popBackStack<HomeDestination>(inclusive = false)
 }
 
 private fun NavController.isInAuthGraph(): Boolean =

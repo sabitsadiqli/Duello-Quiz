@@ -213,6 +213,7 @@ phase).
 | `quiz_exit_dismiss` | Davam et | `dbtn`. |
 | `quiz_result_title` | Nəticə | Screen headline. |
 | `quiz_result_correct_count` | %1$d / %2$d düzgün | Score line, e.g. "7 / 10 düzgün" (OQ-012). |
+| `quiz_result_score_suffix` | " / %1$d" | Shown after the big score number ("7" + " / 10"). Leading space; in `strings.xml` write `\u0020/ %1$d`. |
 | `quiz_result_score_cd` | %2$d sualdan %1$d düzgün cavab | Content description of the score block. |
 | `quiz_result_message_perfect` | Bütün suallara düzgün cavab verdin! | 10 / 10. |
 | `quiz_result_message_great` | Çox yaxşı nəticə! | 7–9. |
