@@ -11,9 +11,16 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object HomeDestination
 
-fun NavGraphBuilder.homeScreen(onOpenSettings: () -> Unit) {
+/**
+ * [onOpenQuiz] gets the session id when the start finished within 1 s, or null when the quiz
+ * loading screen takes over the running start (HOME-02).
+ */
+fun NavGraphBuilder.homeScreen(
+    onOpenSettings: () -> Unit,
+    onOpenQuiz: (categoryId: Int, categoryName: String, sessionId: String?) -> Unit,
+) {
     composable<HomeDestination> {
-        HomeRoute(onOpenSettings = onOpenSettings)
+        HomeRoute(onOpenSettings = onOpenSettings, onOpenQuiz = onOpenQuiz)
     }
 }
 

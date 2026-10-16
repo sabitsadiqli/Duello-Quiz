@@ -44,7 +44,11 @@ fun DuelloNavHost(authState: AuthState) {
             .background(MaterialTheme.colorScheme.surface),
     ) {
         authGraph(navController)
-        homeScreen(onOpenSettings = navController::navigateToSettings)
+        homeScreen(
+            onOpenSettings = navController::navigateToSettings,
+            // The quiz destination is wired with :feature:quiz.
+            onOpenQuiz = { _, _, _ -> },
+        )
         settingsScreens(navController)
     }
 

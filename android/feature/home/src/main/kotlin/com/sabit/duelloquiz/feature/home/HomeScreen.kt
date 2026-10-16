@@ -8,14 +8,22 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -25,6 +33,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,7 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -43,22 +56,31 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
+import com.sabit.duelloquiz.core.designsystem.component.CategoryCard
+import com.sabit.duelloquiz.core.designsystem.component.CategoryCardSkeleton
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
+import com.sabit.duelloquiz.core.designsystem.component.DuelloStateView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
+import com.sabit.duelloquiz.core.designsystem.component.SkeletonBlock
+import com.sabit.duelloquiz.core.designsystem.component.rememberSkeletonAlpha
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
+import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
+import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
+import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import kotlinx.coroutines.launch
 
 @Composable
 internal fun HomeRoute(
     onOpenSettings: () -> Unit,
+    onOpenQuiz: (categoryId: Int, categoryName: String, sessionId: String?) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -71,6 +93,7 @@ internal fun HomeRoute(
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             HomeEvent.NavigateToSettings -> onOpenSettings()
+            is HomeEvent.NavigateToQuiz -> onOpenQuiz(event.categoryId, event.categoryName, event.sessionId)
             is HomeEvent.ShowMessage -> scope.launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
                 snackbarHostState.showSnackbar(
@@ -84,6 +107,7 @@ internal fun HomeRoute(
     HomeScreen(uiState = uiState, onAction = viewModel::onAction, snackbarHostState = snackbarHostState)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HomeScreen(
     uiState: HomeUiState,
@@ -106,26 +130,134 @@ internal fun HomeScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        ContentWidth(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+        val contentModifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .consumeWindowInsets(innerPadding)
+        if (uiState.categories == CategoriesUi.Offline) {
+            // Offline without cache replaces header and list; the top app bar stays (home.md).
+            Box(contentAlignment = Alignment.Center, modifier = contentModifier) {
+                DuelloStateView(
+                    icon = DuelloIcons.CloudOff,
+                    title = stringResource(R.string.home_offline_title),
+                    body = stringResource(R.string.home_offline_body),
+                    primaryActionText = stringResource(R.string.common_retry),
+                    onPrimaryAction = { onAction(HomeAction.RetryClicked) },
+                )
+            }
+            return@Scaffold
+        }
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { onAction(HomeAction.PullToRefresh) },
+            modifier = contentModifier,
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = Spacing.screenGutter, vertical = Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                item(key = "verification_banner") {
-                    VerificationBanner(banner = uiState.verificationBanner, onAction = onAction)
-                }
-                item(key = "profile_header") {
-                    ProfileHeader(displayName = uiState.displayName)
-                }
+            ContentWidth(modifier = Modifier.fillMaxSize()) {
+                HomeContent(uiState = uiState, onAction = onAction)
             }
         }
     }
+}
+
+@Composable
+private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
+    LazyColumn(
+        contentPadding = PaddingValues(
+            start = Spacing.screenGutter,
+            end = Spacing.screenGutter,
+            top = Spacing.sm,
+            bottom = Spacing.xl,
+        ),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        item(key = "offline_banner") {
+            CollapsingBanner(visible = uiState.showOfflineBanner) {
+                DuelloBanner(
+                    variant = BannerVariant.Warning,
+                    icon = DuelloIcons.CloudOff,
+                    body = stringResource(R.string.common_offline_banner),
+                    modifier = Modifier.padding(bottom = Spacing.md),
+                )
+            }
+        }
+        item(key = "verification_banner") {
+            VerificationBanner(banner = uiState.verificationBanner, onAction = onAction)
+        }
+        item(key = "profile_header") {
+            ProfileHeader(
+                header = uiState.header,
+                onRetry = { onAction(HomeAction.RetryProfileClicked) },
+                modifier = Modifier.padding(top = Spacing.lg),
+            )
+        }
+        // Duel entry card: hidden until the duel ships (OQ-020); no placeholder slot.
+        item(key = "categories_title") {
+            Text(
+                text = stringResource(R.string.home_categories_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .padding(top = Spacing.xl, bottom = Spacing.md)
+                    .semantics { heading() },
+            )
+        }
+        categoryItems(uiState, onAction)
+    }
+}
+
+private fun LazyListScope.categoryItems(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
+    when (val categories = uiState.categories) {
+        CategoriesUi.Loading -> items(SKELETON_CARDS, key = { "skeleton_$it" }) {
+            val alpha = rememberSkeletonAlpha()
+            CategoryCardSkeleton(alpha = alpha, modifier = Modifier.padding(bottom = Spacing.listItemGap))
+        }
+        is CategoriesUi.Content -> items(categories.items, key = { it.id }) { category ->
+            CategoryCard(
+                name = category.name,
+                iconKey = category.iconKey,
+                supportingText = pluralStringResource(
+                    R.plurals.home_category_question_count,
+                    uiState.questionsPerQuiz,
+                    uiState.questionsPerQuiz,
+                ),
+                onClick = { onAction(HomeAction.CategoryClicked(category)) },
+                loading = uiState.startingCategoryId == category.id,
+                enabled = uiState.startingCategoryId == null,
+                loadingContentDescription = stringResource(R.string.home_category_loading_cd, category.name),
+                modifier = Modifier
+                    .animateItem()
+                    .padding(bottom = Spacing.listItemGap),
+            )
+        }
+        CategoriesUi.Empty -> item(key = "empty") {
+            DuelloStateView(
+                icon = DuelloIcons.Inbox,
+                title = stringResource(R.string.home_categories_empty),
+                primaryActionText = stringResource(R.string.common_refresh),
+                onPrimaryAction = { onAction(HomeAction.RetryClicked) },
+            )
+        }
+        CategoriesUi.Error -> item(key = "error") {
+            DuelloStateView(
+                icon = DuelloIcons.Error,
+                title = stringResource(R.string.home_categories_error),
+                primaryActionText = stringResource(R.string.common_retry),
+                onPrimaryAction = { onAction(HomeAction.RetryClicked) },
+            )
+        }
+        CategoriesUi.Offline -> Unit // full screen, see HomeScreen
+    }
+}
+
+@Composable
+private fun CollapsingBanner(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(tween(Motion.MEDIUM_1, easing = Motion.EmphasizedDecelerate)) +
+            fadeIn(tween(Motion.MEDIUM_1)),
+        exit = shrinkVertically(tween(Motion.SHORT_4, easing = Motion.EmphasizedAccelerate)) +
+            fadeOut(tween(Motion.SHORT_4)),
+    ) { content() }
 }
 
 /** Banner per email-verification-banner.md; collapses when hidden. */
@@ -134,14 +266,8 @@ private fun VerificationBanner(banner: VerificationBannerUi?, onAction: (HomeAct
     // Keep the last content while the exit animation runs.
     val shown = remember { BannerHolder() }
     if (banner != null) shown.value = banner
-    AnimatedVisibility(
-        visible = banner != null,
-        enter = expandVertically(tween(Motion.MEDIUM_1, easing = Motion.EmphasizedDecelerate)) +
-            fadeIn(tween(Motion.MEDIUM_1)),
-        exit = shrinkVertically(tween(Motion.SHORT_4, easing = Motion.EmphasizedAccelerate)) +
-            fadeOut(tween(Motion.SHORT_4)),
-    ) {
-        val current = shown.value ?: return@AnimatedVisibility
+    CollapsingBanner(visible = banner != null) {
+        val current = shown.value ?: return@CollapsingBanner
         DuelloBanner(
             variant = BannerVariant.Info,
             icon = DuelloIcons.Mail,
@@ -149,6 +275,7 @@ private fun VerificationBanner(banner: VerificationBannerUi?, onAction: (HomeAct
             body = stringResource(R.string.auth_verify_banner_body, current.email),
             onDismiss = { onAction(HomeAction.DismissVerificationBanner) },
             dismissContentDescription = stringResource(R.string.auth_verify_dismiss_cd),
+            modifier = Modifier.padding(bottom = Spacing.md),
             actions = {
                 if (current.isResending) {
                     InlineProgress(color = LocalContentColor.current)
@@ -176,25 +303,55 @@ private class BannerHolder {
     var value: VerificationBannerUi? = null
 }
 
-/** Name + avatar; rating and profile come with `GET /v1/me` (HOME-04, later). */
+/** Avatar, name and rating (HOME-04); skeleton until the profile is known. */
 @Composable
-private fun ProfileHeader(displayName: String?) {
+private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    val name = header.displayName
+    val profileDescription = if (name != null && header.rating != null) {
+        stringResource(R.string.home_profile_cd, name, header.rating)
+    } else {
+        null
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .semantics(mergeDescendants = true) {},
+            .then(
+                if (profileDescription != null) {
+                    Modifier.clearAndSetSemantics { contentDescription = profileDescription }
+                } else {
+                    Modifier
+                },
+            ),
     ) {
-        DuelloAvatar(name = displayName)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = displayName.orEmpty(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        val alpha = rememberSkeletonAlpha()
+        if (name == null) {
+            SkeletonBlock(alpha = alpha, shape = FullShape, modifier = Modifier.size(Sizes.avatar))
+        } else {
+            DuelloAvatar(name = name, imageUrl = header.avatarUrl)
+        }
+        Spacer(Modifier.width(Spacing.md))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            if (name == null) {
+                SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidth).height(Sizes.skeletonLineHeight))
+            } else {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            when {
+                header.rating != null -> Text(
+                    text = stringResource(R.string.home_rating, header.rating),
+                    style = MaterialTheme.typography.labelLarge.tabularFigures(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                header.showRetry -> DuelloTextButton(text = stringResource(R.string.common_retry), onClick = onRetry)
+                else -> SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidthShort).height(Sizes.skeletonLineHeight))
+            }
         }
     }
 }
@@ -206,18 +363,36 @@ private fun HomeMessage.textRes(): Int = when (this) {
     HomeMessage.TooManyRequests -> R.string.auth_error_too_many_requests
     HomeMessage.Offline -> R.string.error_offline
     HomeMessage.Generic -> R.string.error_generic
+    HomeMessage.QuizNeedsInternet -> R.string.home_quiz_needs_internet
+    HomeMessage.CategoryNotPlayable -> R.string.error_category_not_playable
+    HomeMessage.RateLimited -> R.string.error_rate_limited
+    HomeMessage.QuizInvalid -> R.string.error_quiz_invalid
 }
 
 private fun HomeMessage.isError(): Boolean =
     this != HomeMessage.VerificationSent && this != HomeMessage.VerificationDone
 
+private const val SKELETON_CARDS = 5
+
+private val previewCategories = listOf(
+    CategoryUi(1, "Coğrafiya", "geography"),
+    CategoryUi(2, "Tarix", "history"),
+    CategoryUi(3, "Biologiya", "biology"),
+    CategoryUi(4, "Fizika", "physics"),
+    CategoryUi(5, "İdman", "sports"),
+)
+
+private val previewHeader = ProfileHeaderUi(displayName = "Aysel", rating = 1000)
+
 @PreviewLightDark
 @Composable
-private fun HomeWithBannerPreview() {
+private fun HomeContentPreview() {
     DuelloTheme {
         HomeScreen(
             uiState = HomeUiState(
-                displayName = "Aysel",
+                header = previewHeader,
+                categories = CategoriesUi.Content(previewCategories),
+                startingCategoryId = 2,
                 verificationBanner = VerificationBannerUi(email = "aysel@example.com"),
             ),
             onAction = {},
@@ -227,12 +402,19 @@ private fun HomeWithBannerPreview() {
 
 @PreviewLightDark
 @Composable
-private fun HomeBannerCountdownPreview() {
+private fun HomeLoadingPreview() {
+    DuelloTheme { HomeScreen(uiState = HomeUiState(), onAction = {}) }
+}
+
+@PreviewLightDark
+@Composable
+private fun HomeOfflineCachedPreview() {
     DuelloTheme {
         HomeScreen(
             uiState = HomeUiState(
-                displayName = "Aysel",
-                verificationBanner = VerificationBannerUi(email = "aysel@example.com", resendCountdownSeconds = 42),
+                header = previewHeader,
+                categories = CategoriesUi.Content(previewCategories),
+                showOfflineBanner = true,
             ),
             onAction = {},
         )
@@ -241,6 +423,23 @@ private fun HomeBannerCountdownPreview() {
 
 @PreviewLightDark
 @Composable
-private fun HomeVerifiedPreview() {
-    DuelloTheme { HomeScreen(uiState = HomeUiState(displayName = "Aysel"), onAction = {}) }
+private fun HomeEmptyPreview() {
+    DuelloTheme { HomeScreen(uiState = HomeUiState(header = previewHeader, categories = CategoriesUi.Empty), onAction = {}) }
+}
+
+@PreviewLightDark
+@Composable
+private fun HomeErrorPreview() {
+    DuelloTheme {
+        HomeScreen(
+            uiState = HomeUiState(header = ProfileHeaderUi(showRetry = true), categories = CategoriesUi.Error),
+            onAction = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun HomeOfflinePreview() {
+    DuelloTheme { HomeScreen(uiState = HomeUiState(categories = CategoriesUi.Offline), onAction = {}) }
 }

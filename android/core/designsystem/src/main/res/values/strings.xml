@@ -9,8 +9,11 @@
 
     <!-- app_ / common_ -->
     <string name="app_name" translatable="false">Duello Quiz</string>
+    <string name="common_retry">Yenidən cəhd et</string>
     <string name="common_cancel">Ləğv et</string>
     <string name="common_back">Geri</string>
+    <string name="common_close">Bağla</string>
+    <string name="common_refresh">Yenilə</string>
     <string name="common_loading">Yüklənir…</string>
     <string name="common_password_show_cd">Şifrəni göstər</string>
     <string name="common_password_hide_cd">Şifrəni gizlət</string>
@@ -20,6 +23,11 @@
     <string name="error_offline">İnternet bağlantısı yoxdur. Yenidən cəhd et.</string>
     <string name="error_generic">Xəta baş verdi. Yenidən cəhd et.</string>
     <string name="error_sign_in_expired">Giriş müddəti bitib. Yenidən daxil ol.</string>
+    <string name="error_category_not_playable">Bu kateqoriya hazırda əlçatan deyil.</string>
+    <string name="error_rate_limited">Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et.</string>
+    <string name="error_session_expired">Quizin vaxtı bitdi.</string>
+    <string name="error_session_closed">Bu quiz artıq bitib.</string>
+    <string name="error_quiz_invalid">Quizdə xəta baş verdi. Yenidən başla.</string>
 
     <!-- auth_ : welcome -->
     <string name="auth_welcome_tagline">Biliyini sına, yeni şeylər öyrən.</string>
@@ -83,8 +91,73 @@
     <string name="auth_verify_done">E-poçtun təsdiqləndi.</string>
     <string name="auth_verify_dismiss_cd">Bildirişi bağla</string>
 
-    <!-- home_ (placeholder home; categories come with the quiz feature) -->
+    <!-- home_ (the duel entry keys come with the duel, OQ-020) -->
+    <string name="home_rating">Reytinq: %1$d</string>
+    <string name="home_profile_cd">%1$s, reytinq %2$d</string>
     <string name="home_settings_cd">Parametrlər</string>
+    <string name="home_categories_title">Kateqoriyalar</string>
+    <plurals name="home_category_question_count">
+        <item quantity="one">%1$d sual</item>
+        <item quantity="other">%1$d sual</item>
+    </plurals>
+    <string name="home_category_loading_cd">%1$s quizi açılır</string>
+    <string name="home_categories_empty">Hələ ki kateqoriya yoxdur. Bir az sonra yenidən yoxla.</string>
+    <string name="home_categories_error">Kateqoriyaları yükləmək alınmadı.</string>
+    <string name="home_offline_title">İnternet bağlantısı yoxdur.</string>
+    <string name="home_offline_body">Bağlantını yoxla və yenidən cəhd et.</string>
+    <string name="home_quiz_needs_internet">Quiz üçün internet lazımdır.</string>
+
+    <!-- quiz_ : loading and question -->
+    <string name="quiz_loading">Suallar hazırlanır…</string>
+    <string name="quiz_start_error">Quizi başlatmaq alınmadı.</string>
+    <string name="quiz_progress">%1$d / %2$d</string>
+    <string name="quiz_progress_cd">Sual %1$d, cəmi %2$d</string>
+    <string name="quiz_timer_cd">%1$d saniyə qalıb</string>
+    <string name="quiz_close_cd">Quizdən çıx</string>
+    <string name="quiz_image_cd_fallback">Sualın şəkli</string>
+    <string name="quiz_image_failed">Şəkil yüklənmədi</string>
+    <string name="quiz_option_1_cd">1-ci variant: %1$s</string>
+    <string name="quiz_option_2_cd">2-ci variant: %1$s</string>
+    <string name="quiz_option_3_cd">3-cü variant: %1$s</string>
+    <string name="quiz_option_4_cd">4-cü variant: %1$s</string>
+    <string name="quiz_option_state_checking_cd">seçildi, yoxlanılır</string>
+    <string name="quiz_option_state_correct_cd">düzgün cavab</string>
+    <string name="quiz_option_state_wrong_cd">sənin cavabın, səhv</string>
+    <string name="quiz_feedback_correct">Düzgün!</string>
+    <string name="quiz_feedback_wrong">Səhv</string>
+    <string name="quiz_timeout">Vaxt bitdi</string>
+    <string name="quiz_answer_saved">Cavab yadda saxlanıldı</string>
+    <string name="quiz_reconnecting">Bağlantı bərpa olunur…</string>
+    <string name="quiz_offline_banner">İnternet yoxdur. Cavablar göndəriləcək.</string>
+    <string name="quiz_exit_title">Quizdən çıxmaq istəyirsən?</string>
+    <string name="quiz_exit_body">Bu quiz yarımçıq qalacaq. Vaxt bu arada dayanmır.</string>
+    <string name="quiz_exit_confirm">Çıx</string>
+    <string name="quiz_exit_dismiss">Davam et</string>
+
+    <!-- quiz_ : result and review -->
+    <string name="quiz_result_title">Nəticə</string>
+    <string name="quiz_result_correct_count">%1$d / %2$d düzgün</string>
+    <string name="quiz_result_score_cd">%2$d sualdan %1$d düzgün cavab</string>
+    <string name="quiz_result_message_perfect">Bütün suallara düzgün cavab verdin!</string>
+    <string name="quiz_result_message_great">Çox yaxşı nəticə!</string>
+    <string name="quiz_result_message_good">Pis deyil! Səhvlərə bax, növbəti dəfə daha yaxşı olacaq.</string>
+    <string name="quiz_result_message_low">Başlanğıc üçün yaxşıdır. Səhvlərdən öyrən!</string>
+    <string name="quiz_result_message_zero">Bu dəfə alınmadı, amma hər sual yeni bilikdir. Yenidən cəhd et!</string>
+    <string name="quiz_result_expired_note">Vaxt bitdi. Cavab verilməmiş suallar düzgün sayılmadı.</string>
+    <string name="quiz_result_not_synced">Nəticə serverə göndərilə bilmədi. İnternet qayıdanda yenidən göndərəcəyik.</string>
+    <string name="quiz_result_play_again">Yenidən oyna</string>
+    <string name="quiz_result_home">Əsas səhifə</string>
+    <string name="quiz_result_review_entry">Səhvlərin təhlili</string>
+    <plurals name="quiz_result_review_entry_count">
+        <item quantity="one">%1$d sual</item>
+        <item quantity="other">%1$d sual</item>
+    </plurals>
+    <string name="quiz_review_title">Səhvlər</string>
+    <string name="quiz_review_question_number">Sual %1$d</string>
+    <string name="quiz_review_your_answer">Sənin cavabın</string>
+    <string name="quiz_review_correct_answer">Düzgün cavab</string>
+    <string name="quiz_review_not_answered">Cavab verilməyib</string>
+    <string name="quiz_review_explanation">İzah</string>
 
     <!-- settings_ -->
     <string name="settings_title">Parametrlər</string>

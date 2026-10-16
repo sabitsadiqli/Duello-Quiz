@@ -30,4 +30,15 @@ object Motion {
     const val QUIZ_REVEAL_HOLD_MS = 1500
     const val TIMER_WARNING_THRESHOLD_MS = 5000
     const val SCREEN_TRANSITION_MS = 300
+    const val TIMER_WARNING_PULSE_MS = 1000
+    const val TIMER_WARNING_PULSE_SCALE = 1.08f
+    const val OPTION_REVEAL_COLOUR_MS = 200
+    const val OPTION_WRONG_SHAKE_MS = 300
+    const val OPTION_WRONG_SHAKE_CYCLES = 2
+    const val OPTION_WRONG_SHAKE_AMPLITUDE_DP = 4
+    const val QUESTION_TRANSITION_MS = 300
+
+    /** questionTransition: slide by 1/8 of the width. */
+    const val QUESTION_TRANSITION_SLIDE_FRACTION = 8
+    const val SCORE_COUNT_UP_MS = 600
 }
