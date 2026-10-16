@@ -131,7 +131,8 @@ object MatchesTable : Table("matches") {
 }
 
 object MatchRoundsTable : Table("match_rounds") {
-    val id = long("id")
+    // GENERATED ALWAYS AS IDENTITY: never set on insert, read back as generated key.
+    val id = long("id").autoIncrement()
     val matchId = javaUUID("match_id")
     val roundNo = short("round_no")
     val questionId = javaUUID("question_id")

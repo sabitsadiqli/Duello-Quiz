@@ -20,6 +20,7 @@ Package by feature under `src/main/kotlin/com/sabit/duelloquiz/backend/`
 | `category` | `GET /v1/categories` (only playable categories) |
 | `quiz` | Quiz sessions, answers, finish; deadline, rate limit (`RateLimiter`), expiry job |
 | `content` | `ContentImporter` (admin endpoint + CLI) |
+| `duel` | `GET /v1/duel` WebSocket (`docs/api/duel-protocol.md`): `DuelService` (sessions, queue, rejoin), `DuelMatch` (one coroutine per match, server timers), `MatchmakingQueue` (in-memory FIFO), `DbDuelStore` (rounds, results, Elo) |
 | `image` | `ImageStorage` interface + `LocalDiskImageStorage`, `MediaUrls` (processing pipeline comes later) |
 | `common` | Config, errors, i18n, database, Exposed table mappings |
 
@@ -64,6 +65,10 @@ The server applies the Flyway migrations at startup. Without
 
 Game numbers (10 questions, 20 s, 1.5 s reveal, 30 s grace → 245 s deadline, 30
 sessions per hour) live once in the `duello.quiz` block of `application.conf`.
+Duel numbers (phase lengths, 250 ms grace, 30 s queue, Əminlik 3 limit, Elo K) live
+in the `duello.duel` block. The duel runs on a single instance: queue and running
+matches are in memory; on startup every match still `active` in the database is
+marked `abandoned` (a restart loses running matches, OQ-033).
 
 ## Import questions
 
@@ -108,6 +113,9 @@ service account): `auth.setCustomUserClaims(uid, {admin: true})`.
 ./gradlew test build
 ```
 
+- Duel engine tests (`DuelEngineTest`) run `DuelService` on virtual time (`runTest`,
+  injected `DuelClock`) with fake sockets and an in-memory store; `DuelWebSocketTest`
+  plays a full match with two WebSocket clients against the real database.
 - Route tests use `testApplication` with a fake `TokenVerifier`, a fake account
   deleter and a virtual clock (`MutableClock`) for deadlines.
 - Database tests (routes, repositories, importer, migrations) need PostgreSQL:

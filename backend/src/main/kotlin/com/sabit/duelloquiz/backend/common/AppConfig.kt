@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.backend.common
 
+import com.sabit.duelloquiz.backend.duel.DuelConfig
 import io.ktor.server.config.ApplicationConfig
 import java.time.Duration
 
@@ -11,6 +12,7 @@ data class AppConfig(
     val quiz: QuizConfig,
     val displayNameBlocklistFile: String?,
     val importMaxBodyBytes: Long,
+    val duel: DuelConfig = DuelConfig(),
 ) {
     companion object {
         fun from(config: ApplicationConfig): AppConfig {
@@ -43,6 +45,23 @@ data class AppConfig(
                 ),
                 displayNameBlocklistFile = strOrNull("duello.displayName.blocklistFile"),
                 importMaxBodyBytes = long("duello.import.maxBodyBytes"),
+                duel = DuelConfig(
+                    regularRounds = int("duello.duel.regularRounds"),
+                    maxSuddenDeath = int("duello.duel.maxSuddenDeath"),
+                    introMs = long("duello.duel.introMs"),
+                    questionMs = long("duello.duel.questionMs"),
+                    confidenceMs = long("duello.duel.confidenceMs"),
+                    answerMs = long("duello.duel.answerMs"),
+                    resultMs = long("duello.duel.resultMs"),
+                    graceMs = long("duello.duel.graceMs"),
+                    queueTimeoutMs = long("duello.duel.queueTimeoutMs"),
+                    reconnectWindowMs = long("duello.duel.reconnectWindowMs"),
+                    maxBet3PerMatch = int("duello.duel.maxBet3PerMatch"),
+                    missedRoundsToForfeit = int("duello.duel.missedRoundsToForfeit"),
+                    eloK = int("duello.duel.eloK"),
+                    heartbeatIntervalMs = long("duello.duel.heartbeatIntervalMs"),
+                    heartbeatTimeoutMs = long("duello.duel.heartbeatTimeoutMs"),
+                ),
             )
         }
     }

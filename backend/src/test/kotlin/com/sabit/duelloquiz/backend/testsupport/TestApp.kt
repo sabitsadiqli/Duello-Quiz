@@ -15,6 +15,8 @@ import com.sabit.duelloquiz.backend.content.ContentRepository
 import com.sabit.duelloquiz.backend.content.ImportInput
 import com.sabit.duelloquiz.backend.content.ImportItem
 import com.sabit.duelloquiz.backend.content.ImportReport
+import com.sabit.duelloquiz.backend.duel.DuelClock
+import com.sabit.duelloquiz.backend.duel.DuelConfig
 import com.sabit.duelloquiz.backend.featureModule
 import com.sabit.duelloquiz.backend.image.ImageStorage
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
@@ -39,13 +41,14 @@ import org.koin.ktor.plugin.KoinIsolated
 import java.nio.file.Files
 import java.time.Clock
 
-fun testConfig(quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0)) = AppConfig(
+fun testConfig(quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0), duel: DuelConfig = DuelConfig()) = AppConfig(
     db = DbConfig("unused", "unused", "", 1),
     firebase = FirebaseConfig(null, null),
     media = MediaConfig(Files.createTempDirectory("duello-media").toString(), "https://media.example.test/media"),
     quiz = quiz,
     displayNameBlocklistFile = null,
     importMaxBodyBytes = 1_000_000,
+    duel = duel,
 )
 
 /** Everything a route test can control. */
@@ -70,6 +73,7 @@ fun withTestApp(env: TestEnv, block: suspend ApplicationTestBuilder.(HttpClient)
                     single { env.config }
                     single { env.config.quiz }
                     single<Clock> { env.clock }
+                    single<DuelClock> { DuelClock.System }
                     single { env.db }
                     single<TokenVerifier> { env.verifier }
                     single<AuthAccountDeleter> { env.deleter }
