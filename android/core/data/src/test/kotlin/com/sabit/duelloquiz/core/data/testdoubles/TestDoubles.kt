@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.core.data.testdoubles
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.datastore.DuelMatchDataSource
 import com.sabit.duelloquiz.core.datastore.UserCacheDataSource
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.Category
@@ -137,6 +138,10 @@ internal class FakeNetworkDataSource : DuelloNetworkDataSource {
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun TestScope.testAppScope(): CoroutineScope =
     CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+
+internal fun testDuelMatches(scope: CoroutineScope, dir: File): DuelMatchDataSource = DuelMatchDataSource(
+    PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(dir, "duel.preferences_pb") }),
+)
 
 internal fun testUserCache(scope: CoroutineScope, dir: File): UserCacheDataSource = UserCacheDataSource(
     PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(dir, "user_cache.preferences_pb") }),
