@@ -9,13 +9,8 @@
 
     <!-- app_ / common_ -->
     <string name="app_name" translatable="false">Duello Quiz</string>
-    <string name="common_retry">Yenidən cəhd et</string>
     <string name="common_cancel">Ləğv et</string>
     <string name="common_back">Geri</string>
-    <string name="common_close">Bağla</string>
-    <string name="common_ok">Oldu</string>
-    <string name="common_continue">Davam et</string>
-    <string name="common_refresh">Yenilə</string>
     <string name="common_loading">Yüklənir…</string>
     <string name="common_password_show_cd">Şifrəni göstər</string>
     <string name="common_password_hide_cd">Şifrəni gizlət</string>
