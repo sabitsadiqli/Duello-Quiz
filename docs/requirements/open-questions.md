@@ -9,6 +9,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
+| OQ-073 | What does the app do when a `queue.leave` reaches the server after the intro and gets `already_in_match {matchId}` (the user tapped "Ləğv et" but round 1 already started)? A. Rejoin and show the running match; the user can still leave through the DUEL-15 dialog. B. Send `match.leave` automatically (forfeit, Elo loss, without a confirmation). C. Go home silently; the missed-round rule ends the match (≈ 40 s, forfeit). | A: a forfeit always needs an explicit confirmation; the case is rare (the leave must arrive > 3 s after `match.found`). Blocks one criterion of DUEL-03 | Sabit |
 
 ## Decided by Sabit (2026-10-14) — duel and profile
 
@@ -21,7 +22,7 @@ All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead o
 | OQ-026 | Do forfeited matches keep their points, and how do forfeits and abandoned matches appear in history and stats? | Forfeit: stored with current scores, counted as win/loss with a label; abandoned: shown as "Ləğv edildi", not counted |
 | OQ-027 | Which rounds count for the calibration card and profile stats? | Rounds 1–7 with an actively locked Əminlik; exclude defaulted picks, missed rounds and sudden death |
 | OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers |
-| OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Tətbiqi yeniləyin" |
+| OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Duel üçün tətbiqi yenilə" |
 | OQ-030 | Offensive or impersonating display names | Small server-side blocklist (az/tr/ru/en, normalized) on sign-up, Google name and edit; no reporting in the MVP |
 | OQ-031 | How many recent matches does the profile show? | Last 20, newest first, no pagination |
 | OQ-032 | What does the 10 s reconnect window mean when the player is not back after 10 s? | Seat is held and rejoin allowed until the match ends; only the 2-missed-rounds rule decides the outcome |
@@ -48,10 +49,41 @@ Raised by `designer` in `design/screens/*.md` (OQ-D1 … OQ-D6); accepted as pro
 | OQ-046 | When does "Bağlantı bərpa olunur…" appear in the quiz? (OQ-D5) | After an answer has been pending for 2 s or on the first network failure; the 1.5 s reveal starts when the server result arrives |
 | OQ-047 | What does a queued (offline) answer show? (OQ-D6) | "Queued" option state with "Cavab yadda saxlanıldı" for 1.5 s, no correct/wrong; the result appears in the review |
 
+## Decided by Sabit (2026-10-16) — duel engine and design
+
+IDs continue after OQ-052 (backend foundation decisions). OQ-053 … OQ-055 were
+raised by `designer` and decided by Sabit; OQ-056 … OQ-060 are designer questions
+resolved by `backend-dev` in `docs/api/`; OQ-061 … OQ-072 are duel engine decisions
+now in `docs/api/duel-protocol.md`. The designer's OQ-D13 (name length) needs no new
+ID: it is resolved by OQ-042 and `profile.md` PROF-06 now follows it.
+
+| ID | Question | Decision |
+| --- | --- | --- |
+| OQ-053 | Search screen content while waiting (OQ-D7) | Three short rule tips rotate every 10 s in a "Bilirsən?" card; no opponent count |
+| OQ-054 | Sound and haptics at the reveal (OQ-D9) | No sound in the MVP; one haptic when both panels flip (stronger on an own correct answer, light on wrong/timeout) |
+| OQ-055 | App logo (OQ-D15) | The "two speech bubbles" mark in `design/brand.md` is approved; replaceable later without code changes |
+| OQ-056 | How does the client learn the start and deadline of the Əminlik phase? (OQ-D8) | Explicit `round.confidence {roundNo, allIn, bet3Left, deadlineEpochMs}` when the question phase ends; regular rounds only |
+| OQ-057 | How does the client show who won a sudden-death question? (OQ-D10) | `round.result.suddenDeathOutcome`: `you` \| `opponent` \| `same_time` \| `none` (`null` in regular rounds); the client never uses its own timing |
+| OQ-058 | Leaving while offline, then joining again (OQ-D11) | `already_in_match` carries `matchId`, and for `queue.join` a `match.state` follows; the app resumes the match, or sends `match.leave` if the user had already confirmed leaving it |
+| OQ-059 | Who chooses the calibration hint? (OQ-D12) | Server sends per-level counts `{level, picks, correct}` (`match.result`, `GET /v1/me/stats`); the client chooses hint text, "—" and "Az məlumat" |
+| OQ-060 | Data for "Qoşulub" on the profile (OQ-D14) | `createdAt` in `GET /v1/me` (`Profile`) |
+| OQ-061 | How is the protocol version sent? | Required query parameter `protocolVersion` (current and minimum 1); missing or lower → `error upgrade_required` + close `4000` |
+| OQ-062 | Close codes | `4000` upgrade required, `4001` session replaced (no auto-reconnect for either), `4002` 10 bad messages, `4003` heartbeat timeout |
+| OQ-063 | Heartbeat | Client `ping` every 5 s; server closes after 15 s without any client message (`4003`) |
+| OQ-064 | When exactly does a phase close with the 250 ms grace? | At deadline + 251 ms (ms clock), so a message received at exactly deadline + 250 ms counts; earlier if both players acted |
+| OQ-065 | `match.leave` during the 3 s intro | A forfeit like any leave; only a `queue.leave` crossing the pairing cancels the match (`match.cancelled`, opponent re-queued at the front) |
+| OQ-066 | `queue.leave` after the intro | `error already_in_match` with `matchId`; the match is not cancelled (client reaction: OQ-073) |
+| OQ-067 | Running match lost by a backend restart | Marked `abandoned` at startup; `match.rejoin` answers `match_not_found`; no Elo change |
+| OQ-068 | Distinguishing forfeits | `match.result.forfeitCause`: `missed_rounds` \| `left` (`null` otherwise, and on results rebuilt after a restart) |
+| OQ-069 | Account deletion during a running duel | `DELETE /v1/me` first ends a running match as a forfeit by the user (`forfeitCause = left`) and removes any queue entry |
+| OQ-070 | Scaling of the duel backend | Single backend replica; queue and matches in memory; a redeploy abandons running matches |
+| OQ-071 | Resuming after reconnect or process death | `hello.activeMatchId` and an automatic `match.state` on connect; the server's value wins over the app's saved `activeMatchId` |
+| OQ-072 | Is `answered_ms` clamped? | No: raw receive time − options send time; only the speed bonus clamps the receive time to the deadline |
+
 ## Details (background for OQ-024 … OQ-039, all decided — see above)
 
 Added by `business-analyst` on 2026-10-14 while writing `duel.md` and `profile.md`.
-All open. Stories marked as blocked are written for the recommendation.
+All decided on 2026-10-14 (see the table above); kept as background.
 
 ### OQ-024 What the opponent sees
 The opponent's data leaves the server in `match.found`, during rounds and in history.
@@ -109,7 +141,7 @@ always waits.
 ### OQ-029 Minimum app version for the duel protocol
 An old app talking to a changed protocol can break a match for both players.
 - A. Client sends `protocolVersion` in the handshake; the server has a minimum and
-  answers `upgrade_required`; the app shows "Duel üçün tətbiqi yeniləyin." with a Play
+  answers `upgrade_required`; the app shows "Duel üçün tətbiqi yenilə." with a Play
   link. Both players in a match always speak a supported version.
 - B. Play in-app updates API (forced update) for the whole app. Heavier; blocks the
   quiz too.
