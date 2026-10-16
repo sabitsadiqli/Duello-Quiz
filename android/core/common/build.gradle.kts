@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.duelloquiz.android.library)
-    alias(libs.plugins.duelloquiz.hilt)
 }
 
 android {
@@ -10,4 +9,5 @@ android {
 dependencies {
     api(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.core.ktx)
 }
