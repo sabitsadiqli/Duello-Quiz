@@ -10,7 +10,7 @@ Components: `components.md` §3 (option card + picker markers), §16 (reveal fac
 
 ## Questions and decisions
 
-- **OQ-D9 — proposal: no sound, one haptic.** The reveal is the emotional peak, but
+- **OQ-D9 — decided by Sabit (2026-10-16): no sound, one haptic.** The reveal is the emotional peak, but
   the MVP has no audio assets and many players play muted. Proposal: a single
   haptic at the flip (stronger on an own correct answer, light on wrong/timeout),
   no sound. A short neutral "flip" sound can be added later behind a setting.
