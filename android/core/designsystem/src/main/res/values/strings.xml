@@ -136,6 +136,8 @@
 
     <!-- quiz_ : result and review -->
     <string name="quiz_result_title">Nəticə</string>
+    <!-- NOT in design/copy/az.md yet: " / 10" next to the big score number (quiz-result.md score block). Designer to confirm. -->
+    <string name="quiz_result_score_suffix">\u0020/ %1$d</string>
     <string name="quiz_result_correct_count">%1$d / %2$d düzgün</string>
     <string name="quiz_result_score_cd">%2$d sualdan %1$d düzgün cavab</string>
     <string name="quiz_result_message_perfect">Bütün suallara düzgün cavab verdin!</string>
