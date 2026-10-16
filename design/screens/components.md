@@ -97,6 +97,16 @@ Accessibility: each card is one focusable element with role Button, label
 `quiz_option_N_cd`, plus state description (`quiz_option_state_*_cd`) after reveal.
 Colour is never the only signal (icon + state description).
 
+**Duel use** (`duel-match.md`, `duel-reveal.md`): same card and states, plus
+**picker markers** in the result phase: small avatars (20dp, accent ring 2dp, §13)
+in the trailing slot, before the status icon, showing who picked that option —
+self (`scheme.primary` ring) and/or opponent (`scheme.tertiary` ring). The
+opponent's option is shown in the **Wrong** state only if it is wrong and the own
+choice is a different option; otherwise it only gets its marker. State
+description adds `duel_option_picked_by_you_cd` / `duel_option_picked_by_opponent_cd`.
+In the duel the "Selected (pending)" state never turns into correct/wrong before
+the result phase (DUEL-08).
+
 ## 4. Question timer
 
 Linear bar + numeric countdown in the quiz top bar (single-player). The duel later
@@ -116,8 +126,19 @@ reuses the same tokens with a ring variant.
   `scheme.onSurfaceVariant`.
 - **Expired**: bar empty, digits "0" in `game.timerWarning`, then the reveal shows
   `quiz_timeout`.
-- **Ring variant (duel, later)**: circle `size.timerRing`, stroke
-  `size.timerStroke`, same colours and warning rule; digits inside.
+- **Ring variant (duel)**: circle `size.timerRing`, stroke `size.timerStroke`,
+  track `game.timerTrack`, arc `game.timerNormal`, digits inside in `type.titleSmall`
+  tabular figures. The arc drains clockwise from 12 o'clock; fraction =
+  remaining / `motion.duel.phaseNominalMs.<phase>` (clamped), remaining computed
+  from the server deadline and the clock offset (DUEL-12), never from an animation.
+  Warning per phase: `motion.duel.timerWarningThresholdMs` (Əminlik ≤ 2 s, answer
+  ≤ 3 s, none in question and result) → arc and digits `game.timerWarning` + pulse.
+  **Frozen** (own answer sent; result phase): arc and digits
+  `scheme.onSurfaceVariant` on `game.timerTrack`; in the result phase the arc keeps
+  draining (it shows the time to the next round) but never turns orange. **Expired**:
+  digits "0", arc empty; the ring waits for the next server message (no negative
+  numbers, DUEL-12). Content description `quiz_timer_cd`, announced at most at the
+  warning threshold, polite.
 
 ## 5. Category card (home)
 
@@ -159,26 +180,50 @@ When enabled: full-width card, shape `shape.large`, container
 `scheme.onPrimaryContainer`, trailing filled icon button (`bolt` icon,
 `scheme.primary` / `scheme.onPrimary`). No coins, dice, cards or casino imagery.
 
-## 7. Əminlik chips (defined now, used by the duel)
+## 7. Əminlik chips (duel)
 
-Three square chips side by side, each `size.confidenceChip` (88dp), shape
-`shape.component.confidenceChip`, gap `space.md`. Big numeral `type.displaySmall`
-plus three small pips under it (1, 2 or 3 filled dots) so the level is not
-communicated by colour alone.
+Three chips side by side in the confidence panel (§18). Width = (content width −
+2 × `space.md`) / 3 (~101dp on 360dp), min height `size.confidenceChip`, shape
+`shape.component.confidenceChip`, gap `space.md`, padding `space.md`, 1dp
+`scheme.outline` border (chip 1 is pale in light theme and needs it). Content,
+centred, top to bottom:
 
-| Level | Container | Content |
+1. Numeral "1" / "2" / "3" in `type.displaySmall`, tabular figures.
+2. `space.xs`, stake on correct `duel_delta_positive` ("+300") in `type.labelLarge`.
+3. Stake on wrong `duel_delta_negative` ("−200", U+2212) or `duel_delta_zero` ("0")
+   in `type.labelLarge`.
+
+All text uses `game.onConfidenceNContainer` (never green/red on the chip: the sign
+carries the meaning and every pair stays checked). Round 7 shows doubled stakes
+(DUEL-10). The numeral is the level, so colour is never the only signal (the old
+"pips" are dropped: numeral + stakes say more in the same space).
+
+| Level | Container | Content | Stakes (regular / round 7) |
+| --- | --- | --- | --- |
+| 1 | `game.confidence1Container` | `game.onConfidence1Container` | +100 / 0 · +200 / 0 |
+| 2 | `game.confidence2Container` | `game.onConfidence2Container` | +200 / −100 · +400 / −200 |
+| 3 | `game.confidence3Container` | `game.onConfidence3Container` | +300 / −200 · +600 / −400 |
+
+**Uses-left badge on chip 3**: 24dp circle at the chip's top-end corner (inset
+`space.xs`), `scheme.inverseSurface` with the number of remaining uses ("2", "1")
+in `type.labelMedium` `scheme.inverseOnSurface`. Hidden at 0 (the chip is disabled
+and the caption explains it). Always paired with the caption under the chip row
+(`duel_confidence_three_left` / `duel_confidence_three_none`), so the count is
+visible as text, not only as a badge.
+
+| State | Visual | When |
 | --- | --- | --- |
-| 1 | `game.confidence1Container` | `game.onConfidence1Container` |
-| 2 | `game.confidence2Container` | `game.onConfidence2Container` |
-| 3 | `game.confidence3Container` | `game.onConfidence3Container` |
+| Enabled | As above, ripple in content colour | Confidence phase open, nothing sent |
+| Pressed | Scale `motion.duel.chipPress` | Finger down. `round.bet` is sent on the tap itself, never after the animation |
+| Selected / sending | 3dp ring `game.confidenceSelectedOutline` with 2dp gap, scale `motion.duel.chipLock`; other chips fade to `othersFadeToAlpha`; 16dp progress indicator under the stakes | Tapped, waiting for `round.betLocked {self}` |
+| Locked | Ring stays, progress replaced by a 16dp lock icon in the chip's content colour | `round.betLocked {self}` arrived |
+| Defaulted | Chip 1 gets the same ring and the lock icon; others faded; status line `duel_confidence_defaulted` | Confidence deadline passed without a valid pick (server default 1) |
+| Disabled (limit) | Chip 3 only: M3 disabled container/content colours, no badge, not focusable as a button (TalkBack reads `duel_confidence_three_none`) | Əminlik 3 used twice |
+| Disabled (others) | M3 disabled colours | After any chip was tapped, and after the phase deadline |
 
-- Intensity grows with the level (calm → strong) in both themes.
-- **Selected**: 3dp ring `game.confidenceSelectedOutline` with 2dp gap, chip scales
-  to 1.05 (`motion.duration.short4`). Others keep their colour.
-- **Disabled** (Əminlik 3 used twice): M3 disabled colours, small "0" uses-left
-  counter stays readable in `scheme.onSurfaceVariant`.
-- Uses-left counter under chip 3: "2" / "1" / "0" in `type.labelMedium`.
-- Copy for chips and uses-left is defined with the duel spec, not now.
+Accessibility: each chip is one element, role Button, label
+`duel_confidence_chip_1_cd` / `duel_confidence_chip_cd`; state description
+"seçildi" via `duel_confidence_selected_cd`. Haptic: one light tick on tap.
 
 ## 8. Banners
 
@@ -248,10 +293,22 @@ as `type.headlineSmall` instead.
 
 ## 13. Avatar
 
-Circle `size.avatar` (home header). Image via Coil, crop centre. Fallback (no URL or
-load failed): `scheme.tertiaryContainer` with the first letter of the display name
-(uppercase, Azerbaijani-aware: "i" → "İ", "ı" → "I") in `type.titleMedium`
-`scheme.onTertiaryContainer`. Decorative for TalkBack (the header is merged).
+Circle `size.avatar` (home header, duel panels, match history), `size.avatarLarge`
+(result screen), `size.avatarXLarge` (profile header, match intro, search). Image
+via Coil, crop centre. Fallback (no URL or load failed): `scheme.tertiaryContainer`
+with the first letter of the display name (uppercase, Azerbaijani-aware: "i" → "İ",
+"ı" → "I") in `type.titleMedium` (`type.headlineMedium` at `avatarXLarge`)
+`scheme.onTertiaryContainer`. If the first character is not a letter, use the first
+visible character; if there is none, the `person` icon (PROF-02). Decorative for
+TalkBack (the surrounding element carries the name).
+
+- **Deleted player**: `scheme.surfaceContainerHighest` circle with the `person_off`
+  icon in `scheme.onSurfaceVariant`; name `common_deleted_player`.
+- **Accent ring (duel only)**: 2dp ring outside the avatar (avatarXLarge: 3dp) —
+  self `scheme.primary`, opponent `scheme.tertiary`. The same two accents mark self
+  and opponent everywhere in the duel, so "who is who" never depends on position
+  alone. The labels "Sən" / the opponent's name are always present too.
+- The duel never waits for an avatar image (DUEL-05).
 
 ## 14. List rows and radio rows (settings)
 
@@ -263,3 +320,204 @@ Material 3 `ListItem`: min height 56dp (72dp with supporting text), headline
 (`Modifier.selectable`, role RadioButton), radio on the leading side, group
 semantics `selectableGroup` (SET-01 TalkBack). Destructive row ("Hesabı sil"):
 icon and text `scheme.error`.
+
+---
+
+Components 15–23 are used by the duel (`duel-*.md`) and the profile (`profile.md`).
+They reuse existing colour roles only; every new colour combination is listed in
+`tools/contrast.py`.
+
+## 15. Duel top bar and phase stepper
+
+Pinned at the top of the match screen (never scrolls).
+
+**Top bar** (custom, `scheme.surface`, height `size.topAppBarHeight`):
+- Leading: close icon button 48dp, content description `duel_leave_cd` (opens the
+  leave dialog, `duel-interruptions.md`).
+- Centre-start: round label `duel_round_label` ("Raund 3 / 7") or
+  `duel_round_label_sudden_death` ("Əlavə sual 1 / 3") in `type.titleMedium`
+  `scheme.onSurface`, tabular figures, 1 line; content description
+  `duel_round_label_cd` / `duel_round_label_sudden_death_cd`. In round 7 an All-in
+  pill follows the label with `space.sm` gap: `shape.full`,
+  `scheme.tertiaryContainer` / `scheme.onTertiaryContainer`, padding `space.sm` ×
+  `space.xxs`, text `duel_all_in_pill` ("×2") `type.labelLarge`, content
+  description `duel_all_in_pill_cd`.
+- Trailing: timer ring (§4 ring variant), 48dp, `space.xs` end padding.
+
+**Phase stepper** directly below, gutters `space.layout.screenGutter`, height
+reserved 28dp: 4 equal segments (3 in sudden death: no Əminlik), gap `space.xs`.
+Each segment = a bar of `size.phaseSegmentHeight`, `shape.full`, with its label
+centred under it in `type.labelMedium`:
+
+| Segment state | Bar | Label |
+| --- | --- | --- |
+| Done | `scheme.primary` | `scheme.onSurfaceVariant` |
+| Current | `scheme.primary`, label weight 600 | `scheme.onSurface` |
+| Upcoming | `game.timerTrack` | `scheme.onSurfaceVariant` |
+
+Labels: `duel_phase_question`, `duel_phase_confidence`, `duel_phase_answer`,
+`duel_phase_result`. The stepper is decorative for TalkBack; the current phase is
+announced once per phase change as `duel_phase_cd` (polite).
+
+## 16. Duel player panel
+
+Two panels side by side under the stepper (self at the start, opponent at the end),
+gap `space.sm`, gutters `space.layout.screenGutter`, always the same height
+(`IntrinsicSize.Max`), min height `size.duelPlayerPanelMinHeight`. Pinned with the
+top bar. Container `scheme.surfaceContainerLow`, shape
+`shape.component.duelPlayerPanel`, padding `space.md`, no border outside the result
+phase (self/opponent are told apart by the avatar accent ring, §13, and the name).
+
+Content, top to bottom:
+1. Row: avatar `size.avatar` with accent ring, `space.sm`, name in `type.labelLarge`
+   `scheme.onSurface`, 1 line, ellipsis. Self shows `duel_you` ("Sən"); opponent
+   shows the display name (truncation accepted, DUEL-05; the full name is on the
+   intro and the result screen).
+2. `space.xs`, score `type.titleLarge` `scheme.onSurface`, tabular figures, U+2212
+   for negatives. Content description `duel_player_score_cd`.
+3. `space.sm`, **status slot** (min 28dp): a status pill (§17) or, in the result
+   phase, the reveal face (below).
+
+**Reveal face** (result phase, after the flip, `motion.duel.revealFlip`): the panel
+switches container and gets a 2dp border:
+
+| Outcome | Container / content | Border | Icon |
+| --- | --- | --- | --- |
+| Correct | `game.correctContainer` / `game.onCorrectContainer` | `game.correct` | check |
+| Wrong | `game.wrongContainer` / `game.onWrongContainer` | `game.wrong` | cross |
+| Timeout ("Vaxt bitdi") | `scheme.surfaceContainerHighest` / `scheme.onSurface` | `scheme.outline` | `timer_off` |
+| Missed round | `scheme.surfaceContainerHighest` / `scheme.onSurface` | `scheme.outline` | `cloud_off` |
+
+Reveal face content (replaces the status slot; rows 1–2 stay, the score counts up):
+- Row: mini Əminlik badge (`size.duelBadge`, `shape.component.duelBadge`,
+  `game.confidenceNContainer` / `game.onConfidenceNContainer`, numeral
+  `type.titleMedium`) — `space.sm` — answer letter badge (`size.duelBadge` circle,
+  `game.correct` / `game.onCorrect` or `game.wrong` / `game.onWrong`; none for
+  timeout/missed) — `space.xs` — outcome icon 18dp in `game.correct` / `game.wrong`
+  / `scheme.onSurfaceVariant`.
+- Row: round points `type.titleMedium` tabular (`duel_delta_positive` /
+  `duel_delta_negative` / `duel_delta_zero`) in `game.correct` on correct,
+  `game.wrong` on wrong, the content colour when 0; then `space.sm`, speed bonus
+  (only if > 0): 16dp `bolt` icon + "+37" (`duel_delta_positive`) in
+  `type.labelMedium` in the content colour, content description
+  `duel_reveal_bonus_cd`.
+- Outcome word under the points, `type.labelMedium` content colour:
+  `duel_reveal_correct` / `duel_reveal_wrong` / `quiz_timeout` / `duel_reveal_missed`.
+
+Before the flip, the opponent's slot shows a 20dp `lock` icon next to its status
+pill; the own slot shows the own locked level (mini badge). Both panels flip in the
+same frame (never staggered).
+
+## 17. Status pill
+
+`shape.component.statusPill`, height ≥ 28dp, padding `space.sm` × `space.xs`,
+16dp leading icon, `space.xs`, text `type.labelMedium`, wraps to max 2 lines (never
+truncates), cross-fades on change (`motion.duel.statusPillChange`). Polite live
+region on the opponent panel only.
+
+| Variant | Container / content | Icon | Text |
+| --- | --- | --- | --- |
+| Waiting (opponent) | transparent / `scheme.onSurfaceVariant` | 14dp indeterminate progress | `duel_status_choosing`, `duel_status_answering` |
+| Sending (self) | transparent / `scheme.onSurfaceVariant` | 14dp progress | `duel_status_sending` |
+| Done | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | `lock` (Əminlik) / `check_circle` (answer) | `duel_status_locked_opponent`, `duel_status_locked_self`, `duel_status_answered_opponent`, `duel_status_answered_self` |
+| Timeout | `scheme.surfaceContainerHighest` / `scheme.onSurfaceVariant` | `timer_off` | `quiz_timeout` |
+| Disconnected | `scheme.errorContainer` / `scheme.onErrorContainer` | `cloud_off` | `duel_status_disconnected` |
+| Returned | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | `wifi` | `duel_status_returned` (shown for `motion.duel.opponentReturnedHoldMs`) |
+
+The opponent pill never contains a value (OQ-024, DUEL-18).
+
+## 18. Confidence panel
+
+Slides up from the bottom in the Əminlik phase (`motion.duel.confidencePanelEnter`)
+and is replaced by the options in the answer phase. Full width, container
+`scheme.surfaceContainerHigh`, shape `shape.component.confidencePanel` (top
+corners `shape.extraLarge`), padding `space.lg` vertical and
+`space.layout.screenGutter` horizontal, bottom padding + navigation bar inset.
+
+1. Title `duel_confidence_title` `type.titleLarge` `scheme.onSurface`, centred.
+2. `space.lg`, chip row (§7).
+3. `space.md`, caption (centred, `type.bodyMedium`, wraps) in
+   `scheme.onSurfaceVariant`: `duel_confidence_three_left` /
+   `duel_confidence_three_none`.
+4. `space.sm`, status line (height reserved 24dp, `type.bodyMedium`
+   `scheme.onSurface`, 18dp icon): `duel_status_sending` → `duel_confidence_locked`
+   (`lock`) → `duel_confidence_waiting_opponent`; or `duel_confidence_defaulted`
+   (`timer_off`); or `duel_confidence_too_late` (`timer_off`).
+
+## 19. Round banner (All-in, sudden death)
+
+Inline banner (§8 geometry) between the pinned header and the question; scrolls
+with the body. Icon 24dp, title `type.titleSmall`, body `type.bodyMedium`.
+
+| Variant | Container / content | Icon | Text |
+| --- | --- | --- | --- |
+| All-in (round 7) | `scheme.tertiaryContainer` / `scheme.onTertiaryContainer` | `keyboard_double_arrow_up` | `duel_all_in_title`, `duel_all_in_body` |
+| Sudden death | `scheme.inverseSurface` / `scheme.inverseOnSurface` | `bolt` | `duel_sudden_death_title`, `duel_sudden_death_body` |
+
+Expanded in the question phase; from the next phase on it collapses
+(`motion.duration.short4`) and only the top-bar pill (All-in) or the round label
+(sudden death) remains. Announced once (polite).
+
+## 20. Calibration rows and card
+
+Used by the match result (Əminlik kartı, DUEL-21) and the profile (PROF-05).
+Card: `scheme.surfaceContainerLow`, `shape.component.calibrationCard`, padding
+`space.lg`. Title `type.titleMedium`, optional subtitle `type.bodyMedium`
+`scheme.onSurfaceVariant`, then 3 rows (level 1, 2, 3) with gap `space.md`, then a
+hint and a footnote.
+
+Row (stacked so nothing truncates at 1.3):
+- Line 1: mini Əminlik badge (§16) — `space.md` — column: level label
+  `duel_calibration_level` `type.titleSmall` `scheme.onSurface`; value
+  `type.bodyMedium` `scheme.onSurfaceVariant` (card: `duel_calibration_value` "2 / 3
+  düzgün" or `duel_calibration_unused` "—"; profile: `profile_calibration_value`,
+  `profile_calibration_few`, `profile_calibration_never`).
+- Line 2 (aligned with the text column): accuracy bar, height
+  `size.calibrationBarHeight`, `shape.full`, track `scheme.surfaceContainerHighest`,
+  fill `scheme.primary` = correct / count. Track only for "—", "Az məlumat" and
+  "Hələ seçilməyib".
+- One element for TalkBack: `duel_calibration_row_cd` / `profile_calibration_row_cd`
+  (`duel_calibration_unused_cd`, `profile_calibration_row_few_cd`).
+
+Hint (`space.lg` above): 20dp `lightbulb` icon + `type.bodyMedium` `scheme.onSurface`,
+one of `duel_calibration_hint_*` chosen by the rule in `duel-result.md`. Footnote:
+`type.bodySmall` `scheme.onSurfaceVariant`.
+
+## 21. Match history row (profile)
+
+Material 3 `ListItem` (§14), three-line, not clickable (PROF-04):
+- Leading: avatar `size.avatar` (deleted-player variant, §13).
+- Headline: opponent name `type.bodyLarge`, 1 line, ellipsis.
+- Supporting line 1: `profile_match_supporting` = result word · score
+  ("Qələbə · 640 : 410"), `type.bodyMedium`; the result word is coloured
+  `game.correct` (win), `game.wrong` (loss), `scheme.onSurfaceVariant` (draw,
+  abandoned); the rest `scheme.onSurfaceVariant`.
+- Supporting line 2 (optional): `type.labelMedium` `scheme.onSurfaceVariant`:
+  `profile_match_label_opponent_forfeit`, `profile_match_label_self_forfeit`,
+  `profile_match_label_sudden_death`.
+- Trailing column, end-aligned: rating change `type.titleSmall` tabular
+  (`game.correct` +, `game.wrong` −, `scheme.onSurfaceVariant` 0), date
+  `type.labelSmall` `scheme.onSurfaceVariant`.
+- Merged for TalkBack: `profile_match_cd`.
+
+## 22. Duel overlay card (self reconnecting)
+
+Scrim `scheme.scrim` at 0.32 over the match **body** only (the pinned top bar and
+player panels stay visible and keep updating). Centred card: container
+`scheme.surfaceContainerHigh`, `shape.extraLarge`, elevation
+`elevation.component.duelOverlayCard`, padding `space.xl`, max width
+`space.layout.maxContentWidth`. Content: 48dp progress indicator or 48dp
+`cloud_off` icon in `scheme.onSurfaceVariant`, `space.lg`, title `type.titleMedium`
+`scheme.onSurface`, `space.sm`, body `type.bodyMedium` `scheme.onSurfaceVariant`,
+`space.xl`, buttons full width (gap `space.sm`). Not dismissible by scrim tap; back
+opens the leave dialog. Focus moves into the card; announced once (assertive).
+
+## 23. Stat rows (profile record)
+
+Card `scheme.surfaceContainerLow`, `shape.large`, padding `space.lg`. Header row:
+title `type.titleMedium` + trailing total `type.labelLarge`
+`scheme.onSurfaceVariant`. Then 3 rows (min height 40dp): 20dp icon (win
+`emoji_events` `game.correct`, loss `close` `game.wrong`, draw `drag_handle`
+`scheme.onSurfaceVariant`), `space.md`, label `type.bodyLarge` `scheme.onSurface`
+(full width, never truncated), trailing count `type.titleMedium` tabular. The card
+is one TalkBack element (`profile_record_cd`). No win rate in the MVP (PROF-03).
