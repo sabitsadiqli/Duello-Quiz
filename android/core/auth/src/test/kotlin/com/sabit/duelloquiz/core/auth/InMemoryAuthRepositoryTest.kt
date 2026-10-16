@@ -62,10 +62,10 @@ class InMemoryAuthRepositoryTest {
     }
 
     @Test
-    fun deleteAccountSignsOutWithAccountDeletedAndRemovesTheAccount() = runTest {
+    fun onAccountDeletedSignsOutWithAccountDeletedAndRemovesTheAccount() = runTest {
         repository.signUpWithEmail("Aysel", "aysel@example.com", "password1")
 
-        assertEquals(AuthResult.Success(Unit), repository.deleteAccount())
+        repository.onAccountDeleted()
 
         assertEquals(AuthState.SignedOut(SignOutReason.AccountDeleted), repository.authState.value)
         assertEquals(

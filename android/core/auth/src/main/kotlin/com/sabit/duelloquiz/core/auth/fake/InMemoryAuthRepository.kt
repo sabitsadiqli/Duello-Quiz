@@ -114,12 +114,9 @@ class InMemoryAuthRepository(
         holder.onUser(null)
     }
 
-    override suspend fun deleteAccount(): AuthResult<Unit> {
-        delay(latencyMs)
-        val account = currentAccount() ?: return AuthResult.Failure(AuthError.NotSignedIn)
-        accounts.remove(account.email.lowercase())
+    override suspend fun onAccountDeleted() {
+        currentAccount()?.let { accounts.remove(it.email.lowercase()) }
         signOut(SignOutReason.AccountDeleted)
-        return AuthResult.Success(Unit)
     }
 
     /** Test/demo hook: simulates the user clicking the verification link in the browser. */

@@ -3,9 +3,9 @@ package com.sabit.duelloquiz.feature.settings.delete
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sabit.duelloquiz.core.auth.AuthError
-import com.sabit.duelloquiz.core.auth.AuthRepository
-import com.sabit.duelloquiz.core.auth.AuthResult
+import com.sabit.duelloquiz.core.data.repository.AccountRepository
+import com.sabit.duelloquiz.core.model.DataError
+import com.sabit.duelloquiz.core.model.DataResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -39,13 +39,14 @@ sealed interface DeleteAccountEvent {
 }
 
 /**
- * Account deletion (SET-05): explanation screen + second confirmation dialog. On success the
- * repository signs out with [com.sabit.duelloquiz.core.auth.SignOutReason.AccountDeleted] and
- * the app shows welcome with "Hesabın silindi.".
+ * Account deletion (SET-05): explanation screen + second confirmation dialog. On success
+ * (`DELETE /v1/me` returned 204 or 404) the repository clears local data and signs out with
+ * [com.sabit.duelloquiz.core.auth.SignOutReason.AccountDeleted]; the app shows welcome with
+ * "Hesabın silindi.".
  */
 @HiltViewModel
 class DeleteAccountViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeleteAccountUiState())
@@ -71,13 +72,14 @@ class DeleteAccountViewModel @Inject constructor(
         if (_uiState.value.isDeleting) return
         _uiState.update { it.copy(showConfirmDialog = false, isDeleting = true, error = null) }
         viewModelScope.launch {
-            val result = authRepository.deleteAccount()
-            if (result is AuthResult.Failure) {
-                // The user stays signed in; the button is enabled again for a retry.
+            val result = accountRepository.deleteAccount()
+            if (result is DataResult.Failure) {
+                // The user stays signed in; the button is enabled again for a retry (the server
+                // completes a partial deletion on retry, e.g. after 502 auth_provider_error).
                 _uiState.update {
                     it.copy(
                         isDeleting = false,
-                        error = if (result.error == AuthError.Network) DeleteAccountError.Offline else DeleteAccountError.Failed,
+                        error = if (result.error == DataError.Offline) DeleteAccountError.Offline else DeleteAccountError.Failed,
                     )
                 }
             }

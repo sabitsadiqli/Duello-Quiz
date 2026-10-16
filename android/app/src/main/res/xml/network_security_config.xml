@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release: HTTPS only. The debug build overrides this file (src/debug/res/xml) to allow
+     cleartext to the local backend on the emulator host and localhost. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

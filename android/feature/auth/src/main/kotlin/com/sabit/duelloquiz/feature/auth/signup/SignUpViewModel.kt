@@ -12,6 +12,7 @@ import com.sabit.duelloquiz.core.auth.AuthValidator
 import com.sabit.duelloquiz.core.auth.DisplayNameError
 import com.sabit.duelloquiz.core.auth.EmailError
 import com.sabit.duelloquiz.core.auth.PasswordError
+import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.feature.auth.common.AuthFormError
 import com.sabit.duelloquiz.feature.auth.navigation.AuthArgs
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -68,6 +69,7 @@ sealed interface SignUpEvent {
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -132,13 +134,20 @@ class SignUpViewModel @Inject constructor(
             return
         }
         _uiState.update { it.copy(isLoading = true, formError = null) }
+        val displayName = AuthValidator.normalizeDisplayName(state.name)
+        // PATCH /v1/me {displayName} once the new account is signed in (OQ-011): this screen is
+        // usually gone by then because the app navigates home on the auth state.
+        profileRepository.applySignUpDisplayName(displayName)
         viewModelScope.launch {
             val result = authRepository.signUpWithEmail(
-                displayName = AuthValidator.normalizeDisplayName(state.name),
+                displayName = displayName,
                 email = AuthValidator.normalizeEmail(state.email),
                 password = state.password,
             )
-            if (result is AuthResult.Failure) onSignUpFailed(result.error)
+            if (result is AuthResult.Failure) {
+                profileRepository.clearPending()
+                onSignUpFailed(result.error)
+            }
         }
     }
 

@@ -74,6 +74,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:quiz"))
     implementation(project(":feature:settings"))
 
     implementation(libs.androidx.activity.compose)
@@ -84,6 +85,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
+    // Coil 3 singleton ImageLoader (disk cache); OkHttp fetcher for http(s) image URLs.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     testImplementation(project(":core:testing"))
 

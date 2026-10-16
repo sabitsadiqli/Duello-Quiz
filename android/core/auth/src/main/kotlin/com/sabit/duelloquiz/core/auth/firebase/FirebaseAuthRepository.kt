@@ -109,12 +109,10 @@ internal class FirebaseAuthRepository(
         runCatching { CredentialManager.create(appContext).clearCredentialState(ClearCredentialStateRequest()) }
     }
 
-    override suspend fun deleteAccount(): AuthResult<Unit> {
-        // TODO(android): call `DELETE /v1/me` through :core:network once it exists (SET-05,
-        //  OQ-014). The backend deletes the data and the Firebase user with the Admin SDK, so the
-        //  client must not call FirebaseUser.delete() itself. 404 counts as already deleted.
-        //  On success: signOut(SignOutReason.AccountDeleted).
-        return AuthResult.Failure(AuthError.Unknown("delete_endpoint_not_implemented"))
+    override suspend fun onAccountDeleted() {
+        // The backend already deleted the Firebase user with the Admin SDK (OQ-052); the client
+        // never calls FirebaseUser.delete() itself.
+        signOut(SignOutReason.AccountDeleted)
     }
 
     /** Pushes the current Firebase user (e.g. after a profile update or reload). */

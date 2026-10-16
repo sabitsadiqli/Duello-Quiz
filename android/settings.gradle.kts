@@ -44,4 +44,5 @@ include(":core:testing")
 
 include(":feature:auth")
 include(":feature:home")
+include(":feature:quiz")
 include(":feature:settings")

@@ -1,9 +1,10 @@
 package com.sabit.duelloquiz.feature.settings.delete
 
 import app.cash.turbine.test
-import com.sabit.duelloquiz.core.auth.AuthError
-import com.sabit.duelloquiz.core.auth.AuthRepository
-import com.sabit.duelloquiz.core.auth.AuthResult
+import com.sabit.duelloquiz.core.data.repository.AccountRepository
+import com.sabit.duelloquiz.core.model.ApiErrorCode
+import com.sabit.duelloquiz.core.model.DataError
+import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -24,11 +25,11 @@ class DeleteAccountViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val authRepository: AuthRepository = mockk()
+    private val accountRepository: AccountRepository = mockk()
 
     @Test
     fun deleteNeedsASecondConfirmation() = runTest {
-        val vm = DeleteAccountViewModel(authRepository)
+        val vm = DeleteAccountViewModel(accountRepository)
 
         vm.onAction(DeleteAccountAction.DeleteClicked)
         assertTrue(vm.uiState.value.showConfirmDialog)
@@ -36,13 +37,13 @@ class DeleteAccountViewModelTest {
         vm.onAction(DeleteAccountAction.DialogDismissed)
         advanceUntilIdle()
         assertFalse(vm.uiState.value.showConfirmDialog)
-        coVerify(exactly = 0) { authRepository.deleteAccount() }
+        coVerify(exactly = 0) { accountRepository.deleteAccount() }
     }
 
     @Test
     fun confirmedDeleteRunsOnceAndBlocksCancel() = runTest {
-        coEvery { authRepository.deleteAccount() } returns AuthResult.Success(Unit)
-        val vm = DeleteAccountViewModel(authRepository)
+        coEvery { accountRepository.deleteAccount() } returns DataResult.Success(Unit)
+        val vm = DeleteAccountViewModel(accountRepository)
 
         vm.events.test {
             vm.onAction(DeleteAccountAction.DeleteClicked)
@@ -56,20 +57,21 @@ class DeleteAccountViewModelTest {
         }
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { authRepository.deleteAccount() }
+        coVerify(exactly = 1) { accountRepository.deleteAccount() }
         assertNull(vm.uiState.value.error)
     }
 
     @Test
     fun offlineAndServerErrorsKeepTheUserAndAllowRetry() = runTest {
         val cases = mapOf(
-            AuthError.Network to DeleteAccountError.Offline,
-            AuthError.Timeout to DeleteAccountError.Failed,
-            AuthError.Unknown("500") to DeleteAccountError.Failed,
+            DataError.Offline to DeleteAccountError.Offline,
+            DataError.Timeout to DeleteAccountError.Failed,
+            DataError.Server to DeleteAccountError.Failed,
+            DataError.Api(ApiErrorCode.AuthProviderError) to DeleteAccountError.Failed,
         )
         cases.forEach { (error, expected) ->
-            coEvery { authRepository.deleteAccount() } returns AuthResult.Failure(error)
-            val vm = DeleteAccountViewModel(authRepository)
+            coEvery { accountRepository.deleteAccount() } returns DataResult.Failure(error)
+            val vm = DeleteAccountViewModel(accountRepository)
 
             vm.onAction(DeleteAccountAction.DeleteClicked)
             vm.onAction(DeleteAccountAction.DialogConfirmed)
@@ -82,7 +84,7 @@ class DeleteAccountViewModelTest {
 
     @Test
     fun cancelNavigatesBackWhenIdle() = runTest {
-        val vm = DeleteAccountViewModel(authRepository)
+        val vm = DeleteAccountViewModel(accountRepository)
 
         vm.events.test {
             vm.onAction(DeleteAccountAction.CancelClicked)
