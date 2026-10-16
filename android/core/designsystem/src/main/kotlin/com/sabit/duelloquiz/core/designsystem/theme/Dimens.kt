@@ -58,6 +58,9 @@ object Sizes {
     val stateIllustration = 72.dp
     val stateIllustrationContainer = 120.dp
     val warningIcon = 48.dp
+
+    /** Glyph inside the placeholder logo mark (splashLogo circle). */
+    val logoGlyph = 56.dp
 }
 
 /** elevation from design/tokens.json (Material 3 tonal elevation levels). */
