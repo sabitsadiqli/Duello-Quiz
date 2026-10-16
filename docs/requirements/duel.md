@@ -30,7 +30,7 @@ or a phone call must never decide a match silently or unpredictably.
 | --- | --- | --- |
 | DUEL-01 | As a player, I want a duel entry on home that only appears when the duel is released and tells me when I cannot play, so that I never hit a dead end. | OQ-020, OQ-029, OQ-061 |
 | DUEL-02 | As a player, I want to join a matchmaking queue and see that the app is searching, so that I know an opponent is being found. | OQ-053 |
-| DUEL-03 | As a player, I want the search to stop after 30 s with a retry option, and to cancel it myself, so that I am never stuck searching. | OQ-028, OQ-037, OQ-065, OQ-066, OQ-073 (open) |
+| DUEL-03 | As a player, I want the search to stop after 30 s with a retry option, and to cancel it myself, so that I am never stuck searching. | OQ-028, OQ-037, OQ-065, OQ-066, OQ-073 |
 | DUEL-04 | As the product owner, I want one queue entry and one match per user at a time, also across two devices, so that nobody plays against themselves or in two matches. | OQ-040, OQ-062 |
 | DUEL-05 | As a player, I want to see who my opponent is when a match is found, so that the duel feels personal. | OQ-024, OQ-037, OQ-065 |
 | DUEL-06 | As a player, I want to see the question alone for 3 s, so that I can judge how sure I am before seeing options. | — |
@@ -129,10 +129,9 @@ API: `queue.timeout`, `queue.leave` → `queue.left`, `match.cancelled {by}`.
   new 30 s deadline, shown as "Rəqib ayrıldı. Axtarış davam edir.".
 - Given the server receives `queue.leave` after the intro has ended (round 1 already
   started), When it handles it, Then it answers `error already_in_match` with the
-  `matchId` (OQ-066); the match is not cancelled. (Blocked by OQ-073: what the client
-  does next. Recommended: rejoin with `match.rejoin` and show the running match; the
-  user can then leave through the DUEL-15 dialog, so a forfeit always needs an
-  explicit confirmation.)
+  `matchId` (OQ-066); the match is not cancelled. The client then
+  rejoins with `match.rejoin` and shows the running match; the user can leave through
+  the DUEL-15 dialog, so a forfeit always needs an explicit confirmation (OQ-073).
 - Given the app goes to the background while searching (ON_STOP), When that happens,
   Then the client sends `queue.leave` at once, so that nobody is matched with an
   absent player; on return "Axtarış dayandırıldı" ("Tətbiqdən çıxdığın üçün
@@ -781,6 +780,5 @@ OQ-054 (haptic, no sound), OQ-056 (`round.confidence`), OQ-057
 (calibration hint on the client), OQ-061 … OQ-072 (engine decisions).
 
 Decided earlier and used here: OQ-001, OQ-002, OQ-003, OQ-020, OQ-021.
-Open: OQ-007 (questions per category before the closed test; the duel draws from all
-categories), OQ-073 (client reaction to `already_in_match` after a late
-`queue.leave`, blocks one criterion of DUEL-03).
+Also decided: OQ-073 (rejoin after a late `queue.leave`). Open: OQ-007 (questions per
+category before the closed test; the duel draws from all categories).
