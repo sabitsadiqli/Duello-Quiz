@@ -8,7 +8,7 @@ Tokens: `design/tokens.json`. Components: `components.md` §13, §20. Copy: `cop
 
 ## Questions and decisions
 
-- **OQ-D12 — proposal: the calibration hint is chosen on the client** from the card
+- **OQ-D12 — resolved (OQ-059): the calibration hint is chosen on the client** from the card
   counts the server sends (rules below, deterministic, same on the profile). The
   server stays authoritative for the counts; the hint is presentation. If
   backend-dev prefers to send a `hintKey`, the same rules move to the server.

@@ -85,8 +85,8 @@ Options: "Sistem" (default), "İşıqlı", "Qaranlıq". Stored in DataStore
 Recommended flow (blocked by OQ-014 for data handling details):
 
 - Given a signed-in user, When they tap "Hesabı sil", Then a screen explains what
-  will be deleted ("Profiliniz, reytinqiniz və quiz nəticələriniz həmişəlik
-  silinəcək. Bu əməliyyat geri qaytarıla bilməz.") with a destructive button
+  will be deleted ("Profilin, reytinqin və quiz nəticələrin həmişəlik silinəcək. Bu
+  əməliyyatı geri qaytarmaq olmaz.") with a destructive button
   "Hesabı həmişəlik sil" and "Ləğv et".
 - Given the user confirms, When the second confirmation dialog is accepted, Then the
   client calls `DELETE /v1/me` with the current ID token; the backend deletes or
@@ -101,11 +101,13 @@ Recommended flow (blocked by OQ-014 for data handling details):
   silmək alınmadı. Yenidən cəhd et." is shown; the user stays signed in. The server
   operation is idempotent: a retry after a partial failure completes the deletion.
 - Given the server deleted the data but the response was lost, When the client
-  retries, Then the server returns success (404 for the profile is treated as
-  already deleted) and the client completes the local cleanup.
+  retries, Then the server returns 204 again (`DELETE /v1/me` is idempotent, also
+  when the profile row is already gone) and the client completes the local cleanup.
 - Given the user is in a duel queue or match, When deletion is requested, Then the
-  entry is not reachable from a running match; if a match is somehow active on the
-  server, it is ended as a forfeit for this user before deletion.
+  entry is not reachable from a running match; if a match is still running on the
+  server (e.g. on another device), `DELETE /v1/me` first ends it as a forfeit by this
+  user (`forfeitCause = left`, the opponent wins and gets `match.result`) and removes
+  any queue entry, then deletes (`docs/api/openapi.yaml`).
 - Given the account is deleted, When the same Google account or email signs up again,
   Then a fresh profile with rating 1000 is created; nothing of the old account comes
   back.

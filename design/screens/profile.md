@@ -9,13 +9,13 @@ Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, 
 
 ## Questions and decisions
 
-- **OQ-D13 — conflict to resolve (business-analyst): how the name length is
+- **OQ-D13 — resolved (OQ-042: code points, no emoji): how the name length is
   counted and whether emoji are allowed.** `profile.md` PROF-06 says "graphemes,
   an emoji is 1"; the later decision OQ-042 says "no emoji, length in code
   points". This spec follows **OQ-042** (newer, decided by Sabit): emoji are
   rejected with `auth_error_name_characters`; the counter counts code points
   after trimming. PROF-06 should be aligned.
-- **OQ-D14 — dependency on `docs/api/openapi.yaml`: "Qoşulub" needs
+- **OQ-D14 — resolved (OQ-060, `createdAt` in `GET /v1/me`): "Qoşulub" needs
   `createdAt` in `GET /v1/me`.** If the API does not return it, the line is
   hidden (no placeholder).
 - Decided: percentages are written "72%" (number, then the sign, no space) —

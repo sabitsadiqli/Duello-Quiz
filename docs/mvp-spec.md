@@ -60,8 +60,10 @@ Scoring:
 - After the match: result screen + calibration card (accuracy per bet level).
 - Deadlines: a pick or answer received by the server at or before the phase
   deadline + 250 ms counts (network grace, OQ-036); the speed bonus is
-  `floor(50 × remainingMs / 10000)` with the receive time clamped to the deadline.
-  The confidence and answer phases end early once both players have acted (OQ-035).
+  `floor(50 × remainingMs / 10000)` with the receive time clamped to the deadline
+  (`answered_ms` itself is stored unclamped, OQ-072). Without both players acting, a
+  phase closes at deadline + 251 ms (OQ-064). The confidence and answer phases end
+  early once both players have acted (OQ-035).
 - The duel needs at least 10 active questions in total; otherwise the server
   answers `duel_unavailable`.
 - Leaving a running match on purpose is an immediate forfeit (OQ-034). Both players
@@ -74,8 +76,17 @@ Matchmaking (MVP): single global queue, first come first served; if no opponent 
 30 s, show "no opponent found" with retry. Rating is a simple Elo (K = 32, start
 1000), stored per user; a draw is scored 0.5 for both.
 
+Protocol (message names, fields, error and close codes, heartbeat, grace and phase
+closing): `docs/api/duel-protocol.md` — the only source for duel message names.
 User stories and acceptance criteria: `docs/requirements/duel.md` (DUEL-01 …) and
-`docs/requirements/profile.md` (PROF-01 …); open points OQ-024 … OQ-039.
+`docs/requirements/profile.md` (PROF-01 …); decisions OQ-024 … OQ-040 and
+OQ-053 … OQ-072 in `docs/requirements/open-questions.md`.
+
+Deployment note (OQ-070): the duel runs on a **single backend replica**. The queue
+and running matches live in memory; on startup every match still `active` is marked
+`abandoned`, so a restart or redeploy abandons running matches (no Elo change,
+OQ-033). Running more than one replica needs an ADR first (shared queue and match
+state).
 
 ## 3. Auth
 
@@ -138,6 +149,10 @@ Goal: small files, fast load, no visible quality loss on a phone.
 
 ## 6. Data model (initial)
 
+Summary only. The source of truth is the Flyway migrations in
+`backend/src/main/resources/db/migration/` (extra columns such as
+`questions.status`, `content_hash`, `match_answers.side`, `is_correct`: OQ-048 … OQ-050).
+
 ```
 users(id, firebase_uid UNIQUE, display_name, avatar_url, rating INT DEFAULT 1000, created_at)
 categories(id, slug UNIQUE, name_i18n JSONB, icon_key, sort_order, is_active)
@@ -151,15 +166,11 @@ quiz_sessions(id, user_id, category_id, status, correct_count, started_at, deadl
 quiz_session_questions(session_id, question_id, position, PRIMARY KEY(session_id, position))
 quiz_answers(id, session_id, question_id, option_id NULL, is_correct BOOL, answered_at,
              elapsed_ms INT, UNIQUE(session_id, question_id))
-matches(id, player_a NULL, player_b NULL, score_a, score_b, winner NULL, status,
-        started_at, finished_at)   -- players set NULL on account deletion
-match_rounds(id, match_id, round_no, question_id, all_in BOOL, sudden_death BOOL,
-             UNIQUE(match_id, round_no))
-match_answers(id, round_id, user_id, bet SMALLINT, option_id NULL, answered_ms INT, points INT,
-              UNIQUE(round_id, user_id))
+matches, match_rounds, match_answers   -- duel tables: see docs/api/duel-protocol.md §8
+                                       -- and the Flyway migrations (OQ-048)
 ```
 
-## 7. API outline (to be detailed in docs/api/)
+## 7. API outline (details in docs/api/)
 
 REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 
@@ -172,10 +183,16 @@ REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 - `POST /quiz/sessions/{id}/finish`
 - Admin (custom claim `admin=true`): `POST /admin/questions/import` (JSON), `POST /admin/images`
 
-WebSocket `GET /v1/duel` (token in handshake header). Message types:
-`queue.join`, `queue.leave`, `match.found`, `round.question`, `round.bet`,
-`round.betLocked`, `round.options`, `round.answer`, `round.result`, `match.result`,
-`error`. Every timed message carries `deadlineEpochMs` from the server clock.
+- `GET /me/stats` (duel record + calibration counts), `GET /me/matches` (last 20)
+
+Full REST contract: `docs/api/openapi.yaml`.
+
+WebSocket `GET /v1/duel?protocolVersion=1` (token in the handshake header): JSON
+messages for the queue (`queue.*`), the match (`match.*`), each round phase
+(`round.*`) and presence, with server-side sequence numbers, a 5 s heartbeat and a
+`match.state` snapshot for rejoin. Every server message carries `serverNowEpochMs`,
+every timed one `deadlineEpochMs` from the server clock. Message names, fields,
+error codes and close codes: `docs/api/duel-protocol.md` (source of truth).
 
 ## 8. Question bank and import format
 

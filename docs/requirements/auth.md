@@ -74,7 +74,7 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 - Given the app is backgrounded while the request runs, When the user returns, Then
   the outcome (success → home, failure → message) is shown; the form is not reset.
 - Given Firebase answers "too many requests", When the user submits, Then "Çox sayda
-  cəhd edildi. Bir az sonra yenidən cəhd edin." is shown.
+  cəhd edildi. Bir az sonra yenidən cəhd et." is shown.
 - Given leading/trailing spaces in the email, When the user submits, Then they are
   trimmed before validation and sending. The password is never trimmed.
 
@@ -88,7 +88,7 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 - Given the account is disabled in Firebase, When the user submits, Then "Bu hesab
   deaktiv edilib." is shown.
 - Given repeated wrong attempts, When Firebase returns "too many requests", Then
-  "Çox sayda uğursuz cəhd. Bir az sonra yenidən cəhd edin." is shown; the app adds no
+  "Çox sayda uğursuz cəhd. Bir az sonra yenidən cəhd et." is shown; the app adds no
   own lockout.
 - Given the email belongs to a Google-only account, When the user tries a password,
   Then the generic wrong-credentials message is shown (behaviour per OQ-019).
@@ -124,7 +124,7 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
   system flow to add an account is offered; if that is not available, "Bu cihazda
   Google hesabı tapılmadı." is shown.
 - Given Google Play services are missing or outdated, When the user taps the button,
-  Then "Google ilə daxil olmaq mümkün olmadı. E-poçtla daxil olun." is shown and the
+  Then "Google ilə daxil olmaq mümkün olmadı. E-poçtla daxil ol." is shown and the
   email options stay usable.
 - Given the device is offline, When the user taps the button, Then the offline
   message is shown.
@@ -158,8 +158,8 @@ Fields: "E-poçt", "Şifrə" (with show/hide toggle; no "repeat password" field)
 
 Entry point: settings (SET-04).
 
-- Given a signed-in user, When they confirm "Çıxış" in the dialog "Hesabdan çıxmaq
-  istəyirsiniz?", Then Firebase signs out, the Credential Manager state is cleared
+- Given a signed-in user, When they confirm "Çıx" in the dialog "Hesabdan çıxmaq
+  istəyirsən?", Then Firebase signs out, the Credential Manager state is cleared
   (`clearCredentialState`), user-specific local data (Room cache, profile, in-progress
   quiz) is deleted, and the welcome screen is shown with the back stack cleared.
 - Given the device is offline, When the user signs out, Then sign-out still works

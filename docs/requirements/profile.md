@@ -31,9 +31,12 @@ personal data of other players beyond their display name.
 | PROF-07 | As a new player without matches, I want a helpful empty profile, so that I know how to start. | — |
 | PROF-08 | As a player on a weak or missing connection, I want the profile to show the last known data, so that it never looks broken. | — |
 
-API (proposed, spec gap): `GET /v1/me` (profile + rating), `GET /v1/me/stats`
-(record + calibration), `GET /v1/me/matches?limit=N` (recent matches),
-`PATCH /v1/me {displayName}`. Backend-dev may merge stats into `/me`.
+API (`docs/api/openapi.yaml`): `GET /v1/me` (`Profile`: `id`, `displayName`,
+`avatarUrl`, `rating`, `createdAt`), `GET /v1/me/stats` (`record {wins, losses,
+draws, total}` + `calibration`: always 3 entries `{level, picks, correct}`),
+`GET /v1/me/matches?limit=1..20` (`items[]` of `MatchSummary`), `PATCH /v1/me
+{displayName}`. The server sends counts only; every percentage, hint text and "Az
+məlumat" decision is made on the client (OQ-059).
 
 ### PROF-01 Open the profile
 
@@ -51,14 +54,15 @@ API (proposed, spec gap): `GET /v1/me` (profile + rating), `GET /v1/me/stats`
 ### PROF-02 Name, avatar and rating
 
 - Given the profile loaded, When shown, Then it displays the avatar, display name,
-  "Reytinq: 1016" and "Qoşulub: Oktyabr 2026" (month and year of `created_at`,
-  Azerbaijani month names from resources).
+  "Reytinq: 1016" and "Qoşulub: oktyabr 2026" (month and year of `createdAt` from
+  `GET /v1/me`, OQ-060; lowercase Azerbaijani month names from resources, not the
+  system date formatter). If `createdAt` is missing, the line is hidden.
 - Given a Google account with a photo URL, When shown, Then the Google photo is shown
   (Coil, circular, cached). Given no avatar URL or a failed load, Then a circle with
   the first letter of the display name is shown (same rule as HOME-04).
-- Given the display name starts with a non-letter (digit, emoji), When the
-  placeholder is built, Then the first visible character is used; for an empty
-  grapheme a generic person icon is used.
+- Given the display name starts with a non-letter (digit, `'`, `.`, `-`), When the
+  placeholder is built, Then the first letter or digit of the name is used; if there
+  is none, a generic person icon is used. (Names cannot contain emoji, OQ-042.)
 - Given a 20-character name on 360 dp at font scale 1.3, When shown, Then it wraps to
   at most 2 lines on the profile (no truncation here; the home header truncates).
 - Given the email of the account, When the profile is shown, Then the email is not
@@ -68,8 +72,9 @@ API (proposed, spec gap): `GET /v1/me` (profile + rating), `GET /v1/me/stats`
 
 ### PROF-03 Duel record
 
-- Given the user finished matches, When the profile is shown, Then "Qələbə 12 ·
-  Məğlubiyyət 9 · Heç-heçə 1" and the total "22 oyun" are shown.
+- Given the user finished matches, When the profile is shown, Then the "Duel
+  nəticələri" card shows full-width rows "Qələbə 12", "Məğlubiyyət 9", "Heç-heçə 1"
+  and the total "22 oyun", all from `GET /v1/me/stats` `record`.
 - Given forfeits, When counted, Then a forfeit win counts as a win and a forfeit loss
   as a loss (OQ-002); abandoned and cancelled matches are not counted (OQ-026,
   OQ-033, OQ-037).
@@ -80,20 +85,24 @@ API (proposed, spec gap): `GET /v1/me` (profile + rating), `GET /v1/me/stats`
 
 ### PROF-04 Recent matches
 
-- Given finished matches exist, When the profile is shown, Then the last N matches
-  (OQ-031, recommended 20), newest first, are listed with: opponent display name and
-  avatar placeholder, result ("Qələbə", "Məğlubiyyət", "Heç-heçə", "Ləğv edildi" per
-  OQ-026), final score "640 : 410", rating change "+16" / "−14" / "0", and relative
-  date ("bu gün", "dünən", "12 okt").
-- Given an opponent deleted their account, When the match is listed, Then the
-  opponent shows as "Silinmiş oyunçu" with a generic icon (`docs/mvp-spec.md` §3a);
-  the match, score and rating change stay.
+- Given finished matches exist, When the profile is shown, Then the last 20 matches
+  (OQ-031, `GET /v1/me/matches`, statuses `finished` and `abandoned`, newest first by
+  `finishedAt`) are listed with: opponent display name and avatar (or placeholder),
+  result from `result` ("Qələbə", "Məğlubiyyət", "Heç-heçə", "Ləğv edildi", OQ-026),
+  final score "640 : 410" (`scoreOwn : scoreOpponent`), rating change "+16" / "−14"
+  / "0" (`ratingChange`; U+2212 minus), and relative date from `finishedAt` ("bu
+  gün", "dünən", "12 okt", "12 okt 2025" for another year).
+- Given an opponent deleted their account, When the match is listed, Then
+  `opponent.deleted = true` with null name and avatar, and the opponent shows as
+  "Silinmiş oyunçu" with a generic icon (`docs/mvp-spec.md` §3a); the match, score
+  and rating change stay.
 - Given an opponent changed their display name later, When the match is listed, Then
   the opponent's current name is shown (names are not copied into matches).
-- Given a forfeit, When listed, Then a small label "Rəqib tərk etdi" (win) or "Texniki
-  məğlubiyyət" (loss) is shown next to the result.
-- Given a match won or lost in sudden death, When listed, Then the label "Əlavə sual"
-  is shown.
+- Given `endReason = forfeit`, When listed, Then a small label "Rəqib tərk etdi"
+  (`result = win`) or "Texniki məğlubiyyət" (`result = loss`) is shown next to the
+  result.
+- Given `endReason = sudden_death`, When listed, Then the label "Əlavə sualda" is
+  shown.
 - Given the user taps a match row, When tapped, Then nothing opens in the MVP (no
   per-match detail screen; out of scope).
 - Given the user has more than N matches, When the list ends, Then no "load more" is
@@ -105,19 +114,22 @@ API (proposed, spec gap): `GET /v1/me` (profile + rating), `GET /v1/me/stats`
 ### PROF-05 Calibration stats over all matches
 
 - Given finished matches, When the profile is shown, Then "Əminlik statistikası"
-  shows for each level 1, 2, 3: how often it was picked and the accuracy, e.g.
-  "Əminlik 3: 18 dəfə, 72% düzgün".
+  shows for each level 1, 2, 3 (from `GET /v1/me/stats` `calibration[]`
+  `{level, picks, correct}`): how often it was picked and the accuracy computed on
+  the client as a whole percentage of `correct / picks`, e.g. label "Əminlik 3" with value
+  "18 dəfə · 72% düzgün"; a level with `picks = 0` shows "Hələ seçilməyib".
 - Given which rounds count, When the server computes the stats, Then the same rule as
   the calibration card applies (DUEL-21, OQ-027: rounds 1–7 with an actively locked
   Əminlik; defaulted picks, missed rounds and sudden-death questions excluded) and
   the same match statuses as PROF-03.
-- Given a level has fewer than 5 counted rounds, When shown, Then the row shows the
-  count and "Az məlumat" instead of a percentage (small numbers mislead).
-- Given an ideal pattern (accuracy rises from level 1 to 3), When the stats show it,
-  Then a short positive hint may be shown; otherwise a neutral hint (copy by
-  designer); never mocking.
-- Given the stats, When rendered, Then accuracy uses whole percentages ("72%"), with
-  the percent sign after the number as is usual in Azerbaijani UI (designer confirms).
+- Given a level has 1–4 picks, When shown, Then the row shows the count and "Az
+  məlumat" instead of a percentage ("4 dəfə · Az məlumat"; small numbers mislead).
+- Given the counts, When a hint is shown, Then the client chooses it with the same
+  deterministic rules as the calibration card (`design/screens/duel-result.md`,
+  OQ-059); the server sends no hint; never mocking.
+- Given the stats, When rendered, Then accuracy uses whole percentages written "72%"
+  (number, then the sign, no space; decided by the designer in
+  `design/screens/profile.md`).
 - Given TalkBack, When a row is focused, Then it is read as one sentence: "Əminlik 3:
   18 dəfə seçilib, 72 faiz düzgün".
 
@@ -128,24 +140,31 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 - Given the profile, When the user taps the edit icon next to the name (content
   description "Adı dəyiş"), Then a dialog or screen with the field "Ad", pre-filled
   with the current name, "Yadda saxla" and "Ləğv et" is shown.
-- Given a name of 2–20 characters after trimming (`docs/mvp-spec.md` §3, same rule as
-  sign-up), When the user taps "Yadda saxla", Then the server stores it and the
-  profile, the home header and future match screens show the new name; the cache is
-  updated.
-- Given the name is shorter than 2 or longer than 20 characters after trimming, When
-  the user submits, Then "Ad 2–20 simvol olmalıdır." is shown and no request is sent;
-  the server enforces the same rule (400 `invalid_display_name`).
-- Given leading/trailing spaces or repeated inner spaces, When the name is saved,
-  Then the server trims and collapses them to one space; control characters and line
-  breaks are rejected.
-- Given characters are counted, When length is checked, Then the count is in
-  user-visible characters (graphemes), the same on client and server, so "Əli" is 3
-  and an emoji is 1.
+- Given a valid name (OQ-042, same rule as sign-up and `PATCH /v1/me` in
+  `openapi.yaml`), When the user taps "Yadda saxla", Then the server stores it and
+  the profile, the home header and future match screens show the new name
+  ("Adın dəyişdirildi."); the cache is updated.
+- Given the name is normalized, When it is checked, Then client and server apply the
+  same steps: Unicode NFC, leading/trailing whitespace trimmed, inner whitespace runs
+  collapsed to one space; then the length is counted.
+- Given characters are counted, When length is checked, Then the count is in Unicode
+  code points after normalization (OQ-042), the same on client and server, so "Əli"
+  is 3; the counter under the field shows "7/20".
+- Given the name is shorter than 2 or longer than 20 code points, When the user
+  submits, Then "Ad 2–20 simvol olmalıdır." is shown and no request is sent; the
+  server enforces the same rule (400 `invalid_display_name`).
+- Given the name contains anything other than letters of any script (combining marks
+  included), digits, space, `-`, `'` and `.` — for example emoji, other symbols,
+  control characters or line breaks — When the user submits, Then "Adda yalnız
+  hərf, rəqəm, boşluq, «-», «'» və «.» ola bilər." is shown and no request is sent;
+  if the server still rejects a name with 400 `invalid_display_name`, Then "Bu ad
+  uyğun deyil. Ad 2–20 simvol olmalı, yalnız hərf, rəqəm, boşluq, «-», «'» və «.» ola
+  bilər." is shown.
 - Given the name is unchanged, When the user taps "Yadda saxla", Then the dialog
   closes without a request.
 - Given an offensive or impersonating name ("Admin", "Duello"), When it is submitted,
-  Then the behaviour follows OQ-030 (recommended: a server-side blocklist rejects it
-  with 400 `display_name_not_allowed`, shown as "Bu ad istifadə edilə bilməz."). The
+  Then the server-side blocklist (OQ-030) rejects it with 400
+  `display_name_not_allowed`, shown as "Bu ad istifadə edilə bilməz.". The
   same check applies to the sign-up name (AUTH-02) and the Google profile name on
   first creation (falls back to "Oyunçu NNNN").
 - Given the device is offline, When the user submits, Then "Adı dəyişmək üçün internet
@@ -164,10 +183,12 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 
 - Given the user has finished no duel, When the profile is shown, Then name, avatar
   and "Reytinq: 1000" are shown, and instead of record, list and stats one block
-  "Hələ duel oynamamısınız. İlk duelinizi oynayın və Əminlik statistikanızı görün."
-  with a button "Duelə başla" (opens DUEL-02; hidden when the duel flag is off).
+  "Hələ duel oynamamısan" / "İlk duelini oyna və Əminlik statistikanı gör." with a
+  button "Duelə başla" (opens DUEL-02; hidden when the duel flag is off).
 - Given the user played only abandoned or cancelled matches, When the profile is
-  shown, Then the empty state is shown (those matches are not counted, PROF-03).
+  shown, Then the empty state replaces record and stats (`record.total = 0`, those
+  matches are not counted, PROF-03); abandoned matches still appear in "Son oyunlar"
+  as "Ləğv edildi" if `GET /v1/me/matches` returns them.
 - Given category quizzes were played, When the profile is shown, Then they do not
   appear in the record, list or stats (single player is not part of the profile in
   the MVP).
@@ -195,14 +216,19 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 
 - Rating: Elo from `docs/mvp-spec.md` §2 (start 1000, K = 32, draw 0.5); updated only
   by finished duels (DUEL-22); never by the category quiz.
-- Display name: 2–20 characters after trimming (`docs/mvp-spec.md` §3); not unique;
-  offensive names per OQ-030. Fallback "Oyunçu NNNN".
+- Display name: 2–20 Unicode code points after NFC, trimming and collapsing spaces;
+  letters, digits, space, `-`, `'`, `.` only, no emoji (OQ-042, `openapi.yaml`
+  `PATCH /v1/me`); not unique; offensive names per OQ-030. Fallback "Oyunçu NNNN".
 - Deleted opponents: "Silinmiş oyunçu" (`docs/mvp-spec.md` §3a, OQ-014).
 - Record and calibration are computed on the server from `matches` and
   `match_answers`; counted matches: status `finished` (normal, sudden death, draw,
-  forfeit). Not counted: `abandoned`, `cancelled` (proposed statuses, see duel.md §3).
-- Calibration rule: same as the calibration card (DUEL-21, OQ-027).
-- Recent matches: last N (OQ-031), newest first.
+  forfeit). Not counted: `abandoned`, `cancelled` (statuses in
+  `docs/api/duel-protocol.md` §8).
+- Calibration rule: same as the calibration card (DUEL-21, OQ-027). The server sends
+  per-level counts `{level, picks, correct}`; the client derives percentages, "Az
+  məlumat" (fewer than 5 picks) and the hint (OQ-059).
+- Recent matches: last 20 (OQ-031), newest first; `finished` and `abandoned` are
+  listed, `cancelled` never.
 
 ## 4. Out of scope
 
@@ -225,9 +251,12 @@ home loads, so usage can be split by skill level.
 
 ## 6. Decisions
 
-All decided by Sabit on 2026-10-14 as recommended (see `open-questions.md`).
+All decided by Sabit (see `open-questions.md`).
 
-OQ-026 (forfeited and abandoned matches in record and stats), OQ-027 (which rounds
-count for calibration), OQ-030 (offensive display names), OQ-031 (number of recent
-matches). Decided and used here: OQ-011 (display name), OQ-014 (deleted players),
-OQ-020 (duel flag).
+2026-10-14: OQ-026 (forfeited and abandoned matches in record and stats), OQ-027
+(which rounds count for calibration), OQ-030 (offensive display names), OQ-031
+(number of recent matches), OQ-041 ("sən" tone), OQ-042 (display name characters and
+length; also resolves the designer's OQ-D13). 2026-10-16: OQ-059 (counts from the
+server, hint and percentages on the client), OQ-060 (`createdAt` in `GET /v1/me`).
+Decided and used here: OQ-011 (display name), OQ-014 (deleted players), OQ-020 (duel
+flag).

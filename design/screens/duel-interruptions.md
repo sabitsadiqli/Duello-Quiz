@@ -9,7 +9,7 @@ Copy: `copy/az.md`.
 
 ## Questions and decisions
 
-- **OQ-D11 — needs backend-dev / business-analyst: leaving while offline.** If the
+- **OQ-D11 — resolved (OQ-058, see `docs/api/duel-protocol.md`): leaving while offline.** If the
   user confirms "Çıx" while the socket is down, `match.leave` cannot be sent. The
   client goes home and clears `activeMatchId`; the server ends the match later by
   the missed-round rule (same outcome, DUEL-15). Proposal: if the user then joins

@@ -8,7 +8,7 @@ Tokens: `design/tokens.json`. Components: `components.md` §15, §19. Copy: `cop
 
 ## Questions and decisions
 
-- **OQ-D10 — dependency on `docs/api/duel-protocol.md`: sudden-death outcome per
+- **OQ-D10 — resolved (OQ-057, `round.result.suddenDeathOutcome`): sudden-death outcome per
   question.** To show "who was faster" the client needs, in `round.result` of a
   sudden-death question, either a `suddenDeathWinner: self | opponent | null` and
   `sameTime: bool`, or `match.result` right after a decisive question. Proposal:
