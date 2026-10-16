@@ -282,7 +282,9 @@ alt}` (same shape as the quiz API).
 ```
 
 ### `round.confidence`
-Confidence phase start (regular rounds only). `bet3Left` = remaining uses of
+Explicit confidence (Əminlik) phase start (regular rounds only; OQ-D8): sent when the
+question phase ends; the chips open on receipt and `deadlineEpochMs` is the pick
+deadline. Never sent in sudden death. `bet3Left` = remaining uses of
 Əminlik 3 for this player (0–2); `allIn` doubles the points at stake.
 ```json
 {"type": "round.confidence", "seq": 3, "serverNowEpochMs": 1792144807000,
@@ -335,6 +337,11 @@ Per player (`you`, `opponent`): `bet`, `betDefaulted`, `optionId` (`null` = no
 answer/timeout), `correct`, `answeredMs` (`null` without answer), `speedBonus`,
 `points` (this round, incl. bonus), `missed` (no pick and no answer; sudden death: no
 answer), `missedInARow` (2 → forfeit).
+
+`suddenDeathOutcome` (OQ-D10): `null` in regular rounds; in sudden death `you` or
+`opponent` (that player won the match with this question), `same_time` (both right
+with the same `answeredMs` → next question) or `none` (nobody right → next question,
+or a draw after the 3rd question; see `next`).
 ```json
 {"type": "round.result", "seq": 8, "serverNowEpochMs": 1792144813900,
  "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a", "roundNo": 1,
@@ -346,7 +353,7 @@ answer), `missedInARow` (2 → forfeit).
  "opponent": {"bet": 1, "betDefaulted": true, "optionId": null, "correct": false,
               "answeredMs": null, "speedBonus": 0, "points": 0, "missed": true, "missedInARow": 1},
  "scores": {"you": 231, "opponent": 0},
- "bet3Left": 2, "next": "round", "deadlineEpochMs": 1792144816900}
+ "bet3Left": 2, "next": "round", "deadlineEpochMs": 1792144816900, "suddenDeathOutcome": null}
 ```
 
 ### `opponent.connection`
@@ -400,8 +407,14 @@ only (no replay). Fields:
 
 ### `match.result`
 End of the match. Sent to both players right after the last `round.result` (or at
-once on `match.leave`), and again on `match.rejoin` after the end (same `seq`).
+once on `match.leave`), and again on `match.rejoin` after the end (same `seq` while
+the server still has the match in memory, 10 minutes; after a server restart a
+finished match is rebuilt from storage with `seq = 0` and `forfeitCause = null`).
 The app clears `activeMatchId`.
+
+Calibration (OQ-D12): the server sends only the counts per level (`picks`,
+`correct`); the hint text ("Yüksək əminlikdə tez-tez yanılırsan" etc.) and the "—"
+for an unused level are chosen on the client.
 
 | Field | Meaning |
 | --- | --- |
@@ -447,7 +460,7 @@ shown to users; the app maps `code` to text.
 | `upgrade_required` | yes, `4000` | `protocolVersion` missing or below the minimum (OQ-029) |
 | `session_replaced` | yes, `4001` | A newer connection of the same user opened (DUEL-04) |
 | `duel_unavailable` | no | Fewer than 10 active questions in total (DUEL-19) |
-| `already_in_match` | no | `queue.join` or a late `queue.leave` while in a running match; `match.state` follows for `queue.join` |
+| `already_in_match` | no | `queue.join` or a late `queue.leave` while in a running match. The error carries `matchId`; for `queue.join` a `match.state` follows, so the app can resume the match or send `match.leave` (e.g. the user had left while offline and the leave was lost, OQ-D11) |
 | `bet_limit_reached` | no | Third Əminlik 3 in a match |
 | `bet_already_locked` | no | Second pick in a round |
 | `invalid_bet` | no | Pick not 1, 2 or 3 |

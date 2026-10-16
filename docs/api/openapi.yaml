@@ -545,6 +545,7 @@ components:
         createdAt:
           type: string
           format: date-time
+          description: When the profile was created; the profile shows it as "Qoşulub" (month and year, PROF-02).
 
     UpdateProfileRequest:
       type: object

@@ -41,6 +41,7 @@ class DuelEngineTest {
             assertEquals(ra.you, rb.opponent)
             assertEquals(NextStep.ROUND, ra.next)
             assertFalse(ra.allIn)
+            assertNull(ra.suddenDeathOutcome)
         }
         assertEquals(0, b.last<ServerMessage.RoundConfidence>().bet3Left)
 
@@ -425,6 +426,8 @@ class DuelEngineTest {
         assertEquals(0, r8.you.points)
         assertEquals(0, r8.opponent.points, "scores do not change in sudden death")
         assertEquals(NextStep.END, r8.next)
+        assertEquals(Who.OPPONENT, r8.suddenDeathOutcome)
+        assertEquals("you", b.last<ServerMessage.RoundResult>().suddenDeathOutcome)
         val result = b.last<ServerMessage.MatchResult>()
         assertEquals("win", result.outcome)
         assertEquals(EndReasons.SUDDEN_DEATH, result.endReason)
@@ -443,6 +446,7 @@ class DuelEngineTest {
         // SD 1: both right at the same server time → next question.
         val (sd1, _) = h.playRound(a, null, true, b, null, true, answerDelayMs = 500)
         assertEquals(NextStep.SUDDEN_DEATH, sd1.next)
+        assertEquals(SuddenDeathOutcomes.SAME_TIME, sd1.suddenDeathOutcome)
         // SD 2: Bob 1 ms faster.
         h.finishQuestionPhase(a)
         h.advanceBy(700)
@@ -459,7 +463,8 @@ class DuelEngineTest {
         val h = DuelHarness(this)
         val (a, b) = h.startMatch()
         h.tiedAfterSeven(a, b)
-        h.playRound(a, null, false, b, null, false)          // both wrong
+        val (sdWrong, _) = h.playRound(a, null, false, b, null, false) // both wrong
+        assertEquals(SuddenDeathOutcomes.NONE, sdWrong.suddenDeathOutcome)
         h.playRound(a, null, false, b, null, false)
         val (sd3, _) = h.playRound(a, null, false, b, null, null) // Alice wrong, Bob no answer
         assertEquals(NextStep.END, sd3.next)

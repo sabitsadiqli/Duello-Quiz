@@ -237,6 +237,8 @@ sealed interface ServerMessage {
         val bet3Left: Int,
         val next: String,
         val deadlineEpochMs: Long,
+        /** Sudden death only: `you` | `opponent` (winner), `same_time` (both right, equal time), `none` (nobody right). */
+        val suddenDeathOutcome: String? = null,
     ) : ServerMessage
 
     @Serializable @SerialName("opponent.connection")
@@ -319,6 +321,11 @@ object Phases {
     const val ANSWER = "answer"
     const val RESULT = "result"
     const val FINISHED = "finished"
+}
+
+object SuddenDeathOutcomes {
+    const val SAME_TIME = "same_time"
+    const val NONE = "none"
 }
 
 object NextStep {

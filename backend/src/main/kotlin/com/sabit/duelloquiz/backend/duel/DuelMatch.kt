@@ -286,6 +286,7 @@ class DuelMatch(
                 bet3Left = seat.bet3Left(),
                 next = next,
                 deadlineEpochMs = resultDeadline,
+                suddenDeathOutcome = if (round.suddenDeath) suddenDeathOutcome(outcomes, seat.side) else null,
             )
             round.results[seat.side] = message
             emit(seat, message)
@@ -299,6 +300,16 @@ class DuelMatch(
             EndReasons.ABANDONED -> finish(MatchStatus.ABANDONED, EndReasons.ABANDONED, null, null, null)
             EndReasons.FORFEIT -> finish(MatchStatus.FINISHED, EndReasons.FORFEIT, winner, winner!!.other, FORFEIT_MISSED)
             else -> finish(MatchStatus.FINISHED, endReason, winner, null, null)
+        }
+    }
+
+    private fun suddenDeathOutcome(outcomes: Map<Side, Outcome>, viewer: Side): String {
+        val winner = suddenDeathWinner(outcomes)
+        return when {
+            winner == viewer -> "you"
+            winner != null -> Who.OPPONENT
+            outcomes.values.all { it.correct } -> SuddenDeathOutcomes.SAME_TIME
+            else -> SuddenDeathOutcomes.NONE
         }
     }
 
