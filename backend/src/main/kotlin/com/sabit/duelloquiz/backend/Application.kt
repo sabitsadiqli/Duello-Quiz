@@ -34,7 +34,6 @@ import com.sabit.duelloquiz.backend.user.UserService
 import com.sabit.duelloquiz.backend.user.userRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.authenticate
@@ -47,6 +46,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import org.koin.core.module.dsl.onClose
+import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.KoinIsolated
@@ -78,7 +79,8 @@ fun infrastructureModule(config: AppConfig) = module {
     single { config }
     single { config.quiz }
     single<Clock> { Clock.systemUTC() }
-    single { Db(Db.dataSource(config.db).also(Db::migrate)) }
+    // Closed by Koin when the application stops.
+    single { Db(Db.dataSource(config.db).also(Db::migrate)) } withOptions { onClose { it?.close() } }
     single { FirebaseHolder(createFirebaseAuth(config.firebase)) }
     single<TokenVerifier> { get<FirebaseHolder>().auth?.let(::FirebaseTokenVerifier) ?: RejectingTokenVerifier }
     single<AuthAccountDeleter> { get<FirebaseHolder>().auth?.let(::FirebaseAccountDeleter) ?: UnconfiguredAccountDeleter }
@@ -132,7 +134,6 @@ fun Application.configureApp() {
     }
 
     startSessionExpiryJob(get(), config.quiz.expirySweepIntervalMs)
-    monitor.subscribe(ApplicationStopped) { db.close() }
 }
 
 private fun Application.startSessionExpiryJob(service: QuizService, intervalMs: Long) {
