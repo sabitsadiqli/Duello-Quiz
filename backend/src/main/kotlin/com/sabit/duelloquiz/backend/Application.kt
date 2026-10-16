@@ -112,6 +112,7 @@ fun Application.configureApp() {
     install(ContentNegotiation) { json(ApiJson) }
     install(CallLogging) {
         level = Level.INFO
+        disableDefaultColors()
         filter { it.request.path() != "/health" }
     }
     configureErrorHandling()
