@@ -40,8 +40,12 @@ on weak or no network.
    3. **Profile header**, `space.lg` top: row with avatar `size.avatar`
       (`components.md` §13), `space.md`, column: display name `type.titleMedium`
       `scheme.onSurface` (1 line, ellipsis), `home_rating` `type.labelLarge`
-      `scheme.onSurfaceVariant` with tabular figures. Not clickable in the MVP.
-      Merged for TalkBack with `home_profile_cd`.
+      `scheme.onSurfaceVariant` with tabular figures; trailing chevron 24dp
+      `scheme.onSurfaceVariant`. **Clickable** (PROF-01, replaces the earlier "not
+      clickable"): the whole row (min height 56dp, `shape.medium`, ripple) opens the
+      profile (`profile.md`). Merged for TalkBack with `home_profile_cd`, role
+      Button, click label `profile_open_cd`. While the profile is still loading
+      (skeleton), the row is not clickable.
    4. **Duel entry card** (`components.md` §6), `space.xl` top — **only when the
       duel build flag is on** (OQ-020). When off, nothing is rendered and the next
       section moves up; no placeholder.
@@ -99,14 +103,15 @@ quiz loading screen (`quiz-question.md`, QUIZ-01 "loading after 1 s").
 
 ## Accessibility
 
-- Header announced as one element: "Aysel, reytinq 1000" (`home_profile_cd`).
+- Header announced as one element: "Aysel, reytinq 1000" (`home_profile_cd`),
+  role Button, "Profili aç" as the click action (`profile_open_cd`).
 - Each category card: role Button, label = category name + "10 sual".
 - Section header has heading semantics.
 
 ## String keys
 
 `app_name`, `home_settings_cd`, `common_offline_banner`, `home_rating`,
-`home_profile_cd`, `home_duel_title`, `home_duel_hint`, `home_duel_needs_internet`,
+`home_profile_cd`, `profile_open_cd`, `home_duel_title`, `home_duel_hint`, `home_duel_needs_internet`,
 `home_categories_title`, `home_category_question_count`,
 `home_category_loading_cd`, `home_categories_empty`, `common_refresh`,
 `home_categories_error`, `common_retry`, `home_offline_title`, `home_offline_body`,
