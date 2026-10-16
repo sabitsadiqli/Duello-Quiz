@@ -5,7 +5,7 @@ brand colours.
 
 ## Questions and decisions
 
-- **OQ-D15 — for Sabit: approve the mark.** Proposal below ("two speech bubbles":
+- **OQ-D15 — approved by Sabit (2026-10-16).** Proposal below ("two speech bubbles":
   a question between two players). It is a placeholder-quality geometric mark,
   good enough for the closed test and the Play listing; a professional logo can
   replace it later without code changes (same file names, same layers).

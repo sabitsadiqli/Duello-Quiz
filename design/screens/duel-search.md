@@ -9,7 +9,7 @@ Availability errors (upgrade, unavailable, connection failed): `duel-availabilit
 
 ## Questions and decisions
 
-- **OQ-D7 — proposal: rotating rule tips while searching.** Most closed-test
+- **OQ-D7 — decided by Sabit (2026-10-16): rotating rule tips while searching.** Most closed-test
   searches will time out (OQ-028). The wait is used to teach the rules: three
   short tips rotate every 10 s. If Sabit prefers a calmer screen, show only tip 1.
 - Assumption: the opponent count ("N players searching") is not shown (OQ-028 D
