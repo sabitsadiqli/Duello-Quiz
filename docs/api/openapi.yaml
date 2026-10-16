@@ -886,8 +886,8 @@ components:
       description: |
         One question file; authoritative schema:
         `content/schema/question.schema.json` (JSON Schema 2020-12).
-        Additional backend rule: `status = reviewed` requires a non-empty
-        `reviewedBy`.
+        Additional backend rules: `status = reviewed` requires a non-empty
+        `reviewedBy`; the four option texts (`az`) must be distinct.
       type: object
       required: [id, category, difficulty, status, text, options, sources, author]
       properties:
