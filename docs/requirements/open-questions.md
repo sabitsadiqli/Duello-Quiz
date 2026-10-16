@@ -9,7 +9,6 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-073 | What does the app do when a `queue.leave` reaches the server after the intro and gets `already_in_match {matchId}` (the user tapped "Ləğv et" but round 1 already started)? A. Rejoin and show the running match; the user can still leave through the DUEL-15 dialog. B. Send `match.leave` automatically (forfeit, Elo loss, without a confirmation). C. Go home silently; the missed-round rule ends the match (≈ 40 s, forfeit). | A: a forfeit always needs an explicit confirmation; the case is rare (the leave must arrive > 3 s after `match.found`). Blocks one criterion of DUEL-03 | Sabit |
 
 ## Decided by Sabit (2026-10-16) — backend foundation
 
@@ -91,6 +90,7 @@ ID: it is resolved by OQ-042 and `profile.md` PROF-06 now follows it.
 | OQ-070 | Scaling of the duel backend | Single backend replica; queue and matches in memory; a redeploy abandons running matches |
 | OQ-071 | Resuming after reconnect or process death | `hello.activeMatchId` and an automatic `match.state` on connect; the server's value wins over the app's saved `activeMatchId` |
 | OQ-072 | Is `answered_ms` clamped? | No: raw receive time − options send time; only the speed bonus clamps the receive time to the deadline |
+| OQ-073 | Late `queue.leave` after the intro gets `already_in_match {matchId}` | A: the app rejoins and shows the running match; leaving needs the DUEL-15 confirmation (a forfeit always needs an explicit confirmation). Decided by Sabit 2026-10-17 |
 
 ## Details (background for OQ-024 … OQ-039, all decided — see above)
 
