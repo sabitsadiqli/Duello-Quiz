@@ -6,6 +6,7 @@ import com.sabit.duelloquiz.core.auth.fake.InMemoryAuthRepository
 import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestUserPreferencesRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -13,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MainActivityViewModelTest {
 
     @get:Rule

@@ -8,6 +8,7 @@ import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestUserPreferencesRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -18,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
     @get:Rule

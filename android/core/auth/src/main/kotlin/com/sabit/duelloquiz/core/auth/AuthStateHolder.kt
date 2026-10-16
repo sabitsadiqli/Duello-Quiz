@@ -53,3 +53,9 @@ internal suspend fun <T> authCall(
 } catch (e: Exception) {
     AuthResult.Failure(mapError(e))
 }
+
+/** Drops the success value (e.g. Firebase's AuthResult or Void) of a call that only needs to succeed. */
+internal fun AuthResult<*>.ignoreValue(): AuthResult<Unit> = when (this) {
+    is AuthResult.Success -> AuthResult.Success(Unit)
+    is AuthResult.Failure -> this
+}

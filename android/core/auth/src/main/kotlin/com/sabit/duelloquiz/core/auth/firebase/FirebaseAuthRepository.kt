@@ -21,6 +21,7 @@ import com.sabit.duelloquiz.core.auth.AuthState
 import com.sabit.duelloquiz.core.auth.AuthStateHolder
 import com.sabit.duelloquiz.core.auth.SignOutReason
 import com.sabit.duelloquiz.core.auth.authCall
+import com.sabit.duelloquiz.core.auth.ignoreValue
 import com.sabit.duelloquiz.core.model.AuthProvider
 import com.sabit.duelloquiz.core.model.AuthUser
 import kotlinx.coroutines.flow.Flow
@@ -52,10 +53,7 @@ internal class FirebaseAuthRepository(
     }
 
     override suspend fun signInWithEmail(email: String, password: String): AuthResult<Unit> =
-        authCall(::mapError) {
-            auth.signInWithEmailAndPassword(email, password).await()
-            Unit
-        }
+        authCall(::mapError) { auth.signInWithEmailAndPassword(email, password).await() }.ignoreValue()
 
     override suspend fun signUpWithEmail(
         displayName: String,
@@ -69,13 +67,12 @@ internal class FirebaseAuthRepository(
         refreshUser()
     }
 
-    override suspend fun signInWithGoogle(idToken: String): AuthResult<Unit> = authCall(::mapError) {
-        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
-        Unit
-    }
+    override suspend fun signInWithGoogle(idToken: String): AuthResult<Unit> =
+        authCall(::mapError) { auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() }
+            .ignoreValue()
 
     override suspend fun sendPasswordReset(email: String): AuthResult<Unit> {
-        val result = authCall(::mapError) { auth.sendPasswordResetEmail(email).await(); Unit }
+        val result = authCall(::mapError) { auth.sendPasswordResetEmail(email).await() }.ignoreValue()
         // Same outcome whether or not the account exists (AUTH-04, no enumeration).
         return if (result is AuthResult.Failure && result.error == AuthError.InvalidCredentials) {
             AuthResult.Success(Unit)
@@ -86,7 +83,7 @@ internal class FirebaseAuthRepository(
 
     override suspend fun sendEmailVerification(): AuthResult<Unit> {
         val user = auth.currentUser ?: return AuthResult.Failure(AuthError.NotSignedIn)
-        return authCall(::mapError) { user.sendEmailVerification().await(); Unit }
+        return authCall(::mapError) { user.sendEmailVerification().await() }.ignoreValue()
     }
 
     override suspend fun reloadUser(): AuthResult<Unit> {

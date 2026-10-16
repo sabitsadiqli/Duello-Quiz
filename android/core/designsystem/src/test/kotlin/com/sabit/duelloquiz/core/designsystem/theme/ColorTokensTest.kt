@@ -79,7 +79,7 @@ class ColorTokensTest {
     private fun Color.toHex(): String = "%08X".format(toArgb())
 
     private fun findTokensFile(): File {
-        var dir: File? = File(System.getProperty("user.dir")).absoluteFile
+        var dir: File? = File(checkNotNull(System.getProperty("user.dir"))).absoluteFile
         while (dir != null) {
             val candidate = File(dir, "design/tokens.json")
             if (candidate.isFile) return candidate
