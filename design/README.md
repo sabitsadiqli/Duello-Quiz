@@ -21,16 +21,27 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/quiz-question.md` | Quiz loading + question screen + exit dialog (QUIZ-01 … QUIZ-04, QUIZ-07, QUIZ-08) |
 | `screens/quiz-result.md` | Result + wrong-answer review (QUIZ-05, QUIZ-06) |
 | `screens/settings.md` | Settings, delete account, licences (SET-01 … SET-05, AUTH-07) |
+| `screens/duel-search.md` | Duel search / queue, timeout, retry, leave (DUEL-02 … DUEL-04) |
+| `screens/duel-intro.md` | Match found + 3 s intro (DUEL-05) |
+| `screens/duel-match.md` | Match screen frame and the question, Əminlik and answer phases (DUEL-06 … DUEL-08, DUEL-12, DUEL-17) |
+| `screens/duel-reveal.md` | Result phase: simultaneous reveal (DUEL-09) |
+| `screens/duel-special-rounds.md` | Round 7 All-in and sudden death (DUEL-10, DUEL-11) |
+| `screens/duel-interruptions.md` | Disconnect overlays, rejoin, leave dialog, session replaced, match lost (DUEL-13 … DUEL-16) |
+| `screens/duel-result.md` | Match result + calibration card (DUEL-20 … DUEL-22) |
+| `screens/duel-availability.md` | Upgrade required, duel unavailable, connection failed (DUEL-01) |
+| `screens/profile.md` | Profile, match history, calibration stats, edit name (PROF-01 … PROF-08) |
+| `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon |
 
-Duel screens come later (build-order step 5). Their shared pieces already exist:
-`game.confidence*` colours, the Əminlik chip and the timer ring in `components.md`.
+Duel colours reuse existing roles (`game.confidence*`, `game.correct/wrong`,
+`scheme.primary` for self, `scheme.tertiary` for the opponent); duel timing lives
+in `motion.duel`.
 
 ## Design direction
 
 - **Primary: indigo blue** (`#4355B9` light / `#BAC3FF` dark): calm, "knowledge",
   readable, and far from the green/red used for correct/wrong. Secondary is a
-  neutral indigo-grey, tertiary a muted plum used only for the avatar fallback and
-  small accents. Neutrals carry a slight indigo tint.
+  neutral indigo-grey, tertiary a muted plum used for the avatar fallback, small
+  accents and, in the duel, as the opponent's accent (self = primary). Neutrals carry a slight indigo tint.
 - Game colours are separate roles so they never collide with brand colour:
   correct = green, wrong = red, timer warning = burnt orange, Əminlik 1/2/3 =
   increasing indigo intensity. No gold, no coins, no casino visuals.
@@ -94,7 +105,9 @@ Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
   adding it to light and dark and adding its pair to `tools/contrast.py`, then
   regenerating `contrast-report.md`.
 - String keys: `snake_case`, prefix by screen/area: `app_`, `common_`, `error_`,
-  `auth_`, `home_`, `quiz_`, `settings_` (later `duel_`). Suffix `_cd` for content
+  `auth_`, `home_`, `quiz_`, `settings_`, `duel_`, `profile_`. Keys never contain
+  "bet" even when the protocol code does (`bet_limit_reached` →
+  `error_confidence_limit_reached`). Suffix `_cd` for content
   descriptions, `_title`, `_body`, `_label`, `_supporting`, `_button`/`_confirm`
   for roles in a component.
 - Screen spec files: `screens/<screen>.md`, kebab-case.
