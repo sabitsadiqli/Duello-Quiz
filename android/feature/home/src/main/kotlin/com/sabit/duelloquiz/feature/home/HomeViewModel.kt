@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.auth.AuthError
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.auth.AuthResult
+import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
@@ -14,6 +15,7 @@ import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.data.repository.VerificationBannerRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.duel.ActiveDuelStore
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.AuthUser
 import com.sabit.duelloquiz.core.model.Category
@@ -91,10 +93,18 @@ data class HomeUiState(
     val verificationBanner: VerificationBannerUi? = null,
     /** Fixed session size shown on the cards ("10 sual", home.md assumption). */
     val questionsPerQuiz: Int = QUESTIONS_PER_QUIZ,
+    /** OQ-020: the duel entry card exists only when the build flag is on. */
+    val duelEnabled: Boolean = false,
 )
 
 sealed interface HomeAction {
     data object SettingsClicked : HomeAction
+
+    /** PROF-01: the header opens the profile. */
+    data object ProfileClicked : HomeAction
+
+    /** HOME-03: the duel entry card. */
+    data object DuelClicked : HomeAction
 
     /** Screen resumed: refresh in the background and reload an unverified user. */
     data object Resumed : HomeAction
@@ -116,10 +126,16 @@ enum class HomeMessage {
     CategoryNotPlayable,
     RateLimited,
     QuizInvalid,
+    DuelNeedsInternet,
+    DuelLeft,
 }
 
 sealed interface HomeEvent {
     data object NavigateToSettings : HomeEvent
+    data object NavigateToProfile : HomeEvent
+
+    /** [resume]: rejoin the saved running match after a process death (DUEL-16). */
+    data class NavigateToDuel(val resume: Boolean) : HomeEvent
 
     /** [sessionId] null: the start is still running and the quiz loading screen takes it over. */
     data class NavigateToQuiz(val categoryId: Int, val categoryName: String, val sessionId: String?) : HomeEvent
@@ -129,7 +145,7 @@ sealed interface HomeEvent {
 /**
  * Home (HOME-01 … HOME-06): profile header, cached category list with loading/empty/error/offline
  * states, starting a quiz with the 1 s hand-over to the loading screen, and the email
- * verification banner. The duel entry stays hidden until the duel ships (OQ-020).
+ * verification banner. The duel entry exists only behind the build flag (OQ-020).
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -140,6 +156,8 @@ class HomeViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     networkMonitor: NetworkMonitor,
     private val savedStateHandle: SavedStateHandle,
+    private val appConfig: AppConfig,
+    private val activeDuels: ActiveDuelStore,
 ) : ViewModel() {
 
     private data class ResendState(val isSending: Boolean = false, val countdownSeconds: Int = 0)
@@ -174,18 +192,25 @@ class HomeViewModel @Inject constructor(
         local,
     ) { (user, dismissed), profile, categories, online, state ->
         buildState(user, dismissed, profile, categories, online, state)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HomeUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HomeUiState(duelEnabled = appConfig.duelEnabled))
 
     init {
         announceVerification()
         observeConnection()
         observeNotices()
         refresh(userInitiated = false)
+        resumeDuel()
     }
 
     fun onAction(action: HomeAction) {
         when (action) {
             HomeAction.SettingsClicked -> _events.trySend(HomeEvent.NavigateToSettings)
+            HomeAction.ProfileClicked -> _events.trySend(HomeEvent.NavigateToProfile)
+            HomeAction.DuelClicked -> if (appConfig.duelEnabled) {
+                _events.trySend(
+                    if (isOnline.value) HomeEvent.NavigateToDuel(resume = false) else HomeEvent.ShowMessage(HomeMessage.DuelNeedsInternet),
+                )
+            }
             HomeAction.Resumed -> {
                 reloadIfUnverified()
                 refresh(userInitiated = false)
@@ -228,6 +253,7 @@ class HomeViewModel @Inject constructor(
             showOfflineBanner = offlineOverCache,
             isRefreshing = state.isPullRefreshing,
             startingCategoryId = state.startingCategoryId,
+            duelEnabled = appConfig.duelEnabled,
             verificationBanner = user
                 ?.takeIf { it.shouldShowBanner(dismissed) }
                 ?.let {
@@ -266,6 +292,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * DUEL-16: after a process death during a match the app reopens the duel on the saved match
+     * ("Oyuna qayıdırsan…"); checked once per home entry.
+     */
+    private fun resumeDuel() {
+        if (!appConfig.duelEnabled || savedStateHandle.get<Boolean>(KEY_DUEL_RESUME_CHECKED) == true) return
+        savedStateHandle[KEY_DUEL_RESUME_CHECKED] = true
+        viewModelScope.launch {
+            if (activeDuels.activeMatchId.first() != null) _events.send(HomeEvent.NavigateToDuel(resume = true))
+        }
+    }
+
     /** HOME-05: when the connection returns, refresh once automatically. */
     private fun observeConnection() {
         viewModelScope.launch {
@@ -285,6 +323,7 @@ class HomeViewModel @Inject constructor(
                 val message = when (HomeNotice.entries.firstOrNull { it.name == name }) {
                     HomeNotice.CategoryNotPlayable -> HomeMessage.CategoryNotPlayable
                     HomeNotice.QuizInvalid -> HomeMessage.QuizInvalid
+                    HomeNotice.DuelLeft -> HomeMessage.DuelLeft
                     HomeNotice.Generic, null -> HomeMessage.Generic
                 }
                 _events.send(HomeEvent.ShowMessage(message))
@@ -404,6 +443,7 @@ class HomeViewModel @Inject constructor(
         const val START_HANDOVER_MS = 1_000L
         private const val ONE_SECOND_MS = 1_000L
         private const val STOP_TIMEOUT_MS = 5_000L
+        private const val KEY_DUEL_RESUME_CHECKED = "duel_resume_checked"
     }
 }
 
