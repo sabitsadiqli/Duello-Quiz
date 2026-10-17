@@ -13,6 +13,7 @@ data class AppConfig(
     val displayNameBlocklistFile: String?,
     val importMaxBodyBytes: Long,
     val duel: DuelConfig = DuelConfig(),
+    val images: ImageConfig = ImageConfig(),
 ) {
     companion object {
         fun from(config: ApplicationConfig): AppConfig {
@@ -62,6 +63,19 @@ data class AppConfig(
                     heartbeatIntervalMs = long("duello.duel.heartbeatIntervalMs"),
                     heartbeatTimeoutMs = long("duello.duel.heartbeatTimeoutMs"),
                 ),
+                images = ImageConfig(
+                    maxUploadBytes = long("duello.images.maxUploadBytes"),
+                    maxSourcePixels = long("duello.images.maxSourcePixels"),
+                    maxLongSide = int("duello.images.maxLongSide"),
+                    thumbLongSide = int("duello.images.thumbLongSide"),
+                    quality = int("duello.images.quality"),
+                    thumbQuality = int("duello.images.thumbQuality"),
+                    minQuality = int("duello.images.minQuality"),
+                    qualityStep = int("duello.images.qualityStep"),
+                    targetBytes = int("duello.images.targetBytes"),
+                    thumbTargetBytes = int("duello.images.thumbTargetBytes"),
+                    parallelism = int("duello.images.parallelism"),
+                ),
             )
         }
     }
@@ -72,6 +86,27 @@ data class DbConfig(val url: String, val user: String, val password: String, val
 data class FirebaseConfig(val serviceAccountFile: String?, val projectId: String?)
 
 data class MediaConfig(val dir: String, val baseUrl: String)
+
+/** Image pipeline numbers (docs/mvp-spec.md §5); defaults = application.conf. */
+data class ImageConfig(
+    val maxUploadBytes: Long = 10L * 1024 * 1024,
+    val maxSourcePixels: Long = 100_000_000,
+    val maxLongSide: Int = 1024,
+    val thumbLongSide: Int = 400,
+    val quality: Int = 75,
+    val thumbQuality: Int = 70,
+    val minQuality: Int = 50,
+    val qualityStep: Int = 5,
+    val targetBytes: Int = 80_000,
+    val thumbTargetBytes: Int = 20_000,
+    val parallelism: Int = 1,
+) {
+    init {
+        require(thumbLongSide in 1..maxLongSide) { "thumbLongSide must be within 1..maxLongSide" }
+        require(minQuality in 1..minOf(quality, thumbQuality)) { "minQuality must not exceed the start qualities" }
+        require(qualityStep > 0 && parallelism > 0) { "qualityStep and parallelism must be positive" }
+    }
+}
 
 /**
  * Quiz numbers live here once (docs/requirements/quiz.md §3). The session deadline is

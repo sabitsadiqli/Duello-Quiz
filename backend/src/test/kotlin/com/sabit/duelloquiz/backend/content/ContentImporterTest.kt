@@ -1,15 +1,19 @@
 package com.sabit.duelloquiz.backend.content
 
 import com.sabit.duelloquiz.backend.common.db.CategoriesTable
+import com.sabit.duelloquiz.backend.common.db.ImagesTable
 import com.sabit.duelloquiz.backend.common.db.OptionsTable
 import com.sabit.duelloquiz.backend.common.db.QuestionsTable
 import com.sabit.duelloquiz.backend.testsupport.DbTest
+import com.sabit.duelloquiz.backend.testsupport.ImageFixtures
 import com.sabit.duelloquiz.backend.testsupport.MutableClock
 import com.sabit.duelloquiz.backend.testsupport.TestContent
+import com.sabit.duelloquiz.backend.testsupport.TestEnv
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -20,11 +24,14 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ContentImporterTest : DbTest() {
     private val clock = MutableClock()
-    private val importer by lazy { ContentImporter(db, ContentRepository(), clock) }
+    private val env by lazy { TestEnv(db, clock = clock) }
+    private val importer by lazy { env.importer }
     private val repoRoot: Path = Path.of(System.getProperty("duello.repoRoot") ?: "..")
 
     private fun questionRows() = runBlocking {
@@ -160,11 +167,104 @@ class ContentImporterTest : DbTest() {
         assertTrue("astronomiya" !in slugs)
     }
 
+    /** A content directory with question files and their originals under `images/`. */
+    private fun contentDir(questions: List<JsonObject>, images: Map<String, ByteArray>): Path {
+        val dir = Files.createTempDirectory("content")
+        Files.createDirectories(dir.resolve("questions/idman"))
+        Files.createDirectories(dir.resolve("images"))
+        questions.forEach { Files.writeString(dir.resolve("questions/idman/${it["id"]!!.jsonPrimitive.content}.json"), it.toString()) }
+        images.forEach { (name, bytes) -> Files.write(dir.resolve("images/$name"), bytes) }
+        return dir
+    }
+
+    private fun readDir(dir: Path) = ContentFiles.read(dir).copy(images = DirectoryImageSources(dir, env.config.images.maxUploadBytes))
+
+    private fun imageIdOf(externalId: String) = runBlocking {
+        db.tx { QuestionsTable.selectAll().where { QuestionsTable.externalId eq externalId }.single()[QuestionsTable.imageId] }
+    }
+
+    private fun mediaFiles(): Long {
+        val dir = Path.of(env.config.media.dir).resolve("questions")
+        return if (Files.exists(dir)) Files.list(dir).use { it.count() } else 0
+    }
+
     @Test
-    fun `questions with an image are imported without it and reported`() = runBlocking {
-        val report = importer.import(TestContent.input(listOf(TestContent.question("idman-0001", category = "idman", withImage = true))))
-        assertEquals(1, report.created)
-        assertEquals("image_not_imported", report.warnings.single().code)
+    fun `the CLI imports question images from the directory once and stays idempotent`() = runBlocking {
+        val questions = listOf(
+            TestContent.question("idman-0001", category = "idman", withImage = true),
+            TestContent.question("idman-0002", category = "idman", withImage = true),
+            TestContent.question("idman-0003", category = "idman"),
+        )
+        val jpeg = ImageFixtures.jpegWithExif(ImageFixtures.gradient(1600, 1200), orientation = 1)
+        // Two files with identical content share one stored image.
+        val dir = contentDir(questions, mapOf("idman-0001.jpg" to jpeg, "idman-0002.jpg" to jpeg))
+
+        val first = importer.import(readDir(dir))
+        assertEquals(3, first.created)
+        assertEquals(1, first.imagesCreated)
+        assertTrue(first.warnings.isEmpty(), first.warnings.toString())
+        val imageId = assertNotNull(imageIdOf("idman-0001"))
+        assertEquals(imageId, imageIdOf("idman-0002"))
+        assertNull(imageIdOf("idman-0003"))
+        assertEquals(2L, mediaFiles())
+        val row = db.tx { ImagesTable.selectAll().single() }
+        assertEquals(1024 to 768, row[ImagesTable.width] to row[ImagesTable.height])
+        assertEquals("CC BY 4.0" to "Test", row[ImagesTable.licence] to row[ImagesTable.author])
+        val alt = db.tx { QuestionsTable.selectAll().where { QuestionsTable.externalId eq "idman-0001" }.single()[QuestionsTable.imageAltI18n] }
+        assertEquals(mapOf("az" to "Şəkil"), alt)
+
+        // Running it again changes nothing and processes nothing.
+        val second = importer.import(readDir(dir))
+        assertEquals(0, second.created + second.updated + second.imagesCreated)
+        assertEquals(3, second.unchanged)
+        assertEquals(1L, db.tx { ImagesTable.selectAll().count() })
+        assertEquals(2L, mediaFiles())
+
+        // A new original under the same file name is an update with a new image.
+        Files.write(dir.resolve("images/idman-0001.jpg"), ImageFixtures.png(ImageFixtures.gradient(500, 400)))
+        val third = importer.import(readDir(dir))
+        assertEquals(1, third.updated)
+        assertEquals(1, third.imagesCreated)
+        assertTrue(imageIdOf("idman-0001") != imageId)
+        assertEquals(imageId, imageIdOf("idman-0002"))
+    }
+
+    @Test
+    fun `missing, unsupported and broken images reject the whole import`() = runBlocking {
+        val questions = listOf(
+            TestContent.question("idman-0001", category = "idman", withImage = true),
+            TestContent.question("idman-0002", category = "idman", withImage = true),
+            TestContent.question("idman-0003", category = "idman", withImage = true),
+            TestContent.question("idman-0004", category = "idman"),
+        )
+        val png = ImageFixtures.png(ImageFixtures.gradient(40, 40))
+        val dir = contentDir(
+            questions,
+            mapOf(
+                // idman-0001.jpg is missing
+                "idman-0002.jpg" to "not an image".toByteArray(),
+                "idman-0003.jpg" to png.copyOfRange(0, 8) + ByteArray(50) { 3 },
+            ),
+        )
+        val error = assertFailsWith<ImportValidationException> { importer.import(readDir(dir)) }
+        val codes = error.issues.map { it.ref to it.code }.toSet()
+        assertTrue("idman-0001" to "image_missing" in codes, codes.toString())
+        assertTrue("idman-0002" to "image_unsupported_type" in codes, codes.toString())
+        assertEquals(2, error.issues.size, "broken files are only processed once the rest is valid")
+        assertTrue(questionRows().isEmpty())
+
+        // Only the broken file left: found while processing; still nothing written.
+        Files.write(dir.resolve("images/idman-0001.jpg"), png)
+        Files.write(dir.resolve("images/idman-0002.jpg"), png)
+        val broken = assertFailsWith<ImportValidationException> { importer.import(readDir(dir)) }
+        assertEquals("idman-0003" to "image_unreadable", broken.issues.single().let { it.ref to it.code })
+        assertTrue(questionRows().isEmpty())
+        assertEquals(0L, db.tx { ImagesTable.selectAll().count() })
+        assertEquals(0L, mediaFiles(), "files of a rejected import are removed")
+
+        // Paths may not leave the import directory.
+        val escape = DirectoryImageSources(dir, 1_000_000).resolve("images/../../etc/passwd")
+        assertEquals(ImportImageCodes.MISSING, (escape as ImageSource.Rejected).code)
     }
 
     @Test

@@ -25,9 +25,9 @@ info:
       English hint for developers and logs and must never be shown to users.
     - Unknown JSON fields in requests are ignored; a missing or wrongly typed
       required field returns 400 `validation_failed`, malformed JSON 400 `bad_request`.
-    - Image URLs are `mediaBaseUrl + storage key` (immutable files served by Caddy).
-      In the MVP no question has an image yet, so `image` is always `null` until the
-      image pipeline ships; clients must already handle a non-null value.
+    - Image URLs are `mediaBaseUrl + storage key` (immutable files served by Caddy
+      with a one-year cache; a new upload always gets a new key). `image` is `null`
+      for questions without an image.
 
     ## Error codes
     | HTTP | code | When |
@@ -47,9 +47,11 @@ info:
     | 409 | `already_answered` | A different answer for this question is stored |
     | 409 | `session_expired` | Answer after the session deadline (server clock) |
     | 409 | `session_closed` | Answer for a finished or expired session |
-    | 413 | `payload_too_large` | Request body above the limit |
-    | 415 | `unsupported_media_type` | Body is not `application/json` |
+    | 413 | `payload_too_large` | Request body above the limit (image upload: 10 MB) |
+    | 415 | `unsupported_media_type` | Body is not `application/json` (image upload: not `multipart/form-data`, or the file is not a PNG/JPEG by its content) |
     | 422 | `import_invalid` | Import payload failed validation; nothing was written |
+    | 422 | `image_unreadable` | Uploaded image has PNG/JPEG magic bytes but cannot be decoded |
+    | 422 | `image_dimensions_too_large` | Uploaded image has more than 100 million pixels |
     | 429 | `rate_limited` | More than 30 quiz sessions started in the last hour (OQ-022) |
     | 500 | `internal_error` | Unexpected server error |
     | 502 | `auth_provider_error` | Firebase could not be reached while deleting the account |
@@ -398,6 +400,103 @@ paths:
         "404":
           $ref: "#/components/responses/SessionNotFound"
 
+  /v1/admin/images:
+    post:
+      tags: [admin]
+      operationId: uploadImage
+      summary: Upload a question image (admin only)
+      description: |
+        Requires the Firebase custom claim `admin=true` (else 403 `forbidden`).
+        Pipeline (`docs/mvp-spec.md` §5): the type is detected from the file
+        content (PNG or JPEG only; the declared type and file name are ignored),
+        EXIF orientation is applied, the long side is resized to at most 1024 px
+        (never upscaled), the image is encoded as lossy WebP (quality 75) with all
+        metadata (EXIF, GPS, XMP, ICC) dropped, a thumbnail with a long side of at
+        most 400 px is encoded at quality 70, and the dominant colour is computed.
+        Above the size targets (80 000 bytes main, 20 000 bytes thumbnail) the
+        quality is lowered in steps of 5 down to 50; this is reported in
+        `warnings` (`image_quality_reduced`, `image_over_target` if still above).
+        Files are stored as `questions/{id}.webp` and `questions/{id}_thumb.webp`
+        and served by Caddy under `mediaBaseUrl`; only metadata is in the database.
+        Processing runs on a bounded background dispatcher, the request waits for
+        the result. The same original (SHA-256 of the uploaded bytes) is stored
+        once: uploading it again returns 200 with the existing image, updates its
+        licence data and processes nothing.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, licence, author]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PNG or JPEG, at most 10 MB (10 485 760 bytes).
+                licence:
+                  type: string
+                  description: Free licence or own work, e.g. `CC BY 4.0`.
+                author:
+                  type: string
+                sourceUrl:
+                  type: string
+                  format: uri
+                  description: Optional absolute http(s) URL of the original.
+                alt:
+                  type: string
+                  description: |
+                    Optional default alt text as an i18n JSON object, e.g.
+                    `{"az": "Kür çayı"}`. A question's own `image.alt` wins.
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "201":
+          description: New image processed and stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminImage"
+        "200":
+          description: The same original was uploaded before; the existing image (`created = false`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminImage"
+        "400":
+          description: "`validation_failed` (missing `file`, `licence` or `author`; invalid `sourceUrl` or `alt`) or `bad_request` (malformed multipart)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "`forbidden`: the token has no `admin=true` claim."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: "`payload_too_large`: file above 10 MB."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "415":
+          description: "`unsupported_media_type`: not `multipart/form-data`, or the file content is not PNG/JPEG."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: "`image_unreadable` or `image_dimensions_too_large`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /v1/admin/questions/import:
     post:
       tags: [admin]
@@ -413,9 +512,12 @@ paths:
         (`questions.external_id`). Only `status = reviewed` questions are active;
         `draft` and `retired` are stored inactive. Option positions are shuffled
         deterministically per question id, so running the same import twice
-        changes nothing. Question images are not imported yet (image pipeline
-        pending): such questions are imported without an image and reported as a
-        warning. Body limit: 10 MB.
+        changes nothing. Question images: upload each original first with
+        `POST /v1/admin/images` and map every `image.file` to the returned id in
+        `images`; a question whose file is not mapped is an `image_missing` issue.
+        (The CLI import reads the files from the content directory instead.)
+        Licence, author and `sourceUrl` of the question file are written to the
+        image; the question's `image.alt` is its alt text. Body limit: 10 MB.
       requestBody:
         required: true
         content:
@@ -748,7 +850,48 @@ components:
           pattern: "^#[0-9A-Fa-f]{6}$"
         alt:
           type: [string, "null"]
-          description: Localized alt text for accessibility.
+          description: Localized alt text for accessibility (the question's own alt text, else the image's default).
+
+    AdminImage:
+      type: object
+      required: [id, url, thumbUrl, width, height, bytes, thumbWidth, thumbHeight, thumbBytes, quality, thumbQuality,
+                 dominantColor, licence, author, sourceUrl, alt, created, warnings]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Use this id in the `images` map of `POST /v1/admin/questions/import`.
+        url: { type: string, format: uri }
+        thumbUrl: { type: string, format: uri }
+        width: { type: integer }
+        height: { type: integer }
+        bytes: { type: integer, description: Size of the main WebP file }
+        thumbWidth: { type: [integer, "null"] }
+        thumbHeight: { type: [integer, "null"] }
+        thumbBytes: { type: [integer, "null"] }
+        quality: { type: [integer, "null"], description: WebP quality used for the main file }
+        thumbQuality: { type: [integer, "null"] }
+        dominantColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        licence: { type: [string, "null"] }
+        author: { type: [string, "null"] }
+        sourceUrl: { type: [string, "null"], format: uri }
+        alt:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/I18n"
+        created: { type: boolean }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: string
+                enum: [image_quality_reduced, image_over_target]
+              message: { type: string }
 
     SubmitAnswerRequest:
       type: object
@@ -855,6 +998,14 @@ components:
           description: Question files exactly as in `docs/mvp-spec.md` §8.
           items:
             $ref: "#/components/schemas/ImportQuestion"
+        images:
+          type: object
+          description: |
+            Maps each `image.file` used by the questions (e.g. `images/kur.jpg`) to
+            the `id` returned by `POST /v1/admin/images`.
+          additionalProperties:
+            type: string
+            format: uuid
 
     ImportCategory:
       type: object
@@ -913,6 +1064,9 @@ components:
           items: { type: string, format: uri }
         image:
           type: [object, "null"]
+          description: |
+            `null` or `{file, licence, author, sourceUrl?, alt}`; `file` matches
+            `^images/[a-z0-9._-]+\.(jpg|jpeg|png|webp)$`.
         author: { type: string }
         reviewedBy: { type: [string, "null"] }
 
@@ -936,7 +1090,11 @@ components:
         unchanged: { type: integer }
         active: { type: integer, description: Imported questions that are active (reviewed) }
         inactive: { type: integer, description: Imported questions stored inactive (draft/retired) }
+        imagesCreated:
+          type: integer
+          description: Images processed and stored by this run (known originals are reused, so a repeated import reports 0).
         warnings:
+          description: Non-fatal findings, e.g. `image_quality_reduced` or `image_over_target` from the image pipeline.
           type: array
           items:
             $ref: "#/components/schemas/ImportIssue"
@@ -964,6 +1122,8 @@ components:
           description: Question id, `category:<slug>` or the array index when no id is readable.
         code:
           type: string
-          examples: [invalid_field, unknown_category, duplicate_id, category_name_too_long, image_not_imported]
+          examples: [invalid_field, unknown_category, duplicate_id, category_name_too_long, image_missing,
+                     image_unsupported_type, image_too_large, image_unreadable, image_dimensions_too_large,
+                     image_quality_reduced, image_over_target]
         message:
           type: string

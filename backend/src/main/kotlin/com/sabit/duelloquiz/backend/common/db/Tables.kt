@@ -52,6 +52,14 @@ object ImagesTable : Table("images") {
     val licence = text("licence").nullable()
     val author = text("author").nullable()
     val createdAt = timestampWithTimeZone("created_at")
+    val thumbWidth = integer("thumb_width").nullable()
+    val thumbHeight = integer("thumb_height").nullable()
+    val thumbBytes = integer("thumb_bytes").nullable()
+    val quality = short("quality").nullable()
+    val thumbQuality = short("thumb_quality").nullable()
+    val sourceSha256 = varchar("source_sha256", 64).nullable()
+    val sourceUrl = text("source_url").nullable()
+    val altI18n = jsonb<Map<String, String>>("alt_i18n", jsonbFormat).nullable()
     override val primaryKey = PrimaryKey(id)
 }
 

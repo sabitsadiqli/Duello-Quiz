@@ -7,6 +7,7 @@ import com.sabit.duelloquiz.backend.common.AppConfig
 import com.sabit.duelloquiz.backend.common.Db
 import com.sabit.duelloquiz.backend.common.DbConfig
 import com.sabit.duelloquiz.backend.common.FirebaseConfig
+import com.sabit.duelloquiz.backend.common.ImageConfig
 import com.sabit.duelloquiz.backend.common.MediaConfig
 import com.sabit.duelloquiz.backend.common.QuizConfig
 import com.sabit.duelloquiz.backend.configureApp
@@ -18,6 +19,9 @@ import com.sabit.duelloquiz.backend.content.ImportReport
 import com.sabit.duelloquiz.backend.duel.DuelClock
 import com.sabit.duelloquiz.backend.duel.DuelConfig
 import com.sabit.duelloquiz.backend.featureModule
+import com.sabit.duelloquiz.backend.image.ImageProcessor
+import com.sabit.duelloquiz.backend.image.ImageRepository
+import com.sabit.duelloquiz.backend.image.ImageService
 import com.sabit.duelloquiz.backend.image.ImageStorage
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
 import io.ktor.client.HttpClient
@@ -41,7 +45,11 @@ import org.koin.ktor.plugin.KoinIsolated
 import java.nio.file.Files
 import java.time.Clock
 
-fun testConfig(quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0), duel: DuelConfig = DuelConfig()) = AppConfig(
+fun testConfig(
+    quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0),
+    duel: DuelConfig = DuelConfig(),
+    images: ImageConfig = ImageConfig(),
+) = AppConfig(
     db = DbConfig("unused", "unused", "", 1),
     firebase = FirebaseConfig(null, null),
     media = MediaConfig(Files.createTempDirectory("duello-media").toString(), "https://media.example.test/media"),
@@ -49,6 +57,7 @@ fun testConfig(quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0), duel: D
     displayNameBlocklistFile = null,
     importMaxBodyBytes = 1_000_000,
     duel = duel,
+    images = images,
 )
 
 /** Everything a route test can control. */
@@ -59,7 +68,10 @@ class TestEnv(
     val verifier: FakeTokenVerifier = FakeTokenVerifier(),
     val deleter: FakeAccountDeleter = FakeAccountDeleter(),
 ) {
-    val importer = ContentImporter(db, ContentRepository(), clock)
+    val storage = LocalDiskImageStorage(java.nio.file.Path.of(config.media.dir))
+    val imageRepository = ImageRepository()
+    val images = ImageService(db, imageRepository, storage, ImageProcessor(config.images), config.images, clock)
+    val importer = ContentImporter(db, ContentRepository(), clock, images, imageRepository)
 }
 
 /** Runs [block] against the real routes and services with fake auth and a virtual clock. */
@@ -77,7 +89,7 @@ fun withTestApp(env: TestEnv, block: suspend ApplicationTestBuilder.(HttpClient)
                     single { env.db }
                     single<TokenVerifier> { env.verifier }
                     single<AuthAccountDeleter> { env.deleter }
-                    single<ImageStorage> { LocalDiskImageStorage(java.nio.file.Path.of(env.config.media.dir)) }
+                    single<ImageStorage> { env.storage }
                 },
                 featureModule(env.config),
             )
