@@ -18,5 +18,7 @@ object AppModule {
         versionName = BuildConfig.VERSION_NAME,
         versionCode = BuildConfig.VERSION_CODE.toLong(),
         privacyPolicyUrl = BuildConfig.PRIVACY_POLICY_URL,
+        duelEnabled = BuildConfig.DUEL_ENABLED,
+        applicationId = BuildConfig.APPLICATION_ID,
     )
 }
