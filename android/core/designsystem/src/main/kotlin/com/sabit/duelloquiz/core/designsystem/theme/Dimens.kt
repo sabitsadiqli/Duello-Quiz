@@ -95,9 +95,6 @@ object Sizes {
     val stateIllustrationContainer = 120.dp
     val warningIcon = 48.dp
 
-    /** Glyph inside the placeholder logo mark (splashLogo circle). */
-    val logoGlyph = 56.dp
-
     /** components.md §11: loading state indicator. */
     val stateLoadingIndicator = 48.dp
 
