@@ -9,9 +9,9 @@ Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 - Assumption: the account section shows who is signed in (email for email accounts,
   Google display name + email for Google) as supporting text. Useful before
   "Hesabdan çıx" / "Hesabı sil". It is the user's own data on their own device.
-- Assumption: the licences screen uses the standard generated list (e.g.
-  AboutLibraries or `play-services-oss-licenses`); android-dev picks the library.
-  Only the title and theming are specified here.
+- Decided: the licences screen has its own spec, `licenses.md` (generated library
+  list rendered with our components, plus manual entries for Inter and Material
+  Symbols).
 
 ## Purpose
 
@@ -72,9 +72,7 @@ Second confirmation: dialog (`components.md` §9) title
 
 ## Layout — licences screen
 
-Top app bar with back icon and `settings_licenses_title` ("Lisenziyalar"; the long
-form truncates in an app bar, see `az.md`). List styled with the app theme
-(`scheme.surface`, `type.bodyLarge` names, `type.bodySmall` licence names).
+See `licenses.md`.
 
 ## Components
 

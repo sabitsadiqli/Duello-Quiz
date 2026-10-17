@@ -291,6 +291,17 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `settings_privacy_policy` | Məxfilik siyasəti | `row`, opens Custom Tab. |
 | `settings_licenses` | Açıq mənbə lisenziyaları | `row` (fits at 1.3, 24 chars). |
 | `settings_licenses_title` | Lisenziyalar | `bar` title of the licences screen (short form). |
+| `settings_licenses_intro` | Duello Quiz açıq mənbə layihələrdən istifadə edir. Onların müəlliflərinə təşəkkür edirik! | `wrap`. Intro on the licences list (`licenses.md`). |
+| `settings_licenses_section_assets` | Şriftlər və ikonlar | Section header (Inter, Material Symbols). |
+| `settings_licenses_section_libraries` | Kitabxanalar | Section header. |
+| `settings_licenses_item_supporting` | %1$s · %2$s | Row supporting text: `settings_licenses_version` · licence name(s). |
+| `settings_licenses_version` | Versiya %1$s | Version of a library ("Versiya 3.6.0"). |
+| `settings_licenses_unknown` | Lisenziya göstərilməyib | Row supporting text when the metadata has no licence. |
+| `settings_licenses_item_cd` | %1$s, versiya %2$s, lisenziya %3$s | Merged row for TalkBack. |
+| `settings_licenses_open_website` | Veb səhifə | `tbtn` with `open_in_new`, detail screen. |
+| `settings_licenses_open_license` | Lisenziya mətni | `tbtn`, opens the licence URL. |
+| `settings_licenses_text_missing` | Bu kitabxananın lisenziya mətni tətbiqə daxil edilməyib. Mətni linkdən oxuya bilərsən. | `wrap`. Detail, when the metadata has no text. |
+| `settings_licenses_error` | Kitabxanaların siyahısını göstərmək alınmadı. | `wrap`. Inline, list screen. |
 | `settings_link_open_failed` | Səhifəni açmaq mümkün olmadı. | Snackbar if no browser can open the link. |
 | `settings_delete_title` | Hesabı sil | Delete screen headline. |
 | `settings_delete_body` | Profilin, reytinqin və quiz nəticələrin həmişəlik silinəcək. Bu əməliyyatı geri qaytarmaq olmaz. | `wrap`. |
