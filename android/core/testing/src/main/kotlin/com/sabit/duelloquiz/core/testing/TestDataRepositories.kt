@@ -1,6 +1,9 @@
 package com.sabit.duelloquiz.core.testing
 
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
+import com.sabit.duelloquiz.core.data.repository.DuelHistoryRepository
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.QuizProgress
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
@@ -51,6 +54,50 @@ class TestProfileRepository(initial: Profile? = null) : ProfileRepository {
     }
 
     override fun clearPending() = Unit
+
+    /** Null: success with the new name on the current profile. */
+    var nextUpdate: DataResult<Profile>? = null
+    var updateGate: CompletableDeferred<Unit>? = null
+    val updatedNames = mutableListOf<String>()
+
+    override suspend fun updateDisplayName(displayName: String): DataResult<Profile> {
+        updatedNames += displayName
+        updateGate?.await()
+        val result = nextUpdate ?: DataResult.Success(
+            (state.value ?: Profile("p1", displayName, null, 1000)).copy(displayName = displayName),
+        )
+        if (result is DataResult.Success) state.value = result.value
+        return result
+    }
+}
+
+/** [DuelHistoryRepository] with scripted refresh results that publish to the flows on success. */
+class TestDuelHistoryRepository(
+    initialStats: DuelStats? = null,
+    initialMatches: List<MatchSummary>? = null,
+) : DuelHistoryRepository {
+    private val statsState = MutableStateFlow(initialStats)
+    private val matchesState = MutableStateFlow(initialMatches)
+    var nextStats: DataResult<DuelStats> = DataResult.Failure(DataError.Offline)
+    var nextMatches: DataResult<List<MatchSummary>> = DataResult.Failure(DataError.Offline)
+    var statsRefreshCount = 0
+        private set
+
+    override val stats: Flow<DuelStats?> = statsState
+    override val matches: Flow<List<MatchSummary>?> = matchesState
+
+    override suspend fun refreshStats(): DataResult<DuelStats> {
+        statsRefreshCount++
+        val result = nextStats
+        if (result is DataResult.Success) statsState.value = result.value
+        return result
+    }
+
+    override suspend fun refreshMatches(): DataResult<List<MatchSummary>> {
+        val result = nextMatches
+        if (result is DataResult.Success) matchesState.value = result.value
+        return result
+    }
 }
 
 /** [CategoryRepository]; set [refreshGate] to hold a refresh until the test completes it. */

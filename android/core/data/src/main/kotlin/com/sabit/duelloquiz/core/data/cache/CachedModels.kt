@@ -4,6 +4,12 @@ import com.sabit.duelloquiz.core.datastore.CachedEntry
 import com.sabit.duelloquiz.core.datastore.UserCacheDataSource
 import com.sabit.duelloquiz.core.model.Category
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
+import com.sabit.duelloquiz.core.model.duel.DuelRecord
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchEndReason
+import com.sabit.duelloquiz.core.model.duel.MatchOutcome
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.KSerializer
@@ -20,6 +26,32 @@ internal data class CachedProfile(
     val displayName: String,
     val avatarUrl: String? = null,
     val rating: Int,
+    val createdAtEpochMs: Long? = null,
+)
+
+@Serializable
+internal data class CachedStats(
+    val wins: Int,
+    val losses: Int,
+    val draws: Int,
+    val total: Int,
+    /** picks and correct per level 1, 2, 3. */
+    val picks: List<Int>,
+    val correct: List<Int>,
+)
+
+@Serializable
+internal data class CachedMatch(
+    val id: String,
+    val opponentName: String? = null,
+    val opponentAvatarUrl: String? = null,
+    val opponentDeleted: Boolean = false,
+    val outcome: String,
+    val endReason: String,
+    val scoreOwn: Int,
+    val scoreOpponent: Int,
+    val ratingChange: Int,
+    val finishedAtEpochMs: Long,
 )
 
 @Serializable
@@ -30,9 +62,38 @@ internal data class CachedCategory(
     val iconKey: String,
 )
 
-internal fun Profile.toCached() = CachedProfile(id, displayName, avatarUrl, rating)
+internal fun Profile.toCached() = CachedProfile(id, displayName, avatarUrl, rating, createdAtEpochMs)
 
-internal fun CachedProfile.toModel() = Profile(id, displayName, avatarUrl, rating)
+internal fun CachedProfile.toModel() = Profile(id, displayName, avatarUrl, rating, createdAtEpochMs)
+
+internal fun DuelStats.toCached() = CachedStats(
+    wins = record.wins,
+    losses = record.losses,
+    draws = record.draws,
+    total = record.total,
+    picks = calibration.map { it.picks },
+    correct = calibration.map { it.correct },
+)
+
+internal fun CachedStats.toModel() = DuelStats(
+    record = DuelRecord(wins, losses, draws, total),
+    calibration = picks.indices.map { CalibrationLevel(it + 1, picks[it], correct.getOrElse(it) { 0 }) },
+)
+
+internal fun MatchSummary.toCached() = CachedMatch(
+    id, opponentName, opponentAvatarUrl, opponentDeleted, outcome.name, endReason.name, scoreOwn, scoreOpponent,
+    ratingChange, finishedAtEpochMs,
+)
+
+/** Null for an entry written by another app version with unknown values. */
+internal fun CachedMatch.toModelOrNull(): MatchSummary? {
+    val outcome = MatchOutcome.entries.firstOrNull { it.name == outcome } ?: return null
+    val reason = MatchEndReason.entries.firstOrNull { it.name == endReason } ?: return null
+    return MatchSummary(
+        id, opponentName, opponentAvatarUrl, opponentDeleted, outcome, reason, scoreOwn, scoreOpponent, ratingChange,
+        finishedAtEpochMs,
+    )
+}
 
 internal fun Category.toCached() = CachedCategory(id, slug, name, iconKey)
 
@@ -43,9 +104,13 @@ internal val CacheJson = Json { ignoreUnknownKeys = true }
 internal object CacheKeys {
     const val PROFILE = "profile"
     const val CATEGORIES = "categories"
+    const val DUEL_STATS = "duel_stats"
+    const val DUEL_MATCHES = "duel_matches"
 }
 
 internal val CachedCategoryList: KSerializer<List<CachedCategory>> = ListSerializer(CachedCategory.serializer())
+
+internal val CachedMatchList: KSerializer<List<CachedMatch>> = ListSerializer(CachedMatch.serializer())
 
 /** The cached value of [key] if it belongs to the account [uid] emits, else null. */
 internal fun <T> UserCacheDataSource.readFor(

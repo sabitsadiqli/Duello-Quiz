@@ -1,5 +1,7 @@
 package com.sabit.duelloquiz.core.auth
 
+import java.text.Normalizer
+
 /** Client-side mirror of the account rules; the server and Firebase stay authoritative. */
 object AuthRules {
     /** OQ-018: at least 8 characters, no composition rules. */
@@ -42,8 +44,9 @@ object AuthValidator {
     fun validateNewPassword(password: String): PasswordError? =
         if (password.length < AuthRules.PASSWORD_MIN_LENGTH) PasswordError.TooShort else null
 
-    /** OQ-042: trimmed, inner runs of whitespace collapsed to one space. */
-    fun normalizeDisplayName(raw: String): String = raw.trim().replace(WHITESPACE_RUN, " ")
+    /** OQ-042 / PROF-06: Unicode NFC, trimmed, inner runs of whitespace collapsed to one space. */
+    fun normalizeDisplayName(raw: String): String =
+        Normalizer.normalize(raw, Normalizer.Form.NFC).trim().replace(WHITESPACE_RUN, " ")
 
     /** Length in Unicode code points after normalization (shown by the "7/20" counter). */
     fun displayNameLength(raw: String): Int {
