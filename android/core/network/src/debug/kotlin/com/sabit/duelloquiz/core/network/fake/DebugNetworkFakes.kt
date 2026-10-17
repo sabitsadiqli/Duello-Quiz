@@ -10,5 +10,6 @@ internal object DebugNetworkFakes {
     fun create(authRepository: AuthRepository, clock: WallClock): DuelloNetworkDataSource? =
         FakeDuelloNetworkDataSource(authRepository, clock)
 
-    fun createDuel(authRepository: AuthRepository, clock: WallClock): DuelSocketFactory? = null
+    fun createDuel(authRepository: AuthRepository, clock: WallClock): DuelSocketFactory? =
+        FakeDuelSocketFactory(authRepository, clock)
 }
