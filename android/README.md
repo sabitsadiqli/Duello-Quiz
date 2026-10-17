@@ -13,12 +13,14 @@ cd android && ./gradlew lint test assembleDebug
 :app ──► :feature:auth ─────┐
      ├─► :feature:home ─────┤
      ├─► :feature:quiz ─────┤
+     ├─► :feature:duel ─────┤
+     ├─► :feature:profile ──┤
      ├─► :feature:settings ─┤
      │                      ▼
      └─► :core:data ─► :core:network ─► :core:auth
-                   └─► :core:datastore
+         :core:duel ─┘ └─► :core:datastore
          :core:designsystem  :core:common  :core:model
-:core:testing (test-only: MainDispatcherRule, test repositories, Turbine, MockK)
+:core:testing (test-only: MainDispatcherRule, test repositories, fake duel server, Turbine, MockK)
 ```
 
 | Module | Content |
@@ -27,9 +29,12 @@ cd android && ./gradlew lint test assembleDebug
 | `:feature:auth` | Welcome, sign-in, sign-up (sends the name with `PATCH /v1/me`), password reset |
 | `:feature:home` | Profile header, category list with loading/empty/error/offline states, quiz start, verification banner |
 | `:feature:quiz` | Quiz loading and question screen, result, wrong-answer review |
+| `:feature:duel` | The whole duel flow as one destination: search, intro, question → Əminlik → answer → reveal, round 7 and sudden death, disconnect overlays, leave dialog, result with the Əminlik kartı, upgrade/unavailable/connection states |
+| `:feature:profile` | Name, avatar, rating, Qoşulub, duel record, Əminlik statistikası, last 20 matches, name editing |
 | `:feature:settings` | Theme, language, account (sign-out, delete via `DELETE /v1/me`), about |
-| `:core:network` | Ktor client (OkHttp) for `docs/api/openapi.yaml`: Bearer ID token with one refresh on 401, `Accept-Language`, error `code` mapping, DTOs (internal) → `:core:model` |
-| `:core:data` | Repositories (profile, categories, quiz sessions with the offline answer queue, account), per-account cache, `NetworkMonitor`, preferences |
+| `:core:network` | Ktor client (OkHttp) for `docs/api/openapi.yaml`: Bearer ID token with one refresh on 401, `Accept-Language`, error `code` mapping, DTOs (internal) → `:core:model`; the duel WebSocket (`/v1/duel?protocolVersion=1`) with its internal wire types and codec |
+| `:core:duel` | `DuelClient` for `docs/api/duel-protocol.md`: ping, 15 s silence watchdog, clock offset on the monotonic clock, `seq` ordering with `match.rejoin` on gaps, `hello`/`match.state` resync, close codes (no reconnect after 4000/4001), reconnect with backoff in a match, saved running match and "left while offline" marker |
+| `:core:data` | Repositories (profile incl. name editing, categories, quiz sessions with the offline answer queue, duel stats and history, account), per-account cache, `NetworkMonitor`, preferences |
 | `:core:auth` | `AuthRepository` (Firebase or in-memory fake), Credential Manager Google client, validation rules |
 | `:core:datastore` | Preferences DataStore (theme mode) and the per-account cache store |
 | `:core:designsystem` | Theme from `design/tokens.json`, Inter font, icons, components (option card, quiz timer, category card, state views), **all UI strings** |
@@ -81,6 +86,22 @@ it. With Firebase configured, debug builds talk to the real backend.
 Quiz timing follows the server: each question runs 20 s from the moment it is shown, capped by
 the session `deadlineEpochMs` converted with the clock offset measured from `serverNowEpochMs`
 at start; the client only renders `correct` / `correctOptionId`.
+
+## Duel
+
+The duel is behind the build flag `BuildConfig.DUEL_ENABLED` of `:app` (OQ-020): on in debug, off
+in release. Override for every build type with `-PduelEnabled=true|false`. With the flag off there
+is no duel card on home, no duel sections on the profile and no duel route at all.
+
+The socket belongs to the duel screen (`DuelViewModel`): it survives rotation, is closed when the
+user leaves the flow, keeps running in the background during a match and sends `queue.leave` when
+the app is backgrounded while searching. Countdowns are server deadlines minus the clock offset,
+read from `SystemClock.elapsedRealtime`; the client never computes points or correctness. After a
+process death home reopens the duel on the saved running match (`resume = true`).
+
+Without Firebase a debug build plays against `FakeDuelSocketFactory` (`core/network/src/debug`): an
+in-process server with a bot that picks Əminlik and answers at random times (about 70 % right); every
+fake question names its right answer. Finished bot matches feed the fake profile stats and history.
 
 ## Privacy policy URL
 
