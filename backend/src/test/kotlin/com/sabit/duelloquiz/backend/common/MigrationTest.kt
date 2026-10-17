@@ -92,4 +92,47 @@ class MigrationTest : DbTest() {
         }
         Unit
     }
+
+    @Test
+    fun `image metadata constraints (V3)`() = runBlocking {
+        suspend fun insert(id: Int, sha: String?, alt: String? = null, quality: Int = 75) = db.tx {
+            exec(
+                """
+                INSERT INTO images (storage_key, thumb_key, width, height, bytes, dominant_color, quality, source_sha256, alt_i18n)
+                VALUES ('questions/$id.webp', 'questions/${id}_thumb.webp', 10, 10, 100, '#A0B0C0', $quality,
+                        ${sha?.let { "'$it'" } ?: "NULL"}, ${alt?.let { "'$it'::jsonb" } ?: "NULL"})
+                """.trimIndent(),
+            )
+        }
+        val sha = "a".repeat(64)
+        insert(1, sha, """{"az":"Şəkil"}""")
+        insert(2, null)
+        insert(3, null)
+        // The same original is stored once.
+        assertFailsWith<Exception> { insert(4, sha) }
+        assertFailsWith<Exception> { insert(5, "XYZ") }
+        assertFailsWith<Exception> { insert(6, "b".repeat(64), """{"en":"x"}""") }
+        assertFailsWith<Exception> { insert(7, "c".repeat(64), quality = 0) }
+        Unit
+    }
+
+    @Test
+    fun `forfeit cause only on forfeits (V4)`() = runBlocking {
+        suspend fun insert(endReason: String, forfeitedSide: String?, cause: String?) = db.tx {
+            exec(
+                """
+                INSERT INTO matches (status, end_reason, forfeited_side, forfeit_cause, finished_at)
+                VALUES ('finished', '$endReason', ${forfeitedSide?.let { "'$it'" } ?: "NULL"},
+                        ${cause?.let { "'$it'" } ?: "NULL"}, now())
+                """.trimIndent(),
+            )
+        }
+        insert("forfeit", "a", "left")
+        insert("forfeit", "b", "missed_rounds")
+        insert("forfeit", "a", null)
+        insert("normal", null, null)
+        assertFailsWith<Exception> { insert("normal", null, "left") }
+        assertFailsWith<Exception> { insert("forfeit", "a", "rage_quit") }
+        Unit
+    }
 }
