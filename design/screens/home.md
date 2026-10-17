@@ -83,7 +83,7 @@ the list area unless stated.
 | Profile failed, categories ok | Cached profile, else skeleton stays and a small inline `common_retry` text button replaces the rating line | Normal |
 | Category start running | — | That card shows its loading state; all cards ignore taps (HOME-02). |
 | Start: not playable (409 `category_not_playable` / 404 `category_not_found`) | — | Snackbar `error_category_not_playable`; list refreshes. |
-| Start: rate limited (429) | — | Snackbar `error_rate_limited` (long). |
+| Start: rate limited (429) | — | Snackbar `error_rate_limited_retry` with the minutes from `Retry-After` (long); `error_rate_limited` if the header is missing or > 60 min. |
 | Start: offline / timeout / 5xx (fast failure) | — | Snackbar `error_offline` / `error_generic`. Slow starts move to the quiz loading screen (see `quiz-question.md`). |
 | Connection returns | Offline banner collapses, data refreshes once automatically. | Same. |
 
@@ -115,5 +115,5 @@ quiz loading screen (`quiz-question.md`, QUIZ-01 "loading after 1 s").
 `home_categories_title`, `home_category_question_count`,
 `home_category_loading_cd`, `home_categories_empty`, `common_refresh`,
 `home_categories_error`, `common_retry`, `home_offline_title`, `home_offline_body`,
-`home_quiz_needs_internet`, `error_category_not_playable`, `error_rate_limited`,
+`home_quiz_needs_internet`, `error_category_not_playable`, `error_rate_limited`, `error_rate_limited_retry`,
 `error_offline`, `error_generic`; banner keys in `email-verification-banner.md`.

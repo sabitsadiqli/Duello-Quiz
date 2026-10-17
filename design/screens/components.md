@@ -497,8 +497,10 @@ Material 3 `ListItem` (§14), three-line, not clickable (PROF-04):
   `game.correct` (win), `game.wrong` (loss), `scheme.onSurfaceVariant` (draw,
   abandoned); the rest `scheme.onSurfaceVariant`.
 - Supporting line 2 (optional): `type.labelMedium` `scheme.onSurfaceVariant`:
-  `profile_match_label_opponent_forfeit`, `profile_match_label_self_forfeit`,
-  `profile_match_label_sudden_death`.
+  `profile_match_label_opponent_left`, `profile_match_label_opponent_missed_rounds`,
+  `profile_match_label_self_left`, `profile_match_label_self_missed_rounds`
+  (fallbacks without a cause: `profile_match_label_opponent_forfeit`,
+  `profile_match_label_self_forfeit`), `profile_match_label_sudden_death`.
 - Trailing column, end-aligned: rating change `type.titleSmall` tabular
   (`game.correct` +, `game.wrong` −, `scheme.onSurfaceVariant` 0), date
   `type.labelSmall` `scheme.onSurfaceVariant`.

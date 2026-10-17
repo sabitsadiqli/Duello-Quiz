@@ -42,10 +42,22 @@ card) — then make the next match one tap away.
 
       | Outcome | Icon / colour | Headline | Reason line |
       | --- | --- | --- | --- |
-      | Win | `emoji_events`, `game.correct` | `duel_result_win` in `game.correct` | sudden death: `duel_result_reason_sudden_death_win`; opponent forfeit: `duel_result_reason_opponent_forfeit` |
-      | Loss | `flag`, `scheme.onSurfaceVariant` | `duel_result_loss` in `scheme.onSurface` (not red: no shaming) | sudden death: `_sudden_death_loss`; own forfeit: `_self_forfeit`; normal: `duel_result_message_loss` |
+      | Win | `emoji_events`, `game.correct` | `duel_result_win` in `game.correct` | sudden death: `duel_result_reason_sudden_death_win`; opponent forfeit: by `forfeitCause`, table below |
+      | Loss | `flag`, `scheme.onSurfaceVariant` | `duel_result_loss` in `scheme.onSurface` (not red: no shaming) | sudden death: `_sudden_death_loss`; own forfeit: by `forfeitCause`, table below; normal: `duel_result_message_loss` |
       | Draw | `handshake`, `scheme.primary` | `duel_result_draw` in `scheme.primary` | `duel_result_reason_draw` |
       | Abandoned | `block`, `scheme.onSurfaceVariant` | `duel_result_abandoned` in `scheme.onSurface` | `duel_result_reason_abandoned` |
+
+      Forfeit reason line (`endReason = forfeit`), chosen by `forfeitedBy` and
+      `forfeitCause` (OQ-068):
+
+      | `forfeitedBy` | `forfeitCause` | Reason line |
+      | --- | --- | --- |
+      | `opponent` | `left` | `duel_result_reason_opponent_left` |
+      | `opponent` | `missed_rounds` | `duel_result_reason_opponent_missed_rounds` |
+      | `opponent` | `null` (rebuilt after a restart) | `duel_result_reason_opponent_forfeit` |
+      | `self` | `missed_rounds` | `duel_result_reason_self_forfeit` |
+      | `self` | `left` | `duel_result_reason_self_left` (defensive; the leaver normally never sees this screen) |
+      | `self` | `null` | `duel_result_reason_self_forfeit_unknown` |
 
    2. `space.xl`, **score card**: `scheme.surfaceContainerLow`, `shape.large`,
       padding `space.lg`. Two equal columns with a centred ":" (`type.headlineMedium`
@@ -108,8 +120,11 @@ calibration card, filled and outlined buttons.
 | Normal win / loss | Hero + score + rating ± + Əminlik card. |
 | Sudden-death win / loss | Same, reason line `duel_result_reason_sudden_death_*`. |
 | Draw (after 3 sudden-death questions) | Draw hero, no winner pill, rating change may be ≠ 0 (Elo 0.5). |
-| Opponent forfeited | Win hero + `duel_result_reason_opponent_forfeit`; scores as stored (may show the winner behind on points — the reason line explains it). |
+| Opponent left (`match.leave` or account deletion) | Win hero + `duel_result_reason_opponent_left`; arrives without a final `round.result` (the match ends mid-round); scores as stored. |
+| Opponent missed 2 rounds | Reveal of that round, then win hero + `duel_result_reason_opponent_missed_rounds`; scores as stored (may show the winner behind on points — the reason line explains it). |
+| Opponent forfeited, cause unknown (`forfeitCause = null`) | Win hero + `duel_result_reason_opponent_forfeit`. |
 | Own forfeit (2 missed in a row) | Loss hero + `duel_result_reason_self_forfeit`; Əminlik card still shown for the rounds played. |
+| Own forfeit, cause `left` / unknown | Loss hero + `duel_result_reason_self_left` / `duel_result_reason_self_forfeit_unknown`. |
 | Abandoned | Abandoned hero + reason; rating line `duel_result_rating_unchanged`; no Əminlik card; buttons as usual. |
 | Calibration: a level unused | Row value "—", no bar. |
 | Calibration: no counted rounds at all (e.g. all defaulted) | All rows "—", hint `duel_calibration_hint_few_data`. |
@@ -143,7 +158,9 @@ calibration card, filled and outlined buttons.
 `common_close`, `duel_result_win`, `duel_result_loss`, `duel_result_draw`,
 `duel_result_abandoned`, `duel_result_reason_sudden_death_win`,
 `duel_result_reason_sudden_death_loss`, `duel_result_reason_draw`,
+`duel_result_reason_opponent_left`, `duel_result_reason_opponent_missed_rounds`,
 `duel_result_reason_opponent_forfeit`, `duel_result_reason_self_forfeit`,
+`duel_result_reason_self_left`, `duel_result_reason_self_forfeit_unknown`,
 `duel_result_reason_abandoned`, `duel_result_message_loss`,
 `duel_result_winner_badge`, `duel_you`, `duel_result_score_cd`, `home_rating`,
 `duel_delta_positive`, `duel_delta_negative`, `duel_delta_zero`,

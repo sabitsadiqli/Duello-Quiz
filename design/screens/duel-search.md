@@ -75,7 +75,9 @@ card, outlined / filled buttons, state view (`components.md` §11), snackbar.
 | Match found | `match.found` → intro (`duel-intro.md`), fade-through. |
 | Timeout (`queue.timeout`, or overtime + 5 s without any message) | Body replaced by a state view: icon `person_search` in the 120dp circle, title `duel_search_timeout_title`, body `duel_search_timeout_body`, filled button `duel_search_retry`, outlined button `common_home`. Pulse stops. |
 | Stopped (returned from background) | State view: icon `pause_circle`, `duel_search_stopped_title`, `duel_search_stopped_body`, `duel_search_retry`, `common_home`. (The client sent `queue.leave` on ON_STOP, DUEL-03.) |
-| Socket dropped while searching | State view: icon `cloud_off`, `duel_search_disconnected_title`, `duel_search_disconnected_body`, `duel_search_retry`, `common_home`. No automatic re-queue. |
+| Socket dropped while searching | State view: icon `cloud_off`, `duel_search_disconnected_title`, `duel_search_disconnected_body`,
+`duel_search_error_title`, `error_duel_internal`, `duel_search_retry`, `common_home`. No automatic re-queue. |
+| Server error on `queue.join` (`internal_error`) | State view: icon `error`, title `duel_search_error_title`, body `error_duel_internal`, `duel_search_retry`, `common_home`. Pulse stops. |
 | Opponent left during the intro (`match.cancelled`, OQ-037) | Back to Searching with the new 30 s deadline; snackbar `duel_search_opponent_left`. |
 | Cancelling ("Ləğv et", close, back) | Button in loading state for at most 1 s while `queue.leave` → `queue.left`; then home. If no answer in 1 s, go home anyway (the server drops the entry with the socket). |
 | Session replaced (`session_replaced`, DUEL-04) | Full-screen state view: icon `devices`, title `error_session_replaced`, single filled button `common_home`. No retry button (the other device owns the queue). |
@@ -113,5 +115,6 @@ card, outlined / filled buttons, state view (`components.md` §11), snackbar.
 `duel_search_cancel`, `duel_search_timeout_title`, `duel_search_timeout_body`,
 `duel_search_retry`, `duel_search_stopped_title`, `duel_search_stopped_body`,
 `duel_search_disconnected_title`, `duel_search_disconnected_body`,
+`duel_search_error_title`, `error_duel_internal`,
 `duel_search_opponent_left`, `home_rating`, `home_duel_needs_internet`,
 `common_home`, `common_loading`, `error_session_replaced`, `error_already_in_match`.

@@ -7,6 +7,20 @@ Terms follow `docs/requirements/glossary.md`; where this file decides final word
 that differs from a proposal in the requirements, this file wins (see "Changes
 against the requirement proposals" at the end).
 
+## Open questions
+
+- **OQ-D16 — profile history cannot tell "left" from "missed rounds" yet.**
+  `MatchSummary` in `docs/api/openapi.yaml` has `endReason` but no `forfeitCause`
+  (only `match.result` has it). Proposal: backend-dev adds nullable
+  `forfeitCause` (`missed_rounds` | `left`) to `MatchSummary`; until then the app
+  uses the generic labels `profile_match_label_opponent_forfeit` /
+  `profile_match_label_self_forfeit`. Decides: backend-dev / Sabit.
+- **OQ-D17 — what does the server store after `internal_error` on `round.bet` /
+  `round.answer`?** The copy below (`duel_confidence_send_failed`,
+  `duel_answer_send_failed`) assumes **nothing** was stored and a new pick or answer
+  may be sent before the deadline (like `invalid_bet` / `invalid_option`).
+  `duel-protocol.md` does not say. Decides: backend-dev.
+
 ## Tone: "sən"
 
 The app addresses the player with **sən** (informal "you") everywhere, including
@@ -86,7 +100,8 @@ it matters.
 | `error_generic` | Xəta baş verdi. Yenidən cəhd et. | `wrap`. 5xx, timeout (15 s), unknown codes. |
 | `error_sign_in_expired` | Giriş müddəti bitib. Yenidən daxil ol. | `wrap`. HTTP 401 after one refresh+retry (AUTH-09), snackbar on welcome. |
 | `error_category_not_playable` | Bu kateqoriya hazırda əlçatan deyil. | `wrap`. Server codes `category_not_playable` (409) and `category_not_found` (404). |
-| `error_rate_limited` | Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et. | `wrap`. Server code `rate_limited` (429, OQ-022). |
+| `error_rate_limited` | Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et. | `wrap`. Server code `rate_limited` (429, OQ-022) when `Retry-After` is missing, unreadable or more than 60 minutes. |
+| `error_rate_limited_retry` | Qısa müddətdə çox quiz başlatdın. %1$d dəqiqə sonra yenidən cəhd et. | `plurals` (one/other same text). `wrap`. 429 with `Retry-After` (seconds): minutes = ceil(seconds / 60), at least 1, at most 60. Used where `error_rate_limited` was used (home snackbar, quiz loading screen, quiz result). The text is not live-updated. |
 | `error_session_expired` | Quizin vaxtı bitdi. | `wrap`. Server code `session_expired` (409); client then opens the result screen. |
 | `error_session_closed` | Bu quiz artıq bitib. | `wrap`. Server code `session_closed` (409). |
 | `error_already_answered` | Bu suala artıq cavab vermisən. | `wrap`. Server code `already_answered` (409). Normally not shown: the client keeps the stored result. Log only, show if it ever surfaces. |
@@ -98,6 +113,7 @@ it matters.
 | `error_match_not_found` | Oyun texniki səbəbdən dayandırıldı. Reytinq dəyişmədi. | `wrap`. Code `match_not_found` on rejoin (server lost the match, OQ-033). |
 | `error_already_in_match` | Artıq oyundasan. Oyuna qayıdırsan… | `wrap`. Code `already_in_match`: the client rejoins at once; shown only as the loading caption while the snapshot arrives. |
 | `error_confidence_limit_reached` | Əminlik 3 limiti bitib. 1 və ya 2 seç. | `wrap`. Code `bet_limit_reached` (key renamed: keys never say "bet"). Only reachable if the client and server disagree; status line of the confidence panel. |
+| `error_duel_internal` | Serverdə xəta baş verdi. Yenidən cəhd et. | `wrap`. Duel code `internal_error` in answer to `queue.join` (search screen: error state with `duel_search_retry`), `match.rejoin` (state view with `common_retry` + `common_home`) or `match.leave` (snackbar on home; the leave is retried on the next connection like OQ-058). Round messages use `duel_confidence_send_failed` / `duel_answer_send_failed`. |
 | `error_display_name_not_allowed` | Bu ad istifadə edilə bilməz. | Field error. Code `display_name_not_allowed` (OQ-030) on sign-up and profile edit. |
 | `error_invalid_display_name` | Bu ad uyğun deyil. Ad 2–20 simvol olmalı, yalnız hərf, rəqəm, boşluq, «-», «'» və «.» ola bilər. | Field error. Code `invalid_display_name` (400) when the server rejects a name the client let through. |
 
@@ -108,6 +124,24 @@ surfaces where the user waits for something, fall back to `error_generic`):
 state). `too_late` is shown through the phase it belongs to:
 `duel_confidence_too_late` (confidence phase) or `duel_answer_too_late` (answer
 phase).
+
+Every duel error code and close code → what the user sees (`docs/api/duel-protocol.md`
+§1.2, §6):
+
+| Code | Reaches the user? | Copy |
+| --- | --- | --- |
+| HTTP 401 `unauthorized` (handshake, after one token refresh) | Yes | AUTH-09: sign-in screen + `error_sign_in_expired` |
+| Handshake 5xx / 15 s timeout | Yes | `duel_connect_failed_title` / `duel_connect_failed_body` (+ `error_duel_connect_failed` snackbar fallback) |
+| `upgrade_required` / close `4000` | Yes | `duel_upgrade_*` screen (`error_upgrade_required` fallback) |
+| `session_replaced` / close `4001` | Yes | `error_session_replaced` (state view F, `duel-interruptions.md`) |
+| `duel_unavailable` | Yes | `duel_unavailable_*` screen (`error_duel_unavailable` fallback) |
+| `already_in_match` | Yes, briefly | `error_already_in_match` as the loading caption, then the match (OQ-073) |
+| `bet_limit_reached` | Rarely | `error_confidence_limit_reached` |
+| `too_late` | Yes | `duel_confidence_too_late` / `duel_answer_too_late` |
+| `match_not_found` | Yes (rejoin) | `error_match_not_found`; after `match.leave` nothing extra (the user is already home) |
+| `internal_error` | Yes | `duel_confidence_send_failed` (`ref = round.bet`), `duel_answer_send_failed` (`ref = round.answer`), else `error_duel_internal` |
+| close `4002` / `4003` | Indirectly | Reconnect overlay `duel_reconnecting_*` (`duel-interruptions.md`) |
+| `bet_already_locked`, `invalid_bet`, `invalid_option`, `already_answered`, `phase_not_open`, `stale_round`, `bad_message` | No | Log only |
 
 ### auth_ (welcome, sign-in, sign-up, reset, verification)
 
@@ -306,6 +340,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_search_stopped_body` | Tətbiqdən çıxdığın üçün axtarışı dayandırdıq. | `wrap`. |
 | `duel_search_disconnected_title` | Bağlantı kəsildi | Socket dropped while searching. |
 | `duel_search_disconnected_body` | İnternet bağlantını yoxla və yenidən axtar. | `wrap`. |
+| `duel_search_error_title` | Axtarışı başlatmaq alınmadı | State title when `queue.join` gets `internal_error`; body `error_duel_internal`, action `duel_search_retry`. |
 | `duel_search_opponent_left` | Rəqib ayrıldı. Axtarış davam edir. | Snackbar when `match.cancelled` arrives during the intro (OQ-037); the search restarts with a new deadline. |
 
 #### Match intro (`duel-intro.md`)
@@ -355,9 +390,11 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_confidence_waiting_opponent` | Rəqib hələ seçir… | Status line after own lock while the opponent has not locked. |
 | `duel_confidence_defaulted` | Vaxt bitdi — Əminlik 1 | Status line when the server default applied. |
 | `duel_confidence_too_late` | Seçimin gec çatdı — Əminlik 1 sayıldı. | Code `too_late` in the confidence phase (OQ-036). |
+| `duel_confidence_send_failed` | Seçimin qeydə alınmadı. Vaxt varsa, yenidən seç. | `internal_error` with `ref = round.bet`; chips enabled again while time is left (OQ-D17). |
 | `duel_answer_your_confidence` | Əminliyin: %1$d | Content description of the own mini Əminlik badge in the player panel (answer phase). |
-| `duel_answer_sent` | Cavabın göndərildi. Nəticə hər ikiniz üçün eyni anda açılacaq. | Status line after the own answer, `wrap` (2 lines). |
+| `duel_answer_sent` | Cavabın göndərildi. Nəticə sənə və rəqibə eyni anda göstəriləcək. | Status line after the own answer, `wrap` (2 lines). "sən" tone: no plural "hər ikiniz". |
 | `duel_answer_too_late` | Cavabın gec çatdı — cavabsız sayıldı. | Code `too_late` in the answer phase. |
+| `duel_answer_send_failed` | Cavabın qeydə alınmadı. Vaxt varsa, yenidən seç. | `internal_error` with `ref = round.answer`; options enabled again while time is left, timer ring unfrozen (OQ-D17). |
 | `duel_option_picked_by_you_cd` | sən seçdin | Option state description in the result phase. |
 | `duel_option_picked_by_opponent_cd` | rəqib seçdi | Option state description in the result phase. |
 
@@ -377,7 +414,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_sudden_death_you_won` | Daha tez düzgün cavab verdin! | Status line, sudden-death result. |
 | `duel_sudden_death_opponent_won` | Rəqib daha tez düzgün cavab verdi. | Status line. |
 | `duel_sudden_death_none` | Heç kim düzgün cavab vermədi. Növbəti əlavə sual. | Status line (1st and 2nd question). |
-| `duel_sudden_death_same_time` | Eyni anda cavab verdiniz. Növbəti əlavə sual. | Identical `answered_ms`. |
+| `duel_sudden_death_same_time` | Rəqiblə eyni anda düzgün cavab verdin. Növbəti əlavə sual. | `suddenDeathOutcome = same_time` (both right, identical `answeredMs`). "sən" tone: no plural "verdiniz". |
 | `duel_sudden_death_none_last` | Heç kim düzgün cavab vermədi. Oyun heç-heçə bitdi. | 3rd question unresolved → draw. |
 
 #### Interruptions (`duel-interruptions.md`)
@@ -410,8 +447,12 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_result_reason_sudden_death_win` | Əlavə sualda qalib gəldin. | bodyLarge, `wrap`. |
 | `duel_result_reason_sudden_death_loss` | Əlavə sualda uduzdun. | |
 | `duel_result_reason_draw` | 3 əlavə sualdan sonra da hesab bərabər qaldı. | |
-| `duel_result_reason_opponent_forfeit` | Rəqib oyunu tərk etdi. Qələbə sənindir! | DUEL-14/15. |
-| `duel_result_reason_self_forfeit` | Ardıcıl 2 raund buraxdığın üçün oyun başa çatdı. | DUEL-14. |
+| `duel_result_reason_opponent_left` | Rəqib oyundan çıxdı. Qələbə sənindir! | `forfeitedBy = opponent`, `forfeitCause = left` (DUEL-15, also opponent's account deletion, OQ-069). |
+| `duel_result_reason_opponent_missed_rounds` | Rəqib ardıcıl 2 raund buraxdı. Qələbə sənindir! | `forfeitedBy = opponent`, `forfeitCause = missed_rounds` (DUEL-14). |
+| `duel_result_reason_opponent_forfeit` | Rəqib oyunu tərk etdi. Qələbə sənindir! | `forfeitedBy = opponent`, `forfeitCause = null` (result rebuilt after a restart). Fallback only. |
+| `duel_result_reason_self_forfeit` | Ardıcıl 2 raund buraxdığın üçün oyun başa çatdı. | `forfeitedBy = self`, `forfeitCause = missed_rounds` (DUEL-14). |
+| `duel_result_reason_self_left` | Oyundan çıxdın. Məğlubiyyət sayıldı. | `forfeitedBy = self`, `forfeitCause = left`. Defensive: the leaver normally goes home with `duel_left_snackbar` and never sees this screen (DUEL-15). |
+| `duel_result_reason_self_forfeit_unknown` | Oyun texniki məğlubiyyətlə bitdi. | `forfeitedBy = self`, `forfeitCause = null` (rebuilt after a restart). Fallback only. |
 | `duel_result_reason_abandoned` | Oyun texniki səbəbdən dayandırıldı. | OQ-033. |
 | `duel_result_message_loss` | Növbəti dəfə alınacaq. Əminlik kartına bax. | Normal loss only; encouraging. |
 | `duel_result_winner_badge` | Qalib | Pill on the winner's column. |
@@ -465,8 +506,12 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `profile_match_abandoned` | Ləğv edildi | History only (not in the record, OQ-026). |
 | `profile_matches_title` | Son oyunlar | Section header. |
 | `profile_match_supporting` | %1$s · %2$s | "Qələbə · 640 : 410" (`%2$s` = `duel_score_pair`). |
-| `profile_match_label_opponent_forfeit` | Rəqib tərk etdi | History label (forfeit win). |
-| `profile_match_label_self_forfeit` | Texniki məğlubiyyət | History label (forfeit loss). |
+| `profile_match_label_opponent_forfeit` | Rəqib tərk etdi | History label (forfeit win) when the cause is unknown (no `forfeitCause`, OQ-D16). |
+| `profile_match_label_self_forfeit` | Texniki məğlubiyyət | History label (forfeit loss) when the cause is unknown. |
+| `profile_match_label_opponent_left` | Rəqib oyundan çıxdı | Forfeit win, `forfeitCause = left`. Needs `forfeitCause` in `MatchSummary` (OQ-D16). |
+| `profile_match_label_opponent_missed_rounds` | Rəqib 2 raund buraxdı | Forfeit win, `forfeitCause = missed_rounds`. ~183dp at 1.3, fits the ~192dp line. |
+| `profile_match_label_self_left` | Oyundan çıxdın | Forfeit loss, `forfeitCause = left`. |
+| `profile_match_label_self_missed_rounds` | 2 raund buraxdın | Forfeit loss, `forfeitCause = missed_rounds`. |
 | `profile_match_label_sudden_death` | Əlavə sualda | History label (decided in sudden death). |
 | `profile_match_today` | bu gün | History date. |
 | `profile_match_yesterday` | dünən | History date. |
@@ -563,3 +608,14 @@ requirement files when convenient. Examples:
 | Qoşulub: Oktyabr 2026 | Qoşulub: oktyabr 2026 (month lowercase inside a sentence) |
 | Əminlik 3: 18 dəfə, 72% düzgün | Label "Əminlik 3" + value "18 dəfə · 72% düzgün" |
 | Ad 2–20 simvol olmalıdır. | Ad 2–20 simvol olmalıdır. (`auth_error_name_length`, unchanged) |
+
+### Tone audit (2026-10-17)
+
+Every string above was checked for the "sən" form (imperatives, possessives and
+verb endings in the 2nd person singular; no "siz" and no plural "-nız/-niz"
+addressing the player). Fixed in this audit:
+
+| Key | Before | After |
+| --- | --- | --- |
+| `duel_sudden_death_same_time` | Eyni anda cavab verdiniz. Növbəti əlavə sual. | Rəqiblə eyni anda düzgün cavab verdin. Növbəti əlavə sual. |
+| `duel_answer_sent` | Cavabın göndərildi. Nəticə hər ikiniz üçün eyni anda açılacaq. | Cavabın göndərildi. Nəticə sənə və rəqibə eyni anda göstəriləcək. |
