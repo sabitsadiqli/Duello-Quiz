@@ -122,7 +122,9 @@ views, snackbar (on home).
 | Opponent disconnected (≤ 10 s) | Opponent pill "Bağlantı kəsildi" | Banner D with countdown | Normal |
 | Opponent away (> 10 s) | Same | Banner `duel_opponent_still_away` | Normal |
 | Opponent returned | Pill "Qayıtdı" (2 s) | Info banner (2 s) | Normal |
-| Opponent forfeits (2 missed in a row) | — | Reveal of that round, then the result screen with `duel_result_reason_opponent_forfeit` | — |
+| Opponent forfeits (2 missed in a row) | — | Reveal of that round, then the result screen with `duel_result_reason_opponent_missed_rounds` | — |
+| Opponent leaves (`match.leave`, or deletes the account, OQ-069) | — | Result screen at once (no reveal) with `duel_result_reason_opponent_left` | — |
+| Rejoin answered with `internal_error` | — | State view: icon `error`, title `error_duel_internal`, tonal `common_retry` (sends `match.rejoin` again), text button `common_home` | — |
 | Both gone (abandoned) | — | Result screen "Ləğv edildi" if the player comes back before cleanup; else `match_not_found` → G | — |
 | Leave dialog open | Running | Dialog over everything | Dialog only |
 | Session replaced | — | State view F | Home only |
@@ -158,4 +160,5 @@ views, snackbar (on home).
 `duel_leave_title`, `duel_leave_body`, `duel_leave_confirm`, `common_continue`,
 `duel_left_snackbar`, `error_session_replaced`, `error_match_not_found`,
 `error_already_in_match`, `error_sign_in_expired`, `common_home`,
-`common_loading`, `duel_result_reason_opponent_forfeit`.
+`common_loading`, `duel_result_reason_opponent_missed_rounds`,
+`duel_result_reason_opponent_left`, `error_duel_internal`, `common_retry`.

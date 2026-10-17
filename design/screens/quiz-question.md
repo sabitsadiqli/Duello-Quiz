@@ -90,7 +90,7 @@ line, warning banner, exit dialog, state views.
 | Loading (> 1 s) | `quiz_loading`, spinner. Close/back returns home and cancels the request. |
 | Offline / timeout (15 s) / 5xx | Title `quiz_start_error`, body `error_offline` or `error_generic`, buttons `common_retry`, `common_back`. No partial quiz. |
 | Not playable (409/404) | Back to home with snackbar `error_category_not_playable` (home refreshes). |
-| Rate limited (429) | Title `quiz_start_error`, body `error_rate_limited`, only `common_back`. |
+| Rate limited (429) | Title `quiz_start_error`, body `error_rate_limited_retry` (minutes from `Retry-After`) or `error_rate_limited` (no usable header), only `common_back`. |
 | Success | Question 1 slides in. The first 2 images are prefetched; the screen does not wait for them. |
 
 ### Question screen (per question)
@@ -158,7 +158,7 @@ question timed out meanwhile, the timeout state is shown when the dialog closes.
 
 `quiz_close_cd`, `quiz_loading`, `quiz_start_error`, `common_retry`,
 `common_back`, `error_offline`, `error_generic`, `error_category_not_playable`,
-`error_rate_limited`, `quiz_progress`, `quiz_progress_cd`, `quiz_timer_cd`,
+`error_rate_limited`, `error_rate_limited_retry`, `quiz_progress`, `quiz_progress_cd`, `quiz_timer_cd`,
 `quiz_image_cd_fallback`, `quiz_image_failed`, `quiz_option_1_cd` …
 `quiz_option_4_cd`, `quiz_option_state_checking_cd`,
 `quiz_option_state_correct_cd`, `quiz_option_state_wrong_cd`,

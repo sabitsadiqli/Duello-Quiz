@@ -103,7 +103,7 @@ compact option rows (correct / wrong / not answered).
 | Review offline, no data | State view `error_offline` + `common_retry`. |
 | Empty review | Not reachable (entry hidden for 10 / 10). |
 | "Yenidən oyna" offline | Snackbar `home_quiz_needs_internet`; stays on result. |
-| "Yenidən oyna" rate limited / not playable | Snackbar `error_rate_limited` / `error_category_not_playable` (then home refreshes on return). |
+| "Yenidən oyna" rate limited / not playable | Snackbar `error_rate_limited_retry` (or `error_rate_limited` without a usable `Retry-After`) / `error_category_not_playable` (then home refreshes on return). |
 
 ## Interactions and animations
 
@@ -132,4 +132,4 @@ compact option rows (correct / wrong / not answered).
 `quiz_review_correct_answer`, `quiz_review_not_answered`,
 `quiz_review_explanation`, `quiz_image_cd_fallback`, `common_back`,
 `common_close`, `common_retry`, `error_generic`, `error_offline`,
-`home_quiz_needs_internet`, `error_rate_limited`, `error_category_not_playable`.
+`home_quiz_needs_internet`, `error_rate_limited`, `error_rate_limited_retry`, `error_category_not_playable`.

@@ -9,6 +9,12 @@ Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, 
 
 ## Questions and decisions
 
+- **OQ-D16 — open: forfeit cause in the history.** `MatchSummary` has no
+  `forfeitCause`, so a row cannot say whether someone left or missed 2 rounds.
+  Proposal: backend-dev adds nullable `forfeitCause` to `MatchSummary`. Until then
+  the generic labels are used (rows "cause unknown" below). Decides: backend-dev /
+  Sabit.
+
 - **OQ-D13 — resolved (OQ-042: code points, no emoji): how the name length is
   counted and whether emoji are allowed.** `profile.md` PROF-06 says "graphemes,
   an emoji is 1"; the later decision OQ-042 says "no emoji, length in code
@@ -86,8 +92,12 @@ At ≥ 600dp: content centred, max width `space.layout.maxContentWidth`.
 | Win | Opponent name | `profile_match_win` · "640 : 410" | — | "+16" (`game.correct`), date |
 | Loss | Opponent name | `profile_match_loss` · "410 : 640" | — | "−14" (`game.wrong`), date |
 | Draw | Opponent name | `profile_match_draw` · "500 : 500" | `profile_match_label_sudden_death` | "+3" / "−3" / "0", date |
-| Forfeit win | Opponent name | `profile_match_win` · score | `profile_match_label_opponent_forfeit` | "+…", date |
-| Forfeit loss | Opponent name | `profile_match_loss` · score | `profile_match_label_self_forfeit` | "−…", date |
+| Forfeit win, opponent left | Opponent name | `profile_match_win` · score | `profile_match_label_opponent_left` | "+…", date |
+| Forfeit win, opponent missed 2 rounds | Opponent name | `profile_match_win` · score | `profile_match_label_opponent_missed_rounds` | "+…", date |
+| Forfeit win, cause unknown | Opponent name | `profile_match_win` · score | `profile_match_label_opponent_forfeit` | "+…", date |
+| Forfeit loss, self left | Opponent name | `profile_match_loss` · score | `profile_match_label_self_left` | "−…", date |
+| Forfeit loss, self missed 2 rounds | Opponent name | `profile_match_loss` · score | `profile_match_label_self_missed_rounds` | "−…", date |
+| Forfeit loss, cause unknown | Opponent name | `profile_match_loss` · score | `profile_match_label_self_forfeit` | "−…", date |
 | Decided in sudden death | Opponent name | result · score | `profile_match_label_sudden_death` | delta, date |
 | Abandoned | Opponent name | `profile_match_abandoned` · score | — | "0" (`scheme.onSurfaceVariant`), date |
 | Opponent deleted | `common_deleted_player`, `person_off` avatar | as above | as above | as above |
@@ -194,7 +204,9 @@ sign-up).
 `duel_calibration_hint_neutral`, `profile_matches_title`,
 `profile_match_supporting`, `duel_score_pair`, `duel_delta_positive`,
 `duel_delta_negative`, `duel_delta_zero`, `profile_match_label_opponent_forfeit`,
-`profile_match_label_self_forfeit`, `profile_match_label_sudden_death`,
+`profile_match_label_self_forfeit`, `profile_match_label_opponent_left`,
+`profile_match_label_opponent_missed_rounds`, `profile_match_label_self_left`,
+`profile_match_label_self_missed_rounds`, `profile_match_label_sudden_death`,
 `profile_match_today`, `profile_match_yesterday`, `profile_match_date`,
 `profile_match_date_year`, `profile_match_cd`, `common_deleted_player`,
 `profile_empty_title`, `profile_empty_body`, `profile_empty_cta`,

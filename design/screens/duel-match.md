@@ -11,6 +11,11 @@ Tokens: `design/tokens.json` (`motion.duel`). Components: `components.md`
 
 ## Questions and decisions
 
+- **OQ-D17 — open: `internal_error` on `round.bet` / `round.answer`.** The
+  protocol does not say whether anything was stored. This spec assumes nothing was
+  stored and lets the player pick or answer again before the deadline (states
+  "Not stored" below). Decides: backend-dev.
+
 - **OQ-D8 — resolved (OQ-056): the start of the Əminlik phase.** The server sends
   an explicit `round.confidence {deadlineEpochMs, bet3Left}` message
   (`docs/api/duel-protocol.md`); the UI switches to the Əminlik phase on it. Not sent
@@ -143,6 +148,7 @@ line, banners.
 | Both locked | — | Phase ends early (OQ-035): the options arrive; no extra UI | — | — |
 | Defaulted (deadline passed, nothing valid sent) | Chip 1 = Defaulted, others disabled | `duel_confidence_defaulted` | `duel_status_locked_self` (1) | 0 |
 | Too late (`too_late`) | Tapped chip loses its ring; chip 1 = Defaulted | `duel_confidence_too_late` | 1 | 0 |
+| Not stored (`internal_error`, `ref = round.bet`, OQ-D17) | All enabled again while time is left (chip 3 per remaining uses) | `duel_confidence_send_failed` | empty | Running |
 | Limit (`bet_limit_reached`, client/server disagree) | Chip 3 disabled; 1 and 2 enabled again if time is left | `error_confidence_limit_reached` | empty | Running |
 | No uses of 3 left | Chip 3 Disabled (limit), no badge | caption `duel_confidence_three_none` | — | — |
 | Sudden death | No Əminlik phase at all (`duel-special-rounds.md`) | | | |
@@ -158,6 +164,7 @@ arrives (DUEL-07: a tap that arrives late is shown as Əminlik 1 in the reveal).
 | Tapped | Tapped = Selected (pending) — **stays pending until the result phase** (no correct/wrong, DUEL-08); others Disabled | `duel_answer_sent` | Frozen (`scheme.onSurfaceVariant`) at the tap value: the countdown stops for this player |
 | Own countdown reached 0 without a tap | All Disabled | `quiz_timeout` | "0" in `game.timerWarning`. The client sends nothing (server resolves the timeout). |
 | Too late (`too_late`) | Tapped card returns to Disabled | `duel_answer_too_late` | 0 |
+| Not stored (`internal_error`, `ref = round.answer`, OQ-D17) | All enabled again while time is left | `duel_answer_send_failed` | Unfrozen, running to the server deadline |
 | Both answered | Phase ends early (OQ-035): `round.result` arrives → reveal | | |
 | Options arrive late (stall) | Shown with the remaining time only (may be 0 → disabled at once) | | |
 
@@ -230,5 +237,6 @@ arrives (DUEL-07: a tap that arrives late is shown as Əminlik 1 in the reveal).
 `duel_confidence_waiting_opponent`, `duel_confidence_defaulted`,
 `duel_confidence_too_late`, `error_confidence_limit_reached`,
 `duel_answer_your_confidence`, `duel_answer_sent`, `duel_answer_too_late`,
+`duel_confidence_send_failed`, `duel_answer_send_failed`,
 `quiz_timeout`, `quiz_timer_cd`, `quiz_image_cd_fallback`, `quiz_image_failed`,
 `quiz_option_1_cd` … `quiz_option_4_cd`, `quiz_option_state_checking_cd`.
