@@ -99,6 +99,10 @@ dependencies {
     // Coil 3 singleton ImageLoader (disk cache); OkHttp fetcher for http(s) image URLs.
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Firebase Analytics (versions from the BoM). Collects nothing until google-services.json
+    // is present; analytics events from duel.md §5 / profile.md §5 come later.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
     testImplementation(project(":core:testing"))
 
