@@ -26,6 +26,9 @@ class FakeDuelServer : DuelSocketFactory {
     val openFailures = ArrayDeque<DuelConnectError>()
     var onOpen: (FakeDuelSocket) -> Unit = {}
 
+    /** When set, every `ping` is answered with a `pong` carrying this server time. */
+    var autoPong: (() -> Long)? = null
+
     val openCount: Int get() = sockets.size + failedOpens
     private var failedOpens = 0
 
@@ -41,7 +44,7 @@ class FakeDuelServer : DuelSocketFactory {
             failedOpens++
             return DuelOpenResult.Failed(it)
         }
-        val socket = FakeDuelSocket()
+        val socket = FakeDuelSocket(autoPong)
         sockets += socket
         onOpen(socket)
         return DuelOpenResult.Opened(socket)
@@ -52,7 +55,7 @@ class FakeDuelServer : DuelSocketFactory {
         get() = sockets.flatMap { it.sent }.filter { it != DuelClientMessage.Ping }
 }
 
-class FakeDuelSocket : DuelSocket {
+class FakeDuelSocket(private val autoPong: (() -> Long)? = null) : DuelSocket {
     private val channel = Channel<DuelInbound>(Channel.UNLIMITED)
     override val incoming: ReceiveChannel<DuelInbound> = channel
 
@@ -81,6 +84,7 @@ class FakeDuelSocket : DuelSocket {
     override suspend fun send(message: DuelClientMessage): Boolean {
         if (!isOpen) return false
         sent += message
+        if (message == DuelClientMessage.Ping) autoPong?.let { emit(DuelServerMessage.Pong(0, it())) }
         return true
     }
 
