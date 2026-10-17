@@ -19,9 +19,9 @@ Package by feature under `src/main/kotlin/com/sabit/duelloquiz/backend/`
 | `user` | `GET/PATCH/DELETE /v1/me`, `/v1/me/stats`, `/v1/me/matches`; display-name rules and blocklist |
 | `category` | `GET /v1/categories` (only playable categories) |
 | `quiz` | Quiz sessions, answers, finish; deadline, rate limit (`RateLimiter`), expiry job |
-| `content` | `ContentImporter` (admin endpoint + CLI) |
+| `content` | `ContentImporter` (admin endpoint + CLI), image sources of an import (`ImageSources.kt`) |
 | `duel` | `GET /v1/duel` WebSocket (`docs/api/duel-protocol.md`): `DuelService` (sessions, queue, rejoin), `DuelMatch` (one coroutine per match, server timers), `MatchmakingQueue` (in-memory FIFO), `DbDuelStore` (rounds, results, Elo) |
-| `image` | `ImageStorage` interface + `LocalDiskImageStorage`, `MediaUrls` (processing pipeline comes later) |
+| `image` | Pipeline: `ImageProcessor` (decode, resize, WebP, dominant colour), `ImageService` (bounded dispatcher, dedupe, storage), `ImageRepository`, `POST /v1/admin/images`; `ImageStorage` interface + `LocalDiskImageStorage`, `MediaUrls` |
 | `common` | Config, errors, i18n, database, Exposed table mappings |
 
 Database schema: Flyway migrations in `src/main/resources/db/migration/`. Never edit
@@ -58,11 +58,13 @@ The server applies the Flyway migrations at startup. Without
 | `DB_MAX_POOL_SIZE` | `10` | HikariCP pool size |
 | `FIREBASE_SERVICE_ACCOUNT_FILE` | empty | Path to the Firebase Admin service-account JSON (secret file, never in git) |
 | `FIREBASE_PROJECT_ID` | from the service account | Firebase project id |
-| `MEDIA_DIR` | `build/media` | Root of `LocalDiskImageStorage` (Docker volume `media`) |
+| `MEDIA_DIR` | `build/media` | Root of `LocalDiskImageStorage` (Docker volume `media`); also used by the import CLI |
 | `MEDIA_BASE_URL` | `http://localhost:8080/media` | Public base URL of the media files (served by Caddy) |
 | `DISPLAY_NAME_BLOCKLIST_FILE` | empty | Private display-name blocklist (OQ-030), one term per line |
 | `LOG_LEVEL` | `INFO` | Root log level (logs are JSON on stdout) |
 
+Image numbers (10 MB upload limit, 1024/400 px, quality 75/70 down to 50, targets
+80 000/20 000 bytes, 1 image processed at a time) live in the `duello.images` block.
 Game numbers (10 questions, 20 s, 1.5 s reveal, 30 s grace → 245 s deadline, 30
 sessions per hour) live once in the `duello.quiz` block of `application.conf`.
 Duel numbers (phase lengths, 250 ms grace, 30 s queue, Əminlik 3 limit, Elo K) live
@@ -76,7 +78,12 @@ Format: `docs/mvp-spec.md` §8 and `content/schema/question.schema.json`. The im
 validates everything first and writes nothing if any file is invalid; it upserts by
 question `id` (`questions.external_id`) and category `slug`, activates only
 `status = reviewed` (which also needs `reviewedBy`), and running it twice changes
-nothing. Question images are not imported yet (reported as `image_not_imported`).
+nothing. Question images (`image.file`, e.g. `images/kur.jpg`) go through the image
+pipeline (below); a missing, unsupported or broken image rejects the whole import. An
+original is processed once: the importer and the upload endpoint recognise it by its
+SHA-256, so a second run processes nothing, and a new file under the same name is an
+update with a new image. Licence, author and `sourceUrl` from the question file are
+written to the image row; `image.alt` is the question's alt text.
 
 A content directory is read like this:
 - `<dir>/categories.json` (optional): array of
@@ -85,8 +92,9 @@ A content directory is read like this:
 - Question files: every `*.json` under `<dir>/questions/` if it exists, else under
   `<dir>`.
 
-CLI (same database variables as the server; exit code 0 = imported, 1 = invalid,
-2 = usage/runtime error):
+CLI (same database and `MEDIA_DIR` variables as the server; `image.file` is read
+relative to the content directory; exit code 0 = imported, 1 = invalid, 2 =
+usage/runtime error):
 
 ```sh
 cd backend
@@ -96,16 +104,58 @@ cd backend
 bin/duello-backend import /path/to/content
 ```
 
-Admin endpoint (token with the custom claim `admin=true`):
+Admin endpoints (token with the custom claim `admin=true`). Questions with an image:
+upload each original first, then map its `image.file` to the returned `id`:
 
 ```sh
+curl -X POST http://localhost:8080/v1/admin/images \
+  -H "Authorization: Bearer $ADMIN_ID_TOKEN" \
+  -F file=@content/bank/images/kur.jpg -F licence="CC BY 4.0" -F author="..." \
+  -F sourceUrl="https://commons.wikimedia.org/..." -F 'alt={"az": "Kür çayı"}'
+# → 201 {"id": "...", "url": ".../media/questions/<id>.webp", "quality": 75, "warnings": [], ...}
+
 curl -X POST http://localhost:8080/v1/admin/questions/import \
   -H "Authorization: Bearer $ADMIN_ID_TOKEN" -H "Content-Type: application/json" \
-  -d '{"categories": [], "questions": [ ...question files... ]}'
+  -d '{"categories": [], "questions": [ ...question files... ],
+       "images": {"images/kur.jpg": "<id from the upload>"}}'
 ```
 
 Set the admin claim once with the Firebase Admin SDK (e.g. a small script with the
 service account): `auth.setCustomUserClaims(uid, {admin: true})`.
+
+## Images
+
+Pipeline (`docs/mvp-spec.md` §5), used by `POST /v1/admin/images` and the importer:
+
+1. Type by content (magic bytes): the upload takes PNG/JPEG, the importer also WebP
+   (the question schema allows `.webp` originals). Max 10 MB; more than 100 million
+   pixels is rejected from the header before decoding; large sources are subsampled
+   while decoding so memory stays bounded.
+2. EXIF orientation is applied (phones store rotated photos), then only the pixels
+   are kept: EXIF, GPS, XMP and ICC metadata never reach the output.
+3. Long side ≤ 1024 px (never upscaled; stepwise halving + bilinear), lossy WebP
+   quality 75; thumbnail long side ≤ 400 px, quality 70. Above 80 000 / 20 000 bytes
+   the quality drops in steps of 5 down to 50; that and a still-too-large result are
+   returned as warnings (`image_quality_reduced`, `image_over_target`) and logged.
+4. Dominant colour: most frequent 4-bit-per-channel bucket of a 64 px copy
+   (transparent pixels ignored), as `#RRGGBB`.
+5. Files go through `ImageStorage` as `questions/{uuid}.webp` and
+   `questions/{uuid}_thumb.webp` (atomic temp file + rename); `images` keeps only
+   metadata (size, quality, colour, source hash, licence, author, source URL,
+   default alt). Clients get `mediaBaseUrl + key`.
+
+Processing runs on `Dispatchers.Default.limitedParallelism(duello.images.parallelism)`,
+never on a request thread; the upload request waits for its result.
+
+**Encoder:** `com.github.usefulness:webp-imageio` (Apache-2.0), an ImageIO plugin that
+bundles libwebp for Linux x86_64/aarch64, macOS and Windows. No system package or
+`cwebp` binary is needed. Runtime requirements for the container (devops):
+- a **glibc** base image (e.g. `eclipse-temurin:21-jre`, Ubuntu); Alpine/musl does
+  not work with the bundled library;
+- a writable `java.io.tmpdir` (the library extracts its `.so` there at first use);
+  with a read-only root filesystem mount a tmpfs at `/tmp`;
+- `-Djava.awt.headless=true` (set by `applicationDefaultJvmArgs` in the start script);
+  the JRE needs no fonts or X libraries for this.
 
 ## Tests
 
@@ -123,5 +173,10 @@ service account): `auth.setCustomUserClaims(uid, {admin: true})`.
   `TEST_DB_URL` (+ `TEST_DB_USER`, `TEST_DB_PASSWORD`) to use an existing server
   (the tests drop and recreate the schema). Without either they are skipped;
   CI sets `REQUIRE_DB_TESTS=true` so they can never be skipped silently there.
+- Image tests generate their PNG/JPEG fixtures in code (`ImageFixtures`, including a
+  JPEG with an EXIF block): `ImageProcessorTest` (resize, no upscale, metadata
+  stripped, orientation, sizes, quality steps, dominant colour, rejected types),
+  `AdminImageRoutesTest` (endpoint, dedupe, errors, admin import + quiz API) and the
+  importer tests with an image directory.
 - `ContentValidatorTest` checks that the importer and
   `content/schema/question.schema.json` agree on the public samples and fixtures.

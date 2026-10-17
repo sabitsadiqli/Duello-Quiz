@@ -30,6 +30,7 @@ data class QuestionWrite(
     val isActive: Boolean,
     val text: I18nText,
     val explanation: I18nText?,
+    val imageId: UUID?,
     val imageAlt: I18nText?,
     val contentHash: String,
     val options: List<ValidOption>,
@@ -80,6 +81,7 @@ class ContentRepository {
             it[difficulty] = q.difficulty.toShort()
             it[textI18n] = q.text
             it[explanationI18n] = q.explanation
+            it[imageId] = q.imageId
             it[imageAltI18n] = q.imageAlt
             it[status] = q.status
             it[isActive] = q.isActive
@@ -107,6 +109,7 @@ class ContentRepository {
             it[difficulty] = q.difficulty.toShort()
             it[textI18n] = q.text
             it[explanationI18n] = q.explanation
+            it[imageId] = q.imageId
             it[imageAltI18n] = q.imageAlt
             it[status] = q.status
             it[isActive] = q.isActive

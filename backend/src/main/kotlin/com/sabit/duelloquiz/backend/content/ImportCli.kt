@@ -3,6 +3,10 @@ package com.sabit.duelloquiz.backend.content
 import com.sabit.duelloquiz.backend.ApiJson
 import com.sabit.duelloquiz.backend.common.AppConfig
 import com.sabit.duelloquiz.backend.common.Db
+import com.sabit.duelloquiz.backend.image.ImageProcessor
+import com.sabit.duelloquiz.backend.image.ImageRepository
+import com.sabit.duelloquiz.backend.image.ImageService
+import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
 import io.ktor.server.config.ApplicationConfig
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
@@ -19,7 +23,8 @@ import kotlin.io.path.readText
 /**
  * `duello-backend import <dir>`: imports a content directory with the same importer as
  * `POST /v1/admin/questions/import`. Database settings come from application.conf /
- * environment variables (DB_URL, DB_USER, DB_PASSWORD). Exit codes: 0 ok,
+ * environment variables (DB_URL, DB_USER, DB_PASSWORD, MEDIA_DIR). Question images
+ * (`image.file`) are read relative to <dir>, processed and written to MEDIA_DIR. Exit codes: 0 ok,
  * 1 validation failed (nothing written), 2 usage or runtime error.
  */
 fun runImportCli(args: List<String>): Int {
@@ -32,13 +37,18 @@ fun runImportCli(args: List<String>): Int {
         System.err.println("Not a directory: $dir")
         return 2
     }
-    val input = ContentFiles.read(dir)
     val config = AppConfig.from(ApplicationConfig("application.conf"))
+    val input = ContentFiles.read(dir).copy(images = DirectoryImageSources(dir, config.images.maxUploadBytes))
     val dataSource = Db.dataSource(config.db)
     val db = Db(dataSource)
     return try {
         Db.migrate(dataSource)
-        val report = runBlocking { ContentImporter(db, ContentRepository(), Clock.systemUTC()).import(input) }
+        val clock = Clock.systemUTC()
+        val imageRepository = ImageRepository()
+        val images = ImageService(
+            db, imageRepository, LocalDiskImageStorage(Path.of(config.media.dir)), ImageProcessor(config.images), config.images, clock,
+        )
+        val report = runBlocking { ContentImporter(db, ContentRepository(), clock, images, imageRepository).import(input) }
         println(ApiJson.encodeToString(ImportReport.serializer(), report))
         0
     } catch (e: ImportValidationException) {

@@ -209,7 +209,8 @@ class QuizRepository {
             width = this[ImagesTable.width],
             height = this[ImagesTable.height],
             dominantColor = this[ImagesTable.dominantColor],
-            alt = this[QuestionsTable.imageAltI18n],
+            // The question's own alt text wins over the image's default.
+            alt = this[QuestionsTable.imageAltI18n] ?: this[ImagesTable.altI18n],
         )
     }
 }

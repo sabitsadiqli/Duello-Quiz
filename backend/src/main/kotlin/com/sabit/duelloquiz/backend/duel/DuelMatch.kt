@@ -110,6 +110,8 @@ class DuelMatch(
     private suspend fun run() {
         try {
             introDeadline = now() + config.introMs
+            // A player without a socket at the start is already "disconnected".
+            seats.values.filter { it.connection == null }.forEach { it.reconnectDeadline = now() + config.reconnectWindowMs }
             seats.values.forEach { seat ->
                 val opponent = seats.getValue(seat.side.other)
                 emit(
@@ -373,7 +375,7 @@ class DuelMatch(
         current?.phase = Phase.FINISHED
         val a = seats.getValue(Side.A)
         val b = seats.getValue(Side.B)
-        val end = MatchEnd(id, status, endReason, winner, forfeited, a.score, b.score, now())
+        val end = MatchEnd(id, status, endReason, winner, forfeited, a.score, b.score, now(), cause)
         val ratings = try {
             store.endMatch(end, a.profile.rating, b.profile.rating)
         } catch (e: CancellationException) {
@@ -408,6 +410,13 @@ class DuelMatch(
                     suddenDeathPlayed = suddenDeathPlayed,
                     calibration = calibration(seat.side),
                     rounds = summaries(seat.side),
+                    you = ResultPlayer(seat.profile.displayName, seat.profile.avatarUrl, before, after, deleted = false),
+                    opponent = ResultPlayer(
+                        opponent.profile.displayName, opponent.profile.avatarUrl,
+                        ratingBefore = if (seat.side == Side.A) ratings.bBefore else ratings.aBefore,
+                        ratingAfter = opponentAfter,
+                        deleted = false,
+                    ),
                 ),
             )
         }
@@ -495,6 +504,7 @@ class DuelMatch(
             is MatchEvent.Attach -> {
                 val wasAway = seat.connection == null
                 seat.connection = event.connection
+                seat.reconnectDeadline = null
                 seat.language = event.connection.language
                 if (over) {
                     seat.result?.let(event.connection::send)
@@ -507,11 +517,10 @@ class DuelMatch(
             }
             is MatchEvent.Detach -> if (seat.connection === event.connection) {
                 seat.connection = null
+                val deadline = now() + config.reconnectWindowMs
+                seat.reconnectDeadline = deadline
                 if (!over) {
-                    emit(
-                        seats.getValue(seat.side.other),
-                        ServerMessage.OpponentConnection(id.toString(), "disconnected", now() + config.reconnectWindowMs),
-                    )
+                    emit(seats.getValue(seat.side.other), ServerMessage.OpponentConnection(id.toString(), "disconnected", deadline))
                 }
             }
         }
@@ -585,7 +594,13 @@ class DuelMatch(
         return ServerMessage.MatchState(
             matchId = id.toString(),
             you = seat.card(),
-            opponent = OpponentCard(opponent.profile.displayName, opponent.profile.avatarUrl, opponent.profile.rating, opponent.connection != null),
+            opponent = OpponentCard(
+                displayName = opponent.profile.displayName,
+                avatarUrl = opponent.profile.avatarUrl,
+                rating = opponent.profile.rating,
+                connected = opponent.connection != null,
+                reconnectDeadlineEpochMs = opponent.reconnectDeadline.takeIf { opponent.connection == null },
+            ),
             phase = when (phase) {
                 Phase.WAITING -> Phases.INTRO
                 Phase.QUESTION -> Phases.QUESTION
@@ -664,6 +679,9 @@ class DuelMatch(
         var bet3Used = 0
         var missedInARow = 0
         var result: Outgoing? = null
+
+        /** Set while disconnected: disconnect time + reconnect window (informational, OQ-032). */
+        var reconnectDeadline: Long? = null
     }
 
     private class PlayerRound {

@@ -14,6 +14,7 @@ logstash-encoder = "9.0"
 junit = "6.1.3"
 testcontainers = "2.0.5"
 json-schema-validator = "3.0.8"
+webp-imageio = "0.11.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -47,6 +48,9 @@ hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
+
+# WebP encoder/decoder: ImageIO plugin with bundled libwebp (Linux x86_64/aarch64, macOS, Windows; needs glibc).
+webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
 
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-encoder" }

@@ -27,7 +27,11 @@ import com.sabit.duelloquiz.backend.duel.DuelStore
 import com.sabit.duelloquiz.backend.duel.InMemoryMatchmakingQueue
 import com.sabit.duelloquiz.backend.duel.MatchmakingQueue
 import com.sabit.duelloquiz.backend.duel.duelRoutes
+import com.sabit.duelloquiz.backend.image.ImageProcessor
+import com.sabit.duelloquiz.backend.image.ImageRepository
+import com.sabit.duelloquiz.backend.image.ImageService
 import com.sabit.duelloquiz.backend.image.ImageStorage
+import com.sabit.duelloquiz.backend.image.adminImageRoutes
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
 import com.sabit.duelloquiz.backend.image.MediaUrls
 import com.sabit.duelloquiz.backend.quiz.InMemorySlidingWindowRateLimiter
@@ -116,7 +120,10 @@ fun featureModule(config: AppConfig) = module {
     single { QuizRepository() }
     single { QuizService(get(), get(), get(), get(), get(), get(), get()) }
     single { ContentRepository() }
-    single { ContentImporter(get(), get(), get()) }
+    single { ImageRepository() }
+    single { ImageProcessor(config.images) }
+    single { ImageService(get(), get(), get(), get(), config.images, get()) }
+    single { ContentImporter(get(), get(), get(), get(), get()) }
     single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK) }
     single<MatchmakingQueue> { InMemoryMatchmakingQueue() }
     single { DuelScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) } withOptions { onClose { it?.scope?.cancel() } }
@@ -156,6 +163,7 @@ fun Application.configureApp() {
                 categoryRoutes(get(), users)
                 quizRoutes(get(), users)
                 adminContentRoutes(get(), config.importMaxBodyBytes)
+                adminImageRoutes(get(), get())
                 duelRoutes(get(), users, config.duel, get())
             }
         }

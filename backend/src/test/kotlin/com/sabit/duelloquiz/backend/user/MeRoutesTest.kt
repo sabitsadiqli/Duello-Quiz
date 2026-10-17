@@ -149,6 +149,9 @@ class MeRoutesTest : DbTest() {
             assertEquals(16, win.ratingChange)
             assertEquals(640 to 410, win.scoreOwn to win.scoreOpponent)
             assertEquals("forfeit", history.items[2].endReason)
+            // OQ-D16: the specific forfeit cause for the history label; null for other ends.
+            assertEquals("missed_rounds", history.items[2].forfeitCause)
+            assertTrue(history.items.filter { it.endReason != "forfeit" }.all { it.forfeitCause == null })
             assertEquals(2, client.get("/v1/me/matches?limit=2") { auth(aliceToken) }.body<MatchHistoryResponse>().items.size)
 
             listOf("0", "21", "abc").forEach { limit ->
@@ -174,17 +177,17 @@ class MeRoutesTest : DbTest() {
                 VALUES ('00000000-0000-0000-0000-00000000000f', 'cografiya-0900', 1, 1, '{"az":"q"}', 'reviewed', true, 'h'),
                        ('00000000-0000-0000-0000-00000000000e', 'cografiya-0901', 1, 1, '{"az":"q2"}', 'reviewed', true, 'h');
                 INSERT INTO matches (id, player_a, player_b, score_a, score_b, winner_side, status, end_reason, forfeited_side,
-                                     rating_a_before, rating_a_after, rating_b_before, rating_b_after, started_at, finished_at)
+                                     forfeit_cause, rating_a_before, rating_a_after, rating_b_before, rating_b_after, started_at, finished_at)
                 VALUES
-                ('00000000-0000-0000-0000-000000000001', '$alice', '$bob', 640, 410, 'a', 'finished', 'normal', NULL,
+                ('00000000-0000-0000-0000-000000000001', '$alice', '$bob', 640, 410, 'a', 'finished', 'normal', NULL, NULL,
                  1000, 1016, 1000, 984, '2026-10-01T10:00:00Z', '2026-10-01T10:05:00Z'),
-                ('00000000-0000-0000-0000-000000000002', '$bob', '$alice', 300, 100, 'a', 'finished', 'forfeit', 'b',
+                ('00000000-0000-0000-0000-000000000002', '$bob', '$alice', 300, 100, 'a', 'finished', 'forfeit', 'b', 'missed_rounds',
                  984, 1000, 1016, 1000, '2026-10-02T10:00:00Z', '2026-10-02T10:05:00Z'),
-                ('00000000-0000-0000-0000-000000000003', '$alice', '$bob', 500, 500, NULL, 'finished', 'draw', NULL,
+                ('00000000-0000-0000-0000-000000000003', '$alice', '$bob', 500, 500, NULL, 'finished', 'draw', NULL, NULL,
                  1000, 1000, 1000, 1000, '2026-10-03T10:00:00Z', '2026-10-03T10:05:00Z'),
-                ('00000000-0000-0000-0000-000000000004', '$alice', '$bob', 100, 0, NULL, 'abandoned', 'abandoned', NULL,
+                ('00000000-0000-0000-0000-000000000004', '$alice', '$bob', 100, 0, NULL, 'abandoned', 'abandoned', NULL, NULL,
                  1000, 1000, 1000, 1000, '2026-10-04T10:00:00Z', '2026-10-04T10:05:00Z'),
-                ('00000000-0000-0000-0000-000000000005', '$alice', '$bob', 0, 0, NULL, 'cancelled', 'cancelled', NULL,
+                ('00000000-0000-0000-0000-000000000005', '$alice', '$bob', 0, 0, NULL, 'cancelled', 'cancelled', NULL, NULL,
                  NULL, NULL, NULL, NULL, '2026-10-05T10:00:00Z', '2026-10-05T10:00:01Z');
                 INSERT INTO match_rounds (id, match_id, round_no, question_id, sudden_death) OVERRIDING SYSTEM VALUE VALUES
                 (1, '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-00000000000f', false),

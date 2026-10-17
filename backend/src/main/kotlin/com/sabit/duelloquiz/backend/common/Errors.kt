@@ -37,6 +37,8 @@ object ErrorCodes {
     const val PAYLOAD_TOO_LARGE = "payload_too_large"
     const val UNSUPPORTED_MEDIA_TYPE = "unsupported_media_type"
     const val IMPORT_INVALID = "import_invalid"
+    const val IMAGE_UNREADABLE = "image_unreadable"
+    const val IMAGE_DIMENSIONS_TOO_LARGE = "image_dimensions_too_large"
     const val RATE_LIMITED = "rate_limited"
     const val INTERNAL_ERROR = "internal_error"
     const val AUTH_PROVIDER_ERROR = "auth_provider_error"

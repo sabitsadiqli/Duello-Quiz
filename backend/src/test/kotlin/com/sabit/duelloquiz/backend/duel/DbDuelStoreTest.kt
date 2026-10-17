@@ -57,7 +57,7 @@ class DbDuelStoreTest : DbTest() {
                 ),
             ),
         )
-        val end = MatchEnd(matchId, MatchStatus.FINISHED, EndReasons.FORFEIT, Side.A, Side.B, 331, 0, t0 + 60_000)
+        val end = MatchEnd(matchId, MatchStatus.FINISHED, EndReasons.FORFEIT, Side.A, Side.B, 331, 0, t0 + 60_000, DuelMatch.FORFEIT_MISSED)
         val ratings = store.endMatch(end, 1000, 1000)
         assertEquals(RatingUpdate(1000, 1016, 1000, 984), ratings)
         // Second end (retry): no second rating change.
@@ -71,6 +71,7 @@ class DbDuelStoreTest : DbTest() {
         assertEquals(EndReasons.FORFEIT, stored.endReason)
         assertEquals(Side.A, stored.winnerSide)
         assertEquals(Side.B, stored.forfeitedSide)
+        assertEquals(DuelMatch.FORFEIT_MISSED, stored.forfeitCause)
         assertEquals(331 to 0, stored.scoreA to stored.scoreB)
         assertEquals(ratings, stored.ratings)
         val round = stored.rounds.single()

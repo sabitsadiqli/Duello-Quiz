@@ -20,6 +20,8 @@ application {
     // content importer (see backend/README.md).
     mainClass.set("com.sabit.duelloquiz.backend.MainKt")
     applicationName = "duello-backend"
+    // Image processing uses Java2D; no display in the container.
+    applicationDefaultJvmArgs = listOf("-Djava.awt.headless=true")
 }
 
 dependencies {
@@ -51,6 +53,8 @@ dependencies {
 
     implementation(libs.firebase.admin)
 
+    implementation(libs.webp.imageio)
+
     implementation(libs.logback.classic)
     implementation(libs.logstash.logback.encoder)
 
@@ -69,6 +73,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("java.awt.headless", "true")
     // Importer tests read the public samples and the JSON Schema from the monorepo.
     systemProperty("duello.repoRoot", rootDir.parentFile.absolutePath)
     // Optional: run DB tests against an existing PostgreSQL instead of Testcontainers.

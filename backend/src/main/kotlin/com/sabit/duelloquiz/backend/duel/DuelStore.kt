@@ -70,6 +70,8 @@ data class MatchEnd(
     val scoreA: Int,
     val scoreB: Int,
     val finishedAtMs: Long,
+    /** `missed_rounds` | `left` for a forfeit (OQ-068), else null. */
+    val forfeitCause: String? = null,
 )
 
 data class RatingUpdate(val aBefore: Int, val aAfter: Int, val bBefore: Int, val bAfter: Int)
@@ -87,6 +89,7 @@ data class StoredMatch(
     val scoreB: Int,
     val ratings: RatingUpdate?,
     val rounds: List<StoredRound>,
+    val forfeitCause: String? = null,
 )
 
 data class StoredRound(val roundNo: Int, val suddenDeath: Boolean, val answers: Map<Side, AnswerRow>)

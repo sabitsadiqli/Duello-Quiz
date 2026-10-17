@@ -42,6 +42,8 @@ data class MatchSummary(
     val opponent: OpponentDto,
     val result: String,
     val endReason: String,
+    /** `missed_rounds` | `left` when `endReason = forfeit` (OQ-D16); null otherwise and for matches before it was stored. */
+    val forfeitCause: String?,
     val scoreOwn: Int,
     val scoreOpponent: Int,
     val ratingChange: Int,

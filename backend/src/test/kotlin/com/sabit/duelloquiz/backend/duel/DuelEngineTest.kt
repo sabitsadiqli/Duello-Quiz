@@ -3,6 +3,9 @@ package com.sabit.duelloquiz.backend.duel
 import com.sabit.duelloquiz.backend.duel.DuelHarness.Companion.BASE
 import com.sabit.duelloquiz.backend.user.CalibrationLevel
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -545,6 +548,97 @@ class DuelEngineTest {
         // Bob answers on the new socket.
         h.send(h.bob, b2, ClientMessage.RoundAnswer(h.matchId(a), 2, h.rightOption(a)))
         assertEquals(Who.SELF, b2.last<ServerMessage.RoundAnswerLocked>().who)
+    }
+
+    @Test
+    fun `match state shows the opponent's reconnect deadline while disconnected`() = runTest {
+        val h = DuelHarness(this)
+        val (a, b) = h.startMatch()
+        h.send(h.alice, a, ClientMessage.MatchRejoin(h.matchId(a)))
+        val connected = a.last<ServerMessage.MatchState>().opponent
+        assertTrue(connected.connected)
+        assertNull(connected.reconnectDeadlineEpochMs)
+
+        h.advanceBy(1_000)
+        val disconnectedAt = h.now()
+        h.service.disconnect(h.bob, b)
+        h.runCurrent()
+        assertEquals(disconnectedAt + 10_000, a.last<ServerMessage.OpponentConnection>().reconnectDeadlineEpochMs)
+        h.send(h.alice, a, ClientMessage.MatchRejoin(h.matchId(a)))
+        val away = a.last<ServerMessage.MatchState>().opponent
+        assertFalse(away.connected)
+        assertEquals(disconnectedAt + 10_000, away.reconnectDeadlineEpochMs)
+
+        // Informational only: after the window the seat is still held and the value stays.
+        h.advanceBy(15_000)
+        h.send(h.alice, a, ClientMessage.MatchRejoin(h.matchId(a)))
+        assertEquals(disconnectedAt + 10_000, a.last<ServerMessage.MatchState>().opponent.reconnectDeadlineEpochMs)
+
+        val b2 = h.connect(h.bob)
+        assertNull(b2.last<ServerMessage.MatchState>().opponent.reconnectDeadlineEpochMs, "Alice is connected")
+        h.send(h.alice, a, ClientMessage.MatchRejoin(h.matchId(a)))
+        val back = a.last<ServerMessage.MatchState>().opponent
+        assertTrue(back.connected)
+        assertNull(back.reconnectDeadlineEpochMs)
+
+        // Wire format: the field is always present, null while connected.
+        val json = DuelJson.parseToJsonElement(a.received.last { it.message is ServerMessage.MatchState }.encode()) as JsonObject
+        val opponent = json.getValue("opponent") as JsonObject
+        assertTrue("reconnectDeadlineEpochMs" in opponent)
+        assertEquals(JsonNull, opponent.getValue("reconnectDeadlineEpochMs"))
+    }
+
+    @Test
+    fun `match result carries both players so the result screen survives process death`() = runTest {
+        val h = DuelHarness(this)
+        val (a, b) = h.startMatch()
+        val matchId = h.matchId(a)
+        h.advanceTo(a.last<ServerMessage.MatchFound>().deadlineEpochMs)
+        h.playRound(a, 2, true, b, 1, false)
+        h.finishQuestionPhase(a)
+        h.send(h.bob, b, ClientMessage.MatchLeave(matchId))
+
+        val resultA = a.last<ServerMessage.MatchResult>()
+        assertEquals(ResultPlayer("Alice", null, 1000, 1016, deleted = false), resultA.you)
+        assertEquals(ResultPlayer("Bob", null, 1000, 984, deleted = false), resultA.opponent)
+        val resultB = b.last<ServerMessage.MatchResult>()
+        assertEquals(resultA.you, resultB.opponent)
+        assertEquals(resultA.opponent, resultB.you)
+
+        val json = DuelJson.parseToJsonElement(a.received.last { it.message is ServerMessage.MatchResult }.encode()) as JsonObject
+        val you = json.getValue("you") as JsonObject
+        assertEquals(setOf("displayName", "avatarUrl", "ratingBefore", "ratingAfter", "deleted"), you.keys)
+        assertEquals("Bob", (json.getValue("opponent") as JsonObject).getValue("displayName").jsonPrimitive.content)
+
+        // Process death + server restart: the result is rebuilt from storage with the same players.
+        val restarted = DuelService(backgroundScope, h.config, h.clock, h.store, InMemoryMatchmakingQueue(), com.sabit.duelloquiz.backend.image.MediaUrls("https://m"))
+        val a2 = FakeConnection()
+        restarted.connect(h.alice, a2)
+        restarted.handle(h.alice, a2, ClientMessage.MatchRejoin(matchId), h.now())
+        val rebuilt = a2.received.last()
+        assertEquals(0, rebuilt.seq)
+        val stored = rebuilt.message as ServerMessage.MatchResult
+        assertEquals(resultA.you, stored.you)
+        assertEquals(resultA.opponent, stored.opponent)
+        assertEquals(DuelMatch.FORFEIT_LEFT, stored.forfeitCause, "the cause is stored now (OQ-D16)")
+        assertEquals("win", stored.outcome)
+
+        // The opponent deleted the account meanwhile: shown as deleted, ratings kept.
+        h.store.users.remove(h.bob)
+        restarted.handle(h.alice, a2, ClientMessage.MatchRejoin(matchId), h.now())
+        val anonymized = (a2.received.last().message as ServerMessage.MatchResult).opponent
+        assertEquals(ResultPlayer(null, null, 1000, 984, deleted = true), anonymized)
+    }
+
+    @Test
+    fun `internal errors name the message to retry`() {
+        val bet = internalErrorFor(ClientMessage.RoundBet("m-1", 3, 2))
+        assertEquals(DuelErrorCodes.INTERNAL_ERROR, bet.code)
+        assertEquals(Triple("round.bet", "m-1", 3), Triple(bet.ref, bet.matchId, bet.roundNo))
+        val answer = internalErrorFor(ClientMessage.RoundAnswer("m-1", 4, "o-1"))
+        assertEquals(Triple("round.answer", "m-1", 4), Triple(answer.ref, answer.matchId, answer.roundNo))
+        val join = internalErrorFor(ClientMessage.QueueJoin)
+        assertEquals(Triple("queue.join", null, null), Triple(join.ref, join.matchId, join.roundNo))
     }
 
     @Test

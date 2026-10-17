@@ -105,7 +105,7 @@ private suspend fun DefaultWebSocketServerSession.readLoop(
                         throw e
                     } catch (e: Exception) {
                         log.error("duel_message_failed userId={}", userId, e)
-                        connection.send(Outgoing(0, clock.nowMs(), ServerMessage.Error(DuelErrorCodes.INTERNAL_ERROR, "Unexpected server error")))
+                        connection.send(Outgoing(0, clock.nowMs(), internalErrorFor(parsed.message)))
                     }
                     is ParsedClientMessage.Unknown -> log.info("duel_unknown_message userId={} type={}", userId, parsed.type)
                     is ParsedClientMessage.Bad -> if (!bad(parsed.type, parsed.reason)) return
