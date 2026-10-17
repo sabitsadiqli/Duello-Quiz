@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
             }
 
             DuelloTheme(darkTheme = darkTheme) {
-                DuelloNavHost(authState = ready.authState)
+                DuelloNavHost(authState = ready.authState, duelEnabled = BuildConfig.DUEL_ENABLED)
             }
         }
     }

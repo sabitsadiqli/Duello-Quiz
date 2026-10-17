@@ -10,13 +10,62 @@ import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSession
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
 import com.sabit.duelloquiz.core.model.ReviewItem
+import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
+import com.sabit.duelloquiz.core.model.duel.DuelRecord
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchOutcome
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
+import com.sabit.duelloquiz.core.network.duel.endReason
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 internal fun NetworkProfile.asExternalModel() = Profile(
     id = id,
     displayName = displayName,
     avatarUrl = avatarUrl,
     rating = rating,
+    createdAtEpochMs = createdAt?.let(::parseIsoInstantOrNull),
 )
+
+internal fun NetworkStats.asExternalModel() = DuelStats(
+    record = DuelRecord(record.wins, record.losses, record.draws, record.total),
+    calibration = (1..CALIBRATION_LEVELS).map { level ->
+        calibration.firstOrNull { it.level == level }
+            ?.let { CalibrationLevel(level, it.picks, it.correct) }
+            ?: CalibrationLevel(level, 0, 0)
+    },
+)
+
+/** Null for a row the client cannot read (unknown result value): it is skipped, not fatal. */
+internal fun NetworkMatchSummary.asExternalModelOrNull(): MatchSummary? {
+    val outcome = when (result) {
+        "win" -> MatchOutcome.WIN
+        "loss" -> MatchOutcome.LOSS
+        "draw" -> MatchOutcome.DRAW
+        "abandoned" -> MatchOutcome.ABANDONED
+        else -> return null
+    }
+    val reason = runCatching { endReason(endReason) }.getOrNull() ?: return null
+    return MatchSummary(
+        id = id,
+        opponentName = opponent.displayName.takeUnless { opponent.deleted },
+        opponentAvatarUrl = opponent.avatarUrl.takeUnless { opponent.deleted },
+        opponentDeleted = opponent.deleted,
+        outcome = outcome,
+        endReason = reason,
+        scoreOwn = scoreOwn,
+        scoreOpponent = scoreOpponent,
+        ratingChange = ratingChange,
+        finishedAtEpochMs = parseIsoInstantOrNull(finishedAt) ?: return null,
+    )
+}
+
+/** RFC 3339 / ISO 8601 date-time → epoch ms; null when unreadable. */
+@OptIn(ExperimentalTime::class)
+internal fun parseIsoInstantOrNull(value: String): Long? =
+    runCatching { Instant.parse(value).toEpochMilliseconds() }.getOrNull()
+
+private const val CALIBRATION_LEVELS = 3
 
 internal fun NetworkCategory.asExternalModel() = Category(
     id = id,

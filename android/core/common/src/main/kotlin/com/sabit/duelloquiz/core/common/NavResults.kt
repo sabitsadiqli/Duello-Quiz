@@ -19,4 +19,7 @@ enum class HomeNotice {
 
     /** Any other quiz failure that sends the player home (e.g. 401 that a refresh did not fix). */
     Generic,
+
+    /** DUEL-15: the user left a running match ("Oyundan çıxdın. Məğlubiyyət sayıldı."). */
+    DuelLeft,
 }

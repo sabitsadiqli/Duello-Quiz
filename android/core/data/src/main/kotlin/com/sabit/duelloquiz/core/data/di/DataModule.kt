@@ -5,6 +5,8 @@ import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.DataStoreUserPreferencesRepository
 import com.sabit.duelloquiz.core.data.repository.DefaultAccountRepository
 import com.sabit.duelloquiz.core.data.repository.DefaultQuizRepository
+import com.sabit.duelloquiz.core.data.repository.DuelHistoryRepository
+import com.sabit.duelloquiz.core.data.repository.OfflineFirstDuelHistoryRepository
 import com.sabit.duelloquiz.core.data.repository.InMemoryVerificationBannerRepository
 import com.sabit.duelloquiz.core.data.repository.OfflineFirstCategoryRepository
 import com.sabit.duelloquiz.core.data.repository.OfflineFirstProfileRepository
@@ -42,6 +44,9 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun bindQuizRepository(impl: DefaultQuizRepository): QuizRepository
+
+    @Binds
+    abstract fun bindDuelHistoryRepository(impl: OfflineFirstDuelHistoryRepository): DuelHistoryRepository
 
     @Binds
     abstract fun bindAccountRepository(impl: DefaultAccountRepository): AccountRepository

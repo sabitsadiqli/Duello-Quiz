@@ -7,6 +7,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,6 +44,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -81,6 +89,8 @@ import kotlinx.coroutines.launch
 internal fun HomeRoute(
     onOpenSettings: () -> Unit,
     onOpenQuiz: (categoryId: Int, categoryName: String, sessionId: String?) -> Unit,
+    onOpenProfile: () -> Unit,
+    onOpenDuel: (resume: Boolean) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -93,6 +103,8 @@ internal fun HomeRoute(
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             HomeEvent.NavigateToSettings -> onOpenSettings()
+            HomeEvent.NavigateToProfile -> onOpenProfile()
+            is HomeEvent.NavigateToDuel -> onOpenDuel(event.resume)
             is HomeEvent.NavigateToQuiz -> onOpenQuiz(event.categoryId, event.categoryName, event.sessionId)
             is HomeEvent.ShowMessage -> scope.launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -187,10 +199,16 @@ private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
             ProfileHeader(
                 header = uiState.header,
                 onRetry = { onAction(HomeAction.RetryProfileClicked) },
+                onClick = { onAction(HomeAction.ProfileClicked) },
                 modifier = Modifier.padding(top = Spacing.lg),
             )
         }
-        // Duel entry card: hidden until the duel ships (OQ-020); no placeholder slot.
+        // Duel entry card (components.md §6): only behind the build flag (OQ-020); no placeholder.
+        if (uiState.duelEnabled) {
+            item(key = "duel_entry") {
+                DuelEntryCard(onClick = { onAction(HomeAction.DuelClicked) }, modifier = Modifier.padding(top = Spacing.xl))
+            }
+        }
         item(key = "categories_title") {
             Text(
                 text = stringResource(R.string.home_categories_title),
@@ -303,22 +321,31 @@ private class BannerHolder {
     var value: VerificationBannerUi? = null
 }
 
-/** Avatar, name and rating (HOME-04); skeleton until the profile is known. */
+/** Avatar, name and rating (HOME-04); skeleton until the profile is known; opens the profile (PROF-01). */
 @Composable
-private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val name = header.displayName
     val profileDescription = if (name != null && header.rating != null) {
         stringResource(R.string.home_profile_cd, name, header.rating)
     } else {
         null
     }
+    val openLabel = stringResource(R.string.profile_open_cd)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
+            .heightIn(min = Sizes.buttonHeightLarge)
+            .clip(MaterialTheme.shapes.medium)
             .then(
                 if (profileDescription != null) {
-                    Modifier.clearAndSetSemantics { contentDescription = profileDescription }
+                    Modifier
+                        .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onClick)
+                        .clearAndSetSemantics {
+                            contentDescription = profileDescription
+                            role = Role.Button
+                            onClick(label = openLabel) { onClick(); true }
+                        }
                 } else {
                     Modifier
                 },
@@ -353,6 +380,46 @@ private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, modifier
                 else -> SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidthShort).height(Sizes.skeletonLineHeight))
             }
         }
+        if (profileDescription != null) {
+            Icon(
+                painter = painterResource(DuelloIcons.ChevronRight),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(Sizes.icon),
+            )
+        }
+    }
+}
+
+/** components.md §6: no coins, dice or cards; a bolt in a filled icon button. */
+@Composable
+private fun DuelEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = stringResource(R.string.home_duel_title), style = MaterialTheme.typography.titleLarge)
+                Text(text = stringResource(R.string.home_duel_hint), style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.width(Spacing.md))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(Sizes.minTouchTarget)
+                    .background(MaterialTheme.colorScheme.primary, FullShape),
+            ) {
+                Icon(
+                    painter = painterResource(DuelloIcons.Bolt),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
     }
 }
 
@@ -367,10 +434,12 @@ private fun HomeMessage.textRes(): Int = when (this) {
     HomeMessage.CategoryNotPlayable -> R.string.error_category_not_playable
     HomeMessage.RateLimited -> R.string.error_rate_limited
     HomeMessage.QuizInvalid -> R.string.error_quiz_invalid
+    HomeMessage.DuelNeedsInternet -> R.string.home_duel_needs_internet
+    HomeMessage.DuelLeft -> R.string.duel_left_snackbar
 }
 
 private fun HomeMessage.isError(): Boolean =
-    this != HomeMessage.VerificationSent && this != HomeMessage.VerificationDone
+    this != HomeMessage.VerificationSent && this != HomeMessage.VerificationDone && this != HomeMessage.DuelLeft
 
 private const val SKELETON_CARDS = 5
 
@@ -393,6 +462,7 @@ private fun HomeContentPreview() {
                 header = previewHeader,
                 categories = CategoriesUi.Content(previewCategories),
                 startingCategoryId = 2,
+                duelEnabled = true,
                 verificationBanner = VerificationBannerUi(email = "aysel@example.com"),
             ),
             onAction = {},

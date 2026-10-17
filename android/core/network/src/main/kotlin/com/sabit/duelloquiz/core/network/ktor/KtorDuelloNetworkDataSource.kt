@@ -20,7 +20,13 @@ import com.sabit.duelloquiz.core.network.model.NetworkQuizSession
 import com.sabit.duelloquiz.core.network.model.NetworkStartSessionRequest
 import com.sabit.duelloquiz.core.network.model.NetworkSubmitAnswerRequest
 import com.sabit.duelloquiz.core.network.model.NetworkUpdateProfileRequest
+import com.sabit.duelloquiz.core.network.model.NetworkMatchHistory
+import com.sabit.duelloquiz.core.network.model.NetworkStats
 import com.sabit.duelloquiz.core.network.model.asExternalModel
+import com.sabit.duelloquiz.core.network.model.asExternalModelOrNull
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
+import io.ktor.client.request.parameter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -57,6 +63,14 @@ internal class KtorDuelloNetworkDataSource(
             setBody(NetworkUpdateProfileRequest(displayName))
         }
     }) { it.body<NetworkProfile>().asExternalModel() }
+
+    override suspend fun getStats(): DataResult<DuelStats> =
+        call({ get("v1/me/stats") }) { it.body<NetworkStats>().asExternalModel() }
+
+    override suspend fun getMatches(limit: Int): DataResult<List<MatchSummary>> =
+        call({ get("v1/me/matches") { parameter("limit", limit) } }) { response ->
+            response.body<NetworkMatchHistory>().items.mapNotNull { it.asExternalModelOrNull() }
+        }
 
     // 404: the profile is already gone (lost response of an earlier call), SET-05.
     override suspend fun deleteAccount(): DataResult<Unit> =

@@ -7,6 +7,7 @@ import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.testdoubles.FakeNetworkDataSource
 import com.sabit.duelloquiz.core.data.testdoubles.FakeNetworkMonitor
 import com.sabit.duelloquiz.core.data.testdoubles.testAppScope
+import com.sabit.duelloquiz.core.data.testdoubles.testDuelMatches
 import com.sabit.duelloquiz.core.data.testdoubles.testUserCache
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.Category
@@ -52,7 +53,15 @@ class ProfileAndCategoryRepositoryTest {
         return Repositories(
             profile = profile,
             categories = OfflineFirstCategoryRepository(network, cache, auth),
-            account = DefaultAccountRepository(network, auth, cache, profile, quiz, appScope),
+            account = DefaultAccountRepository(
+                network,
+                auth,
+                cache,
+                testDuelMatches(appScope, tmp.root),
+                profile,
+                quiz,
+                appScope,
+            ),
             quiz = quiz,
         )
     }

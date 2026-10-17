@@ -1,42 +1,33 @@
 package com.sabit.duelloquiz.core.designsystem.component
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
-import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 
 /**
- * Placeholder logo mark (welcome, size.splashLogo). Decorative. Replace the glyph with the
- * real logo once design/ delivers one.
+ * The "two speech bubbles" mark (design/brand.md, OQ-055) at size.splashLogo. The variant follows
+ * the app theme (which can differ from the system night mode), so it is chosen from the surface
+ * colour, not from `drawable-night/`. Decorative.
  */
 @Composable
 fun DuelloLogoMark(modifier: Modifier = Modifier) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(Sizes.splashLogo)
-            .background(MaterialTheme.colorScheme.primaryContainer, FullShape),
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_quiz),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(Sizes.logoGlyph),
-        )
-    }
+    val dark = MaterialTheme.colorScheme.surface.luminance() < HALF
+    Image(
+        painter = painterResource(if (dark) R.drawable.ic_logo_mark_dark else R.drawable.ic_logo_mark_light),
+        contentDescription = null,
+        modifier = modifier.size(Sizes.splashLogo),
+    )
 }
 
 @PreviewLightDark
@@ -46,3 +37,5 @@ private fun LogoMarkPreview() {
         Surface { DuelloLogoMark(Modifier.padding(Spacing.lg)) }
     }
 }
+
+private const val HALF = 0.5f

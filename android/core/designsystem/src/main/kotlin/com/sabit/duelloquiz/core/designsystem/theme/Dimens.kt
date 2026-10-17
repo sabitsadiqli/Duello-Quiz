@@ -48,6 +48,42 @@ object Sizes {
     val bannerMinHeight = 56.dp
     val splashLogo = 96.dp
 
+    /** tokens 1.1.0: duel and profile (components.md §13–§23). */
+    val avatarXLarge = 80.dp
+    val duelBadge = 32.dp
+    val duelPlayerPanelMinHeight = 100.dp
+    val phaseSegmentHeight = 4.dp
+    val searchPulse = 176.dp
+    val calibrationBarHeight = 8.dp
+
+    /** components.md §13: accent ring around duel avatars (avatarXLarge: 3dp). */
+    val accentRing = 2.dp
+    val accentRingLarge = 3.dp
+
+    /** components.md §3 / §17: picker markers and status pill icons. */
+    val pickerMarker = 20.dp
+    val pillIcon = 16.dp
+    val pillProgress = 14.dp
+    val statusPillMinHeight = 28.dp
+
+    /** components.md §7: chip 3 uses-left badge and the selection ring with its gap. */
+    val usesLeftBadge = 24.dp
+    val chipSelectedRing = 3.dp
+    val chipSelectedRingGap = 2.dp
+
+    /** components.md §16: reveal-face border; duel-intro.md bolt divider mark. */
+    val revealBorder = 2.dp
+    val introDivider = 40.dp
+
+    /** duel-match.md: question image height after the question phase. */
+    val questionImageCompactMaxHeight = 120.dp
+
+    /** duel-search.md: width of the queue progress bar. */
+    val searchProgressWidth = 160.dp
+
+    /** profile.md: trailing column of a match history row. */
+    val historyTrailingMinWidth = 72.dp
+
     /** components.md: loading indicator inside buttons, banner close icon, inline error icon. */
     val inlineProgress = 20.dp
     val inlineIcon = 20.dp
@@ -58,9 +94,6 @@ object Sizes {
     val stateIllustration = 72.dp
     val stateIllustrationContainer = 120.dp
     val warningIcon = 48.dp
-
-    /** Glyph inside the placeholder logo mark (splashLogo circle). */
-    val logoGlyph = 56.dp
 
     /** components.md §11: loading state indicator. */
     val stateLoadingIndicator = 48.dp

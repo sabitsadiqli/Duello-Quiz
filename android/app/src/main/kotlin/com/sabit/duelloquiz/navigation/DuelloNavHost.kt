@@ -18,9 +18,14 @@ import com.sabit.duelloquiz.core.common.NavResults
 import com.sabit.duelloquiz.feature.auth.navigation.AuthGraph
 import com.sabit.duelloquiz.feature.auth.navigation.authGraph
 import com.sabit.duelloquiz.feature.auth.navigation.navigateToAuth
+import com.sabit.duelloquiz.feature.duel.DuelExit
+import com.sabit.duelloquiz.feature.duel.navigation.duelScreen
+import com.sabit.duelloquiz.feature.duel.navigation.navigateToDuel
 import com.sabit.duelloquiz.feature.home.navigation.HomeDestination
 import com.sabit.duelloquiz.feature.home.navigation.homeScreen
 import com.sabit.duelloquiz.feature.home.navigation.navigateToHome
+import com.sabit.duelloquiz.feature.profile.navigation.navigateToProfile
+import com.sabit.duelloquiz.feature.profile.navigation.profileScreen
 import com.sabit.duelloquiz.feature.quiz.navigation.navigateToQuiz
 import com.sabit.duelloquiz.feature.quiz.navigation.quizScreens
 import com.sabit.duelloquiz.feature.settings.navigation.navigateToSettings
@@ -33,7 +38,7 @@ import com.sabit.duelloquiz.feature.settings.navigation.settingsScreens
  * returns to a screen of the other graph (AUTH-07).
  */
 @Composable
-fun DuelloNavHost(authState: AuthState) {
+fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
     val navController = rememberNavController()
     // Fixed for the lifetime of the host; later changes navigate instead.
     val startDestination: Any = remember {
@@ -51,7 +56,21 @@ fun DuelloNavHost(authState: AuthState) {
         homeScreen(
             onOpenSettings = navController::navigateToSettings,
             onOpenQuiz = navController::navigateToQuiz,
+            onOpenProfile = navController::navigateToProfile,
+            onOpenDuel = { resume -> if (duelEnabled) navController.navigateToDuel(resume) },
         )
+        profileScreen(
+            onBack = navController::popBackStack,
+            onOpenDuel = { if (duelEnabled) navController.navigateToDuel() },
+        )
+        // OQ-020: without the flag the duel route does not exist (no entry, no deep link).
+        if (duelEnabled) {
+            duelScreen(
+                onExit = { exit ->
+                    navController.popBackToHome(if (exit == DuelExit.LEFT_MATCH) HomeNotice.DuelLeft else null)
+                },
+            )
+        }
         quizScreens(navController, onNavigateHome = navController::popBackToHome)
         settingsScreens(navController)
     }

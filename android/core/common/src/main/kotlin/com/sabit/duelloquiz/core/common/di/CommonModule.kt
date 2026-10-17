@@ -1,5 +1,7 @@
 package com.sabit.duelloquiz.core.common.di
 
+import android.os.SystemClock
+import com.sabit.duelloquiz.core.common.MonotonicClock
 import com.sabit.duelloquiz.core.common.WallClock
 import dagger.Module
 import dagger.Provides
@@ -28,4 +30,8 @@ object CommonModule {
     @Provides
     @Singleton
     fun provideWallClock(): WallClock = WallClock(System::currentTimeMillis)
+
+    @Provides
+    @Singleton
+    fun provideMonotonicClock(): MonotonicClock = MonotonicClock(SystemClock::elapsedRealtime)
 }

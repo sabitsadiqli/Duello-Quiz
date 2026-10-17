@@ -23,6 +23,11 @@ val privacyPolicyUrl: String = providers.gradleProperty("privacyPolicyUrl")
     .orElse("https://sabitsadiqli.github.io/DuelloQuiz/legal/privacy-policy.html")
     .get()
 
+// Duel build flag (OQ-020): on in debug, off in release until the duel ships. Override for every
+// build type with -PduelEnabled=true|false.
+val duelEnabledOverride: String? = providers.gradleProperty("duelEnabled").orNull
+fun duelEnabled(default: Boolean): String = (duelEnabledOverride?.toBooleanStrict() ?: default).toString()
+
 android {
     namespace = "com.sabit.duelloquiz"
 
@@ -47,7 +52,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = true))
+        }
         release {
+            buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = false))
             if (releaseStoreFile != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -73,7 +82,9 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
     implementation(project(":feature:auth"))
+    implementation(project(":feature:duel"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:profile"))
     implementation(project(":feature:quiz"))
     implementation(project(":feature:settings"))
 

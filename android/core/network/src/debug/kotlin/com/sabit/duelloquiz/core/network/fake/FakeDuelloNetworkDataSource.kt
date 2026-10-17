@@ -14,6 +14,8 @@ import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSession
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
 import com.sabit.duelloquiz.core.model.ReviewItem
+import com.sabit.duelloquiz.core.model.duel.DuelStats
+import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -47,7 +49,7 @@ internal class FakeDuelloNetworkDataSource(
     private val sessions = mutableMapOf<String, FakeSession>()
 
     override suspend fun getProfile(): DataResult<Profile> = withUser { uid ->
-        DataResult.Success(profileOf(uid))
+        DataResult.Success(profileOf(uid).copy(rating = FakeDuelLedger.rating(uid)))
     }
 
     override suspend fun updateDisplayName(displayName: String): DataResult<Profile> = withUser { uid ->
@@ -55,14 +57,26 @@ internal class FakeDuelloNetworkDataSource(
         if (name.codePointCount(0, name.length) !in NAME_LENGTH) {
             DataResult.Failure(DataError.Api(ApiErrorCode.InvalidDisplayName))
         } else {
-            val updated = profileOf(uid).copy(displayName = name)
+            if (name.lowercase() in RESERVED_NAMES) {
+                return@withUser DataResult.Failure(DataError.Api(ApiErrorCode.DisplayNameNotAllowed))
+            }
+            val updated = profileOf(uid).copy(displayName = name, rating = FakeDuelLedger.rating(uid))
             profiles[uid] = updated
             DataResult.Success(updated)
         }
     }
 
+    override suspend fun getStats(): DataResult<DuelStats> = withUser { uid ->
+        DataResult.Success(FakeDuelLedger.stats(uid))
+    }
+
+    override suspend fun getMatches(limit: Int): DataResult<List<MatchSummary>> = withUser { uid ->
+        DataResult.Success(FakeDuelLedger.matches(uid, limit))
+    }
+
     override suspend fun deleteAccount(): DataResult<Unit> = withUser { uid ->
         profiles.remove(uid)
+        FakeDuelLedger.forget(uid)
         DataResult.Success(Unit)
     }
 
@@ -158,7 +172,13 @@ internal class FakeDuelloNetworkDataSource(
     }
 
     private fun profileOf(uid: String): Profile = profiles.getOrPut(uid) {
-        Profile(id = uid, displayName = "Oyunçu ${uid.hashCode().mod(PLAYER_NUMBER_RANGE)}", avatarUrl = null, rating = START_RATING)
+        Profile(
+            id = uid,
+            displayName = "Oyunçu ${uid.hashCode().mod(PLAYER_NUMBER_RANGE)}",
+            avatarUrl = null,
+            rating = START_RATING,
+            createdAtEpochMs = clock.nowMs(),
+        )
     }
 
     private fun <T> apiError(code: ApiErrorCode): DataResult<T> = DataResult.Failure(DataError.Api(code))
@@ -184,6 +204,9 @@ internal class FakeDuelloNetworkDataSource(
         const val START_RATING = 1000
         const val PLAYER_NUMBER_RANGE = 10_000
         val NAME_LENGTH = 2..20
+
+        /** OQ-051: reserved names answered with `display_name_not_allowed`. */
+        val RESERVED_NAMES = setOf("admin", "administrator", "moderator", "duello")
 
         val CATEGORIES = listOf(
             Category(id = 1, slug = "cografiya", name = "Coğrafiya", iconKey = "geography"),

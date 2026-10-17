@@ -3,6 +3,7 @@ package com.sabit.duelloquiz.core.data.repository
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.auth.AuthState
 import com.sabit.duelloquiz.core.common.di.ApplicationScope
+import com.sabit.duelloquiz.core.datastore.DuelMatchDataSource
 import com.sabit.duelloquiz.core.datastore.UserCacheDataSource
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
@@ -33,6 +34,7 @@ internal class DefaultAccountRepository @Inject constructor(
     private val network: DuelloNetworkDataSource,
     private val authRepository: AuthRepository,
     private val cache: UserCacheDataSource,
+    private val duelMatches: DuelMatchDataSource,
     private val profileRepository: ProfileRepository,
     private val quizRepository: QuizRepository,
     @param:ApplicationScope private val appScope: CoroutineScope,
@@ -60,5 +62,6 @@ internal class DefaultAccountRepository @Inject constructor(
         profileRepository.clearPending()
         quizRepository.discardAll()
         cache.clear()
+        duelMatches.clear()
     }
 }

@@ -10,6 +10,8 @@ data class Profile(
     val avatarUrl: String?,
     /** Elo rating, starts at 1000; only duels change it. */
     val rating: Int,
+    /** When the profile was created ("Qoşulub", OQ-060); null when unknown. */
+    val createdAtEpochMs: Long? = null,
 )
 
 /** A playable category (`GET /v1/categories`), in server order. */

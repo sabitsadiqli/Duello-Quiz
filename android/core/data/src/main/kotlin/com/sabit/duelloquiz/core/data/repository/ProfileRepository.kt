@@ -46,6 +46,12 @@ interface ProfileRepository {
 
     /** Forgets the pending sign-up name (failed sign-up, sign-out, account deletion). */
     fun clearPending()
+
+    /**
+     * PROF-06: `PATCH /v1/me {displayName}`; on success the cache (profile screen, home header)
+     * shows the new name. Validation (OQ-042) is the caller's job; the server checks again.
+     */
+    suspend fun updateDisplayName(displayName: String): DataResult<Profile>
 }
 
 @Singleton
@@ -105,6 +111,13 @@ internal class OfflineFirstProfileRepository @Inject constructor(
 
     private suspend fun store(currentUid: String, profile: Profile) {
         cache.write(currentUid, CacheKeys.PROFILE, CachedProfile.serializer(), profile.toCached())
+    }
+
+    override suspend fun updateDisplayName(displayName: String): DataResult<Profile> = mutex.withLock {
+        val currentUid = uid.first() ?: return DataResult.Failure(DataError.Unauthorized)
+        val result = network.updateDisplayName(displayName)
+        if (result is DataResult.Success) store(currentUid, result.value)
+        result
     }
 
     override fun clearPending() {

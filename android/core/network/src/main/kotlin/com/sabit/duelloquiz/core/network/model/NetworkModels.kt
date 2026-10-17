@@ -117,3 +117,37 @@ internal data class NetworkReviewItem(
     val correctOption: NetworkOption,
     val explanation: String? = null,
 )
+
+@Serializable
+internal data class NetworkStats(
+    val record: NetworkRecord,
+    val calibration: List<NetworkCalibration>,
+)
+
+@Serializable
+internal data class NetworkRecord(val wins: Int, val losses: Int, val draws: Int, val total: Int)
+
+@Serializable
+internal data class NetworkCalibration(val level: Int, val picks: Int, val correct: Int)
+
+@Serializable
+internal data class NetworkMatchHistory(val items: List<NetworkMatchSummary>)
+
+@Serializable
+internal data class NetworkMatchOpponent(
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    val deleted: Boolean = false,
+)
+
+@Serializable
+internal data class NetworkMatchSummary(
+    val id: String,
+    val opponent: NetworkMatchOpponent,
+    val result: String,
+    val endReason: String,
+    val scoreOwn: Int,
+    val scoreOpponent: Int,
+    val ratingChange: Int,
+    val finishedAt: String,
+)

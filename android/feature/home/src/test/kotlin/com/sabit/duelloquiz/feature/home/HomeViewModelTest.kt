@@ -38,6 +38,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import com.sabit.duelloquiz.core.common.AppConfig
+import com.sabit.duelloquiz.core.duel.ActiveDuel
+import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,6 +68,8 @@ class HomeViewModelTest {
     private val quizRepository = TestQuizRepository()
     private val networkMonitor = TestNetworkMonitor(online = true)
     private val savedStateHandle = SavedStateHandle()
+    private var appConfig = AppConfig("1.0", 1, "", duelEnabled = true)
+    private val activeDuels = InMemoryActiveDuelStore()
 
     private val categories = listOf(
         Category(1, "cografiya", "Coğrafiya", "geography"),
@@ -81,6 +86,8 @@ class HomeViewModelTest {
             quizRepository,
             networkMonitor,
             savedStateHandle,
+            appConfig,
+            activeDuels,
         )
         backgroundScope.launch { vm.uiState.collect {} }
         return vm
@@ -152,7 +159,7 @@ class HomeViewModelTest {
         cached.nextRefresh = DataResult.Failure(DataError.Offline)
         val vm = HomeViewModel(
             authRepository, bannerRepository, TestProfileRepository(initial = profile), cached,
-            quizRepository, networkMonitor, savedStateHandle,
+            quizRepository, networkMonitor, savedStateHandle, appConfig, activeDuels,
         )
         backgroundScope.launch { vm.uiState.collect {} }
         runCurrent()
@@ -381,6 +388,70 @@ class HomeViewModelTest {
         vm.events.test {
             vm.onAction(HomeAction.SettingsClicked)
             assertEquals(HomeEvent.NavigateToSettings, awaitItem())
+        }
+    }
+
+    // Duel entry and profile (OQ-020, HOME-03, PROF-01, DUEL-16)
+
+    @Test
+    fun theDuelEntryFollowsTheBuildFlag() = runTest {
+        assertTrue(viewModel().uiState.value.duelEnabled)
+        appConfig = AppConfig("1.0", 1, "", duelEnabled = false)
+        val off = viewModel()
+        runCurrent()
+        assertFalse(off.uiState.value.duelEnabled)
+        off.events.test {
+            off.onAction(HomeAction.DuelClicked)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun theDuelNeedsInternet() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        vm.events.test {
+            vm.onAction(HomeAction.DuelClicked)
+            assertEquals(HomeEvent.NavigateToDuel(resume = false), awaitItem())
+            networkMonitor.online.value = false
+            runCurrent()
+            vm.onAction(HomeAction.DuelClicked)
+            assertEquals(HomeEvent.ShowMessage(HomeMessage.DuelNeedsInternet), awaitItem())
+        }
+    }
+
+    @Test
+    fun theHeaderOpensTheProfile() = runTest {
+        val vm = viewModel()
+        vm.events.test {
+            vm.onAction(HomeAction.ProfileClicked)
+            assertEquals(HomeEvent.NavigateToProfile, awaitItem())
+        }
+    }
+
+    @Test
+    fun aSavedRunningMatchIsResumedOnce() = runTest {
+        activeDuels.duel.value = ActiveDuel("m1", null, null)
+        val vm = viewModel()
+        vm.events.test {
+            runCurrent()
+            assertEquals(HomeEvent.NavigateToDuel(resume = true), awaitItem())
+        }
+        // The same home entry does not reopen it again.
+        val again = viewModel()
+        again.events.test {
+            runCurrent()
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun leavingAMatchShowsTheSnackbarOnHome() = runTest {
+        savedStateHandle[NavResults.HOME_NOTICE] = HomeNotice.DuelLeft.name
+        val vm = viewModel()
+        vm.events.test {
+            runCurrent()
+            assertEquals(HomeEvent.ShowMessage(HomeMessage.DuelLeft), awaitItem())
         }
     }
 }
