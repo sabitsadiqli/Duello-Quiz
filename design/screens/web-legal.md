@@ -18,14 +18,14 @@ Open (need Sabit):
   GitHub serves the files as they are (no Jekyll build over the Markdown in
   `docs/`). Side effect: every file under `docs/` becomes reachable on the Pages
   site (the repo is public anyway; no secrets live there).
-- **OQ-D20 — contact email and developer name** shown on the pages (and in Play
+- **OQ-D20 — deferred by Sabit (2026-10-17): contact email and developer name are added when the app is ready; keep the placeholders until then.** Contact email and developer name shown on the pages (and in Play
   Console). Which address is public? A dedicated address (e.g. a new Gmail) keeps
   the personal one private.
-- **OQ-D21 — English text.** SET-06 asks for Azerbaijani **and English** on the
+- **OQ-D21 — decided by Sabit (2026-10-17): yes, English sections on the privacy policy and the deletion page, below the Azerbaijani text.** SET-06 asks for Azerbaijani **and English** on the
   deletion page. Both pages have an English section placeholder (`lang="en"`); the
   privacy policy's English part is optional. Remove the section if Sabit decides
   Azerbaijani only.
-- **OQ-D22 — minimum age / target audience** for the "Uşaqlar" section must match
+- **OQ-D22 — decided by Sabit (2026-10-17): 13+, not directed at children.** Minimum age / target audience for the "Uşaqlar" section must match
   the Play Console "Target audience and content" answer.
 
 Decided:
