@@ -87,6 +87,21 @@ GAME = [
     ("onSurfaceVariant", "surfaceContainer", TEXT, "duel result / profile: zero rating change, captions on the rating card"),
     ("correct", "correctContainer", TEXT, "duel reveal: points text on a correct player panel"),
     ("wrong", "wrongContainer", TEXT, "duel reveal: points text on a wrong player panel"),
+    # Web legal pages (design/screens/web-legal.md, docs/legal/legal.css)
+    ("onSurface", "surface", TEXT, "web: body text and headings"),
+    ("onSurfaceVariant", "surface", TEXT, "web: meta line, nav links, footer"),
+    ("primary", "surface", TEXT, "web: underlined links"),
+    ("onSurface", "surfaceContainer", TEXT, "web: nav link on hover"),
+    ("primary", "surfaceContainerLow", TEXT, "web: link card title, table-of-contents links"),
+    ("onSurfaceVariant", "surfaceContainerLow", TEXT, "web: link card supporting text"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "web: current nav pill, callout"),
+    ("onBannerWarningContainer", "bannerWarningContainer", TEXT, "web: 'Mətn hazırlanır' placeholder box"),
+    ("onPrimary", "primary", TEXT, "web: skip link"),
+    ("primary", "surface", UI, "web: 3px focus ring"),
+    # Play Store graphics (design/store/, light colours only on export)
+    ("onPrimary", "primary", TEXT, "store: app name on the feature graphic"),
+    ("tertiaryContainer", "primary", UI, "store: back bubble of the mark on the feature graphic"),
+    ("primaryContainer", "primary", UI, "store: decorative option bars on the feature graphic"),
 ]
 
 

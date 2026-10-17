@@ -32,6 +32,8 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/duel-availability.md` | Upgrade required, duel unavailable, connection failed (DUEL-01) |
 | `screens/profile.md` | Profile, match history, calibration stats, edit name (PROF-01 … PROF-08) |
 | `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon |
+| `screens/web-legal.md` | Public GitHub Pages: app intro, privacy policy, account deletion (`docs/legal/`, SET-06) |
+| `store/` | Google Play listing text, screenshot plan, feature graphic |
 
 Duel colours reuse existing roles (`game.confidence*`, `game.correct/wrong`,
 `scheme.primary` for self, `scheme.tertiary` for the opponent); duel timing lives

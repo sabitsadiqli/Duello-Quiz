@@ -26,7 +26,7 @@ which keep text pairs above 4.5:1; this script confirms every pair actually used
 
 ## Summary
 
-Pairs checked: 152, failures: 0.
+Pairs checked: 178, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
@@ -115,6 +115,19 @@ Pairs checked: 152, failures: 0.
 | onSurfaceVariant | surfaceContainer | #46464F | #EFEDF4 | 8.04 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
 | correct | correctContainer | #1E6B30 | #B7F1BC | 5.10 | 4.5 | pass | duel reveal: points text on a correct player panel |
 | wrong | wrongContainer | #B3261E | #F9DEDC | 5.14 | 4.5 | pass | duel reveal: points text on a wrong player panel |
+| onSurface | surface | #1B1B21 | #FBF8FF | 16.30 | 4.5 | pass | web: body text and headings |
+| onSurfaceVariant | surface | #46464F | #FBF8FF | 8.88 | 4.5 | pass | web: meta line, nav links, footer |
+| primary | surface | #4355B9 | #FBF8FF | 6.17 | 4.5 | pass | web: underlined links |
+| onSurface | surfaceContainer | #1B1B21 | #EFEDF4 | 14.76 | 4.5 | pass | web: nav link on hover |
+| primary | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 4.5 | pass | web: link card title, table-of-contents links |
+| onSurfaceVariant | surfaceContainerLow | #46464F | #F5F2FA | 8.43 | 4.5 | pass | web: link card supporting text |
+| onPrimaryContainer | primaryContainer | #00105C | #DEE0FF | 13.20 | 4.5 | pass | web: current nav pill, callout |
+| onBannerWarningContainer | bannerWarningContainer | #311300 | #FFDCC6 | 13.32 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
+| onPrimary | primary | #FFFFFF | #4355B9 | 6.48 | 4.5 | pass | web: skip link |
+| primary | surface | #4355B9 | #FBF8FF | 6.17 | 3.0 | pass | web: 3px focus ring |
+| onPrimary | primary | #FFFFFF | #4355B9 | 6.48 | 4.5 | pass | store: app name on the feature graphic |
+| tertiaryContainer | primary | #FFD8EA | #4355B9 | 5.02 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
+| primaryContainer | primary | #DEE0FF | #4355B9 | 5.01 | 3.0 | pass | store: decorative option bars on the feature graphic |
 
 ### Dark theme
 
@@ -196,3 +209,16 @@ Pairs checked: 152, failures: 0.
 | onSurfaceVariant | surfaceContainer | #C6C5D0 | #1F1F25 | 9.60 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
 | correct | correctContainer | #8DD898 | #06531F | 5.48 | 4.5 | pass | duel reveal: points text on a correct player panel |
 | wrong | wrongContainer | #F2B8B5 | #8C1D18 | 5.34 | 4.5 | pass | duel reveal: points text on a wrong player panel |
+| onSurface | surface | #E4E1E9 | #131318 | 14.33 | 4.5 | pass | web: body text and headings |
+| onSurfaceVariant | surface | #C6C5D0 | #131318 | 10.84 | 4.5 | pass | web: meta line, nav links, footer |
+| primary | surface | #BAC3FF | #131318 | 10.88 | 4.5 | pass | web: underlined links |
+| onSurface | surfaceContainer | #E4E1E9 | #1F1F25 | 12.68 | 4.5 | pass | web: nav link on hover |
+| primary | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 4.5 | pass | web: link card title, table-of-contents links |
+| onSurfaceVariant | surfaceContainerLow | #C6C5D0 | #1B1B21 | 10.04 | 4.5 | pass | web: link card supporting text |
+| onPrimaryContainer | primaryContainer | #DEE0FF | #293CA0 | 7.21 | 4.5 | pass | web: current nav pill, callout |
+| onBannerWarningContainer | bannerWarningContainer | #FFDCC6 | #723400 | 7.39 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
+| onPrimary | primary | #08218A | #BAC3FF | 7.74 | 4.5 | pass | web: skip link |
+| primary | surface | #BAC3FF | #131318 | 10.88 | 3.0 | pass | web: 3px focus ring |
+| onPrimary | primary | #08218A | #BAC3FF | 7.74 | 4.5 | pass | store: app name on the feature graphic |
+| tertiaryContainer | primary | #603C51 | #BAC3FF | 5.45 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
+| primaryContainer | primary | #293CA0 | #BAC3FF | 5.49 | 3.0 | pass | store: decorative option bars on the feature graphic |
