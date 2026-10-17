@@ -32,6 +32,18 @@ Upgrade: websocket
   sides. An unknown `type` is logged and ignored; the connection stays open
   (forward compatibility within one protocol version).
 
+### 1.0 Changes within v1
+
+New fields are only added, never renamed or removed, so `protocolVersion` stays 1
+(clients must ignore unknown fields, servers send every documented field).
+
+| Date | Change |
+| --- | --- |
+| 2026-10-17 | `match.result.you` / `match.result.opponent` (`{displayName, avatarUrl, ratingBefore, ratingAfter, deleted}`) so the result screen can be rebuilt after process death |
+| 2026-10-17 | `match.state.opponent.reconnectDeadlineEpochMs` while the opponent is disconnected |
+| 2026-10-17 | `match.result.forfeitCause` is now stored, so a result rebuilt after a restart keeps it |
+| 2026-10-17 | `error internal_error` carries `ref`, `matchId`, `roundNo` of the failed message; nothing of it was stored (OQ-D17) |
+
 ### 1.1 One connection per user (newest wins)
 
 A user has at most one duel connection. When a second connection of the same user
@@ -359,7 +371,11 @@ or a draw after the 3rd question; see `next`).
 ### `opponent.connection`
 Presence of the opponent (DUEL-13). On `disconnected`, `reconnectDeadlineEpochMs` =
 disconnect + 10 s (informational countdown; the seat is held until the match ends,
-OQ-032). On `connected` it is `null`.
+OQ-032). On `connected` it is `null`. The same value is in
+`match.state.opponent.reconnectDeadlineEpochMs` for as long as the opponent stays
+away (also after it has passed: the window is informational and the seat is held
+until the match ends). A player who had no socket when the match started counts as
+disconnected from that moment.
 ```json
 {"type": "opponent.connection", "seq": 9, "serverNowEpochMs": 1792144814000,
  "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a", "state": "disconnected",
@@ -373,7 +389,7 @@ only (no replay). Fields:
 
 | Field | Meaning |
 | --- | --- |
-| `matchId`, `you`, `opponent` | As in `match.found`; `opponent.connected` (bool) added |
+| `matchId`, `you`, `opponent` | As in `match.found`; `opponent` adds `connected` (bool) and `reconnectDeadlineEpochMs` (disconnect + 10 s while disconnected, else `null`; informational, OQ-032) |
 | `phase` | `intro` \| `question` \| `confidence` \| `answer` \| `result` |
 | `deadlineEpochMs` | End of the current phase (without grace) |
 | `roundNo`, `allIn`, `suddenDeath`, `suddenDeathNo` | Current round (`roundNo = 0` during the intro) |
@@ -392,7 +408,8 @@ only (no replay). Fields:
 {"type": "match.state", "seq": 14, "serverNowEpochMs": 1792144830000,
  "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a",
  "you": {"displayName": "Leyla", "avatarUrl": null, "rating": 1000},
- "opponent": {"displayName": "Murad", "avatarUrl": null, "rating": 1016, "connected": true},
+ "opponent": {"displayName": "Murad", "avatarUrl": null, "rating": 1016, "connected": false,
+              "reconnectDeadlineEpochMs": 1792144836000},
  "phase": "answer", "deadlineEpochMs": 1792144838000,
  "roundNo": 2, "allIn": false, "suddenDeath": false, "suddenDeathNo": null,
  "question": {"text": "…", "image": null, "categoryName": "Tarix"},
@@ -408,9 +425,17 @@ only (no replay). Fields:
 ### `match.result`
 End of the match. Sent to both players right after the last `round.result` (or at
 once on `match.leave`), and again on `match.rejoin` after the end (same `seq` while
-the server still has the match in memory, 10 minutes; after a server restart a
-finished match is rebuilt from storage with `seq = 0` and `forfeitCause = null`).
-The app clears `activeMatchId`.
+the server still has the match in memory, 10 minutes; after that or after a server
+restart a finished match is rebuilt from storage with `seq = 0`; `forfeitCause` is
+`null` there only for forfeits stored before 2026-10-17). The app clears
+`activeMatchId`.
+
+`you` and `opponent` make the message self-contained: after process death the app
+can draw the whole result screen (names, avatars, both ratings) from a single
+`match.result`, without the `match.found` it saw earlier. In a live result the name
+and avatar are the ones from match start; in a rebuilt result they are the current
+profile values. A deleted opponent is `{"displayName": null, "avatarUrl": null,
+"deleted": true}` with the stored ratings (the app shows "Silinmiş oyunçu").
 
 Calibration (OQ-D12): the server sends only the counts per level (`picks`,
 `correct`); the hint text ("Yüksək əminlikdə tez-tez yanılırsan" etc.) and the "—"
@@ -424,7 +449,8 @@ for an unused level are chosen on the client.
 | `forfeitCause` | `missed_rounds` \| `left` \| `null` |
 | `scores` | `{you, opponent}`, final (also on forfeit: current scores) |
 | `ratingBefore`, `ratingAfter`, `ratingChange` | Own Elo; equal for `abandoned` |
-| `opponentRatingAfter` | Opponent's Elo after the match |
+| `opponentRatingAfter` | Opponent's Elo after the match (same as `opponent.ratingAfter`) |
+| `you`, `opponent` | `{displayName, avatarUrl, ratingBefore, ratingAfter, deleted}`; ratings equal for `abandoned`; `displayName`/`avatarUrl` are `null` and `deleted = true` only for a deleted opponent in a rebuilt result |
 | `suddenDeathPlayed` | Number of sudden-death questions (0–3) |
 | `calibration` | Always 3 entries `{level, picks, correct}` for levels 1, 2, 3 (OQ-027: rounds 1–7 with an actively locked Əminlik) |
 | `rounds` | Compact list of all played rounds |
@@ -440,7 +466,19 @@ for an unused level are chosen on the client.
                  {"level": 3, "picks": 2, "correct": 2}],
  "rounds": [{"roundNo": 1, "suddenDeath": false,
              "you": {"bet": 2, "betDefaulted": false, "correct": true, "points": 231, "missed": false},
-             "opponent": {"bet": 1, "betDefaulted": true, "correct": false, "points": 0, "missed": true}}]}
+             "opponent": {"bet": 1, "betDefaulted": true, "correct": false, "points": 0, "missed": true}}],
+ "you": {"displayName": "Leyla", "avatarUrl": null, "ratingBefore": 1000, "ratingAfter": 1017, "deleted": false},
+ "opponent": {"displayName": "Murad", "avatarUrl": "https://lh3.googleusercontent.com/a/x",
+              "ratingBefore": 1016, "ratingAfter": 999, "deleted": false}}
+```
+
+Rebuilt after a restart, opponent deleted meanwhile (excerpt):
+```json
+{"type": "match.result", "seq": 0, "serverNowEpochMs": 1792148000000,
+ "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a", "outcome": "win", "endReason": "forfeit",
+ "forfeitedBy": "opponent", "forfeitCause": "left",
+ "you": {"displayName": "Leyla", "avatarUrl": null, "ratingBefore": 1000, "ratingAfter": 1017, "deleted": false},
+ "opponent": {"displayName": null, "avatarUrl": null, "ratingBefore": 1016, "ratingAfter": 999, "deleted": true}}
 ```
 
 ### `error` (seq 0)
@@ -471,7 +509,7 @@ shown to users; the app maps `code` to text.
 | `stale_round` | no | `roundNo` is not the current round |
 | `match_not_found` | no | Unknown match, not the user's, or lost by a restart |
 | `bad_message` | after 10, `4002` | Malformed JSON, missing/invalid field, binary frame, frame > 4096 bytes |
-| `internal_error` | no | Unexpected server error while handling the message |
+| `internal_error` | no | Unexpected server error while handling the message. Carries `ref` (and `matchId`/`roundNo` for match and round messages). Nothing of the failed message was stored: for `round.bet` / `round.answer` the client may send the same message again while its deadline (+ 250 ms grace) has not passed; a retry after the deadline gets `too_late` (OQ-D17) |
 
 ## 7. Game rules enforced by the server
 

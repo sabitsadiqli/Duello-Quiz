@@ -113,6 +113,7 @@ class UserService(
                         else -> "loss"
                     },
                     endReason = m.endReason,
+                    forfeitCause = m.forfeitCause,
                     scoreOwn = m.scoreOwn,
                     scoreOpponent = m.scoreOpponent,
                     ratingChange = if (m.ratingBefore != null && m.ratingAfter != null) m.ratingAfter - m.ratingBefore else 0,

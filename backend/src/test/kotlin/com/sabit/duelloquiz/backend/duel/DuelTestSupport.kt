@@ -121,6 +121,7 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
         matches[end.matchId] = m.copy(
             status = end.status, endReason = end.endReason, winnerSide = end.winnerSide,
             forfeitedSide = end.forfeitedSide, scoreA = end.scoreA, scoreB = end.scoreB, ratings = ratings,
+            forfeitCause = end.forfeitCause,
         )
         return ratings
     }

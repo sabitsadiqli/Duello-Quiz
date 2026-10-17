@@ -165,6 +165,7 @@ class DbDuelStore(
             it[endReason] = end.endReason
             it[winnerSide] = end.winnerSide?.db
             it[forfeitedSide] = end.forfeitedSide?.db
+            it[forfeitCause] = end.forfeitCause
             it[scoreA] = end.scoreA
             it[scoreB] = end.scoreB
             it[ratingABefore] = if (keepRatings) ratings.aBefore else null
@@ -219,6 +220,7 @@ class DbDuelStore(
             endReason = row[MatchesTable.endReason],
             winnerSide = Side.fromDb(row[MatchesTable.winnerSide]),
             forfeitedSide = Side.fromDb(row[MatchesTable.forfeitedSide]),
+            forfeitCause = row[MatchesTable.forfeitCause],
             scoreA = row[MatchesTable.scoreA],
             scoreB = row[MatchesTable.scoreB],
             ratings = if (aBefore != null && aAfter != null && bBefore != null && bAfter != null) {

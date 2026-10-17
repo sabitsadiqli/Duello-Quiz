@@ -118,7 +118,28 @@ fun parseClientMessage(text: String): ParsedClientMessage {
 data class PlayerCard(val displayName: String, val avatarUrl: String?, val rating: Int)
 
 @Serializable
-data class OpponentCard(val displayName: String, val avatarUrl: String?, val rating: Int, val connected: Boolean)
+data class OpponentCard(
+    val displayName: String,
+    val avatarUrl: String?,
+    val rating: Int,
+    val connected: Boolean,
+    /** While disconnected: end of the informational 10 s reconnect window (OQ-032), else null. */
+    val reconnectDeadlineEpochMs: Long?,
+)
+
+/**
+ * A player on the result screen (`match.result.you` / `.opponent`), complete so the
+ * screen can be rebuilt after process death. A deleted account has `deleted = true`
+ * and null name/avatar (only possible for the opponent of a stored result).
+ */
+@Serializable
+data class ResultPlayer(
+    val displayName: String?,
+    val avatarUrl: String?,
+    val ratingBefore: Int,
+    val ratingAfter: Int,
+    val deleted: Boolean,
+)
 
 @Serializable
 data class Scores(val you: Int, val opponent: Int)
@@ -283,6 +304,8 @@ sealed interface ServerMessage {
         val suddenDeathPlayed: Int,
         val calibration: List<CalibrationLevel>,
         val rounds: List<RoundSummary>,
+        val you: ResultPlayer,
+        val opponent: ResultPlayer,
     ) : ServerMessage
 
     @Serializable @SerialName("error")
@@ -307,6 +330,26 @@ data class Outgoing(val seq: Long, val serverNowEpochMs: Long, val message: Serv
         body.forEach { (k, v) -> if (k != "type") fields[k] = v }
         return JsonObject(fields).toString()
     }
+}
+
+/**
+ * `internal_error` for a client message whose handling threw (OQ-D17). Handling a
+ * message stores nothing before its last step (the hand-over to the match actor, which
+ * cannot fail), so nothing of the message was applied and the client may send it again
+ * before the deadline. Carries the message's `ref`, `matchId` and `roundNo` so the
+ * client knows which action to retry.
+ */
+fun internalErrorFor(message: ClientMessage): ServerMessage.Error {
+    val (ref, matchId, roundNo) = when (message) {
+        ClientMessage.Ping -> Triple("ping", null, null)
+        ClientMessage.QueueJoin -> Triple("queue.join", null, null)
+        ClientMessage.QueueLeave -> Triple("queue.leave", null, null)
+        is ClientMessage.MatchRejoin -> Triple("match.rejoin", message.matchId, null)
+        is ClientMessage.MatchLeave -> Triple("match.leave", message.matchId, null)
+        is ClientMessage.RoundBet -> Triple("round.bet", message.matchId, message.roundNo)
+        is ClientMessage.RoundAnswer -> Triple("round.answer", message.matchId, message.roundNo)
+    }
+    return ServerMessage.Error(DuelErrorCodes.INTERNAL_ERROR, "Unexpected server error; nothing was stored", matchId, roundNo, ref)
 }
 
 object Who {

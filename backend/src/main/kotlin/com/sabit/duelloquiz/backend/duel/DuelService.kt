@@ -244,16 +244,29 @@ class DuelService(
         }
         // Only finished matches can be shown again; abandoned/cancelled/lost ones are "not found" (DUEL-13).
         if (stored == null || side == null || stored.status != MatchStatus.FINISHED) return connection.send(notFound)
-        connection.send(Outgoing(0, clock.nowMs(), storedResult(stored, side)))
+        val profiles = try {
+            store.profiles(listOfNotNull(stored.playerA, stored.playerB))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.error("duel_match_load_failed matchId={}", matchId, e)
+            return connection.send(out(ServerMessage.Error(DuelErrorCodes.INTERNAL_ERROR, "Unexpected server error", rawMatchId, ref = "match.rejoin")))
+        }
+        connection.send(Outgoing(0, clock.nowMs(), storedResult(stored, side, profiles)))
     }
 
-    private fun storedResult(m: StoredMatch, side: Side): ServerMessage.MatchResult {
+    private fun storedResult(m: StoredMatch, side: Side, profiles: Map<UUID, PlayerProfile>): ServerMessage.MatchResult {
         val own = if (side == Side.A) m.scoreA else m.scoreB
         val other = if (side == Side.A) m.scoreB else m.scoreA
         val r = m.ratings
         val before = r?.let { if (side == Side.A) it.aBefore else it.bBefore } ?: 0
         val after = r?.let { if (side == Side.A) it.aAfter else it.bAfter } ?: before
-        val opponentAfter = r?.let { if (side == Side.A) it.bAfter else it.aAfter } ?: 0
+        val opponentBefore = r?.let { if (side == Side.A) it.bBefore else it.aBefore } ?: 0
+        val opponentAfter = r?.let { if (side == Side.A) it.bAfter else it.aAfter } ?: opponentBefore
+        fun player(userId: UUID?, before: Int, after: Int): ResultPlayer {
+            val profile = userId?.let { profiles[it] }
+            return ResultPlayer(profile?.displayName, profile?.avatarUrl, before, after, deleted = profile == null)
+        }
         val counted = m.rounds
             .filter { !it.suddenDeath && it.roundNo <= config.regularRounds }
             .mapNotNull { it.answers[side] }
@@ -269,7 +282,7 @@ class DuelService(
             },
             endReason = m.endReason ?: EndReasons.NORMAL,
             forfeitedBy = m.forfeitedSide?.let { if (it == side) Who.SELF else Who.OPPONENT },
-            forfeitCause = null,
+            forfeitCause = m.forfeitCause,
             scores = Scores(own, other),
             ratingBefore = before,
             ratingAfter = after,
@@ -283,6 +296,8 @@ class DuelService(
             rounds = m.rounds.map {
                 RoundSummary(it.roundNo, it.suddenDeath, it.answers[side]?.summary() ?: empty, it.answers[side.other]?.summary() ?: empty)
             },
+            you = player(if (side == Side.A) m.playerA else m.playerB, before, after),
+            opponent = player(if (side == Side.A) m.playerB else m.playerA, opponentBefore, opponentAfter),
         )
     }
 

@@ -129,6 +129,7 @@ object MatchesTable : Table("matches") {
     val status = varchar("status", 16)
     val endReason = varchar("end_reason", 16).nullable()
     val forfeitedSide = varchar("forfeited_side", 1).nullable()
+    val forfeitCause = varchar("forfeit_cause", 16).nullable()
     val ratingABefore = integer("rating_a_before").nullable()
     val ratingAAfter = integer("rating_a_after").nullable()
     val ratingBBefore = integer("rating_b_before").nullable()

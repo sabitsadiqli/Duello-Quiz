@@ -694,7 +694,7 @@ components:
 
     MatchSummary:
       type: object
-      required: [id, opponent, result, endReason, scoreOwn, scoreOpponent, ratingChange, finishedAt]
+      required: [id, opponent, result, endReason, forfeitCause, scoreOwn, scoreOpponent, ratingChange, finishedAt]
       properties:
         id:
           type: string
@@ -719,6 +719,14 @@ components:
           description: |
             With `forfeit` the app labels a win "Rəqib tərk etdi" and a loss
             "Texniki məğlubiyyət"; with `sudden_death` "Əlavə sual".
+        forfeitCause:
+          type: [string, "null"]
+          enum: [missed_rounds, left, null]
+          description: |
+            Why the match was forfeited (OQ-068, OQ-D16): `missed_rounds` (2 missed
+            rounds in a row) or `left` (left on purpose or deleted the account).
+            `null` unless `endReason = forfeit`, and for forfeits stored before
+            2026-10-17. The forfeiting side follows from `result` (loss = own forfeit).
         scoreOwn: { type: integer }
         scoreOpponent: { type: integer }
         ratingChange:
