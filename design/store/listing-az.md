@@ -12,7 +12,7 @@ counts below include spaces and were checked by script.
 - **OQ-D23 — app name.** Proposal: "Duello Quiz" (11 / 30). Alternative with a
   descriptive part: "Duello Quiz: Bilik Dueli" (24 / 30), better for search, but
   then the launcher name and the listing name differ. Decides: Sabit.
-- **OQ-D24 — "Reklam yoxdur" line.** True for the MVP (ads and in-app purchases are
+- **OQ-D24 — decided by Sabit (2026-10-17): keep the line; the app is free and has no ads or in-app purchases.** True for the MVP (ads and in-app purchases are
   out of scope). If either is added later, the line and the Data safety form must
   change in the same release. Keep it? Decides: Sabit.
 - **OQ-D25 — Advertising ID.** `firebase-analytics` adds the
