@@ -9,13 +9,13 @@ counts below include spaces and were checked by script.
 
 ## Open questions
 
-- **OQ-D23 — app name.** Proposal: "Duello Quiz" (11 / 30). Alternative with a
+- **OQ-D23 — decided by Sabit (2026-10-17): "Duello Quiz".** Proposal: "Duello Quiz" (11 / 30). Alternative with a
   descriptive part: "Duello Quiz: Bilik Dueli" (24 / 30), better for search, but
   then the launcher name and the listing name differ. Decides: Sabit.
 - **OQ-D24 — decided by Sabit (2026-10-17): keep the line; the app is free and has no ads or in-app purchases.** True for the MVP (ads and in-app purchases are
   out of scope). If either is added later, the line and the Data safety form must
   change in the same release. Keep it? Decides: Sabit.
-- **OQ-D25 — Advertising ID.** `firebase-analytics` adds the
+- **OQ-D25 — decided by Sabit (2026-10-17): remove the AD_ID permission and disable ad-ID collection (android-dev).** `firebase-analytics` adds the
   `com.google.android.gms.permission.AD_ID` permission by default. Either declare
   "Device or other IDs → Advertising ID" in Data safety, or (proposal) remove the
   permission in the manifest and disable ad-ID collection
@@ -125,7 +125,7 @@ as "sharing".
 | Photos and videos | No (only the URL of the Google profile photo is stored; declare under "Other info" if in doubt) | — | — | — | — |
 | App activity → App interactions | Yes (quiz answers, duel picks and answers, results, rating; Analytics events) | No | Required | App functionality, analytics | Backend, Firebase Analytics |
 | App info and performance → Crash logs, Diagnostics | Only once Crashlytics is added | No | — | Analytics (stability) | Crashlytics |
-| Device or other IDs | Yes (Firebase Analytics app instance ID; Advertising ID only if not removed, OQ-D25) | No | — | Analytics | Firebase Analytics |
+| Device or other IDs | Yes (Firebase Analytics app instance ID; no Advertising ID, removed per OQ-D25) | No | — | Analytics | Firebase Analytics |
 | Location, contacts, messages, financial info, health, files, calendar, audio | No | — | — | — | — |
 
 Security practices:
