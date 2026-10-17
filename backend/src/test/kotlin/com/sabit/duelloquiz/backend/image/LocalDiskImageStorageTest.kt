@@ -20,6 +20,10 @@ class LocalDiskImageStorageTest {
         storage.put(key, byteArrayOf(1, 2, 3), "image/webp")
         assertTrue(storage.exists(key))
         assertContentEquals(byteArrayOf(1, 2, 3), Files.readAllBytes(root.resolve(key)))
+        // World-readable: Caddy serves the file as another user.
+        if (root.fileSystem.supportedFileAttributeViews().contains("posix")) {
+            assertEquals("rw-r--r--", java.nio.file.attribute.PosixFilePermissions.toString(Files.getPosixFilePermissions(root.resolve(key))))
+        }
         // No temp file is left next to it.
         assertEquals(listOf(root.resolve(key).fileName.toString()), Files.list(root.resolve("questions")).use { s -> s.map { it.fileName.toString() }.toList() })
         storage.delete(key)

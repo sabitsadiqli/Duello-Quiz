@@ -6,6 +6,7 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.PosixFilePermissions
 
 /**
  * Where processed image files live (docs/mvp-spec.md §5). Keys are relative paths such
@@ -33,6 +34,10 @@ class LocalDiskImageStorage(root: Path) : ImageStorage {
         val temp = Files.createTempFile(target.parent, ".upload-", ".tmp")
         try {
             Files.write(temp, bytes)
+            // Temp files are created 0600; Caddy (another user/container) must be able to read the result.
+            if (temp.fileSystem.supportedFileAttributeViews().contains("posix")) {
+                Files.setPosixFilePermissions(temp, PosixFilePermissions.fromString("rw-r--r--"))
+            }
             try {
                 Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
             } catch (e: AtomicMoveNotSupportedException) {
