@@ -13,6 +13,7 @@ import com.sabit.duelloquiz.core.network.duel.DuelSocket
 import com.sabit.duelloquiz.core.network.duel.DuelSocketFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** Connection of a [DuelClient] (what the screen shows about its own socket). */
@@ -247,22 +249,27 @@ class DuelClient(
             }
         }
         var code: Int? = null
-        for (inbound in open.incoming) {
-            when (inbound) {
-                is DuelInbound.Message -> {
-                    lastServerMessageAt = monotonicClock.elapsedMs()
-                    handle(inbound.message)
-                }
-                DuelInbound.Malformed -> Log.w(TAG, "Malformed duel frame ignored")
-                is DuelInbound.Closed -> {
-                    code = inbound.code
-                    break
+        try {
+            for (inbound in open.incoming) {
+                when (inbound) {
+                    is DuelInbound.Message -> {
+                        lastServerMessageAt = monotonicClock.elapsedMs()
+                        handle(inbound.message)
+                    }
+                    DuelInbound.Malformed -> Log.w(TAG, "Malformed duel frame ignored")
+                    is DuelInbound.Closed -> {
+                        code = inbound.code
+                        break
+                    }
                 }
             }
+        } finally {
+            heartbeat.cancel()
+            watchdog.cancel()
+            if (socket === open) socket = null
+            // Also when the owning scope is cancelled (the duel screen is gone): close with 1000.
+            withContext(NonCancellable) { open.close(DuelSocket.NORMAL_CLOSE) }
         }
-        heartbeat.cancel()
-        watchdog.cancel()
-        if (socket === open) socket = null
         code
     }
 

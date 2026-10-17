@@ -92,6 +92,7 @@ class DuelViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
+    /** The socket belongs to this screen: it is closed (1000) when viewModelScope ends. */
     private val client: DuelClient = clientFactory.create(viewModelScope)
     private val isOnline = MutableStateFlow(true)
 
@@ -145,12 +146,6 @@ class DuelViewModel @Inject constructor(
             DuelAction.AppStopped -> onAppStopped()
             DuelAction.AppStarted -> if (model.mode in IN_MATCH_MODES) client.reconnectNow()
         }
-    }
-
-    override fun onCleared() {
-        // The socket belongs to this screen (viewModelScope is cancelled right after).
-        viewModelScope.launch { client.close() }
-        super.onCleared()
     }
 
     // Server messages
