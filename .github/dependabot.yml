@@ -23,3 +23,47 @@ updates:
         patterns: ["androidx.*"]
       kotlin:
         patterns: ["org.jetbrains.kotlin*"]
+
+  - package-ecosystem: gradle
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(backend)
+    open-pull-requests-limit: 5
+    groups:
+      ktor:
+        patterns: ["io.ktor*"]
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*"]
+      exposed:
+        patterns: ["org.jetbrains.exposed*"]
+
+  # Base images of backend/Dockerfile (Temurin JDK/JRE 21).
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(backend)
+    ignore:
+      # Java 21 is the backend toolchain; a new major needs an ADR.
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
+
+  # PostgreSQL and Caddy images of the local and production compose files.
+  - package-ecosystem: docker-compose
+    directories: ["/infra", "/infra/prod"]
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(infra)
+    groups:
+      compose-images:
+        patterns: ["*"]
+    ignore:
+      # A PostgreSQL major upgrade needs a dump/restore, never an automatic bump.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+      - dependency-name: caddy
+        update-types: ["version-update:semver-major"]

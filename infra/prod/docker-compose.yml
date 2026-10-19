@@ -1,0 +1,99 @@
+# Production / dev-server stack for Duello Quiz on one VM (runbook: infra/README.md).
+# Lives on the VM in /opt/duello next to a git-ignored .env (from .env.example);
+# the deploy workflow copies this file, the Caddyfile and scripts/ there on every deploy.
+#
+#   docker compose pull && docker compose up -d     # done by scripts/deploy.sh
+#
+# Only Caddy is reachable from outside (80/443). PostgreSQL and the backend live on the
+# internal network and publish no ports.
+#
+# SINGLE REPLICA: the duel queue and running matches are in the backend's memory
+# (OQ-070). Never scale `backend` beyond 1; every redeploy/restart abandons running
+# matches (OQ-067), so deploy during quiet hours.
+name: duello
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-duello}
+      POSTGRES_USER: ${POSTGRES_USER:-duello}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in /opt/duello/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    shm_size: 128mb
+
+  backend:
+    # BACKEND_TAG is written by scripts/deploy.sh (commit SHA on dev, version on prod).
+    image: ghcr.io/sabitsadiqli/duello-quiz-backend:${BACKEND_TAG:?set BACKEND_TAG (scripts/deploy.sh does it)}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-duello}
+      DB_USER: ${POSTGRES_USER:-duello}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in /opt/duello/.env}
+      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:-10}
+      MEDIA_DIR: /var/lib/duello/media
+      MEDIA_BASE_URL: ${MEDIA_BASE_URL:?set MEDIA_BASE_URL in /opt/duello/.env}
+      # Paths inside the container; the files live in the host's SECRETS_DIR (read-only mount).
+      FIREBASE_SERVICE_ACCOUNT_FILE: ${FIREBASE_SERVICE_ACCOUNT_FILE:-}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      DISPLAY_NAME_BLOCKLIST_FILE: ${DISPLAY_NAME_BLOCKLIST_FILE:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # JAVA_OPTS comes from the image (headless, /tmp, MaxRAMPercentage=75 of the limit below).
+    volumes:
+      - media:/var/lib/duello/media
+      - type: bind
+        source: ${SECRETS_DIR:-/opt/duello/secrets}
+        target: /run/secrets/duello
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [internal]
+    # Never more than one replica (in-memory duel state).
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: ${BACKEND_MEMORY_LIMIT:-3g}
+    stop_grace_period: 20s
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DUELLO_DOMAIN: ${DUELLO_DOMAIN:?set DUELLO_DOMAIN in /opt/duello/.env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in /opt/duello/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3; optional, clients fall back to TCP if UDP 443 is closed
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - media:/srv/media:ro
+      # Certificates and ACME account: must survive restarts (Let's Encrypt rate limits).
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  pgdata:
+  # Question images (WebP + thumbnails) written by the backend, served by Caddy at /media/*.
+  media:
+  caddy_data:
+  caddy_config:
