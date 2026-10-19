@@ -1,9 +1,10 @@
 # Local development stack for Duello Quiz.
 #   cp infra/.env.example infra/.env   # then edit infra/.env
 #   docker compose -f infra/docker-compose.yml up -d
-# Today this starts PostgreSQL only. The backend service is prepared under the
-# "backend" profile and becomes usable once backend/ (and its Dockerfile) exist:
-#   docker compose -f infra/docker-compose.yml --profile backend up -d
+# Without a profile this starts PostgreSQL only (for `./gradlew run`). The backend
+# image (backend/Dockerfile) runs under the "backend" profile:
+#   docker compose -f infra/docker-compose.yml --profile backend up -d --build
+# The production stack (Caddy, TLS, ghcr.io image) is infra/prod/docker-compose.yml.
 # Images live on local disk in the `media` volume (docs/mvp-spec.md §5) — no MinIO.
 name: duello-quiz
 
@@ -26,8 +27,9 @@ services:
       retries: 10
       start_period: 10s
 
-  # Placeholder: backend/ does not exist yet. Only started with `--profile backend`.
-  # backend-dev + devops finalize the Dockerfile, env names and /health endpoint.
+  # Built from backend/Dockerfile. Only started with `--profile backend`.
+  # Locally nothing serves /media/* (Caddy does that in production), so image URLs
+  # resolve only on the server; the API itself works.
   backend:
     profiles: ["backend"]
     build:
@@ -43,6 +45,7 @@ services:
       MEDIA_DIR: /var/lib/duello/media
       MEDIA_BASE_URL: ${MEDIA_BASE_URL:-http://localhost:8080/media}
       FIREBASE_SERVICE_ACCOUNT_FILE: ${FIREBASE_SERVICE_ACCOUNT_FILE:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

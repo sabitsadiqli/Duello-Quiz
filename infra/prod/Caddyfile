@@ -1,0 +1,44 @@
+# Caddy for Duello Quiz (infra/prod/docker-compose.yml).
+# DUELLO_DOMAIN: e.g. duello-dev.duckdns.org (OQ-006: DuckDNS until a real domain).
+# Caddy gets and renews the Let's Encrypt certificate itself (HTTP-01 on port 80),
+# so ports 80 and 443 must be open in the Oracle VCN security list and on the VM.
+{
+	email {$ACME_EMAIL}
+	# Structured JSON logs (errors and Caddy's own events) on stdout.
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$DUELLO_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	# Question images, straight from the media volume (docs/mvp-spec.md §5).
+	# Keys are immutable (a new upload gets a new key), so cache for a year — but only
+	# for files that exist; a 404 must not be cached forever.
+	handle_path /media/* {
+		root * /srv/media
+		@file file
+		header @file Cache-Control "public, max-age=31536000, immutable"
+		file_server {
+			# Atomic-write temp files of LocalDiskImageStorage.
+			hide .upload-*
+		}
+	}
+
+	# REST API and the duel WebSocket (GET /v1/duel, docs/api/duel-protocol.md).
+	# reverse_proxy handles the WebSocket upgrade itself and sets no stream timeout,
+	# so long-lived duel sockets stay open; the protocol's own ping (5 s) keeps them busy.
+	# No `encode` here: API responses are small and compression gains nothing on the socket.
+	handle {
+		reverse_proxy backend:8080 {
+			# On a Caddy config reload, keep open WebSockets for 5 min instead of cutting them.
+			stream_close_delay 5m
+		}
+	}
+}
