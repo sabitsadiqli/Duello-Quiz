@@ -1,0 +1,19 @@
+# Keep the build context small and free of local state/secrets.
+.gradle/
+.kotlin/
+build/
+**/build/
+.idea/
+*.iml
+.DS_Store
+local.properties
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pem
+*service-account*.json
+README.md
+Dockerfile
+.dockerignore
