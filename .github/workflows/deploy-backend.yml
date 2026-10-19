@@ -75,7 +75,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "image tags: $SHA, $extra; deploy tag: $deploy_tag"
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -107,17 +107,17 @@ jobs:
 
       # The Gradle stage runs natively (--platform=$BUILDPLATFORM); QEMU only assembles
       # the small arm64 runtime stage.
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
         if: steps.existing.outputs.found != 'true'
         with:
           platforms: arm64
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
         if: steps.existing.outputs.found != 'true'
 
       - name: Build and push (linux/amd64, linux/arm64)
         if: steps.existing.outputs.found != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: backend
           platforms: linux/amd64,linux/arm64
