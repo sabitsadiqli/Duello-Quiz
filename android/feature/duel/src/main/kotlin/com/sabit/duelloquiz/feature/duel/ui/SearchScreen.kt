@@ -57,7 +57,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -313,13 +313,13 @@ internal fun SearchEndedScreen(reason: SearchEndReason, retrying: Boolean, onRet
         body = stringResource(body),
         onClose = onHome,
     ) {
-        DuelloPrimaryButton(
+        DuelloDuelButton(
             text = stringResource(R.string.duel_search_retry),
             onClick = onRetry,
             loading = retrying,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(Spacing.sm))
+        Spacer(Modifier.height(Spacing.md))
         DuelloNeutralButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -46,9 +48,16 @@ import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
+import com.sabit.duelloquiz.core.designsystem.component.GameCard
+import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
+import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
+import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
+import com.sabit.duelloquiz.core.designsystem.theme.gradients
+import com.sabit.duelloquiz.core.designsystem.theme.toBrush
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
@@ -78,17 +87,25 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
                 .padding(horizontal = Spacing.screenGutter),
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = Spacing.maxContentWidth)) {
+                Spacer(Modifier.height(Spacing.sm))
                 OutcomeHero(result)
-                Spacer(Modifier.height(Spacing.xl))
-                ScoreCard(result)
-                Spacer(Modifier.height(Spacing.md))
+                result.reason?.let {
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text(
+                        text = stringResource(it.textRes()),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Spacer(Modifier.height(Spacing.lg))
                 RatingCard(result)
                 result.calibration?.let { levels ->
                     Spacer(Modifier.height(Spacing.xl))
                     MatchCalibrationCard(levels, result.hint)
                 }
                 Spacer(Modifier.height(Spacing.xl))
-                DuelloPrimaryButton(
+                DuelloDuelButton(
                     text = stringResource(R.string.duel_result_play_again),
                     onClick = onPlayAgain,
                     loading = result.playAgainLoading,
@@ -103,55 +120,85 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
     }
 }
 
+/**
+ * Outcome hero (duel-result.md v2): a game card with the outcome icon, headline and the score row.
+ * Win: `gradient.resultWin` face with white content; loss, draw and abandoned: a white game card.
+ * Pops once (spring bouncy); reduced motion: static.
+ */
 @Composable
 private fun OutcomeHero(result: ResultUi) {
     val game = MaterialTheme.gameColors
     val scheme = MaterialTheme.colorScheme
-    val (icon, color, headline) = when (result.outcome) {
-        MatchOutcome.WIN -> Triple(DuelloIcons.EmojiEvents, game.correct, R.string.duel_result_win)
+    val win = result.outcome == MatchOutcome.WIN
+    val gradient = MaterialTheme.gradients.resultWin
+    val (icon, iconColor, headline) = when (result.outcome) {
+        MatchOutcome.WIN -> Triple(DuelloIcons.EmojiEvents, gradient.on, R.string.duel_result_win)
         MatchOutcome.LOSS -> Triple(DuelloIcons.Flag, scheme.onSurfaceVariant, R.string.duel_result_loss)
         MatchOutcome.DRAW -> Triple(DuelloIcons.Handshake, scheme.primary, R.string.duel_result_draw)
         MatchOutcome.ABANDONED -> Triple(DuelloIcons.Block, scheme.onSurfaceVariant, R.string.duel_result_abandoned)
     }
     val headlineColor = when (result.outcome) {
-        MatchOutcome.WIN -> game.correct
+        MatchOutcome.WIN -> gradient.on
         MatchOutcome.DRAW -> scheme.primary
         else -> scheme.onSurface
+    }
+    val heroColors = if (win) {
+        // White content; the winner pill is white with the brand violet (= gradient start) text.
+        HeroColors(gradient.on, gradient.on, gradient.on, Color.White, gradient.start)
+    } else {
+        HeroColors(scheme.onSurface, scheme.onSurface, scheme.onSurfaceVariant, game.correctContainer, game.onCorrectContainer)
     }
     val reducedMotion = rememberReducedMotion()
     val pop = remember { Animatable(if (reducedMotion) 1f else Motion.Duel.RESULT_HERO_POP_FROM) }
     LaunchedEffect(result.matchId) {
         pop.animateTo(1f, Motion.bouncy())
     }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(top = Spacing.lg)
-            .graphicsLayer {
-                scaleX = pop.value
-                scaleY = pop.value
-            },
-    ) {
-        Icon(painterResource(icon), contentDescription = null, tint = color, modifier = Modifier.size(Sizes.warningIcon))
-        Spacer(Modifier.height(Spacing.sm))
-        Text(
-            text = stringResource(headline),
-            style = MaterialTheme.typography.displaySmall,
-            color = headlineColor,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() },
-        )
-        result.reason?.let {
+    val popModifier = Modifier
+        .fillMaxWidth()
+        .graphicsLayer {
+            scaleX = pop.value
+            scaleY = pop.value
+        }
+    val heroContent: @Composable () -> Unit = {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Icon(painterResource(icon), contentDescription = null, tint = iconColor, modifier = Modifier.size(GameSizes.heroIcon))
             Spacer(Modifier.height(Spacing.sm))
             Text(
-                text = stringResource(it.textRes()),
-                style = MaterialTheme.typography.bodyLarge,
-                color = scheme.onSurfaceVariant,
+                text = stringResource(headline),
+                style = MaterialTheme.typography.displaySmall,
+                color = headlineColor,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
             )
+            Spacer(Modifier.height(Spacing.lg))
+            ScoreRow(result, heroColors)
         }
     }
+    if (win) {
+        PressableSurface(
+            onClick = null,
+            faceColor = gradient.start,
+            faceBrush = gradient.toBrush(),
+            depthColor = game.pressablePrimaryDepth,
+            contentColor = gradient.on,
+            shape = HeroShape,
+            depth = Depth.card,
+            contentPadding = PaddingValues(Spacing.xl),
+            modifier = popModifier,
+        ) { heroContent() }
+    } else {
+        GameCard(shape = HeroShape, contentPadding = PaddingValues(Spacing.xl), modifier = popModifier) { heroContent() }
+    }
 }
+
+/** Text colours inside the outcome hero (white on the win gradient). */
+private data class HeroColors(
+    val name: Color,
+    val score: Color,
+    val separator: Color,
+    val winnerPill: Color,
+    val onWinnerPill: Color,
+)
 
 @StringRes
 private fun ResultReason.textRes(): Int = when (this) {
@@ -164,8 +211,9 @@ private fun ResultReason.textRes(): Int = when (this) {
     ResultReason.LOSS_MESSAGE -> R.string.duel_result_message_loss
 }
 
+/** Score row inside the hero (duel-result.md v2): two equal columns around ":"; one TalkBack element. */
 @Composable
-private fun ScoreCard(result: ResultUi) {
+private fun ScoreRow(result: ResultUi, colors: HeroColors) {
     val opponentName = result.opponent?.displayName ?: stringResource(R.string.common_deleted_player)
     val description = stringResource(
         R.string.duel_result_score_cd,
@@ -173,36 +221,35 @@ private fun ScoreCard(result: ResultUi) {
         opponentName,
         scoreText(result.scores.opponent),
     )
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .clearAndSetSemantics { contentDescription = description },
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {
-            ScoreColumn(
-                player = result.you,
-                name = stringResource(R.string.duel_you),
-                score = result.scores.you,
-                self = true,
-                winner = result.winner == DuelSide.SELF,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = ":",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            ScoreColumn(
-                player = result.opponent,
-                name = opponentName,
-                score = result.scores.opponent,
-                self = false,
-                winner = result.winner == DuelSide.OPPONENT,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        ScoreColumn(
+            player = result.you,
+            name = stringResource(R.string.duel_you),
+            score = result.scores.you,
+            self = true,
+            winner = result.winner == DuelSide.SELF,
+            colors = colors,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = ":",
+            style = MaterialTheme.typography.headlineMedium,
+            color = colors.separator,
+        )
+        ScoreColumn(
+            player = result.opponent,
+            name = opponentName,
+            score = result.scores.opponent,
+            self = false,
+            winner = result.winner == DuelSide.OPPONENT,
+            colors = colors,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -213,9 +260,9 @@ private fun ScoreColumn(
     score: Int,
     self: Boolean,
     winner: Boolean,
+    colors: HeroColors,
     modifier: Modifier = Modifier,
 ) {
-    val game = MaterialTheme.gameColors
     val reducedMotion = rememberReducedMotion()
     var shown by remember { mutableIntStateOf(if (reducedMotion) score else 0) }
     LaunchedEffect(score) {
@@ -232,7 +279,7 @@ private fun ScoreColumn(
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Box(modifier = Modifier.heightIn(min = Sizes.statusPillMinHeight), contentAlignment = Alignment.Center) {
             if (winner) {
-                Surface(color = game.correctContainer, contentColor = game.onCorrectContainer, shape = FullShape) {
+                Surface(color = colors.winnerPill, contentColor = colors.onWinnerPill, shape = FullShape) {
                     Text(
                         text = stringResource(R.string.duel_result_winner_badge),
                         style = MaterialTheme.typography.labelMedium,
@@ -253,7 +300,7 @@ private fun ScoreColumn(
         Text(
             text = name,
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = colors.name,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -262,7 +309,7 @@ private fun ScoreColumn(
         Text(
             text = scoreText(shown),
             style = MaterialTheme.typography.headlineMedium.tabularFigures(),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = colors.score,
         )
     }
 }
@@ -278,14 +325,13 @@ private fun RatingCard(result: ResultUi) {
     } else {
         stringResource(R.string.duel_result_rating_cd, result.ratingAfter, delta)
     }
-    Surface(
-        color = scheme.surfaceContainer,
-        shape = MaterialTheme.shapes.medium,
+    GameCard(
+        contentPadding = PaddingValues(GameSizes.compactCardPadding),
         modifier = Modifier
             .fillMaxWidth()
             .clearAndSetSemantics { contentDescription = description },
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             if (abandoned) {
                 Text(
                     text = stringResource(R.string.duel_result_rating_unchanged),
