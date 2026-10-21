@@ -22,12 +22,13 @@ object Spacing {
     val maxContentWidth = 560.dp
     val sectionGap = 24.dp
     val listItemGap = 12.dp
+    val gridGap = 12.dp
 }
 
 /** size from design/tokens.json. */
 object Sizes {
     val minTouchTarget = 48.dp
-    val buttonHeight = 48.dp
+    val buttonHeight = 52.dp
     val buttonHeightLarge = 56.dp
     val textFieldHeight = 56.dp
     val iconSmall = 18.dp
@@ -36,25 +37,25 @@ object Sizes {
     val avatar = 40.dp
     val avatarLarge = 56.dp
     val topAppBarHeight = 64.dp
-    val optionCardMinHeight = 56.dp
-    val categoryTileMinHeight = 112.dp
+    val optionCardMinHeight = 60.dp
+    val categoryTileMinHeight = 132.dp
     val categoryIconContainer = 48.dp
     val timerRing = 48.dp
-    val timerStroke = 4.dp
-    val progressBarHeight = 4.dp
+    val timerStroke = 5.dp
+    val progressBarHeight = 12.dp
     val questionImageMaxHeight = 200.dp
     val reviewThumbnail = 64.dp
-    val confidenceChip = 88.dp
+    val confidenceChip = 104.dp
     val bannerMinHeight = 56.dp
-    val splashLogo = 96.dp
+    val splashLogo = 112.dp
 
     /** tokens 1.1.0: duel and profile (components.md §13–§23). */
     val avatarXLarge = 80.dp
     val duelBadge = 32.dp
     val duelPlayerPanelMinHeight = 100.dp
-    val phaseSegmentHeight = 4.dp
+    val phaseSegmentHeight = 6.dp
     val searchPulse = 176.dp
-    val calibrationBarHeight = 8.dp
+    val calibrationBarHeight = 10.dp
 
     /** components.md §13: accent ring around duel avatars (avatarXLarge: 3dp). */
     val accentRing = 2.dp
@@ -98,11 +99,12 @@ object Sizes {
     /** components.md §11: loading state indicator. */
     val stateLoadingIndicator = 48.dp
 
-    /** components.md §5: full-width category card (the 112dp tile token is for a grid). */
-    val categoryCardMinHeight = 72.dp
+    /** components.md §5: tile face min height in the single-column fallback, and the tile icon. */
+    val categoryTileSingleColumnMinHeight = 88.dp
+    val categoryTileIcon = 28.dp
 
     /** components.md §3: A–D letter badge of an option card. */
-    val optionLetterBadge = 32.dp
+    val optionLetterBadge = 36.dp
 
     /** quiz-question.md: reserved status line under the options, and its 16dp indicator. */
     val statusLineHeight = 24.dp
@@ -112,6 +114,61 @@ object Sizes {
     val skeletonLineHeight = 12.dp
     val skeletonLineWidth = 120.dp
     val skeletonLineWidthShort = 64.dp
+}
+
+/**
+ * depth from design/tokens.json: the solid bottom edge of pressables and game cards
+ * (components.md §0). Pressed, the face moves down by this amount and covers the edge.
+ */
+object Depth {
+    val pressable = 4.dp
+    val pressableLarge = 5.dp
+    val card = 4.dp
+    val optionCard = 4.dp
+    val confidenceChip = 5.dp
+    val categoryTile = 5.dp
+
+    /** 2dp borders on neutral pressables, white cards and option cards. */
+    val border = 2.dp
+
+    /** components.md §3 / §16: the thicker border of selected, correct and wrong states. */
+    val borderThick = 3.dp
+}
+
+/** v2 component sizes that tokens.json gives only inside components.md / screen specs. */
+object GameSizes {
+    /** components.md §4: timer pill icon and its padding. */
+    val timerPillIcon = 20.dp
+    val timerPillPaddingVertical = 6.dp
+
+    /** components.md §4: glossy highlight stripe on the timer bar indicator. */
+    val timerHighlightHeight = 3.dp
+    val timerHighlightInset = 8.dp
+
+    /** components.md §6: duel hero card padding and the decorative swords box. */
+    val duelHeroPaddingVertical = 18.dp
+    val duelHeroDecor = 56.dp
+
+    /** components.md §7: Əminlik signal bars (3 bars, 6dp wide, 8/13/18dp tall, 3dp gap). */
+    val signalBarWidth = 6.dp
+    val signalBarGap = 3.dp
+    val signalBarHeights = listOf(8.dp, 13.dp, 18.dp)
+
+    /** components.md §7: corner badges of an Əminlik tile and the lock icon inside. */
+    val tileCornerBadge = 24.dp
+    val tileLockIcon = 14.dp
+    val tileBadgeProgress = 16.dp
+
+    /** home.md: avatar in the profile header card. */
+    val homeHeaderAvatar = 48.dp
+
+    /** quiz-result.md: review entry icon box; duel-result.md: hero icon; profile/rating card padding. */
+    val reviewEntryIconBox = 44.dp
+    val heroIcon = 40.dp
+    val compactCardPadding = 14.dp
+
+    /** duel player panel padding (components.md §16). */
+    val playerPanelPadding = 10.dp
 }
 
 /** elevation from design/tokens.json (Material 3 tonal elevation levels). */

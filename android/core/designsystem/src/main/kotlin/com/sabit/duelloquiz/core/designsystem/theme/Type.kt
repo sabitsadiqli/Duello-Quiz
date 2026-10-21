@@ -8,40 +8,48 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.sabit.duelloquiz.core.designsystem.R
 
-/** Inter, bundled (design/README.md): weights 400/500/600/700, no downloadable fonts. */
-val InterFontFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.W400),
-    Font(R.font.inter_medium, FontWeight.W500),
-    Font(R.font.inter_semibold, FontWeight.W600),
-    Font(R.font.inter_bold, FontWeight.W700),
+/**
+ * Nunito, bundled as static instances (design/README.md, third_party/nunito/README.md):
+ * weights 500/600/700/800/900, no downloadable fonts.
+ */
+val NunitoFontFamily = FontFamily(
+    Font(R.font.nunito_medium, FontWeight.W500),
+    Font(R.font.nunito_semibold, FontWeight.W600),
+    Font(R.font.nunito_bold, FontWeight.W700),
+    Font(R.font.nunito_extrabold, FontWeight.W800),
+    Font(R.font.nunito_black, FontWeight.W900),
 )
 
 private fun style(fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Double) = TextStyle(
-    fontFamily = InterFontFamily,
+    fontFamily = NunitoFontFamily,
     fontWeight = FontWeight(weight),
     fontSize = fontSize.sp,
     lineHeight = lineHeight.sp,
     letterSpacing = letterSpacing.sp,
 )
 
-/** typography.scale from design/tokens.json, 1:1. */
+/** typography.scale from design/tokens.json 2.0.0, 1:1. */
 internal val DuelloTypography = Typography(
-    displayLarge = style(57, 64, 700, -0.25),
-    displayMedium = style(45, 52, 700, 0.0),
-    displaySmall = style(36, 44, 700, 0.0),
-    headlineLarge = style(32, 40, 600, 0.0),
-    headlineMedium = style(28, 36, 600, 0.0),
-    headlineSmall = style(24, 32, 600, 0.0),
-    titleLarge = style(22, 28, 600, 0.0),
-    titleMedium = style(16, 24, 600, 0.15),
-    titleSmall = style(14, 20, 600, 0.1),
-    bodyLarge = style(16, 24, 400, 0.15),
-    bodyMedium = style(14, 20, 400, 0.25),
-    bodySmall = style(12, 16, 400, 0.4),
-    labelLarge = style(14, 20, 600, 0.1),
-    labelMedium = style(12, 16, 500, 0.5),
-    labelSmall = style(11, 16, 500, 0.5),
+    displayLarge = style(56, 64, 900, -0.5),
+    displayMedium = style(44, 52, 900, -0.25),
+    displaySmall = style(36, 44, 900, 0.0),
+    headlineLarge = style(32, 40, 800, 0.0),
+    headlineMedium = style(28, 36, 800, 0.0),
+    headlineSmall = style(24, 32, 800, 0.0),
+    titleLarge = style(20, 28, 800, 0.0),
+    titleMedium = style(17, 24, 800, 0.0),
+    titleSmall = style(14, 20, 800, 0.1),
+    bodyLarge = style(16, 24, 600, 0.1),
+    bodyMedium = style(14, 20, 600, 0.15),
+    bodySmall = style(12, 16, 600, 0.3),
+    labelLarge = style(16, 20, 800, 0.2),
+    labelMedium = style(13, 16, 800, 0.2),
+    labelSmall = style(11, 16, 700, 0.3),
 )
 
-/** Tabular figures for timers, progress, scores and rating (tokens: fontFamily.brand.features). */
+/**
+ * Tabular figures for timers, progress, scores and rating (tokens: fontFamily.brand.features).
+ * Nunito has no `tnum` feature but its default digits are already fixed-width, so this is a
+ * no-op today and only matters if the font changes.
+ */
 fun TextStyle.tabularFigures(): TextStyle = copy(fontFeatureSettings = "tnum")

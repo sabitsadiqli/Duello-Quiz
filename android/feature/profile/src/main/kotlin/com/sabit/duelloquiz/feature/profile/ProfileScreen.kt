@@ -285,7 +285,7 @@ private fun SectionBox(content: @Composable () -> Unit) {
 @Composable
 private fun CardSkeleton() {
     val alpha = rememberSkeletonAlpha()
-    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.categoryCardMinHeight), shape = MaterialTheme.shapes.large)
+    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.categoryTileSingleColumnMinHeight), shape = MaterialTheme.shapes.large)
 }
 
 @Composable

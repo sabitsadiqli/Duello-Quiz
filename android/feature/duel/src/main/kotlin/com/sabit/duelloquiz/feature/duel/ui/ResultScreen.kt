@@ -121,7 +121,7 @@ private fun OutcomeHero(result: ResultUi) {
     val reducedMotion = rememberReducedMotion()
     val pop = remember { Animatable(if (reducedMotion) 1f else Motion.Duel.RESULT_HERO_POP_FROM) }
     LaunchedEffect(result.matchId) {
-        pop.animateTo(1f, tween(Motion.Duel.RESULT_HERO_POP_MS, easing = Motion.EmphasizedDecelerate))
+        pop.animateTo(1f, Motion.bouncy())
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

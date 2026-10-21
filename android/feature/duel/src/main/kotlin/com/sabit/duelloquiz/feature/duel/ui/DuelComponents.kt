@@ -494,7 +494,7 @@ private fun RevealFace(reveal: RevealFaceUi, winner: Boolean, animate: Boolean) 
     LaunchedEffect(animate) {
         if (!animate) return@LaunchedEffect
         delay((Motion.Duel.REVEAL_POINTS_POP_DELAY_MS - Motion.Duel.REVEAL_FLIP_MS / 2).toLong())
-        pop.animateTo(1f, tween(Motion.Duel.REVEAL_POINTS_POP_MS, easing = Motion.EmphasizedDecelerate))
+        pop.animateTo(1f, Motion.bouncy())
     }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

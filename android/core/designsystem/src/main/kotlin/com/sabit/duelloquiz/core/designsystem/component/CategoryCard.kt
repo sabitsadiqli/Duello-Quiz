@@ -58,7 +58,7 @@ fun CategoryCard(
         contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = Sizes.categoryCardMinHeight)
+            .heightIn(min = Sizes.categoryTileSingleColumnMinHeight)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 if (loading && loadingContentDescription != null) contentDescription = loadingContentDescription
@@ -124,7 +124,7 @@ fun CategoryCardSkeleton(alpha: () -> Float, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = Sizes.categoryCardMinHeight)
+            .heightIn(min = Sizes.categoryTileSingleColumnMinHeight)
             .clearAndSetSemantics {},
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {

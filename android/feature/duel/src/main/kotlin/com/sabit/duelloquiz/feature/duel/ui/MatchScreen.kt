@@ -567,7 +567,7 @@ private fun ConfidenceChip(chip: ChipUi, usesLeft: Int?, onClick: () -> Unit, mo
     val scale = remember { Animatable(1f) }
     LaunchedEffect(selected) {
         if (selected && !reducedMotion) {
-            scale.animateTo(Motion.Duel.CHIP_LOCK_SCALE, tween(Motion.Duel.CHIP_LOCK_MS, easing = Motion.EmphasizedDecelerate))
+            scale.animateTo(Motion.Duel.CHIP_LOCK_SCALE, Motion.bouncy())
         } else {
             scale.snapTo(1f)
         }

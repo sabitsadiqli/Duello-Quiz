@@ -3,8 +3,10 @@ package com.sabit.duelloquiz.core.designsystem.theme
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
 
-/** motion from design/tokens.json. Durations in ms. */
+/** motion from design/tokens.json 2.0.0. Durations in ms. */
 object Motion {
     const val SHORT_1 = 50
     const val SHORT_2 = 100
@@ -26,6 +28,21 @@ object Motion {
     val EmphasizedAccelerate: Easing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
     val Linear: Easing = LinearEasing
 
+    /** motion.spring.bouncy: pops (correct option, points, result hero, chip lock). */
+    const val SPRING_BOUNCY_DAMPING = 0.5f
+    const val SPRING_BOUNCY_STIFFNESS = 600f
+
+    /** motion.spring.snappy: a pressable face springing back up on release. */
+    const val SPRING_SNAPPY_DAMPING = 0.75f
+    const val SPRING_SNAPPY_STIFFNESS = 1400f
+
+    fun <T> bouncy(): SpringSpec<T> = spring(SPRING_BOUNCY_DAMPING, SPRING_BOUNCY_STIFFNESS)
+
+    fun <T> snappy(): SpringSpec<T> = spring(SPRING_SNAPPY_DAMPING, SPRING_SNAPPY_STIFFNESS)
+
+    /** motion.pressable: face moves down onto its depth edge (standardAccelerate). */
+    const val PRESS_DOWN_MS = 60
+
     /** motion.game */
     const val QUIZ_REVEAL_HOLD_MS = 1500
     const val TIMER_WARNING_THRESHOLD_MS = 5000
@@ -35,12 +52,23 @@ object Motion {
     const val OPTION_REVEAL_COLOUR_MS = 200
     const val OPTION_WRONG_SHAKE_MS = 300
     const val OPTION_WRONG_SHAKE_CYCLES = 2
-    const val OPTION_WRONG_SHAKE_AMPLITUDE_DP = 4
+    const val OPTION_WRONG_SHAKE_AMPLITUDE_DP = 6
+
+    /** optionCorrectPop: the correct card pops once (spring bouncy). */
+    const val OPTION_CORRECT_POP_SCALE = 1.04f
     const val QUESTION_TRANSITION_MS = 300
 
     /** questionTransition: slide by 1/8 of the width. */
     const val QUESTION_TRANSITION_SLIDE_FRACTION = 8
     const val SCORE_COUNT_UP_MS = 600
+
+    /** categoryGridEnter: first load only, staggered per tile. */
+    const val CATEGORY_GRID_ENTER_MS = 300
+    const val CATEGORY_GRID_STAGGER_MS = 40
+    const val CATEGORY_GRID_TRANSLATE_DP = 16
+
+    /** quiz-result.md: 10 / 10 hero pop 0.8 → 1.0 (spring bouncy). */
+    const val PERFECT_HERO_POP_FROM = 0.8f
 
     /** motion.duel (tokens 1.1.0). Display timing only; the server owns every phase. */
     object Duel {
@@ -57,9 +85,8 @@ object Motion {
 
         const val PHASE_TRANSITION_MS = 300
         const val CONFIDENCE_PANEL_ENTER_MS = 300
-        const val CHIP_PRESS_MS = 100
-        const val CHIP_PRESS_SCALE = 0.96f
-        const val CHIP_LOCK_MS = 200
+        /** chipPress: pressable press with depth.confidenceChip. */
+        const val CHIP_PRESS_MS = 60
         const val CHIP_LOCK_SCALE = 1.05f
         const val CHIP_OTHERS_ALPHA = 0.38f
         const val STATUS_PILL_CHANGE_MS = 150
@@ -67,8 +94,7 @@ object Motion {
         const val REVEAL_CAMERA_DISTANCE_DP = 12
         const val REVEAL_OPTION_COLOUR_MS = 200
         const val REVEAL_POINTS_POP_DELAY_MS = 400
-        const val REVEAL_POINTS_POP_MS = 200
-        const val REVEAL_POINTS_POP_FROM = 0.8f
+        const val REVEAL_POINTS_POP_FROM = 0.6f
         const val REVEAL_SCORE_COUNT_UP_DELAY_MS = 600
         const val REVEAL_SCORE_COUNT_UP_MS = 600
         const val REVEAL_MIN_REMAINING_MS = 1500
@@ -78,8 +104,7 @@ object Motion {
         const val SEARCH_PULSE_ALPHA_FROM = 0.24f
         const val INTRO_ENTER_MS = 400
         const val INTRO_DIVIDER_SCALE_FROM = 0.8f
-        const val RESULT_HERO_POP_MS = 300
-        const val RESULT_HERO_POP_FROM = 0.9f
+        const val RESULT_HERO_POP_FROM = 0.8f
         const val OPPONENT_RETURNED_HOLD_MS = 2000
 
         /** reducedMotion: content cross-fades in 150 ms instead. */
