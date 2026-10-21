@@ -37,7 +37,7 @@ cd android && ./gradlew lint test assembleDebug
 | `:core:data` | Repositories (profile incl. name editing, categories, quiz sessions with the offline answer queue, duel stats and history, account), per-account cache, `NetworkMonitor`, preferences |
 | `:core:auth` | `AuthRepository` (Firebase or in-memory fake), Credential Manager Google client, validation rules |
 | `:core:datastore` | Preferences DataStore (theme mode) and the per-account cache store |
-| `:core:designsystem` | Theme from `design/tokens.json`, Inter font, icons, components (option card, quiz timer, category card, state views), **all UI strings** |
+| `:core:designsystem` | Theme from `design/tokens.json` (v2: scheme, game, category accents, gradients, depth), Nunito font, icons, components (pressable surface, buttons, option card, quiz timer, category tile grid, duel hero, Əminlik tiles, state views), **all UI strings** |
 | `:core:common` | `AppConfig`, `WallClock`, application scope, navigation result keys, external links |
 | `:core:model` | Plain models (`AuthUser`, `Profile`, `Category`, quiz types, `DataResult`/`DataError`) |
 

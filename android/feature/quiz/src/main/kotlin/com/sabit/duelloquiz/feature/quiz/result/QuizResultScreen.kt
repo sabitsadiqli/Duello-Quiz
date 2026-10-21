@@ -263,13 +263,13 @@ private fun ScoreHero(uiState: QuizResultUiState) {
     }
 }
 
-/** Category pill on the hero: white at 20 %, 16dp icon and the name (labelMedium, wraps). */
+/** Category pill on the hero: onFace (white) at 20 %, 16dp icon and the name (labelMedium, wraps). */
 @Composable
 private fun CategoryPill(name: String, iconKey: String, color: Color) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(Color.White.copy(alpha = PILL_ALPHA), FullShape)
+            .background(color.copy(alpha = PILL_ALPHA), FullShape)
             .padding(horizontal = Spacing.md, vertical = Spacing.xs),
     ) {
         Icon(

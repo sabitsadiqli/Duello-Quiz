@@ -144,7 +144,7 @@ private fun OutcomeHero(result: ResultUi) {
     }
     val heroColors = if (win) {
         // White content; the winner pill is white with the brand violet (= gradient start) text.
-        HeroColors(gradient.on, gradient.on, gradient.on, Color.White, gradient.start)
+        HeroColors(gradient.on, gradient.on, gradient.on, gradient.on, gradient.start)
     } else {
         HeroColors(scheme.onSurface, scheme.onSurface, scheme.onSurfaceVariant, game.correctContainer, game.onCorrectContainer)
     }
