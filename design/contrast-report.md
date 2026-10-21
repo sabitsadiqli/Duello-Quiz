@@ -21,17 +21,21 @@ Colour is never the only signal: correct/wrong option states also show a check o
 cross icon and a text label for TalkBack; the timer warning also changes the arc
 and pulses the digits; Əminlik chips always show the number 1, 2 or 3.
 
-The palette uses Material 3 tonal steps (tone 40/90/10 in light, 80/30/90 in dark),
-which keep text pairs above 4.5:1; this script confirms every pair actually used.
+Palette v2 (tokens 2.0.0, vivid game style): saturated faces (pressable buttons,
+category tiles, Əminlik 3) carry white text only where #FFFFFF passes 4.5:1; dark
+theme text accents use light tones. Depth edges (`*Depth`, `cardDepth`) and the
+neutral button border are decorative (the label identifies the control) and are
+not checked. Category slots are named `category.<slot>.*`, gradients
+`gradient.<name>.*`; text on a gradient is checked against both stops.
 
 ## Summary
 
-Pairs checked: 178, failures: 0.
+Pairs checked: 242, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
-| light | 5.02 | 3.48 |
-| dark | 5.02 | 3.90 |
+| light | 4.59 | 3.17 |
+| dark | 4.98 | 3.68 |
 
 ## Full tables
 
@@ -39,186 +43,250 @@ Pairs checked: 178, failures: 0.
 
 | Foreground | Background | FG hex | BG hex | Ratio | Min | Result | Usage |
 | --- | --- | --- | --- | ---: | ---: | --- | --- |
-| onPrimary | primary | #FFFFFF | #4355B9 | 6.48 | 4.5 | pass | text on primary (filled button, badge) |
-| onPrimaryContainer | primaryContainer | #00105C | #DEE0FF | 13.20 | 4.5 | pass | text on primaryContainer |
-| onSecondary | secondary | #FFFFFF | #5B5D72 | 6.45 | 4.5 | pass | text on secondary (filled button, badge) |
-| onSecondaryContainer | secondaryContainer | #181A2C | #E0E1F9 | 13.33 | 4.5 | pass | text on secondaryContainer |
-| onTertiary | tertiary | #FFFFFF | #7A5368 | 6.43 | 4.5 | pass | text on tertiary (filled button, badge) |
-| onTertiaryContainer | tertiaryContainer | #2F1124 | #FFD8EA | 13.26 | 4.5 | pass | text on tertiaryContainer |
-| onError | error | #FFFFFF | #BA1A1A | 6.46 | 4.5 | pass | text on error (filled button, badge) |
+| onPrimary | primary | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | text on primary (filled button, badge) |
+| onPrimaryContainer | primaryContainer | #1C0A63 | #E7E1FF | 13.05 | 4.5 | pass | text on primaryContainer |
+| onSecondary | secondary | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | text on secondary (filled button, badge) |
+| onSecondaryContainer | secondaryContainer | #002A55 | #DCEBFF | 11.88 | 4.5 | pass | text on secondaryContainer |
+| onTertiary | tertiary | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | text on tertiary (filled button, badge) |
+| onTertiaryContainer | tertiaryContainer | #3E0026 | #FFD9EC | 13.29 | 4.5 | pass | text on tertiaryContainer |
+| onError | error | #FFFFFF | #B71C1C | 6.57 | 4.5 | pass | text on error (filled button, badge) |
 | onErrorContainer | errorContainer | #410002 | #FFDAD6 | 13.26 | 4.5 | pass | text on errorContainer |
-| onBackground | background | #1B1B21 | #FBF8FF | 16.30 | 4.5 | pass | body text on background |
-| onSurfaceVariant | surfaceVariant | #46464F | #E3E1EC | 7.22 | 4.5 | pass | text on surfaceVariant |
-| onSurface | surface | #1B1B21 | #FBF8FF | 16.30 | 4.5 | pass | primary text |
-| onSurfaceVariant | surface | #46464F | #FBF8FF | 8.88 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceDim | #1B1B21 | #DBD9E0 | 12.25 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceDim | #46464F | #DBD9E0 | 6.67 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceBright | #1B1B21 | #FBF8FF | 16.30 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceBright | #46464F | #FBF8FF | 8.88 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerLowest | #1B1B21 | #FFFFFF | 17.14 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerLowest | #46464F | #FFFFFF | 9.34 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerLow | #1B1B21 | #F5F2FA | 15.48 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerLow | #46464F | #F5F2FA | 8.43 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainer | #1B1B21 | #EFEDF4 | 14.76 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainer | #46464F | #EFEDF4 | 8.04 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerHigh | #1B1B21 | #E9E7EF | 13.99 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerHigh | #46464F | #E9E7EF | 7.62 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerHighest | #1B1B21 | #E4E1E9 | 13.26 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerHighest | #46464F | #E4E1E9 | 7.22 | 4.5 | pass | secondary text, supporting text, icons |
-| primary | surface | #4355B9 | #FBF8FF | 6.17 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainer | #4355B9 | #EFEDF4 | 5.59 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerHigh | #4355B9 | #E9E7EF | 5.29 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerHighest | #4355B9 | #E4E1E9 | 5.02 | 4.5 | pass | text button, link, selected label |
-| error | surface | #BA1A1A | #FBF8FF | 6.14 | 4.5 | pass | field error text, destructive text button |
-| error | surfaceContainerLow | #BA1A1A | #F5F2FA | 5.83 | 4.5 | pass | field error text, destructive text button |
-| error | surfaceContainerHigh | #BA1A1A | #E9E7EF | 5.27 | 4.5 | pass | field error text, destructive text button |
-| inverseOnSurface | inverseSurface | #F2EFF7 | #303036 | 11.53 | 4.5 | pass | snackbar text |
-| inversePrimary | inverseSurface | #BAC3FF | #303036 | 7.70 | 4.5 | pass | snackbar action |
-| outline | surface | #767680 | #FBF8FF | 4.27 | 3.0 | pass | text-field and option-card border |
-| outline | surfaceContainerLow | #767680 | #F5F2FA | 4.06 | 3.0 | pass | text-field and option-card border |
-| outline | surfaceContainerHigh | #767680 | #E9E7EF | 3.67 | 3.0 | pass | text-field and option-card border |
-| primary | surface | #4355B9 | #FBF8FF | 6.17 | 3.0 | pass | filled button / focus ring boundary |
-| error | surface | #BA1A1A | #FBF8FF | 6.14 | 3.0 | pass | error field border, error icon |
-| onCorrect | correct | #FFFFFF | #1E6B30 | 6.56 | 4.5 | pass | text/icon on solid correct badge |
-| onCorrectContainer | correctContainer | #002108 | #B7F1BC | 13.37 | 4.5 | pass | option card text, correct state |
-| onWrong | wrong | #FFFFFF | #B3261E | 6.54 | 4.5 | pass | text/icon on solid wrong badge |
-| onWrongContainer | wrongContainer | #410E0B | #F9DEDC | 12.77 | 4.5 | pass | option card text, wrong state |
-| onPendingContainer | pendingContainer | #00105C | #DEE0FF | 13.20 | 4.5 | pass | option card text, selected/pending |
-| onConfidence1Container | confidence1Container | #181A2C | #E0E1F9 | 13.33 | 4.5 | pass | Əminlik 1 chip label |
-| onConfidence2Container | confidence2Container | #00105C | #BAC3FF | 10.04 | 4.5 | pass | Əminlik 2 chip label |
-| onConfidence3Container | confidence3Container | #FFFFFF | #293CA0 | 9.34 | 4.5 | pass | Əminlik 3 chip label |
-| onBannerInfoContainer | bannerInfoContainer | #181A2C | #E0E1F9 | 13.33 | 4.5 | pass | info banner text |
-| onBannerWarningContainer | bannerWarningContainer | #311300 | #FFDCC6 | 13.32 | 4.5 | pass | offline/warning banner text |
-| timerNormal | surface | #4355B9 | #FBF8FF | 6.17 | 4.5 | pass | timer digits (normal) |
-| timerWarning | surface | #9C4300 | #FBF8FF | 6.21 | 4.5 | pass | timer digits (last 5 s) |
-| timerNormal | timerTrack | #4355B9 | #E4E1E9 | 5.02 | 3.0 | pass | timer arc vs track |
-| timerWarning | timerTrack | #9C4300 | #E4E1E9 | 5.05 | 3.0 | pass | timer arc vs track (last 5 s) |
-| correct | surface | #1E6B30 | #FBF8FF | 6.24 | 4.5 | pass | 'Düzgün cavab' label, check icon |
-| correct | surfaceContainerLow | #1E6B30 | #F5F2FA | 5.92 | 4.5 | pass | review card: correct option label |
-| wrong | surface | #B3261E | #FBF8FF | 6.22 | 4.5 | pass | wrong label, cross icon |
-| wrong | surfaceContainerLow | #B3261E | #F5F2FA | 5.90 | 4.5 | pass | review card: your answer label |
-| correct | correctContainer | #1E6B30 | #B7F1BC | 5.10 | 3.0 | pass | check icon / border on correct card |
-| wrong | wrongContainer | #B3261E | #F9DEDC | 5.14 | 3.0 | pass | cross icon / border on wrong card |
-| confidenceSelectedOutline | surface | #00105C | #FBF8FF | 16.26 | 3.0 | pass | selected Əminlik chip ring vs page |
-| confidence3Container | surface | #293CA0 | #FBF8FF | 8.88 | 3.0 | pass | Əminlik 3 chip boundary vs page |
-| confidenceSelectedOutline | surfaceContainerHigh | #00105C | #E9E7EF | 13.95 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
-| confidence3Container | surfaceContainerHigh | #293CA0 | #E9E7EF | 7.62 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
-| outline | surfaceContainerHighest | #767680 | #E4E1E9 | 3.48 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
-| tertiary | surface | #7A5368 | #FBF8FF | 6.12 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
-| tertiary | surfaceContainerLow | #7A5368 | #F5F2FA | 5.81 | 3.0 | pass | duel: opponent accent ring in the player panel |
-| primary | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
-| onSurfaceVariant | timerTrack | #46464F | #E4E1E9 | 7.22 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
-| timerNormal | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 4.5 | pass | duel: search countdown digits on the search card |
-| correct | surfaceContainer | #1E6B30 | #EFEDF4 | 5.65 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
-| wrong | surfaceContainer | #B3261E | #EFEDF4 | 5.63 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
-| onSurfaceVariant | surfaceContainer | #46464F | #EFEDF4 | 8.04 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
-| correct | correctContainer | #1E6B30 | #B7F1BC | 5.10 | 4.5 | pass | duel reveal: points text on a correct player panel |
-| wrong | wrongContainer | #B3261E | #F9DEDC | 5.14 | 4.5 | pass | duel reveal: points text on a wrong player panel |
-| onSurface | surface | #1B1B21 | #FBF8FF | 16.30 | 4.5 | pass | web: body text and headings |
-| onSurfaceVariant | surface | #46464F | #FBF8FF | 8.88 | 4.5 | pass | web: meta line, nav links, footer |
-| primary | surface | #4355B9 | #FBF8FF | 6.17 | 4.5 | pass | web: underlined links |
-| onSurface | surfaceContainer | #1B1B21 | #EFEDF4 | 14.76 | 4.5 | pass | web: nav link on hover |
-| primary | surfaceContainerLow | #4355B9 | #F5F2FA | 5.86 | 4.5 | pass | web: link card title, table-of-contents links |
-| onSurfaceVariant | surfaceContainerLow | #46464F | #F5F2FA | 8.43 | 4.5 | pass | web: link card supporting text |
-| onPrimaryContainer | primaryContainer | #00105C | #DEE0FF | 13.20 | 4.5 | pass | web: current nav pill, callout |
-| onBannerWarningContainer | bannerWarningContainer | #311300 | #FFDCC6 | 13.32 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
-| onPrimary | primary | #FFFFFF | #4355B9 | 6.48 | 4.5 | pass | web: skip link |
-| primary | surface | #4355B9 | #FBF8FF | 6.17 | 3.0 | pass | web: 3px focus ring |
-| onPrimary | primary | #FFFFFF | #4355B9 | 6.48 | 4.5 | pass | store: app name on the feature graphic |
-| tertiaryContainer | primary | #FFD8EA | #4355B9 | 5.02 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
-| primaryContainer | primary | #DEE0FF | #4355B9 | 5.01 | 3.0 | pass | store: decorative option bars on the feature graphic |
+| onBackground | background | #1A1530 | #F7F5FF | 16.30 | 4.5 | pass | body text on background |
+| onSurfaceVariant | surfaceVariant | #4A4463 | #E4DFF7 | 7.05 | 4.5 | pass | text on surfaceVariant |
+| onSurface | surface | #1A1530 | #F7F5FF | 16.30 | 4.5 | pass | primary text |
+| onSurfaceVariant | surface | #4A4463 | #F7F5FF | 8.47 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceDim | #1A1530 | #D9D3EE | 12.15 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceDim | #4A4463 | #D9D3EE | 6.31 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceBright | #1A1530 | #F7F5FF | 16.30 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceBright | #4A4463 | #F7F5FF | 8.47 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerLowest | #1A1530 | #FFFFFF | 17.59 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerLowest | #4A4463 | #FFFFFF | 9.14 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerLow | #1A1530 | #F1EEFF | 15.42 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerLow | #4A4463 | #F1EEFF | 8.01 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainer | #1A1530 | #EBE7FB | 14.54 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainer | #4A4463 | #EBE7FB | 7.55 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerHigh | #1A1530 | #E4DFF7 | 13.57 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerHigh | #4A4463 | #E4DFF7 | 7.05 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerHighest | #1A1530 | #DCD6F2 | 12.52 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerHighest | #4A4463 | #DCD6F2 | 6.50 | 4.5 | pass | secondary text, supporting text, icons |
+| primary | surface | #5334E6 | #F7F5FF | 6.48 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerLow | #5334E6 | #F1EEFF | 6.13 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainer | #5334E6 | #EBE7FB | 5.78 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerHigh | #5334E6 | #E4DFF7 | 5.40 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerHighest | #5334E6 | #DCD6F2 | 4.98 | 4.5 | pass | text button, link, selected label |
+| error | surface | #B71C1C | #F7F5FF | 6.09 | 4.5 | pass | field error text, destructive text button |
+| error | surfaceContainerLow | #B71C1C | #F1EEFF | 5.76 | 4.5 | pass | field error text, destructive text button |
+| error | surfaceContainerHigh | #B71C1C | #E4DFF7 | 5.07 | 4.5 | pass | field error text, destructive text button |
+| inverseOnSurface | inverseSurface | #F3F0FF | #2E2945 | 12.32 | 4.5 | pass | snackbar text |
+| inversePrimary | inverseSurface | #C0B3FF | #2E2945 | 7.33 | 4.5 | pass | snackbar action |
+| outline | surface | #7A7394 | #F7F5FF | 4.13 | 3.0 | pass | text-field and option-card border |
+| outline | surfaceContainerLow | #7A7394 | #F1EEFF | 3.91 | 3.0 | pass | text-field and option-card border |
+| outline | surfaceContainerHigh | #7A7394 | #E4DFF7 | 3.44 | 3.0 | pass | text-field and option-card border |
+| primary | surface | #5334E6 | #F7F5FF | 6.48 | 3.0 | pass | filled button / focus ring boundary |
+| error | surface | #B71C1C | #F7F5FF | 6.09 | 3.0 | pass | error field border, error icon |
+| onCorrect | correct | #FFFFFF | #0E7445 | 5.83 | 4.5 | pass | text/icon on solid correct badge |
+| onCorrectContainer | correctContainer | #0B3B25 | #D8F8E7 | 11.10 | 4.5 | pass | option card text, correct state |
+| onWrong | wrong | #FFFFFF | #C8213A | 5.62 | 4.5 | pass | text/icon on solid wrong badge |
+| onWrongContainer | wrongContainer | #5C0010 | #FFE1E5 | 11.73 | 4.5 | pass | option card text, wrong state |
+| onPendingContainer | pendingContainer | #1C0A63 | #E7E1FF | 13.05 | 4.5 | pass | option card text, selected/pending |
+| onConfidence1Container | confidence1Container | #0B3566 | #E1F0FF | 10.56 | 4.5 | pass | Əminlik 1 chip label |
+| onConfidence2Container | confidence2Container | #1C0A63 | #B9AAFF | 8.06 | 4.5 | pass | Əminlik 2 chip label |
+| onConfidence3Container | confidence3Container | #FFFFFF | #4B2BD9 | 7.93 | 4.5 | pass | Əminlik 3 chip label |
+| onBannerInfoContainer | bannerInfoContainer | #002A55 | #DCEBFF | 11.88 | 4.5 | pass | info banner text |
+| onBannerWarningContainer | bannerWarningContainer | #3D1C00 | #FFE3C2 | 12.47 | 4.5 | pass | offline/warning banner text |
+| timerNormal | surface | #5334E6 | #F7F5FF | 6.48 | 4.5 | pass | timer digits (normal) |
+| timerWarning | surface | #B54A00 | #F7F5FF | 4.93 | 4.5 | pass | timer digits (last 5 s) |
+| timerNormal | timerTrack | #5334E6 | #E4DFF7 | 5.40 | 3.0 | pass | timer arc vs track |
+| timerWarning | timerTrack | #B54A00 | #E4DFF7 | 4.11 | 3.0 | pass | timer arc vs track (last 5 s) |
+| correct | surface | #0E7445 | #F7F5FF | 5.40 | 4.5 | pass | 'Düzgün cavab' label, check icon |
+| correct | surfaceContainerLow | #0E7445 | #F1EEFF | 5.11 | 4.5 | pass | review card: correct option label |
+| wrong | surface | #C8213A | #F7F5FF | 5.21 | 4.5 | pass | wrong label, cross icon |
+| wrong | surfaceContainerLow | #C8213A | #F1EEFF | 4.93 | 4.5 | pass | review card: your answer label |
+| correct | correctContainer | #0E7445 | #D8F8E7 | 5.14 | 3.0 | pass | check icon / border on correct card |
+| wrong | wrongContainer | #C8213A | #FFE1E5 | 4.59 | 3.0 | pass | cross icon / border on wrong card |
+| confidenceSelectedOutline | surface | #1A1530 | #F7F5FF | 16.30 | 3.0 | pass | selected Əminlik chip ring vs page |
+| confidence3Container | surface | #4B2BD9 | #F7F5FF | 7.35 | 3.0 | pass | Əminlik 3 chip boundary vs page |
+| confidenceSelectedOutline | surfaceContainerHigh | #1A1530 | #E4DFF7 | 13.57 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
+| confidence3Container | surfaceContainerHigh | #4B2BD9 | #E4DFF7 | 6.12 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
+| outline | surfaceContainerHighest | #7A7394 | #DCD6F2 | 3.17 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
+| tertiary | surface | #C2187A | #F7F5FF | 5.25 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
+| tertiary | surfaceContainerLow | #C2187A | #F1EEFF | 4.97 | 3.0 | pass | duel: opponent accent ring in the player panel |
+| primary | surfaceContainerLow | #5334E6 | #F1EEFF | 6.13 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
+| onSurfaceVariant | timerTrack | #4A4463 | #E4DFF7 | 7.05 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
+| timerNormal | surfaceContainerLow | #5334E6 | #F1EEFF | 6.13 | 4.5 | pass | duel: search countdown digits on the search card |
+| correct | surfaceContainer | #0E7445 | #EBE7FB | 4.82 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
+| wrong | surfaceContainer | #C8213A | #EBE7FB | 4.65 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
+| onSurfaceVariant | surfaceContainer | #4A4463 | #EBE7FB | 7.55 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
+| correct | correctContainer | #0E7445 | #D8F8E7 | 5.14 | 4.5 | pass | duel reveal: points text on a correct player panel |
+| wrong | wrongContainer | #C8213A | #FFE1E5 | 4.59 | 4.5 | pass | duel reveal: points text on a wrong player panel |
+| onSurface | surface | #1A1530 | #F7F5FF | 16.30 | 4.5 | pass | web: body text and headings |
+| onSurfaceVariant | surface | #4A4463 | #F7F5FF | 8.47 | 4.5 | pass | web: meta line, nav links, footer |
+| primary | surface | #5334E6 | #F7F5FF | 6.48 | 4.5 | pass | web: underlined links |
+| onSurface | surfaceContainer | #1A1530 | #EBE7FB | 14.54 | 4.5 | pass | web: nav link on hover |
+| primary | surfaceContainerLow | #5334E6 | #F1EEFF | 6.13 | 4.5 | pass | web: link card title, table-of-contents links |
+| onSurfaceVariant | surfaceContainerLow | #4A4463 | #F1EEFF | 8.01 | 4.5 | pass | web: link card supporting text |
+| onPrimaryContainer | primaryContainer | #1C0A63 | #E7E1FF | 13.05 | 4.5 | pass | web: current nav pill, callout |
+| onBannerWarningContainer | bannerWarningContainer | #3D1C00 | #FFE3C2 | 12.47 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
+| onPrimary | primary | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | web: skip link |
+| primary | surface | #5334E6 | #F7F5FF | 6.48 | 3.0 | pass | web: 3px focus ring |
+| onPrimary | primary | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | store: app name on the feature graphic |
+| tertiaryContainer | primary | #FFD9EC | #5334E6 | 5.46 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
+| primaryContainer | primary | #E7E1FF | #5334E6 | 5.53 | 3.0 | pass | store: decorative option bars on the feature graphic |
+| onPressablePrimary | pressablePrimary | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | pressable primary button label |
+| onPressableNeutral | pressableNeutral | #4426D6 | #FFFFFF | 8.42 | 4.5 | pass | pressable neutral (secondary) button label |
+| onPressableDestructive | pressableDestructive | #FFFFFF | #B71C1C | 6.57 | 4.5 | pass | pressable destructive button label |
+| onPressableDuel | pressableDuel | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel CTA button label (home duel card, play again) |
+| onSurface | pressableNeutral | #1A1530 | #FFFFFF | 17.59 | 4.5 | pass | option card text on the white game card |
+| onSurfaceVariant | pressableNeutral | #4A4463 | #FFFFFF | 9.14 | 4.5 | pass | supporting text on white game cards |
+| primary | surfaceContainerLowest | #5334E6 | #FFFFFF | 7.00 | 4.5 | pass | option letter / link on a white game card |
+| onPrimaryContainer | primaryContainer | #1C0A63 | #E7E1FF | 13.05 | 4.5 | pass | default option letter badge |
+| primary | pendingContainer | #5334E6 | #E7E1FF | 5.53 | 3.0 | pass | selected option 2dp border vs its container |
+| onConfidence1Container | confidence1Container | #0B3566 | #E1F0FF | 10.56 | 3.0 | pass | Əminlik 1 signal bars |
+| onConfidence3Container | confidence3Container | #FFFFFF | #4B2BD9 | 7.93 | 3.0 | pass | Əminlik 3 signal bars |
+| onTertiaryContainer | tertiaryContainer | #3E0026 | #FFD9EC | 13.29 | 4.5 | pass | round-7 pill, opponent badge |
+| gradient.duelHero.on | gradient.duelHero.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | duel hero card text, gradient start |
+| gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
+| gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |
+| gradient.resultWin.on | gradient.resultWin.end | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | win result hero text, gradient end |
+| category.violet.onFace | category.violet.face | #FFFFFF | #6A3DE8 | 6.09 | 4.5 | pass | category tile name + count, slot violet |
+| category.violet.onContainer | category.violet.container | #2A0F7A | #ECE5FF | 11.89 | 4.5 | pass | category chip / quiz top bar tint, slot violet |
+| category.blue.onFace | category.blue.face | #FFFFFF | #1565D8 | 5.41 | 4.5 | pass | category tile name + count, slot blue |
+| category.blue.onContainer | category.blue.container | #00285F | #DDEBFF | 11.85 | 4.5 | pass | category chip / quiz top bar tint, slot blue |
+| category.teal.onFace | category.teal.face | #FFFFFF | #00796B | 5.32 | 4.5 | pass | category tile name + count, slot teal |
+| category.teal.onContainer | category.teal.container | #00332D | #D2F5EF | 11.94 | 4.5 | pass | category chip / quiz top bar tint, slot teal |
+| category.green.onFace | category.green.face | #FFFFFF | #2E7D32 | 5.13 | 4.5 | pass | category tile name + count, slot green |
+| category.green.onContainer | category.green.container | #0E3A12 | #DCF5D9 | 11.09 | 4.5 | pass | category chip / quiz top bar tint, slot green |
+| category.orange.onFace | category.orange.face | #FFFFFF | #C2410C | 5.18 | 4.5 | pass | category tile name + count, slot orange |
+| category.orange.onContainer | category.orange.container | #4A1500 | #FFE4D4 | 12.37 | 4.5 | pass | category chip / quiz top bar tint, slot orange |
+| category.rose.onFace | category.rose.face | #FFFFFF | #C62850 | 5.50 | 4.5 | pass | category tile name + count, slot rose |
+| category.rose.onContainer | category.rose.container | #4F0018 | #FFE0E7 | 12.68 | 4.5 | pass | category chip / quiz top bar tint, slot rose |
+| category.pink.onFace | category.pink.face | #FFFFFF | #B0237F | 6.19 | 4.5 | pass | category tile name + count, slot pink |
+| category.pink.onContainer | category.pink.container | #45002D | #FFDDF1 | 13.06 | 4.5 | pass | category chip / quiz top bar tint, slot pink |
+| category.ocean.onFace | category.ocean.face | #FFFFFF | #0B6E99 | 5.67 | 4.5 | pass | category tile name + count, slot ocean |
+| category.ocean.onContainer | category.ocean.container | #00314A | #D6EFFA | 11.43 | 4.5 | pass | category chip / quiz top bar tint, slot ocean |
 
 ### Dark theme
 
 | Foreground | Background | FG hex | BG hex | Ratio | Min | Result | Usage |
 | --- | --- | --- | --- | ---: | ---: | --- | --- |
-| onPrimary | primary | #08218A | #BAC3FF | 7.74 | 4.5 | pass | text on primary (filled button, badge) |
-| onPrimaryContainer | primaryContainer | #DEE0FF | #293CA0 | 7.21 | 4.5 | pass | text on primaryContainer |
-| onSecondary | secondary | #2D2F42 | #C4C5DD | 7.75 | 4.5 | pass | text on secondary (filled button, badge) |
-| onSecondaryContainer | secondaryContainer | #E0E1F9 | #434659 | 7.22 | 4.5 | pass | text on secondaryContainer |
-| onTertiary | tertiary | #47263A | #EAB9D2 | 7.70 | 4.5 | pass | text on tertiary (filled button, badge) |
-| onTertiaryContainer | tertiaryContainer | #FFD8EA | #603C51 | 7.19 | 4.5 | pass | text on tertiaryContainer |
+| onPrimary | primary | #23107A | #C0B3FF | 7.80 | 4.5 | pass | text on primary (filled button, badge) |
+| onPrimaryContainer | primaryContainer | #EDE8FF | #4A2FD6 | 6.59 | 4.5 | pass | text on primaryContainer |
+| onSecondary | secondary | #003060 | #9ECAFF | 7.76 | 4.5 | pass | text on secondary (filled button, badge) |
+| onSecondaryContainer | secondaryContainer | #D6E8FF | #004A8F | 7.09 | 4.5 | pass | text on secondaryContainer |
+| onTertiary | tertiary | #5C0038 | #FFADD6 | 8.07 | 4.5 | pass | text on tertiary (filled button, badge) |
+| onTertiaryContainer | tertiaryContainer | #FFD9EC | #8A1059 | 7.13 | 4.5 | pass | text on tertiaryContainer |
 | onError | error | #690005 | #FFB4AB | 7.72 | 4.5 | pass | text on error (filled button, badge) |
 | onErrorContainer | errorContainer | #FFDAD6 | #93000A | 7.24 | 4.5 | pass | text on errorContainer |
-| onBackground | background | #E4E1E9 | #131318 | 14.33 | 4.5 | pass | body text on background |
-| onSurfaceVariant | surfaceVariant | #C6C5D0 | #46464F | 5.47 | 4.5 | pass | text on surfaceVariant |
-| onSurface | surface | #E4E1E9 | #131318 | 14.33 | 4.5 | pass | primary text |
-| onSurfaceVariant | surface | #C6C5D0 | #131318 | 10.84 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceDim | #E4E1E9 | #131318 | 14.33 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceDim | #C6C5D0 | #131318 | 10.84 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceBright | #E4E1E9 | #39393F | 8.87 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceBright | #C6C5D0 | #39393F | 6.72 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerLowest | #E4E1E9 | #0E0E13 | 14.89 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerLowest | #C6C5D0 | #0E0E13 | 11.27 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerLow | #E4E1E9 | #1B1B21 | 13.26 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerLow | #C6C5D0 | #1B1B21 | 10.04 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainer | #E4E1E9 | #1F1F25 | 12.68 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainer | #C6C5D0 | #1F1F25 | 9.60 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerHigh | #E4E1E9 | #2A292F | 11.15 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerHigh | #C6C5D0 | #2A292F | 8.44 | 4.5 | pass | secondary text, supporting text, icons |
-| onSurface | surfaceContainerHighest | #E4E1E9 | #35343A | 9.54 | 4.5 | pass | primary text |
-| onSurfaceVariant | surfaceContainerHighest | #C6C5D0 | #35343A | 7.22 | 4.5 | pass | secondary text, supporting text, icons |
-| primary | surface | #BAC3FF | #131318 | 10.88 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainer | #BAC3FF | #1F1F25 | 9.63 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerHigh | #BAC3FF | #2A292F | 8.47 | 4.5 | pass | text button, link, selected label |
-| primary | surfaceContainerHighest | #BAC3FF | #35343A | 7.24 | 4.5 | pass | text button, link, selected label |
-| error | surface | #FFB4AB | #131318 | 10.91 | 4.5 | pass | field error text, destructive text button |
-| error | surfaceContainerLow | #FFB4AB | #1B1B21 | 10.09 | 4.5 | pass | field error text, destructive text button |
-| error | surfaceContainerHigh | #FFB4AB | #2A292F | 8.49 | 4.5 | pass | field error text, destructive text button |
-| inverseOnSurface | inverseSurface | #303036 | #E4E1E9 | 10.14 | 4.5 | pass | snackbar text |
-| inversePrimary | inverseSurface | #4355B9 | #E4E1E9 | 5.02 | 4.5 | pass | snackbar action |
-| outline | surface | #90909A | #131318 | 5.86 | 3.0 | pass | text-field and option-card border |
-| outline | surfaceContainerLow | #90909A | #1B1B21 | 5.42 | 3.0 | pass | text-field and option-card border |
-| outline | surfaceContainerHigh | #90909A | #2A292F | 4.56 | 3.0 | pass | text-field and option-card border |
-| primary | surface | #BAC3FF | #131318 | 10.88 | 3.0 | pass | filled button / focus ring boundary |
-| error | surface | #FFB4AB | #131318 | 10.91 | 3.0 | pass | error field border, error icon |
-| onCorrect | correct | #00391A | #8DD898 | 7.75 | 4.5 | pass | text/icon on solid correct badge |
-| onCorrectContainer | correctContainer | #B7F1BC | #06531F | 7.21 | 4.5 | pass | option card text, correct state |
-| onWrong | wrong | #601410 | #F2B8B5 | 7.66 | 4.5 | pass | text/icon on solid wrong badge |
-| onWrongContainer | wrongContainer | #F9DEDC | #8C1D18 | 7.17 | 4.5 | pass | option card text, wrong state |
-| onPendingContainer | pendingContainer | #DEE0FF | #293CA0 | 7.21 | 4.5 | pass | option card text, selected/pending |
-| onConfidence1Container | confidence1Container | #E0E1F9 | #434659 | 7.22 | 4.5 | pass | Əminlik 1 chip label |
-| onConfidence2Container | confidence2Container | #DEE0FF | #293CA0 | 7.21 | 4.5 | pass | Əminlik 2 chip label |
-| onConfidence3Container | confidence3Container | #00105C | #BAC3FF | 10.04 | 4.5 | pass | Əminlik 3 chip label |
-| onBannerInfoContainer | bannerInfoContainer | #E0E1F9 | #434659 | 7.22 | 4.5 | pass | info banner text |
-| onBannerWarningContainer | bannerWarningContainer | #FFDCC6 | #723400 | 7.39 | 4.5 | pass | offline/warning banner text |
-| timerNormal | surface | #BAC3FF | #131318 | 10.88 | 4.5 | pass | timer digits (normal) |
-| timerWarning | surface | #FFB68A | #131318 | 10.86 | 4.5 | pass | timer digits (last 5 s) |
-| timerNormal | timerTrack | #BAC3FF | #35343A | 7.24 | 3.0 | pass | timer arc vs track |
-| timerWarning | timerTrack | #FFB68A | #35343A | 7.23 | 3.0 | pass | timer arc vs track (last 5 s) |
-| correct | surface | #8DD898 | #131318 | 10.94 | 4.5 | pass | 'Düzgün cavab' label, check icon |
-| correct | surfaceContainerLow | #8DD898 | #1B1B21 | 10.13 | 4.5 | pass | review card: correct option label |
-| wrong | surface | #F2B8B5 | #131318 | 10.85 | 4.5 | pass | wrong label, cross icon |
-| wrong | surfaceContainerLow | #F2B8B5 | #1B1B21 | 10.04 | 4.5 | pass | review card: your answer label |
-| correct | correctContainer | #8DD898 | #06531F | 5.48 | 3.0 | pass | check icon / border on correct card |
-| wrong | wrongContainer | #F2B8B5 | #8C1D18 | 5.34 | 3.0 | pass | cross icon / border on wrong card |
-| confidenceSelectedOutline | surface | #FFFFFF | #131318 | 18.52 | 3.0 | pass | selected Əminlik chip ring vs page |
-| confidence3Container | surface | #BAC3FF | #131318 | 10.88 | 3.0 | pass | Əminlik 3 chip boundary vs page |
-| confidenceSelectedOutline | surfaceContainerHigh | #FFFFFF | #2A292F | 14.42 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
-| confidence3Container | surfaceContainerHigh | #BAC3FF | #2A292F | 8.47 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
-| outline | surfaceContainerHighest | #90909A | #35343A | 3.90 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
-| tertiary | surface | #EAB9D2 | #131318 | 10.91 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
-| tertiary | surfaceContainerLow | #EAB9D2 | #1B1B21 | 10.09 | 3.0 | pass | duel: opponent accent ring in the player panel |
-| primary | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
-| onSurfaceVariant | timerTrack | #C6C5D0 | #35343A | 7.22 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
-| timerNormal | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 4.5 | pass | duel: search countdown digits on the search card |
-| correct | surfaceContainer | #8DD898 | #1F1F25 | 9.69 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
-| wrong | surfaceContainer | #F2B8B5 | #1F1F25 | 9.60 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
-| onSurfaceVariant | surfaceContainer | #C6C5D0 | #1F1F25 | 9.60 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
-| correct | correctContainer | #8DD898 | #06531F | 5.48 | 4.5 | pass | duel reveal: points text on a correct player panel |
-| wrong | wrongContainer | #F2B8B5 | #8C1D18 | 5.34 | 4.5 | pass | duel reveal: points text on a wrong player panel |
-| onSurface | surface | #E4E1E9 | #131318 | 14.33 | 4.5 | pass | web: body text and headings |
-| onSurfaceVariant | surface | #C6C5D0 | #131318 | 10.84 | 4.5 | pass | web: meta line, nav links, footer |
-| primary | surface | #BAC3FF | #131318 | 10.88 | 4.5 | pass | web: underlined links |
-| onSurface | surfaceContainer | #E4E1E9 | #1F1F25 | 12.68 | 4.5 | pass | web: nav link on hover |
-| primary | surfaceContainerLow | #BAC3FF | #1B1B21 | 10.07 | 4.5 | pass | web: link card title, table-of-contents links |
-| onSurfaceVariant | surfaceContainerLow | #C6C5D0 | #1B1B21 | 10.04 | 4.5 | pass | web: link card supporting text |
-| onPrimaryContainer | primaryContainer | #DEE0FF | #293CA0 | 7.21 | 4.5 | pass | web: current nav pill, callout |
-| onBannerWarningContainer | bannerWarningContainer | #FFDCC6 | #723400 | 7.39 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
-| onPrimary | primary | #08218A | #BAC3FF | 7.74 | 4.5 | pass | web: skip link |
-| primary | surface | #BAC3FF | #131318 | 10.88 | 3.0 | pass | web: 3px focus ring |
-| onPrimary | primary | #08218A | #BAC3FF | 7.74 | 4.5 | pass | store: app name on the feature graphic |
-| tertiaryContainer | primary | #603C51 | #BAC3FF | 5.45 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
-| primaryContainer | primary | #293CA0 | #BAC3FF | 5.49 | 3.0 | pass | store: decorative option bars on the feature graphic |
+| onBackground | background | #EDE9FF | #121027 | 15.68 | 4.5 | pass | body text on background |
+| onSurfaceVariant | surfaceVariant | #C3BCE0 | #3A355C | 6.29 | 4.5 | pass | text on surfaceVariant |
+| onSurface | surface | #EDE9FF | #121027 | 15.68 | 4.5 | pass | primary text |
+| onSurfaceVariant | surface | #C3BCE0 | #121027 | 10.26 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceDim | #EDE9FF | #121027 | 15.68 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceDim | #C3BCE0 | #121027 | 10.26 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceBright | #EDE9FF | #3A355C | 9.60 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceBright | #C3BCE0 | #3A355C | 6.29 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerLowest | #EDE9FF | #0C0A1C | 16.45 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerLowest | #C3BCE0 | #0C0A1C | 10.77 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerLow | #EDE9FF | #1A1733 | 14.58 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerLow | #C3BCE0 | #1A1733 | 9.54 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainer | #EDE9FF | #201C3D | 13.67 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainer | #C3BCE0 | #201C3D | 8.95 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerHigh | #EDE9FF | #2A2649 | 12.03 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerHigh | #C3BCE0 | #2A2649 | 7.87 | 4.5 | pass | secondary text, supporting text, icons |
+| onSurface | surfaceContainerHighest | #EDE9FF | #353057 | 10.34 | 4.5 | pass | primary text |
+| onSurfaceVariant | surfaceContainerHighest | #C3BCE0 | #353057 | 6.77 | 4.5 | pass | secondary text, supporting text, icons |
+| primary | surface | #C0B3FF | #121027 | 9.86 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerLow | #C0B3FF | #1A1733 | 9.17 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainer | #C0B3FF | #201C3D | 8.60 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerHigh | #C0B3FF | #2A2649 | 7.56 | 4.5 | pass | text button, link, selected label |
+| primary | surfaceContainerHighest | #C0B3FF | #353057 | 6.50 | 4.5 | pass | text button, link, selected label |
+| error | surface | #FFB4AB | #121027 | 10.95 | 4.5 | pass | field error text, destructive text button |
+| error | surfaceContainerLow | #FFB4AB | #1A1733 | 10.19 | 4.5 | pass | field error text, destructive text button |
+| error | surfaceContainerHigh | #FFB4AB | #2A2649 | 8.40 | 4.5 | pass | field error text, destructive text button |
+| inverseOnSurface | inverseSurface | #2E2945 | #EDE9FF | 11.65 | 4.5 | pass | snackbar text |
+| inversePrimary | inverseSurface | #5334E6 | #EDE9FF | 5.90 | 4.5 | pass | snackbar action |
+| outline | surface | #8F88AD | #121027 | 5.57 | 3.0 | pass | text-field and option-card border |
+| outline | surfaceContainerLow | #8F88AD | #1A1733 | 5.18 | 3.0 | pass | text-field and option-card border |
+| outline | surfaceContainerHigh | #8F88AD | #2A2649 | 4.28 | 3.0 | pass | text-field and option-card border |
+| primary | surface | #C0B3FF | #121027 | 9.86 | 3.0 | pass | filled button / focus ring boundary |
+| error | surface | #FFB4AB | #121027 | 10.95 | 3.0 | pass | error field border, error icon |
+| onCorrect | correct | #00391F | #5FD39A | 7.02 | 4.5 | pass | text/icon on solid correct badge |
+| onCorrectContainer | correctContainer | #B8F5D4 | #0E3B2A | 10.16 | 4.5 | pass | option card text, correct state |
+| onWrong | wrong | #5C0010 | #FF8F9C | 6.61 | 4.5 | pass | text/icon on solid wrong badge |
+| onWrongContainer | wrongContainer | #FFD9DD | #4A0E18 | 11.86 | 4.5 | pass | option card text, wrong state |
+| onPendingContainer | pendingContainer | #EDE8FF | #4A2FD6 | 6.59 | 4.5 | pass | option card text, selected/pending |
+| onConfidence1Container | confidence1Container | #D6EBFF | #1F3A5C | 9.45 | 4.5 | pass | Əminlik 1 chip label |
+| onConfidence2Container | confidence2Container | #E7E1FF | #3A2A99 | 8.43 | 4.5 | pass | Əminlik 2 chip label |
+| onConfidence3Container | confidence3Container | #1C0A63 | #C0B3FF | 8.75 | 4.5 | pass | Əminlik 3 chip label |
+| onBannerInfoContainer | bannerInfoContainer | #D6E8FF | #004A8F | 7.09 | 4.5 | pass | info banner text |
+| onBannerWarningContainer | bannerWarningContainer | #FFDDB8 | #6B3300 | 7.76 | 4.5 | pass | offline/warning banner text |
+| timerNormal | surface | #C0B3FF | #121027 | 9.86 | 4.5 | pass | timer digits (normal) |
+| timerWarning | surface | #FFB68A | #121027 | 10.90 | 4.5 | pass | timer digits (last 5 s) |
+| timerNormal | timerTrack | #C0B3FF | #353057 | 6.50 | 3.0 | pass | timer arc vs track |
+| timerWarning | timerTrack | #FFB68A | #353057 | 7.19 | 3.0 | pass | timer arc vs track (last 5 s) |
+| correct | surface | #5FD39A | #121027 | 9.98 | 4.5 | pass | 'Düzgün cavab' label, check icon |
+| correct | surfaceContainerLow | #5FD39A | #1A1733 | 9.28 | 4.5 | pass | review card: correct option label |
+| wrong | surface | #FF8F9C | #121027 | 8.56 | 4.5 | pass | wrong label, cross icon |
+| wrong | surfaceContainerLow | #FF8F9C | #1A1733 | 7.96 | 4.5 | pass | review card: your answer label |
+| correct | correctContainer | #5FD39A | #0E3B2A | 6.72 | 3.0 | pass | check icon / border on correct card |
+| wrong | wrongContainer | #FF8F9C | #4A0E18 | 7.07 | 3.0 | pass | cross icon / border on wrong card |
+| confidenceSelectedOutline | surface | #FFFFFF | #121027 | 18.60 | 3.0 | pass | selected Əminlik chip ring vs page |
+| confidence3Container | surface | #C0B3FF | #121027 | 9.86 | 3.0 | pass | Əminlik 3 chip boundary vs page |
+| confidenceSelectedOutline | surfaceContainerHigh | #FFFFFF | #2A2649 | 14.27 | 3.0 | pass | duel: selected Əminlik chip ring on the confidence panel |
+| confidence3Container | surfaceContainerHigh | #C0B3FF | #2A2649 | 7.56 | 3.0 | pass | duel: Əminlik 3 chip boundary on the confidence panel |
+| outline | surfaceContainerHighest | #8F88AD | #353057 | 3.68 | 3.0 | pass | duel: neutral reveal panel border (timeout / missed) |
+| tertiary | surface | #FFADD6 | #121027 | 10.81 | 3.0 | pass | duel: opponent avatar accent ring (intro, result) |
+| tertiary | surfaceContainerLow | #FFADD6 | #1A1733 | 10.05 | 3.0 | pass | duel: opponent accent ring in the player panel |
+| primary | surfaceContainerLow | #C0B3FF | #1A1733 | 9.17 | 3.0 | pass | duel: own accent ring in the player panel, calibration bar |
+| onSurfaceVariant | timerTrack | #C3BCE0 | #353057 | 6.77 | 3.0 | pass | duel: timer ring in the result phase / frozen after own answer |
+| timerNormal | surfaceContainerLow | #C0B3FF | #1A1733 | 9.17 | 4.5 | pass | duel: search countdown digits on the search card |
+| correct | surfaceContainer | #5FD39A | #201C3D | 8.70 | 4.5 | pass | duel result / profile: positive rating change on the rating card |
+| wrong | surfaceContainer | #FF8F9C | #201C3D | 7.46 | 4.5 | pass | duel result / profile: negative rating change on the rating card |
+| onSurfaceVariant | surfaceContainer | #C3BCE0 | #201C3D | 8.95 | 4.5 | pass | duel result / profile: zero rating change, captions on the rating card |
+| correct | correctContainer | #5FD39A | #0E3B2A | 6.72 | 4.5 | pass | duel reveal: points text on a correct player panel |
+| wrong | wrongContainer | #FF8F9C | #4A0E18 | 7.07 | 4.5 | pass | duel reveal: points text on a wrong player panel |
+| onSurface | surface | #EDE9FF | #121027 | 15.68 | 4.5 | pass | web: body text and headings |
+| onSurfaceVariant | surface | #C3BCE0 | #121027 | 10.26 | 4.5 | pass | web: meta line, nav links, footer |
+| primary | surface | #C0B3FF | #121027 | 9.86 | 4.5 | pass | web: underlined links |
+| onSurface | surfaceContainer | #EDE9FF | #201C3D | 13.67 | 4.5 | pass | web: nav link on hover |
+| primary | surfaceContainerLow | #C0B3FF | #1A1733 | 9.17 | 4.5 | pass | web: link card title, table-of-contents links |
+| onSurfaceVariant | surfaceContainerLow | #C3BCE0 | #1A1733 | 9.54 | 4.5 | pass | web: link card supporting text |
+| onPrimaryContainer | primaryContainer | #EDE8FF | #4A2FD6 | 6.59 | 4.5 | pass | web: current nav pill, callout |
+| onBannerWarningContainer | bannerWarningContainer | #FFDDB8 | #6B3300 | 7.76 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
+| onPrimary | primary | #23107A | #C0B3FF | 7.80 | 4.5 | pass | web: skip link |
+| primary | surface | #C0B3FF | #121027 | 9.86 | 3.0 | pass | web: 3px focus ring |
+| onPrimary | primary | #23107A | #C0B3FF | 7.80 | 4.5 | pass | store: app name on the feature graphic |
+| tertiaryContainer | primary | #8A1059 | #C0B3FF | 4.84 | 3.0 | pass | store: back bubble of the mark on the feature graphic |
+| primaryContainer | primary | #4A2FD6 | #C0B3FF | 4.17 | 3.0 | pass | store: decorative option bars on the feature graphic |
+| onPressablePrimary | pressablePrimary | #FFFFFF | #6A4DFF | 5.10 | 4.5 | pass | pressable primary button label |
+| onPressableNeutral | pressableNeutral | #C0B3FF | #2A2649 | 7.56 | 4.5 | pass | pressable neutral (secondary) button label |
+| onPressableDestructive | pressableDestructive | #FFFFFF | #D32F2F | 4.98 | 4.5 | pass | pressable destructive button label |
+| onPressableDuel | pressableDuel | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel CTA button label (home duel card, play again) |
+| onSurface | pressableNeutral | #EDE9FF | #2A2649 | 12.03 | 4.5 | pass | option card text on the white game card |
+| onSurfaceVariant | pressableNeutral | #C3BCE0 | #2A2649 | 7.87 | 4.5 | pass | supporting text on white game cards |
+| primary | surfaceContainerLowest | #C0B3FF | #0C0A1C | 10.35 | 4.5 | pass | option letter / link on a white game card |
+| onPrimaryContainer | primaryContainer | #EDE8FF | #4A2FD6 | 6.59 | 4.5 | pass | default option letter badge |
+| primary | pendingContainer | #C0B3FF | #4A2FD6 | 4.17 | 3.0 | pass | selected option 2dp border vs its container |
+| onConfidence1Container | confidence1Container | #D6EBFF | #1F3A5C | 9.45 | 3.0 | pass | Əminlik 1 signal bars |
+| onConfidence3Container | confidence3Container | #1C0A63 | #C0B3FF | 8.75 | 3.0 | pass | Əminlik 3 signal bars |
+| onTertiaryContainer | tertiaryContainer | #FFD9EC | #8A1059 | 7.13 | 4.5 | pass | round-7 pill, opponent badge |
+| gradient.duelHero.on | gradient.duelHero.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | duel hero card text, gradient start |
+| gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
+| gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |
+| gradient.resultWin.on | gradient.resultWin.end | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | win result hero text, gradient end |
+| category.violet.onFace | category.violet.face | #FFFFFF | #6A3DE8 | 6.09 | 4.5 | pass | category tile name + count, slot violet |
+| category.violet.onContainer | category.violet.container | #E3DAFF | #33246E | 9.73 | 4.5 | pass | category chip / quiz top bar tint, slot violet |
+| category.blue.onFace | category.blue.face | #FFFFFF | #1565D8 | 5.41 | 4.5 | pass | category tile name + count, slot blue |
+| category.blue.onContainer | category.blue.container | #D6E6FF | #0E3466 | 9.77 | 4.5 | pass | category chip / quiz top bar tint, slot blue |
+| category.teal.onFace | category.teal.face | #FFFFFF | #00796B | 5.32 | 4.5 | pass | category tile name + count, slot teal |
+| category.teal.onContainer | category.teal.container | #C4F0E8 | #073B35 | 10.07 | 4.5 | pass | category chip / quiz top bar tint, slot teal |
+| category.green.onFace | category.green.face | #FFFFFF | #2E7D32 | 5.13 | 4.5 | pass | category tile name + count, slot green |
+| category.green.onContainer | category.green.container | #CDEFC9 | #163B19 | 10.03 | 4.5 | pass | category chip / quiz top bar tint, slot green |
+| category.orange.onFace | category.orange.face | #FFFFFF | #C2410C | 5.18 | 4.5 | pass | category tile name + count, slot orange |
+| category.orange.onContainer | category.orange.container | #FFDCC8 | #4D1F08 | 10.77 | 4.5 | pass | category chip / quiz top bar tint, slot orange |
+| category.rose.onFace | category.rose.face | #FFFFFF | #C62850 | 5.50 | 4.5 | pass | category tile name + count, slot rose |
+| category.rose.onContainer | category.rose.container | #FFD6E0 | #4D1222 | 11.19 | 4.5 | pass | category chip / quiz top bar tint, slot rose |
+| category.pink.onFace | category.pink.face | #FFFFFF | #B0237F | 6.19 | 4.5 | pass | category tile name + count, slot pink |
+| category.pink.onContainer | category.pink.container | #FFD3EC | #4A1037 | 11.11 | 4.5 | pass | category chip / quiz top bar tint, slot pink |
+| category.ocean.onFace | category.ocean.face | #FFFFFF | #0B6E99 | 5.67 | 4.5 | pass | category tile name + count, slot ocean |
+| category.ocean.onContainer | category.ocean.container | #CDEAF7 | #0A3447 | 10.47 | 4.5 | pass | category chip / quiz top bar tint, slot ocean |

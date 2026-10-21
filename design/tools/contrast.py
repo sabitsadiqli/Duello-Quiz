@@ -102,7 +102,29 @@ GAME = [
     ("onPrimary", "primary", TEXT, "store: app name on the feature graphic"),
     ("tertiaryContainer", "primary", UI, "store: back bubble of the mark on the feature graphic"),
     ("primaryContainer", "primary", UI, "store: decorative option bars on the feature graphic"),
+    # v2 (tokens 2.0.0): pressable buttons, game cards, gradients
+    ("onPressablePrimary", "pressablePrimary", TEXT, "pressable primary button label"),
+    ("onPressableNeutral", "pressableNeutral", TEXT, "pressable neutral (secondary) button label"),
+    ("onPressableDestructive", "pressableDestructive", TEXT, "pressable destructive button label"),
+    ("onPressableDuel", "pressableDuel", TEXT, "duel CTA button label (home duel card, play again)"),
+    ("onSurface", "pressableNeutral", TEXT, "option card text on the white game card"),
+    ("onSurfaceVariant", "pressableNeutral", TEXT, "supporting text on white game cards"),
+    ("primary", "surfaceContainerLowest", TEXT, "option letter / link on a white game card"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "default option letter badge"),
+    ("primary", "pendingContainer", UI, "selected option 2dp border vs its container"),
+    ("onConfidence1Container", "confidence1Container", UI, "Əminlik 1 signal bars"),
+    ("onConfidence3Container", "confidence3Container", UI, "Əminlik 3 signal bars"),
+    ("onTertiaryContainer", "tertiaryContainer", TEXT, "round-7 pill, opponent badge"),
+    ("gradient.duelHero.on", "gradient.duelHero.start", TEXT, "duel hero card text, gradient start"),
+    ("gradient.duelHero.on", "gradient.duelHero.end", TEXT, "duel hero card text, gradient end"),
+    ("gradient.resultWin.on", "gradient.resultWin.start", TEXT, "win result hero text, gradient start"),
+    ("gradient.resultWin.on", "gradient.resultWin.end", TEXT, "win result hero text, gradient end"),
 ]
+CATEGORY_SLOTS = ["violet", "blue", "teal", "green", "orange", "rose", "pink", "ocean"]
+for slot in CATEGORY_SLOTS:
+    GAME.append((f"category.{slot}.onFace", f"category.{slot}.face", TEXT, f"category tile name + count, slot {slot}"))
+    GAME.append((f"category.{slot}.onContainer", f"category.{slot}.container", TEXT, f"category chip / quiz top bar tint, slot {slot}"))
+
 
 
 def lum(hex_colour):
@@ -118,6 +140,11 @@ def ratio(a, b):
 
 
 def resolve(theme, name):
+    if "." in name:
+        node = theme
+        for part in name.split("."):
+            node = node[part]
+        return node
     c = theme["scheme"].get(name) or theme["game"].get(name)
     if c is None:
         raise KeyError(name)
@@ -147,8 +174,12 @@ Colour is never the only signal: correct/wrong option states also show a check o
 cross icon and a text label for TalkBack; the timer warning also changes the arc
 and pulses the digits; Əminlik chips always show the number 1, 2 or 3.
 
-The palette uses Material 3 tonal steps (tone 40/90/10 in light, 80/30/90 in dark),
-which keep text pairs above 4.5:1; this script confirms every pair actually used.
+Palette v2 (tokens 2.0.0, vivid game style): saturated faces (pressable buttons,
+category tiles, Əminlik 3) carry white text only where #FFFFFF passes 4.5:1; dark
+theme text accents use light tones. Depth edges (`*Depth`, `cardDepth`) and the
+neutral button border are decorative (the label identifies the control) and are
+not checked. Category slots are named `category.<slot>.*`, gradients
+`gradient.<name>.*`; text on a gradient is checked against both stops.
 """
 
 
