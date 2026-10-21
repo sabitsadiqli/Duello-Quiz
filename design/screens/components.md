@@ -12,46 +12,94 @@ General rules for all components:
 - Touch target ≥ `size.minTouchTarget` (48dp) even when the visual is smaller.
 - Disabled: content `scheme.onSurface` at `stateLayer.disabledContentOpacity`,
   container `scheme.onSurface` at `stateLayer.disabledContainerOpacity`.
-- Pressed/hover/focus: Material 3 state layers (ripple) in the content colour.
+- Pressed: **pressable** components (§0) move down onto their depth edge, no
+  ripple. Other components (list rows, icon buttons, text buttons): Material 3
+  state layers (ripple) in the content colour. Focus: 3dp `scheme.primary` ring
+  outside the shape (keyboard / switch access).
 - Every icon-only control has a content description from `az.md`.
 - Works at font scale 1.3 without truncation and stays usable at 2.0 (text wraps,
   containers grow in height, never clip).
 
 ---
 
+## 0. Pressable surface (v2 "chunky" look) — `PressableSurface`
+
+The base of every game control: buttons (§1), option cards (§3), category tiles
+(§5), Əminlik tiles (§7), the duel hero card (§6) and white game cards.
+
+Anatomy (bottom to top):
+1. **Depth edge**: same shape as the face, colour = the component's depth role
+   (`game.pressable*Depth`, `game.cardDepth`, `game.correctDepth`, …,
+   `category.<slot>.depth`), offset down by `depth.<component>` (4dp buttons,
+   cards, option cards; 5dp category and Əminlik tiles). Not a shadow, no blur.
+2. **Face**: the container colour, optional 2dp border (`depth.border`) inside the
+   shape (neutral buttons and white cards use `game.pressableNeutralBorder` /
+   `game.cardBorder`).
+3. Content.
+
+Build it as one composable: a `Box` with the depth shape drawn behind
+(`drawBehind`) and the face translated by `-depth + pressOffset`. The layout height
+= face + depth, so nothing jumps when pressed.
+
+| State | Face offset | Edge | Notes |
+| --- | --- | --- | --- |
+| Rest | 0 | visible, `depth` dp | |
+| Pressed (finger down) | +`depth` dp (face covers the edge) | hidden | `motion.pressable.pressDownMs` (60 ms, `standardAccelerate`) |
+| Released | springs back to 0 | visible | `motion.spring.snappy`; the click fires on release as usual and never waits for the animation |
+| Disabled | +`depth` dp (flat) | none | face `scheme.onSurface` 12 %, content 38 % (M3); no border |
+| Reduced motion | 0 | visible | no translation; the face shows the pressed state layer instead |
+
+Haptics: a light tick on press-down for game inputs (option, Əminlik tile,
+category tile), none for buttons (`motion.pressable.haptic`).
+Accessibility: the whole surface is one node with role Button; the depth edge is
+inside the touch target (≥ 48dp total height).
+
 ## 1. Buttons
 
-All buttons: height ≥ `size.buttonHeight`, shape `shape.component.button` (full),
-label `type.labelLarge`, horizontal padding `space.xl`, icon `size.iconSmall` with
-`space.sm` gap. Single-line labels (checked in `az.md`).
+All buttons: face height `size.buttonHeight` (52dp) + depth `depth.pressable`
+(4dp) = 56dp, shape `shape.component.button` (medium, 16dp — a rounded
+rectangle, not a pill, so the edge reads as a solid block), label
+`type.labelLarge` (16sp ExtraBold), horizontal padding `space.xl`, icon
+`size.iconSmall`… `size.icon` with `space.sm` gap. Single-line labels (checked in
+`az.md`). Never all caps.
 
-| Variant | Container | Label | Use |
-| --- | --- | --- | --- |
-| Filled (primary) | `scheme.primary` | `scheme.onPrimary` | The one main action per screen: "Daxil ol", "Yenidən oyna" |
-| Filled destructive | `scheme.error` | `scheme.onError` | "Hesabı həmişəlik sil" only |
-| Tonal | `scheme.secondaryContainer` | `scheme.onSecondaryContainer` | Secondary action of equal weight: "E-poçtla daxil ol" |
-| Outlined | transparent, 1dp `scheme.outline` | `scheme.primary` | Alternative action: "Əsas səhifə", "Geri" |
-| Text | transparent | `scheme.primary` (destructive: `scheme.error`) | Low-emphasis: links, dialog actions, banner actions |
-| Google sign-in | `scheme.surfaceContainerLowest`, 1dp `scheme.outline` | `scheme.onSurface` + multicolour Google "G" (official asset) | Welcome only. Follows Google branding: the "G" logo is never recoloured. |
+| Variant | Face | Label | Depth edge | Use |
+| --- | --- | --- | --- | --- |
+| Primary (pressable) | `game.pressablePrimary` | `game.onPressablePrimary` | `game.pressablePrimaryDepth` | The one main action per screen: "Daxil ol", "Yenidən oyna" (quiz) |
+| Duel (pressable) | `game.pressableDuel` | `game.onPressableDuel` | `game.pressableDuelDepth` | Duel entry points only: "Yenidən oyna" on the duel result, "Yenidən axtar", "Duelə başla" (profile empty state) |
+| Neutral (pressable) | `game.pressableNeutral` + 2dp `game.pressableNeutralBorder` | `game.onPressableNeutral` | `game.pressableNeutralDepth` | Secondary action of equal weight: "Əsas səhifə", "E-poçtla daxil ol", "Ləğv et" (search). Replaces v1 Tonal and Outlined |
+| Destructive (pressable) | `game.pressableDestructive` | `game.onPressableDestructive` | `game.pressableDestructiveDepth` | "Hesabı həmişəlik sil" only |
+| Text | transparent, no edge | `scheme.primary` (destructive: `scheme.error`), `type.labelLarge` | — | Low emphasis: links, dialog actions, banner actions. Ripple, not pressable |
+| Google sign-in | Neutral pressable | `scheme.onSurface` + multicolour Google "G" (official asset) | `game.pressableNeutralDepth` | Welcome / sign-in. Google branding: the "G" logo is never recoloured; the label stays `scheme.onSurface` (not violet) per Google's guidelines |
+
+Naming in screen specs: "primary button" = Primary pressable, "neutral button" =
+Neutral pressable (v1 "tonal" and "outlined" both map here), "destructive
+button" = Destructive pressable, "duel button" = Duel pressable. Where a duel
+screen spec says "primary button" for the main duel action (`duel_result_play_again`,
+`duel_search_retry`, `profile_empty_cta`), use the **Duel** variant.
 
 Full-width buttons on phones: width = content width (360 − 2 × `space.layout.screenGutter`).
+Two buttons stacked: gap `space.md`, primary on top.
 
-States:
-- **Default / pressed / focused**: as above with state layer.
+States (on top of §0):
 - **Loading**: label replaced by a 20dp circular progress indicator in the label
-  colour; button keeps its width (no layout jump); not clickable; content
-  description `common_loading`. Used for every network submit (double-tap guard).
-- **Disabled**: M3 disabled colours. Also used for countdowns
-  ("Yenidən göndər (42 san.)") — the countdown text stays readable because it uses
-  `scheme.onSurfaceVariant` instead of the 38 % disabled colour (exception, since
-  the user must read it).
+  colour; button keeps its width and stays in the rest position (no layout jump);
+  not clickable; content description `common_loading`. Used for every network
+  submit (double-tap guard).
+- **Disabled**: flat (§0). Countdowns ("Yenidən göndər (42 san.)") keep the label
+  in `scheme.onSurfaceVariant` instead of the 38 % colour (exception, the user must
+  read it).
 
 ## 2. Text field
 
-Material 3 **outlined** text field. Height ≥ `size.textFieldHeight`, shape
-`shape.component.textField`, label `type.bodyLarge` → floating `type.bodySmall`,
-input `type.bodyLarge` `scheme.onSurface`, border `scheme.outline` (focused 2dp
-`scheme.primary`), supporting text `type.bodySmall` `scheme.onSurfaceVariant`.
+Outlined text field with a **label above the field** (not floating — keeps long
+Azerbaijani labels fully visible). Label `type.labelMedium`
+`scheme.onSurfaceVariant`, `space.xs` gap, field: height ≥ `size.textFieldHeight`,
+shape `shape.component.textField` (16dp), container `scheme.surfaceContainerLowest`,
+2dp border `scheme.outline` (focused: 2dp `scheme.primary` + 3dp focus ring
+`scheme.primary` at 20 % outside), input `type.bodyLarge` `scheme.onSurface`,
+placeholder `scheme.onSurfaceVariant`, supporting text `type.bodySmall`
+`scheme.onSurfaceVariant`. No depth edge (it is not a button).
 
 - **Error**: border and label `scheme.error`, supporting text replaced by the error
   string in `scheme.error`, trailing error icon (24dp) unless the field has a
@@ -67,39 +115,46 @@ input `type.bodyLarge` `scheme.onSurface`, border `scheme.outline` (focused 2dp
 
 ## 3. Option card (quiz answer)
 
-Full-width card, min height `size.optionCardMinHeight`, shape
-`shape.component.optionCard`, padding `space.lg` horizontal / `space.md` vertical,
-gap between cards `space.md`.
+Pressable surface (§0): full width, face min height `size.optionCardMinHeight`
+(60dp) + `depth.optionCard`, shape `shape.component.optionCard` (16dp), padding
+`space.md` start / `space.lg` end / `space.md` vertical, gap between cards
+`space.md`.
 
-Content, left to right: letter badge (A, B, C, D — 32dp circle, `type.labelLarge`),
+Content, left to right: **letter badge** (A, B, C, D — `size.optionLetterBadge`
+36dp rounded square `shape.component.optionLetterBadge`, letter `type.labelLarge`),
 `space.md`, option text `type.bodyLarge` (wraps, **never truncated**, up to 3+
-lines), trailing status icon slot 24dp (empty unless revealed).
+lines), trailing **outcome word** slot (`type.labelMedium`, only after reveal).
 
 Letters A–D are used (not numbers) so options never look like Əminlik 1/2/3 in the
 duel. TalkBack still reads "1-ci variant: …" (`quiz_option_N_cd`).
 
-| State | Container | Border | Text | Badge | Icon | When |
-| --- | --- | --- | --- | --- | --- | --- |
-| Default | `scheme.surfaceContainerLow` | 1dp `scheme.outline` | `scheme.onSurface` | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | — | Question open, timer running |
-| Pressed | Default + pressed state layer | — | — | — | — | Finger down |
-| Selected (pending) | `game.pendingContainer` | 2dp `scheme.primary` | `game.onPendingContainer` | `scheme.primary` / `scheme.onPrimary` | 20dp progress indicator in `scheme.primary` | Tapped, waiting for server |
-| Correct | `game.correctContainer` | 2dp `game.correct` | `game.onCorrectContainer` | `game.correct` / `game.onCorrect` | check, `game.correct` | Server says correct (tapped or the right one after a wrong tap/timeout) |
-| Wrong | `game.wrongContainer` | 2dp `game.wrong` | `game.onWrongContainer` | `game.wrong` / `game.onWrong` | cross, `game.wrong` | The user's tapped option when wrong |
-| Disabled (other options) | `scheme.surfaceContainerLow` | 1dp `scheme.outlineVariant` | `scheme.onSurfaceVariant` | unchanged | — | After a tap or timeout, for options that are neither correct nor wrong. Text stays readable (not 38 % alpha) so the user can still read them during the reveal. |
-| Queued (offline) | `scheme.surfaceContainerHigh` | 2dp `scheme.outline` | `scheme.onSurface` | `scheme.secondary` / `scheme.onSecondary` | cloud-upload icon, `scheme.onSurfaceVariant` | Answer saved locally, result unknown (QUIZ-08) |
+| State | Face | Border | Depth edge | Text | Badge (container / glyph) | Trailing | When |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Default | `game.pressableNeutral` | 2dp `game.cardBorder` | `game.cardDepth` | `scheme.onSurface` | `scheme.primaryContainer` / letter `scheme.onPrimaryContainer` | — | Question open, timer running |
+| Pressed | §0 pressed | — | hidden | — | — | — | Finger down |
+| Selected (pending) | `game.pendingContainer` | 3dp `scheme.primary` | `game.pendingDepth` | `game.onPendingContainer` | `scheme.primary` / letter `scheme.onPrimary` | 20dp progress in `scheme.primary` | Tapped, waiting for server |
+| Correct | `game.correctContainer` | 3dp `game.correct` | `game.correctDepth` | `game.onCorrectContainer` | `game.correct` / **check glyph** `game.onCorrect` | `quiz_option_outcome_correct` ("Düzgün") in `game.correct` | Server says correct (tapped or the right one after a wrong tap/timeout) |
+| Wrong | `game.wrongContainer` | 3dp `game.wrong` | `game.wrongDepth` | `game.onWrongContainer` | `game.wrong` / **cross glyph** `game.onWrong` | `quiz_option_outcome_wrong` ("Səhv") in `game.wrong` | The user's tapped option when wrong |
+| Dimmed (other options) | `game.pressableNeutral` | 2dp `game.cardBorder` | none (flat) | `scheme.onSurfaceVariant` | `scheme.surfaceContainerHigh` / letter `scheme.onSurfaceVariant` | — | After a tap or timeout, for options that are neither correct nor wrong. Text stays readable (not 38 % alpha) |
+| Queued (offline) | `scheme.surfaceContainerHigh` | 2dp `scheme.outline` | `game.cardDepth` | `scheme.onSurface` | `scheme.secondary` / letter `scheme.onSecondary` | cloud-upload icon, `scheme.onSurfaceVariant` | Answer saved locally, result unknown (QUIZ-08) |
 
-Motion: colour change `motion.game.optionRevealColour`; wrong card shakes once
-horizontally `motion.game.optionWrongShake`; correct card's check icon scales in
-(0 → 1, `motion.duration.short4`, `emphasizedDecelerate`). No shake/scale with
-reduced motion.
+**Colour-blind safety**: correct and wrong differ in four ways besides hue — the
+badge glyph (check vs cross instead of the letter), the outcome word, the motion
+(pop vs shake) and luminance (crimson `game.wrong` is clearly darker/redder than the
+teal-leaning `game.correct` under deuteranopia and protanopia simulation). Never
+remove the glyph or the word to "clean up" the card.
+
+Motion: colour change `motion.game.optionRevealColour`; correct card pops once
+(`motion.game.optionCorrectPop`, spring `bouncy`) and its check glyph scales in;
+wrong card shakes horizontally `motion.game.optionWrongShake`. Reduced motion: no
+pop or shake.
 
 Accessibility: each card is one focusable element with role Button, label
 `quiz_option_N_cd`, plus state description (`quiz_option_state_*_cd`) after reveal.
-Colour is never the only signal (icon + state description).
 
 **Duel use** (`duel-match.md`, `duel-reveal.md`): same card and states, plus
 **picker markers** in the result phase: small avatars (20dp, accent ring 2dp, §13)
-in the trailing slot, before the status icon, showing who picked that option —
+in the trailing slot, before the outcome word, showing who picked that option —
 self (`scheme.primary` ring) and/or opponent (`scheme.tertiary` ring). The
 opponent's option is shown in the **Wrong** state only if it is wrong and the own
 choice is a different option; otherwise it only gets its marker. State
@@ -112,21 +167,25 @@ the result phase (DUEL-08).
 Linear bar + numeric countdown in the quiz top bar (single-player). The duel later
 reuses the same tokens with a ring variant.
 
-- **Bar**: full content width, height `size.progressBarHeight`, track
-  `game.timerTrack`, indicator `game.timerNormal`, shape `shape.full`. Shrinks from
+- **Bar**: full content width, height `size.progressBarHeight` (12dp, chunky),
+  track `game.timerTrack`, indicator `game.timerNormal`, shape `shape.full`, plus a
+  decorative highlight stripe on the indicator (3dp, white at 30 %, inset 8dp from
+  the start, `space.xxs` from the top) for the glossy game look. Shrinks from
   full to empty over 20 s, driven by wall-clock remaining time (not by an animation
   that could drift or pause).
-- **Digits**: "17" in `type.titleMedium` with tabular figures, colour
-  `game.timerNormal`, right-aligned in the top bar, with a 20dp timer icon.
-- **Warning (≤ `motion.game.timerWarningThresholdMs`, 5 s)**: bar and digits switch
-  to `game.timerWarning`; digits pulse once per second
+- **Digits**: a **timer pill** right-aligned in the top bar: `shape.full`,
+  container `scheme.surfaceContainerLowest`, 2dp border `game.cardBorder`, padding
+  `space.sm` + 2dp × 6dp, 20dp `timer` icon + "17" in `type.titleMedium` with
+  tabular figures, both `game.timerNormal`.
+- **Warning (≤ `motion.game.timerWarningThresholdMs`, 5 s)**: bar, pill border,
+  icon and digits switch to `game.timerWarning`; digits pulse once per second
   (`motion.game.timerWarningPulse`); TalkBack announces `quiz_timer_cd` at 5 s.
   Reduced motion: no pulse, colour change only.
 - **Stopped** (after a tap): bar and digits freeze at the remaining value in
   `scheme.onSurfaceVariant`.
 - **Expired**: bar empty, digits "0" in `game.timerWarning`, then the reveal shows
   `quiz_timeout`.
-- **Ring variant (duel)**: circle `size.timerRing`, stroke `size.timerStroke`,
+- **Ring variant (duel)**: circle `size.timerRing`, stroke `size.timerStroke` (5dp, round caps),
   track `game.timerTrack`, arc `game.timerNormal`, digits inside in `type.titleSmall`
   tabular figures. The arc drains clockwise from 12 o'clock; fraction =
   remaining / `motion.duel.phaseNominalMs.<phase>` (clamped), remaining computed
@@ -140,21 +199,40 @@ reuses the same tokens with a ring variant.
   numbers, DUEL-12). Content description `quiz_timer_cd`, announced at most at the
   warning threshold, polite.
 
-## 5. Category card (home)
+## 5. Category tile (home grid)
 
-Full-width card (not a grid — see truncation risks in `az.md`), min height 72dp,
-shape `shape.component.categoryTile`, container `scheme.surfaceContainerLow`,
-padding `space.lg`, gap `space.layout.listItemGap` between cards.
+Pressable surface (§0) in the category's own accent colour. **2-column grid**,
+gap `space.layout.gridGap`, cell width = (content width − gap) / 2 (158dp on a
+360dp phone), face min height `size.categoryTileMinHeight` (132dp) + 
+`depth.categoryTile`, shape `shape.component.categoryTile` (20dp). All tiles in a
+row take the height of the tallest one. An odd last tile stays one cell wide
+(start-aligned).
 
-Left: icon container `size.categoryIconContainer` circle, `scheme.primaryContainer`
-with 24dp icon in `scheme.onPrimaryContainer`. Then `space.lg`, a text column: name
-`type.titleMedium` `scheme.onSurface` (max 2 lines, ellipsis), supporting
-`home_category_question_count` `type.bodyMedium` `scheme.onSurfaceVariant`. Right:
-chevron 24dp `scheme.onSurfaceVariant`.
+Colours: `category.<slot>.face` / `.onFace` / `.depth`, where `<slot>` comes from
+the category's `accentKey` (one of `color.categoryAccentOrder`: violet, blue, teal,
+green, orange, rose, pink, ocean). Unknown/missing key → slot by index
+(`categoryAccentOrder[index % 8]`, server order), so a new category always gets a
+colour without an app release. Proposed defaults for the seed categories:
+`color.categoryAccentDefaults` (Coğrafiya ocean, Tarix orange, Biologiya green,
+Fizika violet, İdman rose).
+
+Content, top to bottom, padding `space.lg`, gap `space.md`:
+1. Icon box: `size.categoryIconContainer` (48dp) rounded square
+   (`shape.component.categoryIcon`), `category.<slot>.onFace` at 20 %; icon 28dp
+   `category.<slot>.onFace`.
+2. Name `type.titleMedium` `category.<slot>.onFace`, **max 3 lines**, wraps at word
+   boundaries, never hyphenated, never ellipsized.
+3. `space.xxs`, `home_category_question_count` `type.bodyMedium`
+   `category.<slot>.onFace`.
+
+**Single-column fallback** (no truncation at 360dp): when font scale > 1.15 **or**
+the window is narrower than 360dp **or** any category name has a single word wider
+than the cell's text width (measure with `TextMeasurer`; Azerbaijani words such as
+"Astronomiya" at 1.3 do not fit 126dp), switch to one column: full-width tiles,
+face min height 88dp, icon box at the start and the text column beside it.
 
 Icons (Material Symbols Rounded, Apache 2.0, bundled as vector drawables), mapped by
-`icon_key`. The key values are a **proposal** until `backend-dev` fixes them in
-`docs/api/` (open question in `home.md`):
+`icon_key`. The key values are decided (OQ-044):
 
 | icon_key | Symbol |
 | --- | --- |
@@ -165,30 +243,44 @@ Icons (Material Symbols Rounded, Apache 2.0, bundled as vector drawables), mappe
 | `sports` | `sports_soccer` |
 | unknown | `category` (generic fallback, HOME-01) |
 
-States: default; pressed (state layer); **loading** (the chevron is replaced by a
-20dp progress indicator, the card is not clickable and all other cards ignore taps
-— HOME-02 double-tap rule); **skeleton** (icon circle and two text bars in
-`scheme.surfaceContainerHighest`, shimmer alpha 0.5 ↔ 1.0 over 1 s, no shimmer with
-reduced motion).
+States: rest / pressed (§0); **loading** (the count line is replaced by a 20dp
+progress indicator in `onFace`, the tile is not clickable and all other tiles
+ignore taps — HOME-02 double-tap rule); **skeleton** (tile face
+`scheme.surfaceContainerHighest`, no depth, icon box and two text bars in
+`scheme.surfaceContainerHigh`, shimmer alpha 0.5 ↔ 1.0 over 1 s, no shimmer with
+reduced motion). First appearance: `motion.game.categoryGridEnter` (stagger).
 
-## 6. Duel entry card (home, behind build flag)
+## 6. Duel hero card (home, behind build flag)
 
 Hidden until the duel ships (OQ-020) — the layout slot simply does not exist.
-When enabled: full-width card, shape `shape.large`, container
-`scheme.primaryContainer`, title `home_duel_title` `type.titleLarge`
-`scheme.onPrimaryContainer`, hint `home_duel_hint` `type.bodyMedium`
-`scheme.onPrimaryContainer`, trailing filled icon button (`bolt` icon,
-`scheme.primary` / `scheme.onPrimary`). No coins, dice, cards or casino imagery.
+When enabled: full-width pressable card (§0), shape `shape.extraLarge` − 4 (24dp),
+face = `gradient.duelHero` (violet → pink, 135°), depth `game.pressableDuelDepth`
+5dp, padding `space.xl` × 18dp, gap `space.md`:
+- Row: column (title `home_duel_title` `type.headlineMedium`, hint
+  `home_duel_hint` `type.bodyMedium`, both `gradient.duelHero.on`) + decorative
+  56dp rounded square (white 18 %) with the 32dp `swords` symbol (two crossed
+  swords = a duel; no coins, dice, cards or casino imagery).
+- Full-width white pressable button (face #FFFFFF = `game.pressableNeutral` light
+  value in both themes, label `game.onPressableNeutral` light value `#4426D6`,
+  depth `scheme.primaryContainer` light value): `home_duel_cta` ("Duelə başla").
+The whole card is one touch target; the button is its visual anchor.
 
-## 7. Əminlik chips (duel)
+## 7. Əminlik tiles (duel)
 
-Three chips side by side in the confidence panel (§18). Width = (content width −
-2 × `space.md`) / 3 (~101dp on 360dp), min height `size.confidenceChip`, shape
-`shape.component.confidenceChip`, gap `space.md`, padding `space.md`, 1dp
-`scheme.outline` border (chip 1 is pale in light theme and needs it). Content,
+Three pressable tiles (§0) side by side in the confidence panel (§18). Width =
+(content width − 2 × `space.md`) / 3 (~101dp on 360dp), face min height
+`size.confidenceChip`, depth `depth.confidenceChip` (5dp) in
+`game.confidenceNDepth`, shape `shape.component.confidenceChip` (20dp — a rounded
+rectangle, **never a circle**, so it cannot read as a chip/coin), gap `space.md`,
+padding `space.md` vertical / `space.sm` horizontal. Tile 1 also gets a 2dp border
+in `game.onConfidence1Container` at 30 % (it is pale in light theme). Content,
 centred, top to bottom:
 
-1. Numeral "1" / "2" / "3" in `type.displaySmall`, tabular figures.
+1. Row: numeral "1" / "2" / "3" in `type.displaySmall` (Black), tabular figures,
+   `space.sm`, **signal bars**: three rounded bars 6dp wide, heights 8/13/18dp,
+   gap 3dp; the first N bars are solid in the content colour, the rest at 30 %
+   (level 1 = one bar, 3 = three bars). The bars are a strength meter — a second,
+   non-colour cue for the level.
 2. `space.xs`, stake on correct `duel_delta_positive` ("+300") in `type.labelLarge`.
 3. Stake on wrong `duel_delta_negative` ("−200", U+2212) or `duel_delta_zero` ("0")
    in `type.labelLarge`.
@@ -196,7 +288,7 @@ centred, top to bottom:
 All text uses `game.onConfidenceNContainer` (never green/red on the chip: the sign
 carries the meaning and every pair stays checked). Round 7 shows doubled stakes
 (DUEL-10). The numeral is the level, so colour is never the only signal (the old
-"pips" are dropped: numeral + stakes say more in the same space).
+"pips" are replaced by the signal bars).
 
 | Level | Container | Content | Stakes (regular / round 7) |
 | --- | --- | --- | --- |
@@ -214,11 +306,11 @@ visible as text, not only as a badge.
 | State | Visual | When |
 | --- | --- | --- |
 | Enabled | As above, ripple in content colour | Confidence phase open, nothing sent |
-| Pressed | Scale `motion.duel.chipPress` | Finger down. `round.bet` is sent on the tap itself, never after the animation |
-| Selected / sending | 3dp ring `game.confidenceSelectedOutline` with 2dp gap, scale `motion.duel.chipLock`; other chips fade to `othersFadeToAlpha`; 16dp progress indicator under the stakes | Tapped, waiting for `round.betLocked {self}` |
-| Locked | Ring stays, progress replaced by a 16dp lock icon in the chip's content colour | `round.betLocked {self}` arrived |
+| Pressed | §0 press (`motion.duel.chipPress`) | Finger down. `round.bet` is sent on the tap itself, never after the animation |
+| Selected / sending | 3dp ring `game.confidenceSelectedOutline` outside the shape, scale `motion.duel.chipLock` (spring `bouncy`); other tiles fade to `othersFadeToAlpha`; 24dp corner badge at the top-start (inverse of the ring colour) with a 16dp progress indicator | Tapped, waiting for `round.betLocked {self}` |
+| Locked | Ring stays, the corner badge shows a 14dp `lock` icon | `round.betLocked {self}` arrived |
 | Defaulted | Chip 1 gets the same ring and the lock icon; others faded; status line `duel_confidence_defaulted` | Confidence deadline passed without a valid pick (server default 1) |
-| Disabled (limit) | Chip 3 only: M3 disabled container/content colours, no badge, not focusable as a button (TalkBack reads `duel_confidence_three_none`) | Əminlik 3 used twice |
+| Disabled (limit) | Tile 3 only: flat (§0), M3 disabled container/content colours, no badge, not focusable as a button (TalkBack reads `duel_confidence_three_none`) | Əminlik 3 used twice |
 | Disabled (others) | M3 disabled colours | After any chip was tapped, and after the phase deadline |
 
 Accessibility: each chip is one element, role Button, label
@@ -277,7 +369,7 @@ padding `space.xl`:
   offline). No raster illustrations in the MVP.
 - `space.lg`, title `type.titleMedium` `scheme.onSurface`, centred, wraps.
 - `space.sm`, body `type.bodyMedium` `scheme.onSurfaceVariant`, centred, optional.
-- `space.xl`, primary action: tonal button (`common_retry` / `common_refresh`);
+- `space.xl`, primary action: neutral pressable button (`common_retry` / `common_refresh`);
   optional secondary text button under it.
 - **Loading**: circular indicator 48dp `scheme.primary`, optional caption
   `type.bodyMedium` `scheme.onSurfaceVariant` (e.g. `quiz_loading`). Shown only after
@@ -286,8 +378,9 @@ padding `space.xl`:
 ## 12. Top app bar
 
 `TopAppBar` (small), height `size.topAppBarHeight`, container `scheme.surface`
-(scrolled: `scheme.surfaceContainer`), title `type.titleLarge` `scheme.onSurface`
-single line, icons `scheme.onSurfaceVariant`. Titles longer than ~16 characters are
+(scrolled: same colour plus a 2dp `game.cardBorder` line at the bottom, no tonal
+change), title `type.titleLarge` (20sp ExtraBold) `scheme.onSurface` single line,
+navigation icon `scheme.onSurface`, action icons `scheme.onSurfaceVariant`. Titles longer than ~16 characters are
 not allowed here (see `az.md` risks); auth screens put their title in the content
 as `type.headlineSmall` instead.
 
@@ -324,8 +417,9 @@ icon and text `scheme.error`.
 ---
 
 Components 15–23 are used by the duel (`duel-*.md`) and the profile (`profile.md`).
-They reuse existing colour roles only; every new colour combination is listed in
-`tools/contrast.py`.
+They reuse existing colour roles; every new colour combination is listed in
+`tools/contrast.py`. Since tokens 2.0.0 every card-like container is a white game
+card with a depth edge (§0) unless stated otherwise.
 
 ## 15. Duel top bar and phase stepper
 
@@ -362,10 +456,11 @@ begins. Decorative for TalkBack; the phase change is announced once as
 Two panels side by side under the stepper (self at the start, opponent at the end),
 gap `space.sm`, gutters `space.layout.screenGutter`, always the same height
 (`IntrinsicSize.Max`), min height `size.duelPlayerPanelMinHeight`. Pinned with the
-top bar. Container `scheme.surfaceContainerLow`, shape
-`shape.component.duelPlayerPanel`, padding `space.sm`, no border outside the result
-phase (self and opponent are told apart by the avatar accent ring, §13, and the
-name).
+top bar. White game card (§0 without press): face `scheme.surfaceContainerLowest`,
+depth `game.cardDepth` 4dp, shape `shape.component.duelPlayerPanel`, padding
+10dp, **2dp border in the player's accent** — self `scheme.primary`, opponent
+`scheme.tertiary` (plus the avatar accent ring, §13, and the name, so "who is who"
+never depends on colour alone).
 
 Content, top to bottom:
 1. Row: avatar `size.avatar` with accent ring, `space.sm`, column:
@@ -383,7 +478,8 @@ Content, top to bottom:
    the reveal.
 
 **Reveal face** (result phase, after the flip, `motion.duel.revealFlip`): the panel
-switches container and gets a 2dp border:
+switches face, depth edge (`game.correctDepth` / `game.wrongDepth` /
+`game.cardDepth`) and gets a 3dp border:
 
 | Outcome | Container / content | Border | Icon |
 | --- | --- | --- | --- |
@@ -465,8 +561,9 @@ Expanded in the question phase; from the next phase on it collapses
 ## 20. Calibration rows and card
 
 Used by the match result (Əminlik kartı, DUEL-21) and the profile (PROF-05).
-Card: `scheme.surfaceContainerLow`, `shape.component.calibrationCard`, padding
-`space.lg`. Title `type.titleMedium`, optional subtitle `type.bodyMedium`
+White game card (§0 without press): `scheme.surfaceContainerLowest`, 2dp
+`game.cardBorder`, depth `game.cardDepth`, `shape.component.calibrationCard`,
+padding `space.lg`. Title `type.titleMedium`, optional subtitle `type.bodyMedium`
 `scheme.onSurfaceVariant`, then 3 rows (level 1, 2, 3) with gap `space.md`, then a
 hint and a footnote.
 
@@ -520,7 +617,7 @@ opens the leave dialog. Focus moves into the card; announced once (assertive).
 
 ## 23. Stat rows (profile record)
 
-Card `scheme.surfaceContainerLow`, `shape.large`, padding `space.lg`. Header row:
+White game card (§0 without press), `shape.large`, padding `space.lg`. Header row:
 title `type.titleMedium` + trailing total `type.labelLarge`
 `scheme.onSurfaceVariant`. Then 3 rows (min height 40dp): 20dp icon (win
 `emoji_events` `game.correct`, loss `close` `game.wrong`, draw `drag_handle`
