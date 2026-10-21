@@ -41,6 +41,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloLogoMark
 import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
 import com.sabit.duelloquiz.core.designsystem.component.GoogleSignInButton
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -168,7 +169,7 @@ internal fun WelcomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(Spacing.md))
-                    DuelloNeutralButton(
+                    DuelloPrimaryButton(
                         text = stringResource(R.string.auth_email_sign_in),
                         onClick = { onAction(WelcomeAction.EmailSignInClicked) },
                         enabled = !running,
