@@ -406,7 +406,7 @@ private fun OptionDisplayState.toComponent(): OptionCardState = when (this) {
     OptionDisplayState.Selected -> OptionCardState.Selected
     OptionDisplayState.Correct -> OptionCardState.Correct
     OptionDisplayState.Wrong -> OptionCardState.Wrong
-    OptionDisplayState.Disabled -> OptionCardState.Dimmed
+    OptionDisplayState.Dimmed -> OptionCardState.Dimmed
     OptionDisplayState.Queued -> OptionCardState.Queued
 }
 
@@ -477,7 +477,7 @@ private fun QuizQuestionWrongPreview() {
                 phase = QuizPhase.Playing(
                     previewQuestion(
                         QuestionStatus.Wrong,
-                        listOf(OptionDisplayState.Correct, OptionDisplayState.Wrong, OptionDisplayState.Disabled, OptionDisplayState.Disabled),
+                        listOf(OptionDisplayState.Correct, OptionDisplayState.Wrong, OptionDisplayState.Dimmed, OptionDisplayState.Dimmed),
                         TimerStatus.Stopped,
                     ),
                 ),
@@ -498,7 +498,7 @@ private fun QuizQuestionQueuedPreview() {
                 phase = QuizPhase.Playing(
                     previewQuestion(
                         QuestionStatus.AnswerSaved,
-                        listOf(OptionDisplayState.Disabled, OptionDisplayState.Queued, OptionDisplayState.Disabled, OptionDisplayState.Disabled),
+                        listOf(OptionDisplayState.Dimmed, OptionDisplayState.Queued, OptionDisplayState.Dimmed, OptionDisplayState.Dimmed),
                         TimerStatus.Stopped,
                     ),
                 ),

@@ -10,7 +10,9 @@ import com.sabit.duelloquiz.core.model.QuizOption
 import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
 import com.sabit.duelloquiz.core.model.ReviewItem
+import com.sabit.duelloquiz.core.model.Category
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
+import com.sabit.duelloquiz.core.testing.TestCategoryRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestQuizRepository
 import com.sabit.duelloquiz.core.testing.testQuizSession
@@ -38,6 +40,7 @@ class QuizResultViewModelTest {
 
     private val repository = TestQuizRepository()
     private val monitor = TestNetworkMonitor(online = true)
+    private val categories = TestCategoryRepository()
 
     private fun handle(sessionClosed: Boolean = false) = SavedStateHandle(
         mapOf(
@@ -49,7 +52,7 @@ class QuizResultViewModelTest {
     )
 
     private fun TestScope.viewModel(sessionClosed: Boolean = false) =
-        QuizResultViewModel(repository, monitor, WallClock { testScheduler.currentTime }, handle(sessionClosed))
+        QuizResultViewModel(repository, categories, monitor, WallClock { testScheduler.currentTime }, handle(sessionClosed))
 
     private suspend fun answer(vararg optionIds: String) {
         optionIds.forEachIndexed { index, optionId -> repository.submitAnswer("session-1", "q${index + 1}", optionId, 1_000) }
@@ -57,6 +60,34 @@ class QuizResultViewModelTest {
 
     private fun review(count: Int) = (1..count).map {
         ReviewItem("q$it", it, "Sual $it", null, null, QuizOption("q$it-a", "A"), null)
+    }
+
+    @Test
+    fun theHeroUsesTheCategorysAccentAndIconFromTheServerOrder() = runTest {
+        repository.register(testQuizSession())
+        categories.nextRefresh = DataResult.Success(
+            listOf(
+                Category(id = 7, slug = "history", name = "Tarix", iconKey = "history"),
+                Category(id = 3, slug = "physics", name = "Fizika", iconKey = "physics"),
+                Category(id = 1, slug = "geography", name = "Coğrafiya", iconKey = "geography"),
+            ),
+        )
+        categories.refresh()
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals("teal", vm.uiState.value.categoryAccent)
+        assertEquals("geography", vm.uiState.value.categoryIconKey)
+    }
+
+    @Test
+    fun withoutCachedCategoriesTheHeroKeepsTheDefaultAccent() = runTest {
+        repository.register(testQuizSession())
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals("violet", vm.uiState.value.categoryAccent)
+        assertEquals("", vm.uiState.value.categoryIconKey)
     }
 
     @Test

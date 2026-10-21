@@ -149,7 +149,7 @@ class QuizViewModelTest {
         val revealed = vm.question
         assertEquals(QuestionStatus.Correct, revealed.status)
         assertEquals(OptionDisplayState.Correct, revealed.stateOf("q1-a"))
-        assertEquals(OptionDisplayState.Disabled, revealed.stateOf("q1-b"))
+        assertEquals(OptionDisplayState.Dimmed, revealed.stateOf("q1-b"))
         assertEquals(TimerStatus.Stopped, revealed.timer.status)
         assertEquals(16_800L, revealed.timer.frozenRemainingMs)
         assertFalse(revealed.acceptsAnswers)
@@ -188,7 +188,7 @@ class QuizViewModelTest {
 
         assertEquals(1, repository.submitted.size)
         assertEquals(OptionDisplayState.Selected, vm.question.stateOf("q1-b"))
-        assertEquals(OptionDisplayState.Disabled, vm.question.stateOf("q1-c"))
+        assertEquals(OptionDisplayState.Dimmed, vm.question.stateOf("q1-c"))
         gate.complete(Unit)
     }
 
