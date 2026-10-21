@@ -10,7 +10,7 @@ Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
   Google display name + email for Google) as supporting text. Useful before
   "Hesabdan çıx" / "Hesabı sil". It is the user's own data on their own device.
 - Decided: the licences screen has its own spec, `licenses.md` (generated library
-  list rendered with our components, plus manual entries for Inter and Material
+  list rendered with our components, plus manual entries for Nunito and Material
   Symbols).
 
 ## Purpose
@@ -77,7 +77,7 @@ See `licenses.md`.
 ## Components
 
 Top app bar, section headers, radio rows, list rows, destructive row, dialogs,
-filled destructive button, outlined button, snackbar.
+filled destructive button, neutral button, snackbar.
 
 ## States
 

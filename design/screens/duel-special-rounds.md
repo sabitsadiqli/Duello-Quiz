@@ -79,7 +79,7 @@ Sudden death starts when the round 7 result phase ends with equal totals.
 ## Components
 
 Duel top bar with All-in pill, phase stepper (4 or 3 segments), round banners,
-Əminlik chips with doubled stakes, player panels, status line.
+Əminlik tiles with doubled stakes, player panels, status line.
 
 ## States
 

@@ -30,7 +30,7 @@ sign-up.
    3. `space.lg`, text field `auth_email_label` (email keyboard, Next).
    4. `space.lg`, password field `auth_password_label` (toggle, Done = submit).
    5. `space.sm`, text button `auth_forgot_password`, end-aligned.
-   6. `space.xl`, filled button `auth_sign_in_button`, full width.
+   6. `space.xl`, primary button `auth_sign_in_button`, full width.
    7. `space.xl`, row centred: `auth_no_account_prompt` (`type.bodyMedium`
       `scheme.onSurfaceVariant`) + text button `auth_sign_up_link`. Wraps to two
       centred lines if it does not fit.
@@ -39,7 +39,7 @@ sign-up.
 
 ## Components
 
-Top app bar, outlined text fields (email, password), text buttons, filled button,
+Top app bar, outlined text fields (email, password), text buttons, primary button,
 inline form error, snackbar host.
 
 ## States

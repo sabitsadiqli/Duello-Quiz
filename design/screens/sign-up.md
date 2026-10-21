@@ -35,14 +35,14 @@ Create an email account with a public display name in one screen.
    5. `space.lg`, password field `auth_password_label`; supporting
       `auth_password_supporting` ("Ən azı 8 simvol."); toggle; Done = submit.
       No "repeat password" field (AUTH-02); the show toggle replaces it.
-   6. `space.xl`, filled button `auth_sign_up_cta`, full width.
+   6. `space.xl`, primary button `auth_sign_up_cta`, full width.
    7. `space.xl`, centred row `auth_have_account_prompt` + text button
       `auth_sign_in_link`.
 
 ## Components
 
 Top app bar, outlined text fields (with counter and supporting text), password
-field, filled button, text button, inline form error.
+field, primary button, text button, inline form error.
 
 ## States
 

@@ -26,7 +26,7 @@ Request a Firebase reset link without revealing whether an account exists.
    2. `space.sm`, `auth_reset_body` `type.bodyMedium` `scheme.onSurfaceVariant`.
    3. `space.xl`, form error slot (hidden by default).
    4. `space.lg`, text field `auth_email_label` (Done = submit).
-   5. `space.xl`, filled button `auth_reset_send`, full width.
+   5. `space.xl`, primary button `auth_reset_send`, full width.
    6. Confirmation block (hidden until sent): info banner style container
       (`game.bannerInfoContainer` / `game.onBannerInfoContainer`, `shape.medium`,
       padding `space.lg`, `mail` icon) with `auth_reset_sent`.
@@ -34,7 +34,7 @@ Request a Firebase reset link without revealing whether an account exists.
 
 ## Components
 
-Top app bar, outlined text field, filled button (with countdown), info block, text
+Top app bar, outlined text field, primary button (with countdown), info block, text
 button.
 
 ## States

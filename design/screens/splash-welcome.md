@@ -38,15 +38,15 @@ Google in one tap, email sign-in, or sign-up.
 
 1. Status bar inset, edge-to-edge, background `scheme.surface`.
 2. Flexible top space (weight 1).
-3. Logo mark 96dp (`size.splashLogo`), centred (`design/brand.md`, light/dark file).
+3. Logo mark 112dp (`size.splashLogo`), centred (`design/brand.md`, light/dark file).
 4. `space.lg`, `app_name` in `type.headlineMedium` `scheme.onSurface`, centred.
 5. `space.sm`, `auth_welcome_tagline` `type.bodyLarge` `scheme.onSurfaceVariant`,
    centred, max 2 lines.
 6. Flexible space (weight 1).
 7. Button column, side gutters `space.layout.screenGutter`, gap `space.md`:
    - Google sign-in button (`components.md` §1) `auth_google_sign_in`.
-   - Tonal button `auth_email_sign_in`.
-   - Outlined button `auth_sign_up_cta`.
+   - Primary button `auth_email_sign_in`.
+   - Neutral button `auth_sign_up_cta`.
 8. `space.xl`, text button `auth_privacy_link` (`type.labelLarge`, centred),
    opens the privacy policy URL (OQ-015) in a Custom Tab.
 9. `space.lg` + navigation bar inset.
@@ -56,7 +56,7 @@ At ≥ 600dp width: content centred, max width `space.layout.maxContentWidth`.
 
 ## Components
 
-Google sign-in button, tonal button, outlined button, text button, snackbar host.
+Google sign-in button, primary button, neutral button, text button, snackbar host.
 
 ## States
 

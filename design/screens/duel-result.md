@@ -36,13 +36,19 @@ card) — then make the next match one tap away.
 
 1. Top app bar: close icon (`common_close`) → home; no title.
 2. Scrollable column, gutters `space.layout.screenGutter`, centred:
-   1. **Outcome hero**: 48dp icon, `space.sm`, headline `type.displaySmall`,
-      centred, then `space.sm` reason line `type.bodyLarge`
-      `scheme.onSurfaceVariant` (wraps, optional).
+   1. **Outcome hero** (v2): a game card (`components.md` §0 without press),
+      shape 24dp, padding `space.xl`, content centred: 40dp icon, `space.sm`,
+      headline `type.displaySmall`, then the score row (avatars, names, scores,
+      winner pill — previously a separate card) inside the hero. **Win**: face
+      `gradient.resultWin`, depth `game.pressablePrimaryDepth`, all content
+      `gradient.resultWin.on` (white), winner pill white with `scheme.primary`
+      light-value text. **Loss / Draw / Abandoned**: white game card, colours
+      from the table below. The reason line sits under the hero, `space.sm`,
+      `type.bodyLarge` `scheme.onSurfaceVariant` (wraps, optional).
 
       | Outcome | Icon / colour | Headline | Reason line |
       | --- | --- | --- | --- |
-      | Win | `emoji_events`, `game.correct` | `duel_result_win` in `game.correct` | sudden death: `duel_result_reason_sudden_death_win`; opponent forfeit: by `forfeitCause`, table below |
+      | Win | `emoji_events`, white on `gradient.resultWin` | `duel_result_win` in white (`gradient.resultWin.on`) | sudden death: `duel_result_reason_sudden_death_win`; opponent forfeit: by `forfeitCause`, table below |
       | Loss | `flag`, `scheme.onSurfaceVariant` | `duel_result_loss` in `scheme.onSurface` (not red: no shaming) | sudden death: `_sudden_death_loss`; own forfeit: by `forfeitCause`, table below; normal: `duel_result_message_loss` |
       | Draw | `handshake`, `scheme.primary` | `duel_result_draw` in `scheme.primary` | `duel_result_reason_draw` |
       | Abandoned | `block`, `scheme.onSurfaceVariant` | `duel_result_abandoned` in `scheme.onSurface` | `duel_result_reason_abandoned` |
@@ -59,8 +65,10 @@ card) — then make the next match one tap away.
       | `self` | `left` | `duel_result_reason_self_left` (defensive; the leaver normally never sees this screen) |
       | `self` | `null` | `duel_result_reason_self_forfeit_unknown` |
 
-   2. `space.xl`, **score card**: `scheme.surfaceContainerLow`, `shape.large`,
-      padding `space.lg`. Two equal columns with a centred ":" (`type.headlineMedium`
+   2. **Score row** — v2: rendered inside the outcome hero, `space.lg` under the
+      headline (no separate card). On the Win gradient all text is white and the
+      winner pill is white with `#5334E6` text; on the other heroes colours are as
+      written here. Two equal columns with a centred ":" (`type.headlineMedium`
       `scheme.onSurfaceVariant`) between them. Each column, centred: avatar
       `size.avatarLarge` with accent ring (self primary, opponent tertiary;
       deleted-player variant if the opponent deleted their account meanwhile),
@@ -70,8 +78,8 @@ card) — then make the next match one tap away.
       pill above the avatar (`game.correctContainer` / `game.onCorrectContainer`,
       `type.labelMedium`), height reserved in both columns so they stay aligned.
       One TalkBack element: `duel_result_score_cd`.
-   3. `space.md`, **rating card**: `scheme.surfaceContainer`, `shape.medium`,
-      padding `space.lg`, row: `trending_up`/`trending_down`/`trending_flat` icon
+   3. `space.lg`, **rating card**: white game card (`components.md` §0 without
+      press), padding 14dp, row: `trending_up`/`trending_down`/`trending_flat` icon
       20dp in the delta colour, `space.md`, `home_rating` ("Reytinq: 1016")
       `type.titleMedium` `scheme.onSurface`, `space.sm`, delta ("+16" / "−14" /
       "0") `type.titleMedium` tabular in `game.correct` / `game.wrong` /
@@ -82,8 +90,8 @@ card) — then make the next match one tap away.
       Əminlik 1, 2, 3 with `duel_calibration_value` ("2 / 3 düzgün") or
       `duel_calibration_unused` ("—"), hint (rules below), footnote
       `duel_calibration_footnote`. **Hidden for abandoned matches** (DUEL-21).
-   5. `space.xl`, filled button `duel_result_play_again`, full width.
-   6. `space.md`, outlined button `common_home`, full width.
+   5. `space.xl`, **duel** button (`components.md` §1) `duel_result_play_again`, full width.
+   6. `space.md`, neutral button `common_home`, full width.
    7. `space.xl` + navigation bar inset.
 
 On a 360 × 640dp phone the hero, score and rating cards are visible without
@@ -111,7 +119,7 @@ rules 2–4 (PROF-05 "Az məlumat"). Hints never mock; they describe and suggest
 ## Components
 
 Top app bar, outcome hero, score card with avatars and winner pill, rating card,
-calibration card, filled and outlined buttons.
+calibration card, filled and neutral buttons.
 
 ## States
 

@@ -51,7 +51,7 @@ way back — or a deliberate way out.
 ### B. Self offline — after 10 s without success (same card, new content)
 
 - Icon `cloud_off` 48dp, title `duel_offline_title`, body `duel_offline_body`
-  ("…Ardıcıl 2 raund buraxsan, oyun məğlubiyyətlə bitəcək."), filled button
+  ("…Ardıcıl 2 raund buraxsan, oyun məğlubiyyətlə bitəcək."), primary button
   `duel_reconnect_button` (forces an immediate retry; loading state while trying),
   text button `duel_leave_button` (opens the leave dialog). Background retries
   continue (OQ-032).
@@ -95,13 +95,13 @@ way back — or a deliberate way out.
 ### F. Session replaced (`session_replaced`) during intro or match
 
 - Full-screen state view replacing the whole screen (header included): icon
-  `devices`, title `error_session_replaced`, single filled button `common_home`.
+  `devices`, title `error_session_replaced`, single primary button `common_home`.
   The match continues on the other device; nothing to retry here.
 
 ### G. Match lost by the server (`match_not_found` on rejoin)
 
 - Full-screen state view: icon `error`, title `error_match_not_found`
-  ("Oyun texniki səbəbdən dayandırıldı. Reytinq dəyişmədi."), filled button
+  ("Oyun texniki səbəbdən dayandırıldı. Reytinq dəyişmədi."), primary button
   `common_home`. `activeMatchId` is cleared.
 
 ## Components
@@ -124,7 +124,7 @@ views, snackbar (on home).
 | Opponent returned | Pill "Qayıtdı" (2 s) | Info banner (2 s) | Normal |
 | Opponent forfeits (2 missed in a row) | — | Reveal of that round, then the result screen with `duel_result_reason_opponent_missed_rounds` | — |
 | Opponent leaves (`match.leave`, or deletes the account, OQ-069) | — | Result screen at once (no reveal) with `duel_result_reason_opponent_left` | — |
-| Rejoin answered with `internal_error` | — | State view: icon `error`, title `error_duel_internal`, tonal `common_retry` (sends `match.rejoin` again), text button `common_home` | — |
+| Rejoin answered with `internal_error` | — | State view: icon `error`, title `error_duel_internal`, neutral `common_retry` (sends `match.rejoin` again), text button `common_home` | — |
 | Both gone (abandoned) | — | Result screen "Ləğv edildi" if the player comes back before cleanup; else `match_not_found` → G | — |
 | Leave dialog open | Running | Dialog over everything | Dialog only |
 | Session replaced | — | State view F | Home only |
