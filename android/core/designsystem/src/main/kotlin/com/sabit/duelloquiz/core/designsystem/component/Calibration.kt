@@ -92,7 +92,7 @@ data class CalibrationRowSpec(
 )
 
 /**
- * Calibration card (components.md §20): used by the Əminlik kartı (DUEL-21) and the profile
+ * Calibration card (components.md §20), a white game card: used by the Əminlik kartı (DUEL-21) and the profile
  * (PROF-05). Rows are stacked so nothing truncates at font scale 1.3; bars grow once (none with
  * reduced motion).
  */
@@ -105,12 +105,8 @@ fun CalibrationCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(Spacing.lg)) {
+    GameCard(modifier = modifier.fillMaxWidth()) {
+        Column {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,

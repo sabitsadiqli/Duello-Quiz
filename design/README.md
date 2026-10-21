@@ -39,22 +39,34 @@ Duel colours reuse existing roles (`game.confidence*`, `game.correct/wrong`,
 `scheme.primary` for self, `scheme.tertiary` for the opponent); duel timing lives
 in `motion.duel`.
 
-## Design direction
+## Design direction (v2, tokens 2.0.0)
 
-- **Primary: indigo blue** (`#4355B9` light / `#BAC3FF` dark): calm, "knowledge",
-  readable, and far from the green/red used for correct/wrong. Secondary is a
-  neutral indigo-grey, tertiary a muted plum used for the avatar fallback, small
-  accents and, in the duel, as the opponent's accent (self = primary). Neutrals carry a slight indigo tint.
-- Game colours are separate roles so they never collide with brand colour:
-  correct = green, wrong = red, timer warning = burnt orange, Əminlik 1/2/3 =
-  increasing indigo intensity. No gold, no coins, no casino visuals.
-- **Font: Inter** (OFL, Google Fonts), bundled, weights 400/500/600/700. Chosen for
-  full Azerbaijani Latin coverage, very good legibility at small sizes, tabular
-  figures for timers and scores, and a neutral modern look. Fallback: system
-  `sans-serif` (Roboto/Noto), which also covers Azerbaijani.
-- Material 3 tonal surfaces instead of shadows. Rounded but not toy-like shapes.
+Vivid game style in the spirit of Duolingo / Trivia Crack (decided by Sabit,
+2026-10-21; full before/after table in `brand.md`).
 
-Azerbaijani glyph test string (must render with Inter, no fallback glyphs, in every
+- **Primary: electric violet** (`#5334E6` light; `#C0B3FF` as the dark-theme text
+  accent, `#6A4DFF` as the dark-theme button face). **Tertiary: hot pink**
+  (`#C2187A` / `#FFADD6`) = the opponent's accent in the duel (self = primary).
+  **Secondary: sky blue** (`#0068C9` / `#9ECAFF`). Light surfaces are a pale
+  lavender with white "game cards"; dark surfaces a deep ink-violet.
+- **Chunky pressable controls**: buttons, option cards, category tiles and Əminlik
+  tiles sit on a solid bottom depth edge (`depth.*`, `game.*Depth`) that disappears
+  when pressed (`motion.pressable`). No blurred shadows except dialogs/snackbars.
+- **Category colours**: 8 named accent slots (`color.<theme>.category.<slot>`),
+  assigned per category row by an `accentKey`, never per category name in code.
+- Game colours stay separate roles: correct = green, wrong = crimson, timer warning
+  = burnt orange, Əminlik 1/2/3 = increasing violet intensity with 1–3 signal bars.
+  Correct/wrong always add a glyph (check / cross replaces the letter badge) and an
+  outcome word, so colour-blind players never rely on hue. No gold, no coins, no
+  casino visuals.
+- **Font: Nunito** (OFL, Google Fonts), bundled, weights 600/700/800/900 (500
+  optional). Rounded, friendly, full Azerbaijani Latin coverage. Fallback: system
+  `sans-serif`. Never all-caps.
+- Figma mirror (not authoritative): "Duello Quiz — UI refresh",
+  https://www.figma.com/design/7ik6IU2tYVByPYP2jBRcLB — foundations, components and
+  360 × 800 mockups in light and dark.
+
+Azerbaijani glyph test string (must render with Nunito, no fallback glyphs, in every
 weight): `Əə Ğğ Iı İi Öö Üü Çç Şş — Coğrafiya, Şəki, İsmayıllı, Gəncə, Ağdaş`.
 Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
 
@@ -68,13 +80,20 @@ Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
 - `color.<theme>.game` → an immutable `GameColors` data class exposed through a
   `CompositionLocal` (e.g. `MaterialTheme.gameColors`), one instance per theme,
   same property names as the JSON keys.
+- `color.<theme>.category.<slot>` → `CategoryColors(face, onFace, depth, container,
+  onContainer)` per slot in a `CompositionLocal` (`LocalCategoryColors`), keyed by
+  the slot name. Resolve a category's slot from its `accentKey`; unknown or missing
+  key → `color.categoryAccentOrder[index % 8]` by server order.
+- `color.<theme>.gradient.*` → `Brush.linearGradient` (135°) for the duel hero card
+  and the win hero; text on it is `on` (white), checked against both stops.
+- `depth.*` → dp constants for the pressable depth edge (`components.md` §0).
 - `color.stateLayer` → Material 3 defaults already match; only use the values for
   custom components.
 - Theme choice (Sistem/İşıqlı/Qaranlıq) is read before the first frame so the
   splash already has the right background (SET-01).
 
 ### Typography, shapes, spacing, sizes, motion
-- `typography.scale` → `Typography(...)` with the Inter `FontFamily`; names match.
+- `typography.scale` → `Typography(...)` with the Nunito `FontFamily`; names match.
   Use `fontFeatureSettings = "tnum"` where `tokens.json` says so.
 - `shape` → `Shapes(extraSmall…extraLarge)`; `shape.component` says which one each
   component uses.

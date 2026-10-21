@@ -28,35 +28,39 @@ the questions they missed.
 
 ## Layout — result screen (top to bottom)
 
-1. Top app bar: close icon (goes home), no title (the headline is in content).
+1. Top app bar: close icon (goes home), title `quiz_result_title`.
 2. Scrollable column, gutters `space.layout.screenGutter`, content centred:
    1. Optional info banner `quiz_result_not_synced` (when `finish` failed).
-   2. `space.xl`, `quiz_result_title` `type.titleMedium` `scheme.onSurfaceVariant`
-      + category name (`type.titleMedium` `scheme.onSurface`), centred.
-   3. `space.lg`, **score block**: big score "7" `type.displayLarge`
-      `scheme.primary` with tabular figures, followed by " / 10" `type.headlineSmall`
-      `scheme.onSurfaceVariant`; below it `quiz_result_correct_count`
-      `type.titleMedium` `scheme.onSurface`. Whole block content description
-      `quiz_result_score_cd`.
-   4. `space.md`, **message** by score band (`type.bodyLarge` `scheme.onSurface`,
+   2. `space.lg`, **score hero** (v2): a game card in the played category's
+      accent colour (`components.md` §0 without press): face
+      `category.<slot>.face`, depth `category.<slot>.depth` 5dp, shape 24dp,
+      padding `space.xl`, content centred, all text `category.<slot>.onFace`:
+      - category pill: `shape.full`, white at 20 %, 16dp category icon + category
+        name `type.labelMedium`;
+      - big score "7" `type.displayLarge` (Black) with tabular figures, followed by
+        " / 10" `type.headlineMedium`;
+      - `quiz_result_correct_count` `type.titleMedium`.
+      Whole block content description `quiz_result_score_cd`. The screen title
+      `quiz_result_title` moves to the top app bar.
+   4. `space.lg`, **message** by score band (`type.headlineSmall` `scheme.onSurface`,
       centred, wraps): 10 → `quiz_result_message_perfect`, 7–9 → `_great`,
       4–6 → `_good`, 1–3 → `_low`, 0 → `_zero`.
    5. Optional `space.sm`, `quiz_result_expired_note` `type.bodyMedium`
       `scheme.onSurfaceVariant` (session deadline passed).
-   6. `space.xl`, **review entry card** (hidden when 10 / 10): card
-      `scheme.surfaceContainerLow`, `shape.medium`, padding `space.lg`, leading
-      `fact_check` icon in `scheme.onSurfaceVariant`, title
+   6. `space.xl`, **review entry card** (hidden when 10 / 10): white game card
+      (`components.md` §0), padding 14dp, leading 44dp rounded square
+      `game.wrongContainer` with the `rule` icon in `game.onWrongContainer`, title
       `quiz_result_review_entry` `type.titleMedium`, supporting
       `quiz_result_review_entry_count` ("3 sual"), trailing chevron. Whole card
       clickable.
    7. Flexible space, then buttons (gap `space.md`, full width):
-      - Filled `quiz_result_play_again`.
-      - Outlined `quiz_result_home`.
+      - Primary button `quiz_result_play_again`.
+      - Neutral button `quiz_result_home`.
    8. `space.xl` + navigation bar inset.
 
-10 / 10: the score number uses `game.correct` instead of `scheme.primary`, a
-`celebration` icon 32dp in `game.correct` sits above the title, and a one-time
-confetti-free "pop" (score scale 0.9 → 1.0) — no fireworks, no coins.
+10 / 10: a `celebration` icon 32dp in the hero's `onFace` sits above the score,
+and the hero pops once (`motion.spring.bouncy`, scale 0.8 → 1.0) — no fireworks,
+no coins. Every result: the score counts up (`motion.game.scoreCountUp`).
 
 ## Layout — review screen (top to bottom)
 

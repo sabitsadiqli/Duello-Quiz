@@ -57,13 +57,13 @@ honest way out — no endless spinner, no dead end.
       `scheme.onSurfaceVariant`, `space.xs`, tip text `type.bodyMedium`
       `scheme.onSurface` (wraps; card height = tallest tip so it never jumps).
       Tips `duel_search_tip_1` … `_3`, cross-fade every 10 s.
-   8. `space.xl`, outlined button `duel_search_cancel`, full width.
+   8. `space.xl`, neutral button `duel_search_cancel`, full width.
    9. `space.xl` + navigation bar inset.
 
 ## Components
 
 Top app bar, avatar with accent ring, pulse rings, countdown digits + bar, tip
-card, outlined / filled buttons, state view (`components.md` §11), snackbar.
+card, outlined / primary buttons, state view (`components.md` §11), snackbar.
 
 ## States
 
@@ -73,14 +73,14 @@ card, outlined / filled buttons, state view (`components.md` §11), snackbar.
 | Searching | Title `duel_search_title`, countdown to `deadlineEpochMs` (server time + clock offset), bar draining, pulse, tips. |
 | Overtime (client countdown at 0, no server message yet) | Countdown and bar hidden; title stays `duel_search_title`; up to 5 s more. The client does not leave on its own (a match found at 29.9 s must still open, DUEL-03). |
 | Match found | `match.found` → intro (`duel-intro.md`), fade-through. |
-| Timeout (`queue.timeout`, or overtime + 5 s without any message) | Body replaced by a state view: icon `person_search` in the 120dp circle, title `duel_search_timeout_title`, body `duel_search_timeout_body`, filled button `duel_search_retry`, outlined button `common_home`. Pulse stops. |
+| Timeout (`queue.timeout`, or overtime + 5 s without any message) | Body replaced by a state view: icon `person_search` in the 120dp circle, title `duel_search_timeout_title`, body `duel_search_timeout_body`, primary button `duel_search_retry`, neutral button `common_home`. Pulse stops. |
 | Stopped (returned from background) | State view: icon `pause_circle`, `duel_search_stopped_title`, `duel_search_stopped_body`, `duel_search_retry`, `common_home`. (The client sent `queue.leave` on ON_STOP, DUEL-03.) |
 | Socket dropped while searching | State view: icon `cloud_off`, `duel_search_disconnected_title`, `duel_search_disconnected_body`,
 `duel_search_error_title`, `error_duel_internal`, `duel_search_retry`, `common_home`. No automatic re-queue. |
 | Server error on `queue.join` (`internal_error`) | State view: icon `error`, title `duel_search_error_title`, body `error_duel_internal`, `duel_search_retry`, `common_home`. Pulse stops. |
 | Opponent left during the intro (`match.cancelled`, OQ-037) | Back to Searching with the new 30 s deadline; snackbar `duel_search_opponent_left`. |
 | Cancelling ("Ləğv et", close, back) | Button in loading state for at most 1 s while `queue.leave` → `queue.left`; then home. If no answer in 1 s, go home anyway (the server drops the entry with the socket). |
-| Session replaced (`session_replaced`, DUEL-04) | Full-screen state view: icon `devices`, title `error_session_replaced`, single filled button `common_home`. No retry button (the other device owns the queue). |
+| Session replaced (`session_replaced`, DUEL-04) | Full-screen state view: icon `devices`, title `error_session_replaced`, single primary button `common_home`. No retry button (the other device owns the queue). |
 | Already in a match (`already_in_match`) | Loading state view `error_already_in_match`, then the match screen from `match.state` (`duel-interruptions.md`, rejoin). |
 | Upgrade required / duel unavailable / handshake failed | `duel-availability.md`. |
 | Offline at entry | Not reachable (home blocks it with a snackbar). Offline after entry = "Socket dropped". |

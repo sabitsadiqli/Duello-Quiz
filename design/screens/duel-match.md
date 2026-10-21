@@ -125,7 +125,7 @@ At ≥ 600dp: body centred with `space.layout.maxContentWidth`; panels keep 50/5
 ## Components
 
 Duel top bar + phase stepper, timer ring, player panels + status pills, question
-image, confidence panel with Əminlik chips, option cards, own Əminlik pill, status
+image, confidence panel with Əminlik tiles, option cards, own Əminlik pill, status
 line, banners.
 
 ## States

@@ -65,7 +65,8 @@ import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
-import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
+import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.DuelloStateView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextField
@@ -285,13 +286,13 @@ private fun SectionBox(content: @Composable () -> Unit) {
 @Composable
 private fun CardSkeleton() {
     val alpha = rememberSkeletonAlpha()
-    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.categoryCardMinHeight), shape = MaterialTheme.shapes.large)
+    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.categoryTileSingleColumnMinHeight), shape = MaterialTheme.shapes.large)
 }
 
 @Composable
 private fun SectionError(onRetry: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {
+    GameCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.profile_section_error),
                 style = MaterialTheme.typography.bodyMedium,
@@ -324,7 +325,7 @@ private fun EmptyCard(onStart: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(Spacing.lg))
-            DuelloPrimaryButton(text = stringResource(R.string.profile_empty_cta), onClick = onStart)
+            DuelloDuelButton(text = stringResource(R.string.profile_empty_cta), onClick = onStart)
         }
     }
 }
@@ -334,14 +335,12 @@ private fun EmptyCard(onStart: () -> Unit) {
 private fun RecordCard(record: DuelRecord) {
     val description = stringResource(R.string.profile_record_cd, record.wins, record.losses, record.draws, record.total)
     val game = MaterialTheme.gameColors
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
+    GameCard(
         modifier = Modifier
             .fillMaxWidth()
             .clearAndSetSemantics { contentDescription = description },
     ) {
-        Column(modifier = Modifier.padding(Spacing.lg)) {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.profile_record_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Text(

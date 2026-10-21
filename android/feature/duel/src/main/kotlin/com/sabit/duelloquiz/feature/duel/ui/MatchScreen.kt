@@ -11,7 +11,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,7 +30,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,25 +46,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.OptionCard
+import com.sabit.duelloquiz.core.designsystem.component.ConfidenceTile
+import com.sabit.duelloquiz.core.designsystem.component.ConfidenceTileState
 import com.sabit.duelloquiz.core.designsystem.component.OptionCardState
 import com.sabit.duelloquiz.core.designsystem.component.QuestionImage
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
-import com.sabit.duelloquiz.core.designsystem.component.confidenceColors
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
+import com.sabit.duelloquiz.core.designsystem.theme.ConfidencePanelShape
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.Elevation
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
@@ -329,7 +325,7 @@ private fun QuestionHint(suddenDeath: Boolean) {
 @Composable
 private fun OptionsBlock(match: MatchUi, onOption: (String) -> Unit) {
     val reducedMotion = rememberReducedMotion()
-    Column(modifier = Modifier.padding(top = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(modifier = Modifier.padding(top = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         match.options.forEachIndexed { index, option ->
             StaggeredIn(index = index, enabled = !reducedMotion && match.phase == DuelPhase.ANSWER) {
                 DuelOptionCard(option = option, index = index, revealed = match.phase == DuelPhase.RESULT, onOption = onOption)
@@ -364,28 +360,24 @@ private fun DuelOptionCard(option: DuelOptionUi, index: Int, revealed: Boolean, 
         if (option.pickedBySelf) add(stringResource(R.string.duel_option_picked_by_you_cd))
         if (option.pickedByOpponent) add(stringResource(R.string.duel_option_picked_by_opponent_cd))
     }
-    Box {
-        OptionCard(
-            letter = option.letter,
-            text = option.text,
-            state = option.state,
-            contentDescription = cd,
-            onClick = { onOption(option.id) },
-            enabled = option.enabled,
-            stateDescription = states.joinToString(", ").ifEmpty { null },
-        )
-        if (revealed && (option.pickedBySelf || option.pickedByOpponent)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = Spacing.lg + Sizes.icon + Spacing.sm),
-            ) {
+    val showMarkers = revealed && (option.pickedBySelf || option.pickedByOpponent)
+    OptionCard(
+        letter = option.letter,
+        text = option.text,
+        state = option.state,
+        contentDescription = cd,
+        onClick = { onOption(option.id) },
+        enabled = option.enabled,
+        stateDescription = states.joinToString(", ").ifEmpty { null },
+        markers = if (showMarkers) {
+            {
                 if (option.pickedBySelf) PickerMarker(self = true)
                 if (option.pickedByOpponent) PickerMarker(self = false)
             }
-        }
-    }
+        } else {
+            null
+        },
+    )
 }
 
 @Composable
@@ -467,10 +459,7 @@ private fun StatusLine(match: MatchUi) {
 private fun ConfidencePanel(confidence: ConfidenceUi, label: RoundLabelUi, onConfidence: (Int) -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.extraLarge.copy(
-            bottomStart = CornerSize(0),
-            bottomEnd = CornerSize(0),
-        ),
+        shape = ConfidencePanelShape,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -558,97 +547,32 @@ private fun ConfidenceStatusLine(status: ConfidenceStatus?) {
 
 @Composable
 private fun ConfidenceChip(chip: ChipUi, usesLeft: Int?, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val (container, content) = confidenceColors(chip.level)
-    val enabled = chip.state == ChipState.ENABLED
-    val selected = chip.state == ChipState.SELECTED || chip.state == ChipState.LOCKED || chip.state == ChipState.DEFAULTED
-    val faded = chip.state == ChipState.FADED
-    val disabled = chip.state == ChipState.DISABLED || chip.state == ChipState.DISABLED_LIMIT
-    val reducedMotion = rememberReducedMotion()
-    val scale = remember { Animatable(1f) }
-    LaunchedEffect(selected) {
-        if (selected && !reducedMotion) {
-            scale.animateTo(Motion.Duel.CHIP_LOCK_SCALE, tween(Motion.Duel.CHIP_LOCK_MS, easing = Motion.EmphasizedDecelerate))
-        } else {
-            scale.snapTo(1f)
-        }
-    }
-    val scheme = MaterialTheme.colorScheme
-    val chipContainer = if (disabled) scheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA) else container
-    val chipContent = if (disabled) scheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA) else content
     val description = when {
         chip.state == ChipState.DISABLED_LIMIT -> stringResource(R.string.duel_confidence_three_none)
         chip.level == 1 -> stringResource(R.string.duel_confidence_chip_1_cd, chip.gain)
         else -> stringResource(R.string.duel_confidence_chip_cd, chip.level, chip.gain, chip.loss)
     }
-    val selectedDescription = stringResource(R.string.duel_confidence_selected_cd)
-    val ring = MaterialTheme.gameColors.confidenceSelectedOutline
-    Box(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-                alpha = if (faded) Motion.Duel.CHIP_OTHERS_ALPHA else 1f
-            }
-            .then(if (selected) Modifier.border(Sizes.chipSelectedRing, ring, MaterialTheme.shapes.large) else Modifier)
-            .padding(if (selected) Sizes.chipSelectedRing + Sizes.chipSelectedRingGap else Spacing.none)
-            .clearAndSetSemantics {
-                role = Role.Button
-                contentDescription = description
-                if (selected) stateDescription = selectedDescription
-                if (enabled) onClick { onClick(); true } else disabled()
-            },
-    ) {
-        Surface(
-            color = chipContainer,
-            contentColor = chipContent,
-            shape = MaterialTheme.shapes.large,
-            border = BorderStroke(Sizes.outlineThin, scheme.outline),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = Sizes.confidenceChip)
-                .clickable(enabled = enabled, onClick = onClick),
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(Spacing.md)) {
-                Text(text = chip.level.toString(), style = MaterialTheme.typography.displaySmall.tabularFigures())
-                Spacer(Modifier.height(Spacing.xs))
-                Text(text = deltaText(chip.gain), style = MaterialTheme.typography.labelLarge.tabularFigures())
-                Text(text = deltaText(-chip.loss), style = MaterialTheme.typography.labelLarge.tabularFigures())
-                when (chip.state) {
-                    ChipState.SELECTED -> CircularProgressIndicator(
-                        color = chipContent,
-                        strokeWidth = Sizes.progressStroke,
-                        modifier = Modifier
-                            .padding(top = Spacing.xs)
-                            .size(Sizes.statusIndicator),
-                    )
-                    ChipState.LOCKED, ChipState.DEFAULTED -> Icon(
-                        painterResource(DuelloIcons.Lock),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(top = Spacing.xs)
-                            .size(Sizes.statusIndicator),
-                    )
-                    else -> Unit
-                }
-            }
-        }
-        if (usesLeft != null && usesLeft > 0 && !disabled) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(Spacing.xs)
-                    .size(Sizes.usesLeftBadge)
-                    .background(scheme.inverseSurface, FullShape),
-            ) {
-                Text(text = usesLeft.toString(), style = MaterialTheme.typography.labelMedium, color = scheme.inverseOnSurface)
-            }
-        }
-    }
+    ConfidenceTile(
+        level = chip.level,
+        gainText = deltaText(chip.gain),
+        lossText = deltaText(-chip.loss),
+        state = chip.state.toTileState(),
+        contentDescription = description,
+        selectedDescription = stringResource(R.string.duel_confidence_selected_cd),
+        onClick = onClick,
+        usesLeft = usesLeft,
+        modifier = modifier,
+    )
 }
 
-private const val DISABLED_CONTAINER_ALPHA = 0.12f
-private const val DISABLED_CONTENT_ALPHA = 0.38f
+/** Feature chip state → design-system tile state (components.md §7). */
+internal fun ChipState.toTileState(): ConfidenceTileState = when (this) {
+    ChipState.ENABLED -> ConfidenceTileState.Enabled
+    ChipState.SELECTED -> ConfidenceTileState.Sending
+    ChipState.LOCKED, ChipState.DEFAULTED -> ConfidenceTileState.Locked
+    ChipState.FADED -> ConfidenceTileState.Faded
+    ChipState.DISABLED, ChipState.DISABLED_LIMIT -> ConfidenceTileState.Disabled
+}
 
 /** Own connection card over the body (duel-interruptions.md A, B, C, components.md §22). */
 @Composable

@@ -56,7 +56,7 @@ Canvas 1080 × 1920 px, light colours for every frame (also for dark screenshots
 so the gallery looks consistent):
 
 1. Background `scheme.primary` light `#4355B9`.
-2. Caption: top 96 px margin, centred, max 2 lines, Inter SemiBold 72 px, line
+2. Caption: top 96 px margin, centred, max 2 lines, Nunito ExtraBold 72 px, line
    height 88 px, `scheme.onPrimary` `#FFFFFF` (pair `onPrimary` / `primary`,
    checked). Side margins 72 px. One-line captions sit vertically centred in a
    352 px caption band.

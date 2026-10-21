@@ -2,25 +2,25 @@ package com.sabit.duelloquiz.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
 /**
  * Every colour in design/tokens.json must be mapped 1:1 to the Compose theme:
  * color.<theme>.scheme -> ColorScheme property of the same name,
- * color.<theme>.game -> GameColors property of the same name.
+ * color.<theme>.game -> GameColors property of the same name,
+ * color.<theme>.category.<slot> -> CategoryColors in the slot map,
+ * color.<theme>.gradient.<name> -> GradientColors of the same name,
+ * color.categoryAccentOrder / categoryAccentDefaults -> CategoryAccent.
  */
 class ColorTokensTest {
 
-    private val tokens: JsonObject by lazy {
-        Json.parseToJsonElement(findTokensFile().readText()).jsonObject
-    }
+    private val tokens: JsonObject by lazy { readTokens() }
 
     @Test
     fun lightSchemeMatchesTokens() = assertMatches("light", "scheme", LightColorScheme)
@@ -43,6 +43,62 @@ class ColorTokensTest {
             .map { it.removePrefix("get").substringBefore('-').replaceFirstChar(Char::lowercaseChar) }
             .toSet()
         assertEquals(tokenKeys, properties)
+    }
+
+    @Test
+    fun lightCategoryColorsMatchTokens() = assertCategories("light", LightCategoryColors)
+
+    @Test
+    fun darkCategoryColorsMatchTokens() = assertCategories("dark", DarkCategoryColors)
+
+    @Test
+    fun lightGradientsMatchTokens() = assertGradients("light", LightGradients)
+
+    @Test
+    fun darkGradientsMatchTokens() = assertGradients("dark", DarkGradients)
+
+    @Test
+    fun accentOrderAndDefaultsMatchTokens() {
+        val color = tokens.getValue("color").jsonObject
+        val order = color.getValue("categoryAccentOrder").jsonArray.map { it.jsonPrimitive.content }
+        assertEquals(order, CategoryAccent.Order)
+        assertEquals(order.toSet(), LightCategoryColors.keys)
+        assertEquals(order.toSet(), DarkCategoryColors.keys)
+        val defaults = color.getValue("categoryAccentDefaults").jsonObject
+            .filterKeys { it != "notes" }
+            .mapValues { it.value.jsonPrimitive.content }
+        assertEquals(defaults, CategoryAccent.Defaults)
+    }
+
+    private fun assertCategories(theme: String, palette: Map<String, CategoryColors>) {
+        val slots = tokens.getValue("color").jsonObject.getValue(theme).jsonObject.getValue("category").jsonObject
+        assertEquals(slots.keys, palette.keys)
+        slots.forEach { (slot, roles) ->
+            val colors = palette.getValue(slot)
+            roles.jsonObject.forEach { (role, hex) ->
+                assertEquals(
+                    "color.$theme.category.$slot.$role",
+                    parseHex(hex.jsonPrimitive.content).toHex(),
+                    readColor(colors, role).toHex(),
+                )
+            }
+        }
+    }
+
+    private fun assertGradients(theme: String, gradients: DuelloGradients) {
+        val group = tokens.getValue("color").jsonObject.getValue(theme).jsonObject.getValue("gradient").jsonObject
+        assertEquals(setOf("duelHero", "resultWin"), group.keys)
+        group.forEach { (name, value) ->
+            val token = value.jsonObject
+            val actual = when (name) {
+                "duelHero" -> gradients.duelHero
+                else -> gradients.resultWin
+            }
+            assertEquals("$theme.$name.start", parseHex(token.getValue("start").jsonPrimitive.content).toHex(), actual.start.toHex())
+            assertEquals("$theme.$name.end", parseHex(token.getValue("end").jsonPrimitive.content).toHex(), actual.end.toHex())
+            assertEquals("$theme.$name.on", parseHex(token.getValue("on").jsonPrimitive.content).toHex(), actual.on.toHex())
+            assertEquals("$theme.$name.angle", token.getValue("angle").jsonPrimitive.content.toFloat(), actual.angleDegrees)
+        }
     }
 
     private fun assertMatches(theme: String, group: String, target: Any) {
@@ -77,14 +133,4 @@ class ColorTokensTest {
     }
 
     private fun Color.toHex(): String = "%08X".format(toArgb())
-
-    private fun findTokensFile(): File {
-        var dir: File? = File(checkNotNull(System.getProperty("user.dir"))).absoluteFile
-        while (dir != null) {
-            val candidate = File(dir, "design/tokens.json")
-            if (candidate.isFile) return candidate
-            dir = dir.parentFile
-        }
-        throw AssertionError("design/tokens.json not found above ${System.getProperty("user.dir")}")
-    }
 }

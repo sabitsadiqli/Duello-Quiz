@@ -115,6 +115,20 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun tileAccentsFollowTheServerOrderAndWrapAfterEight() = runTest {
+        val many = (1..10).map { Category(id = it, slug = "c$it", name = "Kateqoriya $it", iconKey = "unknown") }
+        categoryRepository.nextRefresh = DataResult.Success(many)
+        val vm = viewModel()
+        runCurrent()
+
+        val content = vm.uiState.value.categories as CategoriesUi.Content
+        assertEquals(
+            listOf("violet", "blue", "teal", "green", "orange", "rose", "pink", "ocean", "violet", "blue"),
+            content.items.map { it.accent },
+        )
+    }
+
+    @Test
     fun emptyListShowsTheEmptyState() = runTest {
         categoryRepository.nextRefresh = DataResult.Success(emptyList())
         val vm = viewModel()

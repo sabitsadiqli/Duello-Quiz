@@ -32,7 +32,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.DuelloLoadingView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloTonalButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
@@ -149,7 +149,7 @@ internal fun DuelBlockedScreen(
                 DuelloTextButton(text = stringResource(R.string.common_home), onClick = onHome)
             }
             BlockedReason.UNAVAILABLE, BlockedReason.CONNECT_FAILED -> {
-                DuelloTonalButton(text = stringResource(R.string.common_retry), onClick = onRetry, loading = retrying)
+                DuelloNeutralButton(text = stringResource(R.string.common_retry), onClick = onRetry, loading = retrying)
                 Spacer(Modifier.height(Spacing.sm))
                 DuelloTextButton(text = stringResource(R.string.common_home), onClick = onHome)
             }

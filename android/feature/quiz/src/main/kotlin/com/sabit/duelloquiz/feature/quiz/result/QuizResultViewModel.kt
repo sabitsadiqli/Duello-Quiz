@@ -5,9 +5,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.common.WallClock
+import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.QuizProgress
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,6 +38,13 @@ enum class ScoreBand { Perfect, Great, Good, Low, Zero }
 @Immutable
 data class QuizResultUiState(
     val categoryName: String,
+    /** Icon key of the played category for the hero pill; empty = generic icon. */
+    val categoryIconKey: String = "",
+    /**
+     * Accent slot of the score hero (quiz-result.md v2): the category's position in the cached
+     * server list, like its home tile ([CategoryAccent.resolve]).
+     */
+    val categoryAccent: String = CategoryAccent.Order.first(),
     val correctCount: Int = 0,
     val total: Int = 0,
     /** The session deadline passed: unanswered questions counted as wrong. */
@@ -88,6 +98,7 @@ sealed interface QuizResultEvent {
 @HiltViewModel
 class QuizResultViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
+    private val categoryRepository: CategoryRepository,
     networkMonitor: NetworkMonitor,
     private val clock: WallClock,
     savedStateHandle: SavedStateHandle,
@@ -116,6 +127,19 @@ class QuizResultViewModel @Inject constructor(
             }
             finish()
             retryWhenOnline()
+            loadCategoryLook()
+        }
+    }
+
+    /** Same accent and icon as the category's home tile (the list is cached by home). */
+    private fun loadCategoryLook() {
+        viewModelScope.launch {
+            val categories = categoryRepository.categories.first() ?: return@launch
+            val index = categories.indexOfFirst { it.id == args.categoryId }
+            if (index < 0) return@launch
+            _uiState.update {
+                it.copy(categoryAccent = CategoryAccent.resolve(index), categoryIconKey = categories[index].iconKey)
+            }
         }
     }
 

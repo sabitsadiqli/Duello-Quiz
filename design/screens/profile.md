@@ -138,11 +138,11 @@ section has its own state; the screen is never blocked by one failing section
 | First load, no cache | Skeleton: avatar circle, two text bars (`scheme.surfaceContainerHighest`, shimmer as `components.md` §5) | Card skeletons with 3 bars each | 3 skeleton rows |
 | Cache exists | Cached data at once; replaced silently when fresh data arrives (no flicker). Data is always reloaded on open (PROF-01: a just-finished duel must appear). | Same | Same |
 | Success | As laid out | As laid out | Rows |
-| Empty (no counted match; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000" | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, filled button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
+| Empty (no counted match; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000" | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, primary button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
 | Duel flag off | Normal | Hidden (no empty card, no CTA) | Hidden |
 | Section failed (5xx / 15 s timeout), others ok | — | That card shows `profile_section_error` (`type.bodyMedium`) + text button `common_retry`, card height kept | Same inline error in place of the list |
 | Offline, cache | Cached + offline banner `common_offline_banner` | Cached | Cached |
-| Offline, no cache | Full screen (below the top app bar): state view `cloud_off`, `home_offline_title`, tonal `common_retry` | | |
+| Offline, no cache | Full screen (below the top app bar): state view `cloud_off`, `home_offline_title`, neutral `common_retry` | | |
 | Pull-to-refresh | Kept; indicator only | Kept | Kept |
 | Signed out / switched account | Cache of the previous account is never shown (AUTH-07); first load state. | | |
 

@@ -375,13 +375,13 @@ class QuizViewModel @Inject constructor(
             val state = when (answer) {
                 Answer.Open -> OptionDisplayState.Default
                 is Answer.Pending ->
-                    if (option.id == answer.optionId) OptionDisplayState.Selected else OptionDisplayState.Disabled
+                    if (option.id == answer.optionId) OptionDisplayState.Selected else OptionDisplayState.Dimmed
                 is Answer.Queued ->
-                    if (option.id == answer.optionId) OptionDisplayState.Queued else OptionDisplayState.Disabled
+                    if (option.id == answer.optionId) OptionDisplayState.Queued else OptionDisplayState.Dimmed
                 is Answer.Revealed -> when (option.id) {
                     answer.result.correctOptionId -> OptionDisplayState.Correct
                     answer.optionId -> OptionDisplayState.Wrong
-                    else -> OptionDisplayState.Disabled
+                    else -> OptionDisplayState.Dimmed
                 }
             }
             OptionUi(option.id, option.text, state)

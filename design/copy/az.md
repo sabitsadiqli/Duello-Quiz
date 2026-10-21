@@ -51,8 +51,9 @@ Rules:
 
 ## Width check (360dp)
 
-Estimate method (Inter, average glyph advance ≈ 0.56 em lowercase, 0.68 em
-uppercase, ×1.04 for weight 600), available text width on a 360dp phone with
+Estimate method (Nunito since tokens 2.0.0 — re-checked: average glyph advance
+≈ 0.55 em lowercase at 600, ≈ 0.59 em at 800, 0.68 em uppercase; button labels are
+now 16sp ExtraBold, so `btn` budgets were re-estimated with 0.59 em × 16sp), available text width on a 360dp phone with
 `screenGutter` 16dp. "Fit" lists the component budget; every single-line label was
 estimated at font scale **1.0 and 1.3**.
 
@@ -206,6 +207,7 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `home_settings_cd` | Parametrlər | Content description of the settings icon. |
 | `home_duel_title` | Duel | Duel card title. Hidden until the duel ships (OQ-020). |
 | `home_duel_hint` | Əminliyini sına, reytinq qazan | Duel card supporting text, `wrap` 2 lines. |
+| `home_duel_cta` | Duelə başla | `btn` inside the duel hero card (v2, `components.md` §6). 11 chars, ~104 / ~135dp at 1.0 / 1.3 — fits. Same text as `profile_empty_cta`, kept separate. |
 | `home_categories_title` | Kateqoriyalar | Section header, titleMedium. |
 | `home_category_question_count` | %1$d sual | `plurals`. Category card supporting text; value 10. |
 | `home_category_loading_cd` | %1$s quizi açılır | Content description while the start request runs. |
@@ -237,6 +239,8 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `quiz_option_state_wrong_cd` | sənin cavabın, səhv | Appended state description. |
 | `quiz_feedback_correct` | Düzgün! | Reveal label, titleMedium. |
 | `quiz_feedback_wrong` | Səhv | Reveal label. |
+| `quiz_option_outcome_correct` | Düzgün | Outcome word in the trailing slot of the correct option card (v2 colour-blind cue, `components.md` §3), labelMedium. Not read by TalkBack (the state description already says it). |
+| `quiz_option_outcome_wrong` | Səhv | Outcome word on the user's wrong option card, labelMedium. Not read by TalkBack. |
 | `quiz_timeout` | Vaxt bitdi | Reveal label after timeout. |
 | `quiz_answer_saved` | Cavab yadda saxlanıldı | Reveal label when the answer is queued offline (no result yet). |
 | `quiz_reconnecting` | Bağlantı bərpa olunur… | Inline status while the answer request is retried. |
@@ -257,7 +261,7 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `quiz_result_expired_note` | Vaxt bitdi. Cavab verilməmiş suallar düzgün sayılmadı. | Shown when the session deadline passed. |
 | `quiz_result_not_synced` | Nəticə serverə göndərilə bilmədi. İnternet qayıdanda yenidən göndərəcəyik. | Info banner when `finish` failed. |
 | `quiz_result_play_again` | Yenidən oyna | `btn`. |
-| `quiz_result_home` | Əsas səhifə | `btn` (outlined). |
+| `quiz_result_home` | Əsas səhifə | `btn` (neutral). |
 | `quiz_result_review_entry` | Səhvlərin təhlili | `row` title of the entry card. |
 | `quiz_result_review_entry_count` | %1$d sual | `plurals`. Supporting text of the entry card. |
 | `quiz_review_title` | Səhvlər | `bar` title of the review screen (short form, see risks). |
@@ -292,7 +296,7 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `settings_licenses` | Açıq mənbə lisenziyaları | `row` (fits at 1.3, 24 chars). |
 | `settings_licenses_title` | Lisenziyalar | `bar` title of the licences screen (short form). |
 | `settings_licenses_intro` | Duello Quiz açıq mənbə layihələrdən istifadə edir. Onların müəlliflərinə təşəkkür edirik! | `wrap`. Intro on the licences list (`licenses.md`). |
-| `settings_licenses_section_assets` | Şriftlər və ikonlar | Section header (Inter, Material Symbols). |
+| `settings_licenses_section_assets` | Şriftlər və ikonlar | Section header (Nunito, Material Symbols). |
 | `settings_licenses_section_libraries` | Kitabxanalar | Section header. |
 | `settings_licenses_item_supporting` | %1$s · %2$s | Row supporting text: `settings_licenses_version` · licence name(s). |
 | `settings_licenses_version` | Versiya %1$s | Version of a library ("Versiya 3.6.0"). |
@@ -343,10 +347,10 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_search_tip_1` | Variantları görməzdən əvvəl Əminliyini seç: 1, 2 və ya 3. | Tip card, `wrap`. Rotates every 10 s. |
 | `duel_search_tip_2` | Əminlik 3 ən çox xal gətirir, səhv olsa isə xal itirirsən. Onu bir oyunda 2 dəfə seçə bilərsən. | |
 | `duel_search_tip_3` | 7-ci raund həlledicidir: Əminlik xalları ikiqat olur. | |
-| `duel_search_cancel` | Ləğv et | `btn` (outlined). |
+| `duel_search_cancel` | Ləğv et | `btn` (neutral). |
 | `duel_search_timeout_title` | Rəqib tapılmadı | State title. |
 | `duel_search_timeout_body` | Hazırda başqa oyunçu axtarmır. Bir az sonra yenidən cəhd et. | `wrap`. |
-| `duel_search_retry` | Yenidən axtar | `btn` (filled). 13 chars. |
+| `duel_search_retry` | Yenidən axtar | `btn` (primary). 13 chars. |
 | `duel_search_stopped_title` | Axtarış dayandırıldı | After the app went to the background while searching (DUEL-03). |
 | `duel_search_stopped_body` | Tətbiqdən çıxdığın üçün axtarışı dayandırdıq. | `wrap`. |
 | `duel_search_disconnected_title` | Bağlantı kəsildi | Socket dropped while searching. |
@@ -436,7 +440,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_reconnecting_body` | Oyun davam edir, vaxt dayanmır. | Overlay card body. |
 | `duel_offline_title` | Bağlantı yoxdur | Overlay card after 10 s (OQ-032). |
 | `duel_offline_body` | Oyun davam edir. Ardıcıl 2 raund buraxsan, oyun məğlubiyyətlə bitəcək. | `wrap`. |
-| `duel_reconnect_button` | Yenidən qoşul | `btn` (filled). |
+| `duel_reconnect_button` | Yenidən qoşul | `btn` (primary). |
 | `duel_leave_button` | Oyundan çıx | `tbtn` in the overlay card; opens the leave dialog. |
 | `duel_rejoining` | Oyuna qayıdırsan… | Loading caption after process death / `already_in_match`. |
 | `duel_opponent_disconnected` | Rəqibin bağlantısı kəsildi. %1$d san. gözləyirik. | Warning banner with live countdown (10 → 1). |
@@ -470,7 +474,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_result_score_cd` | Hesab: sən %1$s, %2$s %3$s | "Hesab: sən 640, Aysel 410". |
 | `duel_result_rating_unchanged` | Reytinq dəyişmədi | Abandoned. |
 | `duel_result_rating_cd` | Reytinq %1$d, dəyişiklik %2$s | |
-| `duel_result_play_again` | Yenidən oyna | `btn` (filled). Joins the queue again (no rematch, OQ-025). |
+| `duel_result_play_again` | Yenidən oyna | `btn` (primary). Joins the queue again (no rematch, OQ-025). |
 | `duel_calibration_title` | Əminlik kartı | Card title. |
 | `duel_calibration_subtitle` | Bu oyunda hər Əminlik səviyyəsində neçə düzgün cavab verdin | Card subtitle, `wrap`. |
 | `duel_calibration_level` | Əminlik %1$d | Row label. |
@@ -491,7 +495,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | --- | --- | --- |
 | `duel_upgrade_title` | Duel üçün tətbiqi yenilə | State title. |
 | `duel_upgrade_body` | Bu versiya duel üçün köhnədir. Kateqoriya quizləri əvvəlki kimi işləyir. | `wrap`. |
-| `duel_upgrade_button` | Yenilə | `btn` (filled); opens the Play Store page. |
+| `duel_upgrade_button` | Yenilə | `btn` (primary); opens the Play Store page. |
 | `duel_upgrade_store_failed` | Play Store-u açmaq mümkün olmadı. | Snackbar if no store app can open the link. |
 | `duel_unavailable_title` | Duel hazırda əlçatan deyil | State title. |
 | `duel_unavailable_body` | Bir az sonra yenidən cəhd et. | |
@@ -539,7 +543,7 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `profile_calibration_footnote` | 1–7-ci raundlar sayılır. Vaxt bitəndə verilən Əminlik 1, buraxılan raundlar və əlavə suallar sayılmır. | bodySmall. |
 | `profile_empty_title` | Hələ duel oynamamısan | Empty state title. |
 | `profile_empty_body` | İlk duelini oyna və Əminlik statistikanı gör. | Empty state body. |
-| `profile_empty_cta` | Duelə başla | `btn` (filled). Hidden when the duel flag is off. |
+| `profile_empty_cta` | Duelə başla | `btn` (primary). Hidden when the duel flag is off. |
 | `profile_section_error` | Yükləmək alınmadı | Inline section error; action `common_retry` (`tbtn`). |
 | `profile_edit_title` | Adı dəyiş | Dialog title. |
 | `profile_edit_save` | Yadda saxla | `dbtn`. 11 chars; at 1.3 ~117dp > ~100dp, the dialog stacks the buttons (accepted, see risks). |

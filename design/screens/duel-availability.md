@@ -32,15 +32,15 @@ screen frame: top app bar with close icon (`common_close`) → home, centred col
 | Variant | Icon (72dp in 120dp circle) | Title | Body | Primary action | Secondary |
 | --- | --- | --- | --- | --- | --- |
 | Upgrade required (`upgrade_required`) | `system_update` | `duel_upgrade_title` | `duel_upgrade_body` | Filled `duel_upgrade_button` → Play Store | Text `common_home` |
-| Duel unavailable (`duel_unavailable`) | `hourglass_empty` | `duel_unavailable_title` | `duel_unavailable_body` | Tonal `common_retry` | Text `common_home` |
-| Connection failed (handshake 5xx / 15 s timeout) | `cloud_off` | `duel_connect_failed_title` | `duel_connect_failed_body` | Tonal `common_retry` | Text `common_home` |
+| Duel unavailable (`duel_unavailable`) | `hourglass_empty` | `duel_unavailable_title` | `duel_unavailable_body` | Neutral `common_retry` | Text `common_home` |
+| Connection failed (handshake 5xx / 15 s timeout) | `cloud_off` | `duel_connect_failed_title` | `duel_connect_failed_body` | Neutral `common_retry` | Text `common_home` |
 
-Upgrade uses a **filled** button (the only way forward); the other two use tonal
+Upgrade uses a **primary** button (the only way forward); the other two use neutral
 retry (they may resolve by themselves).
 
 ## Components
 
-Top app bar, full-screen state view, filled / tonal / text buttons, snackbar.
+Top app bar, full-screen state view, primary / neutral / text buttons, snackbar.
 
 ## States
 

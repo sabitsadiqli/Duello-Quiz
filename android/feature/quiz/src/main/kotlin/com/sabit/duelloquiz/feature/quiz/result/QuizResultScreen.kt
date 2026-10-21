@@ -4,7 +4,10 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalResources
@@ -49,11 +52,18 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
-import com.sabit.duelloquiz.core.designsystem.component.DuelloOutlinedButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
+import com.sabit.duelloquiz.core.designsystem.component.GameCard
+import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
+import com.sabit.duelloquiz.core.designsystem.theme.FullShape
+import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
+import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
+import com.sabit.duelloquiz.core.designsystem.theme.categoryColors
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
@@ -105,6 +115,7 @@ internal fun QuizResultScreen(
     Scaffold(
         topBar = {
             DuelloTopAppBar(
+                title = stringResource(R.string.quiz_result_title),
                 navigationIcon = {
                     IconButton(onClick = { onAction(QuizResultAction.HomeClicked) }) {
                         Icon(painterResource(DuelloIcons.Close), contentDescription = stringResource(R.string.common_close))
@@ -134,14 +145,12 @@ internal fun QuizResultScreen(
                         body = stringResource(R.string.quiz_result_not_synced),
                     )
                 }
-                Spacer(Modifier.height(Spacing.xl))
-                ResultTitle(uiState)
                 Spacer(Modifier.height(Spacing.lg))
-                ScoreBlock(uiState)
-                Spacer(Modifier.height(Spacing.md))
+                ScoreHero(uiState)
+                Spacer(Modifier.height(Spacing.lg))
                 Text(
                     text = stringResource(uiState.band.messageRes()),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
@@ -167,7 +176,7 @@ internal fun QuizResultScreen(
                         loading = uiState.isPlayAgainLoading,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    DuelloOutlinedButton(
+                    DuelloNeutralButton(
                         text = stringResource(R.string.quiz_result_home),
                         onClick = { onAction(QuizResultAction.HomeClicked) },
                         modifier = Modifier.fillMaxWidth(),
@@ -179,37 +188,17 @@ internal fun QuizResultScreen(
     }
 }
 
+/**
+ * Score hero (quiz-result.md v2): a game card in the played category's accent colour with the
+ * category pill, the big score (count-up) and the correct count; one TalkBack element. 10 / 10
+ * adds a celebration icon and pops the hero once (spring bouncy). Reduced motion: final values.
+ */
 @Composable
-private fun ResultTitle(uiState: QuizResultUiState) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        if (uiState.isPerfect) {
-            Icon(
-                painter = painterResource(DuelloIcons.Celebration),
-                contentDescription = null,
-                tint = MaterialTheme.gameColors.correct,
-                modifier = Modifier.size(Sizes.iconLarge),
-            )
-        }
-        Text(
-            text = stringResource(R.string.quiz_result_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = uiState.categoryName,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-/** "7 / 10" with a count-up (static with reduced motion); one TalkBack element. */
-@Composable
-private fun ScoreBlock(uiState: QuizResultUiState) {
+private fun ScoreHero(uiState: QuizResultUiState) {
+    val colors = categoryColors(uiState.categoryAccent)
     val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
     val shown = remember { Animatable(if (reducedMotion) uiState.correctCount.toFloat() else 0f) }
-    val pop = remember { Animatable(if (uiState.isPerfect && !reducedMotion) POP_FROM else 1f) }
+    val pop = remember { Animatable(if (uiState.isPerfect && !reducedMotion) Motion.PERFECT_HERO_POP_FROM else 1f) }
     LaunchedEffect(uiState.correctCount) {
         if (reducedMotion) {
             shown.snapTo(uiState.correctCount.toFloat())
@@ -219,55 +208,100 @@ private fun ScoreBlock(uiState: QuizResultUiState) {
     }
     LaunchedEffect(uiState.isPerfect) {
         if (uiState.isPerfect && !reducedMotion) {
-            pop.snapTo(POP_FROM)
-            pop.animateTo(1f, tween(Motion.SCORE_COUNT_UP_MS, easing = Motion.EmphasizedDecelerate))
+            pop.snapTo(Motion.PERFECT_HERO_POP_FROM)
+            pop.animateTo(1f, Motion.bouncy())
         }
     }
     val description = stringResource(R.string.quiz_result_score_cd, uiState.correctCount, uiState.total)
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+    PressableSurface(
+        onClick = null,
+        faceColor = colors.face,
+        depthColor = colors.depth,
+        contentColor = colors.onFace,
+        shape = HeroShape,
+        depth = Depth.categoryTile,
+        contentAlignment = Alignment.Center,
+        contentPadding = PaddingValues(Spacing.xl),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pop.value
+                scaleY = pop.value
+            }
+            .clearAndSetSemantics { contentDescription = description },
     ) {
-        Row(verticalAlignment = Alignment.Bottom) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            if (uiState.isPerfect) {
+                Icon(
+                    painter = painterResource(DuelloIcons.Celebration),
+                    contentDescription = null,
+                    tint = colors.onFace,
+                    modifier = Modifier.size(Sizes.iconLarge),
+                )
+            }
+            CategoryPill(name = uiState.categoryName, iconKey = uiState.categoryIconKey, color = colors.onFace)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = shown.value.toInt().toString(),
+                    style = MaterialTheme.typography.displayLarge.tabularFigures(),
+                    color = colors.onFace,
+                )
+                Text(
+                    text = stringResource(R.string.quiz_result_score_suffix, uiState.total),
+                    style = MaterialTheme.typography.headlineMedium.tabularFigures(),
+                    color = colors.onFace,
+                    modifier = Modifier.padding(bottom = Spacing.sm),
+                )
+            }
             Text(
-                text = shown.value.toInt().toString(),
-                style = MaterialTheme.typography.displayLarge.tabularFigures(),
-                color = if (uiState.isPerfect) MaterialTheme.gameColors.correct else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = pop.value
-                    scaleY = pop.value
-                },
-            )
-            Text(
-                text = stringResource(R.string.quiz_result_score_suffix, uiState.total),
-                style = MaterialTheme.typography.headlineSmall.tabularFigures(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = Spacing.sm),
+                text = stringResource(R.string.quiz_result_correct_count, uiState.correctCount, uiState.total),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.onFace,
+                textAlign = TextAlign.Center,
             )
         }
-        Text(
-            text = stringResource(R.string.quiz_result_correct_count, uiState.correctCount, uiState.total),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
     }
 }
 
+/** Category pill on the hero: onFace (white) at 20 %, 16dp icon and the name (labelMedium, wraps). */
+@Composable
+private fun CategoryPill(name: String, iconKey: String, color: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(color.copy(alpha = PILL_ALPHA), FullShape)
+            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+    ) {
+        Icon(
+            painter = painterResource(DuelloIcons.category(iconKey)),
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(Sizes.pillIcon),
+        )
+        Spacer(Modifier.width(Spacing.xs))
+        Text(text = name, style = MaterialTheme.typography.labelMedium, color = color, textAlign = TextAlign.Center)
+    }
+}
+
+/** Review entry (quiz-result.md v2): white game card, 44dp wrong-tinted icon box, chevron. */
 @Composable
 private fun ReviewEntryCard(count: Int, onClick: () -> Unit) {
-    Surface(
+    val game = MaterialTheme.gameColors
+    GameCard(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentPadding = PaddingValues(GameSizes.compactCardPadding),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Spacing.lg)) {
-            Icon(
-                painter = painterResource(DuelloIcons.FactCheck),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(Spacing.lg))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(GameSizes.reviewEntryIconBox)
+                    .background(game.wrongContainer, MaterialTheme.shapes.small),
+            ) {
+                Icon(painter = painterResource(DuelloIcons.Rule), contentDescription = null, tint = game.onWrongContainer)
+            }
+            Spacer(Modifier.width(Spacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.quiz_result_review_entry),
@@ -308,14 +342,22 @@ private fun QuizResultMessage.textRes(): Int = when (this) {
     QuizResultMessage.Generic -> R.string.error_generic
 }
 
-private const val POP_FROM = 0.9f
+/** quiz-result.md: category pill, white at 20 %. */
+private const val PILL_ALPHA = 0.2f
 
 @PreviewLightDark
 @Composable
 private fun QuizResultPreview() {
     DuelloTheme {
         QuizResultScreen(
-            uiState = QuizResultUiState(categoryName = "Coğrafiya", correctCount = 7, total = 10, reviewCount = 3),
+            uiState = QuizResultUiState(
+                categoryName = "Coğrafiya",
+                categoryIconKey = "geography",
+                categoryAccent = "ocean",
+                correctCount = 7,
+                total = 10,
+                reviewCount = 3,
+            ),
             onAction = {},
         )
     }
@@ -325,7 +367,7 @@ private fun QuizResultPreview() {
 @Composable
 private fun QuizResultPerfectPreview() {
     DuelloTheme {
-        QuizResultScreen(uiState = QuizResultUiState(categoryName = "Tarix", correctCount = 10, total = 10), onAction = {})
+        QuizResultScreen(uiState = QuizResultUiState(categoryName = "Tarix", categoryIconKey = "history", categoryAccent = "orange", correctCount = 10, total = 10), onAction = {})
     }
 }
 

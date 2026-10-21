@@ -36,7 +36,7 @@ server's verdict for 1.5 s and move on — calm, fair and readable on a small ph
 - Top app bar: close icon (`quiz_close_cd`), title = category name
   (`type.titleLarge`, 1 line, ellipsis).
 - Centre: loading state view (`components.md` §11) with `quiz_loading`. No timer.
-- Error: state view with `error` icon, title from the error (see states), tonal
+- Error: state view with `error` icon, title from the error (see states), neutral
   button `common_retry`, text button `common_back`.
 
 ### B. Question screen (top to bottom, 360dp)

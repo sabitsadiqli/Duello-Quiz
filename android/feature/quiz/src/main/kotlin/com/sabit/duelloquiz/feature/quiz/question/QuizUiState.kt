@@ -63,7 +63,7 @@ data class OptionUi(
 )
 
 /** Mirrors the option card states of components.md §3. */
-enum class OptionDisplayState { Default, Selected, Correct, Wrong, Disabled, Queued }
+enum class OptionDisplayState { Default, Selected, Correct, Wrong, Dimmed, Queued }
 
 enum class TimerStatus { Running, Stopped, Expired }
 

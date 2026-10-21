@@ -13,8 +13,10 @@ Entry from `settings.md`. Tokens: `design/tokens.json`. Components: `components.
   ignores dark mode and our type scale. The generator must run for release builds,
   so the list always matches the shipped dependencies.
 - Decided: two **manual entries** that no Gradle scan can find are always added on
-  top: **Inter** (fonts in `core/designsystem/src/main/res/font`, SIL Open Font
-  License 1.1, full text from `android/core/designsystem/third_party/inter/OFL.txt`)
+  top: **Nunito** (fonts in `core/designsystem/src/main/res/font`, SIL Open Font
+  License 1.1, full text from `android/core/designsystem/third_party/nunito/OFL.txt`;
+  replaces Inter since tokens 2.0.0 — drop the Inter entry when the Inter files are
+  removed)
   and **Material Symbols** (icons copied as vector drawables, Apache License 2.0).
   The OFL requires the licence to travel with the font; showing the full text here
   satisfies that.
@@ -44,7 +46,7 @@ offline.
    1. Intro, padding `space.lg` horizontal, `space.sm` top, `space.md` bottom:
       `settings_licenses_intro` `type.bodyMedium` `scheme.onSurfaceVariant`, wraps.
    2. Section header (`components.md` §14) `settings_licenses_section_assets`.
-   3. Manual rows in this order: Inter, Material Symbols.
+   3. Manual rows in this order: Nunito, Material Symbols.
    4. Section header `settings_licenses_section_libraries`.
    5. Generated rows, sorted by name (case-insensitive, Azerbaijani collation not
       needed: names are Latin/English). One row per library as delivered by the
