@@ -36,7 +36,7 @@ fun DuelloTopAppBar(
     TopAppBar(
         title = {
             if (title != null) {
-                Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         },
         navigationIcon = {
@@ -55,9 +55,10 @@ fun DuelloTopAppBar(
         expandedHeight = Sizes.topAppBarHeight,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            // v2: no tonal change when content scrolls under the bar (components.md §12).
+            scrolledContainerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     )

@@ -125,6 +125,8 @@
     <string name="quiz_option_state_wrong_cd">sənin cavabın, səhv</string>
     <string name="quiz_feedback_correct">Düzgün!</string>
     <string name="quiz_feedback_wrong">Səhv</string>
+    <string name="quiz_option_outcome_correct">Düzgün</string>
+    <string name="quiz_option_outcome_wrong">Səhv</string>
     <string name="quiz_timeout">Vaxt bitdi</string>
     <string name="quiz_answer_saved">Cavab yadda saxlanıldı</string>
     <string name="quiz_reconnecting">Bağlantı bərpa olunur…</string>
@@ -210,6 +212,7 @@
     <string name="error_invalid_display_name">Bu ad uyğun deyil. Ad 2–20 simvol olmalı, yalnız hərf, rəqəm, boşluq, «-», «\'» və «.» ola bilər.</string>
     <string name="home_duel_title">Duel</string>
     <string name="home_duel_hint">Əminliyini sına, reytinq qazan</string>
+    <string name="home_duel_cta">Duelə başla</string>
     <string name="home_duel_needs_internet">Duel üçün internet lazımdır.</string>
     <string name="duel_you">Sən</string>
     <string name="duel_delta_positive">+%1$d</string>

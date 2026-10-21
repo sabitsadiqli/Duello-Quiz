@@ -75,7 +75,7 @@ import com.sabit.duelloquiz.core.designsystem.component.OptionCard
 import com.sabit.duelloquiz.core.designsystem.component.OptionCardState
 import com.sabit.duelloquiz.core.designsystem.component.QuestionImage
 import com.sabit.duelloquiz.core.designsystem.component.QuizTimerBar
-import com.sabit.duelloquiz.core.designsystem.component.QuizTimerDigits
+import com.sabit.duelloquiz.core.designsystem.component.QuizTimerPill
 import com.sabit.duelloquiz.core.designsystem.component.QuizTimerStatus
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -255,7 +255,7 @@ private fun QuizTopBar(question: QuestionUi, onAction: (QuizAction) -> Unit) {
                 .clearAndSetSemantics { contentDescription = progressDescription },
         )
         TimerAnnouncer(question.timer)
-        QuizTimerDigits(
+        QuizTimerPill(
             seconds = question.timer.remainingSeconds,
             status = question.timer.status.toComponent(),
             modifier = Modifier
@@ -406,7 +406,7 @@ private fun OptionDisplayState.toComponent(): OptionCardState = when (this) {
     OptionDisplayState.Selected -> OptionCardState.Selected
     OptionDisplayState.Correct -> OptionCardState.Correct
     OptionDisplayState.Wrong -> OptionCardState.Wrong
-    OptionDisplayState.Disabled -> OptionCardState.Disabled
+    OptionDisplayState.Disabled -> OptionCardState.Dimmed
     OptionDisplayState.Queued -> OptionCardState.Queued
 }
 

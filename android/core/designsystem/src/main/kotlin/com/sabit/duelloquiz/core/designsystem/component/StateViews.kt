@@ -49,8 +49,8 @@ import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import kotlinx.coroutines.delay
 
 /**
- * Full-screen state view (components.md §11): icon on a circle, title, optional body, a tonal
- * primary action and an optional text action under it.
+ * Full-screen state view (components.md §11): icon on a circle, title, optional body, a neutral
+ * (or [primaryActionVariant]) primary action and an optional text action under it.
  */
 @Composable
 fun DuelloStateView(
@@ -60,6 +60,7 @@ fun DuelloStateView(
     body: String? = null,
     primaryActionText: String? = null,
     onPrimaryAction: () -> Unit = {},
+    primaryActionVariant: ButtonVariant = ButtonVariant.Neutral,
     secondaryActionText: String? = null,
     onSecondaryAction: () -> Unit = {},
 ) {
@@ -102,7 +103,7 @@ fun DuelloStateView(
         }
         if (primaryActionText != null) {
             Spacer(Modifier.height(Spacing.xl))
-            DuelloTonalButton(text = primaryActionText, onClick = onPrimaryAction)
+            DuelloButton(text = primaryActionText, onClick = onPrimaryAction, variant = primaryActionVariant)
         }
         if (secondaryActionText != null) {
             Spacer(Modifier.height(Spacing.sm))

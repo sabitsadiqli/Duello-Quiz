@@ -482,7 +482,7 @@ class DuelViewModelTest {
         advanceTimeBy(3_000)
         val match = vm.match
         assertEquals(AnswerStatus.TIMEOUT, match.answerStatus)
-        assertTrue(match.options.all { it.state == OptionCardState.Disabled && !it.enabled })
+        assertTrue(match.options.all { it.state == OptionCardState.Dimmed && !it.enabled })
         vm.onAction(DuelAction.OptionSelected("r1-a"))
         runCurrent()
         assertTrue(sent.none { it is DuelClientMessage.RoundAnswer })
@@ -495,7 +495,7 @@ class DuelViewModelTest {
         runCurrent()
         emit(DuelTestMessages.error(now(), DuelErrorCode.TOO_LATE, "round.answer", MATCH_ID, 1))
         assertEquals(AnswerStatus.TOO_LATE, vm.match.answerStatus)
-        assertEquals(OptionCardState.Disabled, vm.match.options[0].state)
+        assertEquals(OptionCardState.Dimmed, vm.match.options[0].state)
     }
 
     // Reveal (DUEL-09)
@@ -533,7 +533,7 @@ class DuelViewModelTest {
         assertTrue(match.options[0].pickedBySelf)
         assertEquals(OptionCardState.Wrong, match.options[2].state)
         assertTrue(match.options[2].pickedByOpponent)
-        assertEquals(OptionCardState.Disabled, match.options[1].state)
+        assertEquals(OptionCardState.Dimmed, match.options[1].state)
         assertTrue(match.reveal!!.animate)
         // One haptic, stronger on an own correct answer.
         assertEquals(listOf<DuelEvent>(DuelEvent.Haptic(DuelHaptic.STRONG)), events)

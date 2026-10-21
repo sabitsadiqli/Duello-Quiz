@@ -49,7 +49,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
-import com.sabit.duelloquiz.core.designsystem.component.DuelloOutlinedButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
@@ -167,7 +167,7 @@ internal fun QuizResultScreen(
                         loading = uiState.isPlayAgainLoading,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    DuelloOutlinedButton(
+                    DuelloNeutralButton(
                         text = stringResource(R.string.quiz_result_home),
                         onClick = { onAction(QuizResultAction.HomeClicked) },
                         modifier = Modifier.fillMaxWidth(),

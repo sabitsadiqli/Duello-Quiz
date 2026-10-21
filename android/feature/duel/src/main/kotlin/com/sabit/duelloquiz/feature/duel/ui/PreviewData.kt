@@ -73,8 +73,8 @@ internal object PreviewData {
         options = listOf(
             DuelOptionUi("a", "A", "Araz", OptionCardState.Wrong, enabled = false, pickedByOpponent = true),
             DuelOptionUi("b", "B", "Kür", OptionCardState.Correct, enabled = false, pickedBySelf = true),
-            DuelOptionUi("c", "C", "Samur", OptionCardState.Disabled, enabled = false),
-            DuelOptionUi("d", "D", "Qanıx", OptionCardState.Disabled, enabled = false),
+            DuelOptionUi("c", "C", "Samur", OptionCardState.Dimmed, enabled = false),
+            DuelOptionUi("d", "D", "Qanıx", OptionCardState.Dimmed, enabled = false),
         ),
         reveal = RevealUi(3, animate = false, outcomeCorrect = true),
     )

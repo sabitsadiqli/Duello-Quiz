@@ -279,14 +279,14 @@ internal class DuelUiRenderer(
                     option.id == result.correctOptionId -> OptionCardState.Correct
                     own -> OptionCardState.Wrong
                     opponent -> OptionCardState.Wrong
-                    else -> OptionCardState.Disabled
+                    else -> OptionCardState.Dimmed
                 }
                 DuelOptionUi(option.id, LETTERS[index].toString(), option.text, state, false, own, opponent)
             } else {
                 val state = when {
                     round.answerSent == option.id && !round.answerTooLate -> OptionCardState.Selected
                     open -> OptionCardState.Default
-                    else -> OptionCardState.Disabled
+                    else -> OptionCardState.Dimmed
                 }
                 DuelOptionUi(option.id, LETTERS[index].toString(), option.text, state, open)
             }

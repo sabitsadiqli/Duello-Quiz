@@ -55,6 +55,10 @@ object DuelloIcons {
     @DrawableRes val TrendingUp = R.drawable.ic_trending_up
     @DrawableRes val Wifi = R.drawable.ic_wifi
 
+    // v2 (components.md §6, quiz-result.md): duel hero card, review entry card.
+    @DrawableRes val Swords = R.drawable.ic_swords
+    @DrawableRes val Rule = R.drawable.ic_rule
+
     /**
      * Category icon by the server `iconKey` (OQ-044, components.md §5). Unknown keys get the
      * generic `category` icon, so a new server category never needs an app update (HOME-01).

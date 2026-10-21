@@ -45,7 +45,7 @@ import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
-import com.sabit.duelloquiz.core.designsystem.component.DuelloOutlinedButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -95,7 +95,7 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(Spacing.md))
-                DuelloOutlinedButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
+                DuelloNeutralButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Spacing.xl))
                 Spacer(Modifier.navigationBarsPadding())
             }

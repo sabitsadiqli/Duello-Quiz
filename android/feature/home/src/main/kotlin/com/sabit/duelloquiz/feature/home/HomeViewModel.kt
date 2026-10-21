@@ -15,6 +15,7 @@ import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.data.repository.VerificationBannerRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.duel.ActiveDuelStore
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.AuthUser
@@ -59,13 +60,22 @@ data class ProfileHeaderUi(
     val showRetry: Boolean = false,
 )
 
+/**
+ * A category tile. [accent] is the colour slot (components.md §5): the API has no `accentKey`
+ * yet, so it follows the server order; when it does, pass the key to [CategoryAccent.resolve].
+ */
 @Immutable
-data class CategoryUi(val id: Int, val name: String, val iconKey: String)
+data class CategoryUi(
+    val id: Int,
+    val name: String,
+    val iconKey: String,
+    val accent: String = CategoryAccent.Order.first(),
+)
 
 /** The category area of home (home.md "States"). */
 @Immutable
 sealed interface CategoriesUi {
-    /** First load without cache: 5 skeleton cards. */
+    /** First load without cache: skeleton tiles. */
     data object Loading : CategoriesUi
 
     data class Content(val items: List<CategoryUi>) : CategoriesUi
@@ -236,7 +246,11 @@ class HomeViewModel @Inject constructor(
     ): HomeUiState {
         val categoriesUi = when {
             categories != null && categories.isEmpty() -> CategoriesUi.Empty
-            categories != null -> CategoriesUi.Content(categories.map { CategoryUi(it.id, it.name, it.iconKey) })
+            categories != null -> CategoriesUi.Content(
+                categories.mapIndexed { index, category ->
+                    CategoryUi(category.id, category.name, category.iconKey, accent = CategoryAccent.resolve(index))
+                },
+            )
             !state.categoriesAttempted || state.categoriesLoading -> CategoriesUi.Loading
             state.categoriesError == DataError.Offline || !online -> CategoriesUi.Offline
             else -> CategoriesUi.Error
