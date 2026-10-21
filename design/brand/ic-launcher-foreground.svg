@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
   <g transform="translate(2.7 2.7) scale(0.95)">
     <title>Adaptive icon foreground</title>
-    <path d="M56,38 H70 A10,10 0 0 1 80,48 V60 A10,10 0 0 1 72.5,69.7 L75,77 L64,70 H56 A10,10 0 0 1 46,60 V48 A10,10 0 0 1 56,38 Z" fill="#FFD8EA"/>
-    <path d="M38,30 H52 A10,10 0 0 1 62,40 V52 A10,10 0 0 1 52,62 H40 L31,70 L28,56 V40 A10,10 0 0 1 38,30 Z" fill="#4355B9" stroke="#4355B9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M56,38 H70 A10,10 0 0 1 80,48 V60 A10,10 0 0 1 72.5,69.7 L75,77 L64,70 H56 A10,10 0 0 1 46,60 V48 A10,10 0 0 1 56,38 Z" fill="#FFD9EC"/>
+    <path d="M38,30 H52 A10,10 0 0 1 62,40 V52 A10,10 0 0 1 52,62 H40 L31,70 L28,56 V40 A10,10 0 0 1 38,30 Z" fill="#5334E6" stroke="#5334E6" stroke-width="6" stroke-linejoin="round"/>
     <path d="M38,30 H52 A10,10 0 0 1 62,40 V52 A10,10 0 0 1 52,62 H40 L31,70 L28,56 V40 A10,10 0 0 1 38,30 Z" fill="#FFFFFF"/>
-    <path d="M39.2,40.5 A5.8,5.8 0 1 1 47.9,45.52 C46.2,46.5 45,47.4 45,49" fill="none" stroke="#4355B9" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="45" cy="56" r="2.5" fill="#4355B9"/>
+    <path d="M39.2,40.5 A5.8,5.8 0 1 1 47.9,45.52 C46.2,46.5 45,47.4 45,49" fill="none" stroke="#5334E6" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="45" cy="56" r="2.5" fill="#5334E6"/>
   </g>
 </svg>

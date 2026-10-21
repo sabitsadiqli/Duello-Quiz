@@ -101,8 +101,8 @@ Feature graphic notes (`feature-graphic.svg`):
 - Light colours only (Play shows it on both light and dark store themes; the
   indigo `primary` #4355B9 background works on both). Pairs checked in
   `contrast.py` ("store" group).
-- Only text: the app name "Duello Quiz" (not translated). The text uses Inter
-  SemiBold; **convert the text to outlines** (or export on a machine with Inter
+- Only text: the app name "Duello Quiz" (not translated). The text uses Nunito
+  ExtraBold; **convert the text to outlines** (or export on a machine with Nunito
   installed) before rendering the PNG, otherwise a fallback font is used.
 - Everything important sits inside the central 924 × 400 area, so crops and the
   rounded corners Play applies in some placements never cut the mark or the name.
