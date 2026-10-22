@@ -26,6 +26,8 @@ import com.sabit.duelloquiz.feature.home.navigation.homeScreen
 import com.sabit.duelloquiz.feature.home.navigation.navigateToHome
 import com.sabit.duelloquiz.feature.profile.navigation.navigateToProfile
 import com.sabit.duelloquiz.feature.profile.navigation.profileScreen
+import com.sabit.duelloquiz.feature.quiz.navigation.navigateToDaily
+import com.sabit.duelloquiz.feature.quiz.navigation.navigateToDailyResult
 import com.sabit.duelloquiz.feature.quiz.navigation.navigateToQuiz
 import com.sabit.duelloquiz.feature.quiz.navigation.quizScreens
 import com.sabit.duelloquiz.feature.settings.navigation.navigateToSettings
@@ -58,6 +60,8 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
             onOpenQuiz = navController::navigateToQuiz,
             onOpenProfile = navController::navigateToProfile,
             onOpenDuel = { resume -> if (duelEnabled) navController.navigateToDuel(resume) },
+            onOpenDaily = navController::navigateToDaily,
+            onOpenDailyResult = navController::navigateToDailyResult,
         )
         profileScreen(
             onBack = navController::popBackStack,
