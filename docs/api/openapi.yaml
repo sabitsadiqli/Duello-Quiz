@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Duello Quiz API
-  version: 0.1.0
+  version: 0.2.0
   summary: REST API of the Duello Quiz backend (MVP).
   description: |
     Contract for the Android app and admin tooling. Owner: `backend-dev`.
@@ -13,8 +13,8 @@ info:
     - All `/v1` endpoints need `Authorization: Bearer <Firebase ID token>`.
       The backend verifies the token with the Firebase Admin SDK and never accepts a
       user id from the request body. The user row is created on the first
-      authenticated call to any `/v1/me*`, `/v1/categories` or `/v1/quiz/*` endpoint
-      (AUTH-06); concurrent first calls create exactly one row.
+      authenticated call to any `/v1/me*`, `/v1/categories`, `/v1/quiz/*` or
+      `/v1/daily*` endpoint (AUTH-06); concurrent first calls create exactly one row.
     - Localized content (category names, question and option texts, explanations,
       image alt texts) is resolved from `Accept-Language` (first supported language
       wins); missing translations fall back to `az`. The MVP only stores `az`.
@@ -28,6 +28,18 @@ info:
     - Image URLs are `mediaBaseUrl + storage key` (immutable files served by Caddy
       with a one-year cache; a new upload always gets a new key). `image` is `null`
       for questions without an image.
+    - Day = Baku calendar day: 00:00–24:00 Asia/Baku (UTC+4, no DST) by the server
+      clock (OQ-074). `dayKey` is that date as `YYYY-MM-DD`. Device clock and time zone
+      are never used; clients show countdowns from `nextResetEpochMs` corrected by
+      `serverNowEpochMs`. An activity counts for the day it started (OQ-087).
+    - XP, levels and the streak change only as a side effect of the server finalizing
+      a quiz session, a daily attempt or a duel; no endpoint accepts progress from the
+      client (`docs/mvp-spec.md` §10).
+
+    ## Changes
+    | Version | Change |
+    | --- | --- |
+    | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
 
     ## Error codes
     | HTTP | code | When |
@@ -38,6 +50,7 @@ info:
     | 400 | `display_name_not_allowed` | Display name on the blocklist (OQ-030) |
     | 400 | `question_not_in_session` | Answer for a question outside the session |
     | 400 | `invalid_option` | `optionId` does not belong to the question |
+    | 400 | `invalid_push_token` | Push token empty, longer than 1024 characters or containing whitespace |
     | 401 | `unauthorized` | Missing, invalid, expired or revoked token |
     | 403 | `forbidden` | Admin endpoint without the `admin=true` claim |
     | 404 | `not_found` | Unknown route |
@@ -47,6 +60,8 @@ info:
     | 409 | `already_answered` | A different answer for this question is stored |
     | 409 | `session_expired` | Answer after the session deadline (server clock) |
     | 409 | `session_closed` | Answer for a finished or expired session |
+    | 409 | `daily_unavailable` | No daily challenge today (fewer than 5 active questions) |
+    | 409 | `daily_already_played` | Today's daily attempt is finished or expired; the body also carries `result` |
     | 413 | `payload_too_large` | Request body above the limit (image upload: 10 MB) |
     | 415 | `unsupported_media_type` | Body is not `application/json` (image upload: not `multipart/form-data`, or the file is not a PNG/JPEG by its content) |
     | 422 | `import_invalid` | Import payload failed validation; nothing was written |
@@ -73,6 +88,12 @@ tags:
     description: Playable quiz categories.
   - name: quiz
     description: Single-player category quiz sessions.
+  - name: daily
+    description: Daily challenge ("Gündəlik çağırış", docs/mvp-spec.md §9).
+  - name: progress
+    description: XP, levels and streak (docs/mvp-spec.md §10).
+  - name: notifications
+    description: Push tokens and reminder switches (docs/mvp-spec.md §11).
   - name: admin
     description: Content administration (custom claim `admin=true`).
 
@@ -169,6 +190,10 @@ paths:
       summary: Delete the account immediately (OQ-014, SET-05)
       description: |
         Deletes the user row, all quiz sessions, session questions and quiz answers,
+        daily challenge attempts and answers, XP awards and the XP ledger, XP totals,
+        category XP, active days, streak and freeze, notification settings, the
+        notification send log and every push token of the user (all in the same
+        transaction; the per-day daily question sets are not personal data and stay),
         anonymizes the user in matches (`player_a`/`player_b`/`winner`/
         `forfeited_by`/`match_answers.user_id` set to NULL, shown to opponents as
         "Silinmiş oyunçu") and then deletes the Firebase user with the Admin SDK.
@@ -385,6 +410,13 @@ paths:
         correct count (OQ-012); single-player never changes the rating. The review
         lists every wrong or unanswered question in session order; it is only ever
         returned here, after the session is closed.
+
+        `progress`: XP for this session (10 per correct answer to the session's
+        category, OQ-081/OQ-084; 0 for a session without any answer; 0 with
+        `xpCapped = true` beyond the 20th session with answers on that Baku day,
+        OQ-082) and the streak. Awarded once, in the same transaction that closes the
+        session (also when the expiry job closes it); a retried finish returns the
+        same object.
       parameters:
         - $ref: "#/components/parameters/SessionId"
         - $ref: "#/components/parameters/AcceptLanguage"
@@ -399,6 +431,282 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/SessionNotFound"
+
+  /v1/daily:
+    get:
+      tags: [daily]
+      operationId: getDaily
+      summary: Today's daily challenge state (DAILY-01)
+      description: |
+        Creates today's set on first use (server-random, stored, one active question
+        per playable category, not used in a daily during the last 60 days, OQ-076).
+        Never returns another day. An attempt whose deadline passed is finalized
+        here. `result` is set only for `status = finished` and holds the score and
+        the squares. Share text (OQ-080): the client builds it from its own string
+        resources with `number`, `result.squares`, `result.correctCount`/`total`,
+        `streakCurrent` and the Play Store link; no question, option or category data
+        is needed or sent.
+      responses:
+        "200":
+          description: Today's state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyStatus"
+              examples:
+                finished:
+                  value:
+                    dayKey: "2026-10-22"
+                    number: 12
+                    status: finished
+                    questionCount: 5
+                    serverNowEpochMs: 1792651200000
+                    nextResetEpochMs: 1792699200000
+                    attempt: { id: "0b6f3f7e-9d1c-4b8e-8a3a-1f2d3c4b5a69", status: finished, startedAtEpochMs: 1792650000000, deadlineEpochMs: 1792650137500 }
+                    result: { correctCount: 3, total: 5, squares: [correct, wrong, correct, correct, unanswered] }
+                    streakCurrent: 7
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/daily/attempt:
+    post:
+      tags: [daily]
+      operationId: startDailyAttempt
+      summary: Start or resume today's attempt (DAILY-02, DAILY-06)
+      description: |
+        One attempt per account per Baku day (unique on user and day, also under
+        concurrent calls from two devices). The first call creates it (201) with
+        `deadlineEpochMs = start + 5 × (20 s + 1.5 s) + 30 s = 137.5 s` (OQ-075); every
+        further call before the deadline returns the same attempt (200, `resumed =
+        true`, same deadline) with the results of the questions already answered.
+        Questions are the day's set in its fixed order, options in their stored order
+        (identical for everyone), without correctness data or explanations. After the
+        attempt is finished or expired: 409 `daily_already_played` with the stored
+        result. Not rate limited; never changes the Elo rating (OQ-078).
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "201":
+          description: Attempt created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyAttempt"
+        "200":
+          description: The existing attempt (resume).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyAttempt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: |
+            `daily_already_played` (body `DailyAlreadyPlayed` with the stored result) or
+            `daily_unavailable` (plain `Error`).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/DailyAlreadyPlayed"
+                  - $ref: "#/components/schemas/Error"
+
+  /v1/daily/attempt/{attemptId}/answers:
+    post:
+      tags: [daily]
+      operationId: submitDailyAnswer
+      summary: Answer one daily question (DAILY-03, DAILY-10)
+      description: |
+        Same rules, order of checks and error codes as
+        `POST /v1/quiz/sessions/{sessionId}/answers`: unknown attempt or another
+        user's → 404 `session_not_found`; question not in the day's set → 400
+        `question_not_in_session`; foreign option → 400 `invalid_option`; same retry →
+        stored result; different second answer → 409 `already_answered`; closed
+        attempt → 409 `session_closed`; after the deadline → 409 `session_expired`
+        (not stored). An attempt started yesterday can be answered until its own
+        deadline (OQ-087). `optionId = null` is a timeout.
+      parameters:
+        - $ref: "#/components/parameters/AttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerRequest"
+      responses:
+        "200":
+          description: Answer stored (or the stored result for a retry).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResult"
+        "400":
+          description: "`question_not_in_session`, `invalid_option`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+        "409":
+          description: "`already_answered`, `session_closed`, `session_expired`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/daily/attempt/{attemptId}/finish:
+    post:
+      tags: [daily]
+      operationId: finishDailyAttempt
+      summary: Finish the attempt; result, review, XP and streak (DAILY-04)
+      description: |
+        Idempotent like the quiz finish. Before the deadline the attempt becomes
+        `finished`, after it `expired` (the server also finalizes it at the deadline by
+        itself, so XP and the streak are never lost). XP (OQ-081, OQ-084): 10 per
+        correct answer to the question's category + 20 completion bonus (overall only),
+        if at least one answer (a timeout counts) was sent; no cap. Such an attempt
+        makes its day active (OQ-085). `review` lists wrong and unanswered questions
+        with the correct option and explanation.
+      parameters:
+        - $ref: "#/components/parameters/AttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Final result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/SessionNotFound"
+
+  /v1/me/progress:
+    get:
+      tags: [progress]
+      operationId: getMyProgress
+      summary: XP, overall and category levels, streak (PROG-03 … PROG-08)
+      description: |
+        Level curve (OQ-083): level n → n+1 needs 100 × n XP; clients use `level`,
+        `xpIntoLevel` and `xpForNextLevel` as sent and never derive levels from XP.
+        The streak is evaluated against today's Baku day: alive while the last active
+        day is today or yesterday, or the day before yesterday while a freeze is held
+        (the freeze covers yesterday and is consumed when the user plays today).
+        `streakEvent` drives the one-time home messages (PROG-07, PROG-08); the client
+        remembers the shown `(type, dayKey)` per account. `categories` lists every
+        playable category in `sortOrder` (never-played ones at level 1).
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Progress.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/push-tokens:
+    put:
+      tags: [notifications]
+      operationId: registerPushToken
+      summary: Register or refresh this device's FCM token (NOTIF-02)
+      description: |
+        Upsert by token (one row per device token). A token registered by another
+        account moves to the caller (never kept for both). Refreshes `last_seen`;
+        tokens not refreshed for 60 days are deleted, tokens FCM reports as
+        `UNREGISTERED`/`INVALID_ARGUMENT` too. `locale` (default `az`) picks the
+        language of the notification text (fallback `az`). At most 10 tokens per
+        account (the least recently seen are dropped).
+
+        Reminders (OQ-088, OQ-089, OQ-092, OQ-096): FCM "notification" messages with
+        title/body from backend i18n and data `{type, dayKey}` only; Android
+        `channelId` and `tag` both equal `type` (`daily_reminder` |
+        `streak_reminder`), `collapseKey` too. Daily reminder 10:00 Baku if today's
+        daily is not started; streak reminder 20:00 Baku if the streak is ≥ 2 and
+        today is not active; at most one per type and day; a job missed by more than
+        60 minutes is skipped; nothing in 22:00–09:00 Baku; nothing after more than 7
+        days without an active day.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenRequest"
+      responses:
+        "204":
+          description: Stored.
+        "400":
+          description: "`invalid_push_token`, `validation_failed` (bad `locale`) or `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/push-tokens/{token}:
+    delete:
+      tags: [notifications]
+      operationId: deletePushToken
+      summary: Remove this device's token (sign-out, permission revoked)
+      description: Deletes the token if it belongs to the caller. Idempotent; always 204.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: The FCM token, URL-encoded.
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted (or not present).
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/notification-settings:
+    get:
+      tags: [notifications]
+      operationId: getNotificationSettings
+      summary: Reminder switches of the account (NOTIF-06, OQ-091)
+      description: Stored per account (all devices). Both default to `true`.
+      responses:
+        "200":
+          description: Switches.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [notifications]
+      operationId: updateNotificationSettings
+      summary: Change the reminder switches
+      description: Both fields are required; returns the stored switches.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: Stored switches.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /v1/admin/images:
     post:
@@ -573,6 +881,13 @@ components:
         example: az
     SessionId:
       name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttemptId:
+      name: attemptId
       in: path
       required: true
       schema:
@@ -938,7 +1253,7 @@ components:
 
     QuizResult:
       type: object
-      required: [sessionId, status, score, correctCount, total, finishedAt, review]
+      required: [sessionId, status, score, correctCount, total, finishedAt, review, progress]
       properties:
         sessionId:
           type: string
@@ -966,6 +1281,11 @@ components:
           description: Wrong and unanswered questions in session order; empty for 10/10.
           items:
             $ref: "#/components/schemas/ReviewItem"
+        progress:
+          description: XP and streak change of this session; `null` only for sessions closed before 2026-10-22.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Progress"
 
     ReviewItem:
       type: object
@@ -991,6 +1311,232 @@ components:
           $ref: "#/components/schemas/Option"
         explanation:
           type: [string, "null"]
+
+    Progress:
+      type: object
+      description: |
+        What one finalized quiz session, daily attempt or duel did to the player's
+        progress (also `match.result.progress` in `duel-protocol.md`). Stored once per
+        (user, source); retries return the identical object. Hide the XP row when
+        `xpGained = 0`; show the cap note only when `xpCapped = true`.
+      required: [dayKey, xpGained, xpCapped, xpBreakdown, xpTotal, levelBefore, levelAfter, xpIntoLevelBefore,
+                 xpForNextLevelBefore, xpIntoLevel, xpForNextLevel, categoryLevelUps, streakCurrent, streakBest,
+                 streakExtendedToday, freezeAvailable]
+      properties:
+        dayKey:
+          type: string
+          format: date
+          description: Baku day the activity counted for (the day it started, OQ-087).
+        xpGained: { type: integer, minimum: 0 }
+        xpCapped:
+          type: boolean
+          description: XP was withheld by a daily cap (OQ-082); the game still counts as played and for the streak.
+        xpBreakdown:
+          type: array
+          items:
+            type: object
+            required: [reason, categoryId, amount]
+            properties:
+              reason:
+                type: string
+                enum: [correct_answers, daily_bonus, duel_played, duel_win, duel_draw]
+              categoryId:
+                type: [integer, "null"]
+                description: Set when the amount also counts for that category (correct answers only, OQ-084).
+              amount: { type: integer, minimum: 1 }
+        xpTotal: { type: integer, format: int64, description: Overall XP after this award }
+        levelBefore: { type: integer, minimum: 1 }
+        levelAfter: { type: integer, minimum: 1 }
+        xpIntoLevelBefore: { type: integer, format: int64, description: Bar start value (animate from before to after) }
+        xpForNextLevelBefore: { type: integer, format: int64 }
+        xpIntoLevel: { type: integer, format: int64 }
+        xpForNextLevel: { type: integer, format: int64 }
+        categoryLevelUps:
+          type: array
+          items:
+            type: object
+            required: [categoryId, levelBefore, levelAfter]
+            properties:
+              categoryId: { type: integer }
+              levelBefore: { type: integer }
+              levelAfter: { type: integer }
+        streakCurrent: { type: integer, minimum: 0 }
+        streakBest: { type: integer, minimum: 0 }
+        streakExtendedToday:
+          type: boolean
+          description: This result made its day active for the first time (streak highlight, shown once).
+        freezeAvailable: { type: boolean, description: A streak freeze is held (max 1, OQ-086) }
+
+    ProgressSummary:
+      type: object
+      required: [xpTotal, level, xpIntoLevel, xpForNextLevel, streakCurrent, streakBest, todayActive, freezeAvailable,
+                 streakEvent, dayKey, nextResetEpochMs, serverNowEpochMs, categories]
+      properties:
+        xpTotal: { type: integer, format: int64 }
+        level: { type: integer, minimum: 1 }
+        xpIntoLevel: { type: integer, format: int64 }
+        xpForNextLevel: { type: integer, format: int64 }
+        streakCurrent: { type: integer, minimum: 0 }
+        streakBest: { type: integer, minimum: 0 }
+        todayActive: { type: boolean, description: Today (Baku) already counts for the streak }
+        freezeAvailable: { type: boolean }
+        streakEvent:
+          description: |
+            One-time home message, `null` if none. `freeze_used`: a held freeze covers
+            the missed day `dayKey` (yesterday); sent on the day after the missed day,
+            before and after the user plays (same key); `previousStreak` = the
+            protected streak. `streak_lost`: `dayKey` (the first missed day) was not
+            covered; sent from the day after until the end of the day the user plays
+            again (same key); `previousStreak` = the lost streak (the app shows the
+            message only for ≥ 2).
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [type, dayKey, previousStreak]
+              properties:
+                type: { type: string, enum: [freeze_used, streak_lost] }
+                dayKey: { type: string, format: date }
+                previousStreak: { type: integer, minimum: 1 }
+        dayKey: { type: string, format: date, description: Today (Baku) }
+        nextResetEpochMs: { type: integer, format: int64, description: "Next 00:00 Baku" }
+        serverNowEpochMs: { type: integer, format: int64 }
+        categories:
+          type: array
+          items:
+            type: object
+            required: [categoryId, slug, name, iconKey, xp, level, xpIntoLevel, xpForNextLevel]
+            properties:
+              categoryId: { type: integer }
+              slug: { type: string }
+              name: { type: string, description: Localized }
+              iconKey: { type: string }
+              xp: { type: integer, format: int64 }
+              level: { type: integer, minimum: 1 }
+              xpIntoLevel: { type: integer, format: int64 }
+              xpForNextLevel: { type: integer, format: int64 }
+
+    DailyStatus:
+      type: object
+      required: [dayKey, number, status, questionCount, serverNowEpochMs, nextResetEpochMs, attempt, result, streakCurrent]
+      properties:
+        dayKey: { type: string, format: date }
+        number:
+          type: [integer, "null"]
+          description: "#N = days since the configured first day + 1; `null` when `unavailable`."
+        status:
+          type: string
+          enum: [available, in_progress, finished, unavailable]
+          description: "`finished` covers finished and expired attempts."
+        questionCount: { type: integer, description: "5" }
+        serverNowEpochMs: { type: integer, format: int64 }
+        nextResetEpochMs: { type: integer, format: int64, description: "Next 00:00 Baku (countdown)" }
+        attempt:
+          description: Today's attempt; `null` when `available` or `unavailable`.
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [id, status, startedAtEpochMs, deadlineEpochMs]
+              properties:
+                id: { type: string, format: uuid }
+                status: { type: string, enum: [active, finished, expired] }
+                startedAtEpochMs: { type: integer, format: int64 }
+                deadlineEpochMs: { type: integer, format: int64 }
+        result:
+          description: Set only when `status = finished`.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/DailyResultSummary"
+        streakCurrent: { type: integer, minimum: 0, description: Current streak (share text line) }
+
+    DailyResultSummary:
+      type: object
+      required: [correctCount, total, squares]
+      properties:
+        correctCount: { type: integer, minimum: 0 }
+        total: { type: integer }
+        squares:
+          type: array
+          description: One per question in order (share squares, OQ-080). A timeout is `unanswered`.
+          items:
+            type: string
+            enum: [correct, wrong, unanswered]
+
+    DailyAttempt:
+      type: object
+      required: [id, dayKey, number, startedAtEpochMs, deadlineEpochMs, serverNowEpochMs, questionTimeLimitMs, resumed,
+                 questions, answers]
+      properties:
+        id: { type: string, format: uuid }
+        dayKey: { type: string, format: date, description: The day the attempt belongs to }
+        number: { type: integer }
+        startedAtEpochMs: { type: integer, format: int64 }
+        deadlineEpochMs: { type: integer, format: int64, description: "Start + 137.5 s" }
+        serverNowEpochMs: { type: integer, format: int64 }
+        questionTimeLimitMs: { type: integer, description: "20000" }
+        resumed: { type: boolean }
+        questions:
+          type: array
+          minItems: 5
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/SessionQuestion"
+        answers:
+          type: array
+          description: Results of the questions already answered (resume); empty for a new attempt.
+          items:
+            $ref: "#/components/schemas/AnswerResult"
+
+    DailyResult:
+      type: object
+      required: [attemptId, dayKey, number, status, score, correctCount, total, squares, finishedAt, review, progress,
+                 streakCurrent]
+      properties:
+        attemptId: { type: string, format: uuid }
+        dayKey: { type: string, format: date }
+        number: { type: integer }
+        status: { type: string, enum: [finished, expired] }
+        score: { type: integer, minimum: 0, maximum: 5 }
+        correctCount: { type: integer, minimum: 0, maximum: 5 }
+        total: { type: integer }
+        squares:
+          type: array
+          items: { type: string, enum: [correct, wrong, unanswered] }
+        finishedAt: { type: string, format: date-time }
+        review:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+        progress:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Progress"
+        streakCurrent: { type: integer, minimum: 0, description: For the share text streak line }
+
+    DailyAlreadyPlayed:
+      type: object
+      required: [code, message, result]
+      properties:
+        code: { type: string, const: daily_already_played }
+        message: { type: string }
+        result:
+          $ref: "#/components/schemas/DailyResult"
+
+    PushTokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 1024 }
+        locale:
+          type: string
+          description: Language tag of the device UI (`az`, `az-AZ`); default `az`.
+          examples: [az]
+
+    NotificationSettings:
+      type: object
+      required: [dailyReminder, streakReminder]
+      properties:
+        dailyReminder: { type: boolean, description: "10:00 Baku if today's daily is not started" }
+        streakReminder: { type: boolean, description: "20:00 Baku if streak ≥ 2 and today is not active" }
 
     ImportRequest:
       type: object
