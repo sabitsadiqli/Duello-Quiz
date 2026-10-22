@@ -3,6 +3,7 @@ package com.sabit.duelloquiz.core.network.fake
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.model.QuizOption
+import com.sabit.duelloquiz.core.model.XpBreakdownItem
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
 import com.sabit.duelloquiz.core.model.duel.CompactRound
 import com.sabit.duelloquiz.core.model.duel.CompactRoundPlayer
@@ -19,7 +20,6 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
-import com.sabit.duelloquiz.core.model.XpBreakdownItem
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.model.duel.OwnBet

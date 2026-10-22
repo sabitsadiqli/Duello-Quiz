@@ -11,9 +11,9 @@ import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.repository.DuelHistoryRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.ProgressRepository
+import com.sabit.duelloquiz.core.data.util.NetworkMonitor
 import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
-import com.sabit.duelloquiz.core.data.util.NetworkMonitor
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult

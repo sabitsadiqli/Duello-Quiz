@@ -9,12 +9,12 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.sabit.duelloquiz.core.common.di.ApplicationScope
 import com.sabit.duelloquiz.core.data.repository.PushTokenRepository
-import com.sabit.duelloquiz.core.designsystem.R as DesignR
 import com.sabit.duelloquiz.core.model.ReminderType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.sabit.duelloquiz.core.designsystem.R as DesignR
 
 /**
  * FCM entry point. In the background the system shows the reminder ("notification" message,

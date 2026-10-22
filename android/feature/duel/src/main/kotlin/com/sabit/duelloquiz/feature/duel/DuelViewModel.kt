@@ -7,10 +7,10 @@ import com.sabit.duelloquiz.core.common.MonotonicClock
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.ProgressRepository
+import com.sabit.duelloquiz.core.data.util.NetworkMonitor
 import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import com.sabit.duelloquiz.core.designsystem.component.toCardUi
 import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
-import com.sabit.duelloquiz.core.data.util.NetworkMonitor
 import com.sabit.duelloquiz.core.duel.DuelClient
 import com.sabit.duelloquiz.core.duel.DuelClientFactory
 import com.sabit.duelloquiz.core.duel.DuelConnectionState

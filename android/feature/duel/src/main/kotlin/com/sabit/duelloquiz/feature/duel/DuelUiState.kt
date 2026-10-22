@@ -1,8 +1,8 @@
 package com.sabit.duelloquiz.feature.duel
 
-import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import androidx.compose.runtime.Immutable
 import com.sabit.duelloquiz.core.designsystem.component.OptionCardState
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import com.sabit.duelloquiz.core.model.QuestionImage
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
