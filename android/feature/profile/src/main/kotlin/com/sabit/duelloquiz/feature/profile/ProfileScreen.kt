@@ -164,6 +164,7 @@ internal fun ProfileScreen(
                         }
                     }
                     item(key = "header") { HeaderSection(uiState.header, onAction) }
+                    progressSections(uiState.progress, onAction)
                     if (uiState.duelEnabled) duelSections(uiState, onAction)
                 }
             }
@@ -228,6 +229,28 @@ private fun HeaderSection(header: SectionUi<ProfileHeaderUi>, onAction: (Profile
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+        }
+    }
+}
+
+/** progression.md C: level card, streak card, category levels — always shown (PROF-09). */
+private fun LazyListScope.progressSections(progress: SectionUi<ProgressUi>, onAction: (ProfileAction) -> Unit) {
+    when (progress) {
+        SectionUi.Loading -> {
+            item(key = "level_skeleton") { SectionBox { CardSkeleton() } }
+            item(key = "streak_skeleton") { Box(Modifier.padding(top = Spacing.lg)) { CardSkeleton() } }
+        }
+        SectionUi.Error -> item(key = "progress_error") {
+            SectionBox { SectionError(onRetry = { onAction(ProfileAction.RetryProgress) }) }
+        }
+        is SectionUi.Content -> {
+            item(key = "level") { SectionBox { LevelCard(progress.value) } }
+            item(key = "streak") { StreakCard(progress.value, modifier = Modifier.padding(top = Spacing.lg)) }
+            if (progress.value.categories.isNotEmpty()) {
+                item(key = "category_levels") {
+                    SectionBox { CategoryLevelsSection(progress.value.categories) }
                 }
             }
         }

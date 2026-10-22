@@ -1,5 +1,7 @@
 package com.sabit.duelloquiz.feature.profile
 
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
+import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
@@ -38,6 +40,8 @@ class ProfileViewModelTest {
     private val network = TestNetworkMonitor()
     private val events = mutableListOf<ProfileEvent>()
 
+    private val progress = TestProgressRepository()
+
     private fun stats(total: Int = 22) = DuelStats(
         DuelRecord(12, 9, 1, total),
         listOf(CalibrationLevel(1, 8, 7), CalibrationLevel(2, 6, 4), CalibrationLevel(3, 6, 2)),
@@ -45,7 +49,10 @@ class ProfileViewModelTest {
 
     private fun TestScope.viewModel(duelEnabled: Boolean = true): ProfileViewModel {
         profile.nextRefresh = DataResult.Success(Profile("u1", "Aysel", null, 1016, createdAtEpochMs = 0))
-        val vm = ProfileViewModel(profile, history, network, AppConfig("1", 1, "", duelEnabled = duelEnabled))
+        val vm = ProfileViewModel(
+            profile, history, network, AppConfig("1", 1, "", duelEnabled = duelEnabled), progress,
+            WallClock { testScheduler.currentTime },
+        )
         backgroundScope.launch { vm.events.collect { events += it } }
         runCurrent()
         return vm
