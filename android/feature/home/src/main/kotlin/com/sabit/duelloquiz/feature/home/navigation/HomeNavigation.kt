@@ -20,9 +20,18 @@ fun NavGraphBuilder.homeScreen(
     onOpenQuiz: (categoryId: Int, categoryName: String, sessionId: String?) -> Unit,
     onOpenProfile: () -> Unit,
     onOpenDuel: (resume: Boolean) -> Unit,
+    onOpenDaily: (attemptId: String?) -> Unit,
+    onOpenDailyResult: (attemptId: String) -> Unit,
 ) {
     composable<HomeDestination> {
-        HomeRoute(onOpenSettings = onOpenSettings, onOpenQuiz = onOpenQuiz, onOpenProfile = onOpenProfile, onOpenDuel = onOpenDuel)
+        HomeRoute(
+            onOpenSettings = onOpenSettings,
+            onOpenQuiz = onOpenQuiz,
+            onOpenProfile = onOpenProfile,
+            onOpenDuel = onOpenDuel,
+            onOpenDaily = onOpenDaily,
+            onOpenDailyResult = onOpenDailyResult,
+        )
     }
 }
 

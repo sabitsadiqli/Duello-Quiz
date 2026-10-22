@@ -34,6 +34,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import com.sabit.duelloquiz.core.designsystem.component.DailyCard
+import com.sabit.duelloquiz.core.designsystem.component.DailyCardUi
+import com.sabit.duelloquiz.core.designsystem.component.HomeMessageBanner
+import com.sabit.duelloquiz.core.designsystem.component.HomeMessageVariant
+import com.sabit.duelloquiz.core.designsystem.component.LevelChipRow
+import com.sabit.duelloquiz.core.designsystem.component.LevelChipSkeleton
+import com.sabit.duelloquiz.core.designsystem.component.StreakBadge
+import com.sabit.duelloquiz.core.designsystem.component.StreakBadgeSkeleton
+import com.sabit.duelloquiz.core.designsystem.component.StreakBadgeState
+import com.sabit.duelloquiz.core.designsystem.daily.DailyShareText
+import com.sabit.duelloquiz.core.designsystem.daily.ResourceDailyShareStrings
+import com.sabit.duelloquiz.core.designsystem.daily.shareDailyResult
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,17 +113,40 @@ internal fun HomeRoute(
     onOpenQuiz: (categoryId: Int, categoryName: String, sessionId: String?) -> Unit,
     onOpenProfile: () -> Unit,
     onOpenDuel: (resume: Boolean) -> Unit,
+    onOpenDaily: (attemptId: String?) -> Unit,
+    onOpenDailyResult: (attemptId: String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
+    val context = LocalContext.current
+    val listState = rememberLazyListState()
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onAction(HomeAction.Resumed) }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { viewModel.onAction(HomeAction.Paused) }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
+            is HomeEvent.NavigateToDaily -> onOpenDaily(event.attemptId)
+            is HomeEvent.NavigateToDailyResult -> onOpenDailyResult(event.attemptId)
+            is HomeEvent.ShareDaily -> DailyShareText.build(
+                number = event.number,
+                squares = event.squares,
+                correctCount = event.correctCount,
+                total = event.total,
+                streakDays = event.streak,
+                applicationId = context.packageName,
+                strings = ResourceDailyShareStrings(resources),
+            )?.let(context::shareDailyResult)
+            HomeEvent.ScrollToDaily -> scope.launch {
+                val info = listState.layoutInfo
+                val card = info.visibleItemsInfo.firstOrNull { it.key == DAILY_KEY }
+                val fullyVisible = card != null && card.offset >= info.viewportStartOffset &&
+                    card.offset + card.size <= info.viewportEndOffset
+                if (!fullyVisible) listState.animateScrollToItem(DAILY_ITEM_INDEX)
+            }
             HomeEvent.NavigateToSettings -> onOpenSettings()
             HomeEvent.NavigateToProfile -> onOpenProfile()
             is HomeEvent.NavigateToDuel -> onOpenDuel(event.resume)
@@ -122,7 +161,7 @@ internal fun HomeRoute(
         }
     }
 
-    HomeScreen(uiState = uiState, onAction = viewModel::onAction, snackbarHostState = snackbarHostState)
+    HomeScreen(uiState = uiState, onAction = viewModel::onAction, snackbarHostState = snackbarHostState, listState = listState)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,6 +170,7 @@ internal fun HomeScreen(
     uiState: HomeUiState,
     onAction: (HomeAction) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    listState: LazyListState = rememberLazyListState(),
 ) {
     Scaffold(
         topBar = {
@@ -171,14 +211,14 @@ internal fun HomeScreen(
             modifier = contentModifier,
         ) {
             ContentWidth(modifier = Modifier.fillMaxSize()) {
-                HomeContent(uiState = uiState, onAction = onAction)
+                HomeContent(uiState = uiState, onAction = onAction, listState = listState)
             }
         }
     }
 }
 
 @Composable
-private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
+private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit, listState: LazyListState) {
     // categoryGridEnter runs only on the first appearance, not on return from a quiz.
     var gridEntered by rememberSaveable { mutableStateOf(false) }
     val content = uiState.categories as? CategoriesUi.Content
@@ -188,6 +228,7 @@ private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
         val names = remember(content) { content?.items?.map { it.name }.orEmpty() }
         val columns = rememberCategoryGridColumns(names, contentWidth)
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(
                 start = Spacing.screenGutter,
                 end = Spacing.screenGutter,
@@ -215,6 +256,34 @@ private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit) {
                     onRetry = { onAction(HomeAction.RetryProfileClicked) },
                     onClick = { onAction(HomeAction.ProfileClicked) },
                     modifier = Modifier.padding(top = Spacing.xs),
+                )
+            }
+            item(key = "home_message") {
+                val message = uiState.message
+                val shown = remember { MessageHolder() }
+                if (message != null) shown.value = message
+                CollapsingBanner(visible = message != null) {
+                    val current = shown.value ?: return@CollapsingBanner
+                    HomeMessageBanner(
+                        variant = current.variant,
+                        text = when (current.variant) {
+                            HomeMessageVariant.StreakHint -> stringResource(R.string.home_streak_hint)
+                            HomeMessageVariant.FreezeUsed -> stringResource(R.string.home_streak_freeze_used)
+                            HomeMessageVariant.StreakLost -> pluralStringResource(R.plurals.home_streak_lost, current.days, current.days)
+                        },
+                        onDismiss = { onAction(HomeAction.DismissMessage) },
+                        modifier = Modifier.padding(top = Spacing.md),
+                    )
+                }
+            }
+            // Daily challenge card (components.md §28): always rendered, same min height in every state.
+            item(key = DAILY_KEY) {
+                DailyCard(
+                    ui = uiState.daily,
+                    onStart = { onAction(HomeAction.DailyStartClicked) },
+                    onShare = { onAction(HomeAction.DailyShareClicked) },
+                    onRetry = { onAction(HomeAction.DailyRetryClicked) },
+                    modifier = Modifier.padding(top = Spacing.lg),
                 )
             }
             // Duel hero card (components.md §6): only behind the build flag (OQ-020); no placeholder.
@@ -369,6 +438,11 @@ private class BannerHolder {
     var value: VerificationBannerUi? = null
 }
 
+/** Same as [BannerHolder] for the streak message banner. */
+private class MessageHolder {
+    var value: HomeMessageUi? = null
+}
+
 /**
  * Profile header card (HOME-04, home.md v2): a white game card with avatar, name and rating;
  * skeleton until the profile is known; the whole card opens the profile (PROF-01).
@@ -376,8 +450,18 @@ private class BannerHolder {
 @Composable
 private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val name = header.displayName
+    val progress = header.progress as? HeaderProgressUi.Content
+    val progressDescription = progress?.let {
+        val streak = if (it.badge == StreakBadgeState.ActiveToday) {
+            pluralStringResource(R.plurals.progress_streak_cd_active, it.streak, it.streak)
+        } else {
+            pluralStringResource(R.plurals.progress_streak_cd_inactive, it.streak, it.streak)
+        }
+        val freeze = if (it.freezeAvailable) ", " + stringResource(R.string.progress_streak_freeze_cd) else ""
+        ", " + stringResource(R.string.progress_level_cd, it.level) + ", " + streak + freeze
+    }.orEmpty()
     val profileDescription = if (name != null && header.rating != null) {
-        stringResource(R.string.home_profile_cd, name, header.rating)
+        stringResource(R.string.home_profile_cd, name, header.rating) + progressDescription
     } else {
         null
     }
@@ -429,23 +513,50 @@ private fun ProfileHeader(header: ProfileHeaderUi, onRetry: () -> Unit, onClick:
                             modifier = Modifier.size(Sizes.pillIcon),
                         )
                         Spacer(Modifier.width(Spacing.xs))
+                        // home.md: above font scale 1.15 the rating line uses labelMedium so it fits.
+                        val ratingStyle = if (LocalDensity.current.fontScale > COMPACT_RATING_FONT_SCALE) {
+                            MaterialTheme.typography.labelMedium
+                        } else {
+                            MaterialTheme.typography.labelLarge
+                        }
                         Text(
                             text = stringResource(R.string.home_rating, header.rating),
-                            style = MaterialTheme.typography.labelLarge.tabularFigures(),
+                            style = ratingStyle.tabularFigures(),
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     header.showRetry -> DuelloTextButton(text = stringResource(R.string.common_retry), onClick = onRetry)
                     else -> SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidthShort).height(Sizes.skeletonLineHeight))
                 }
+                when (val headerProgress = header.progress) {
+                    is HeaderProgressUi.Content -> LevelChipRow(level = headerProgress.level, fraction = headerProgress.fraction)
+                    HeaderProgressUi.Skeleton -> LevelChipSkeleton(alpha)
+                    HeaderProgressUi.Hidden -> Unit
+                }
             }
-            if (profileDescription != null) {
-                Icon(
-                    painter = painterResource(DuelloIcons.ChevronRight),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(Sizes.icon),
-                )
+            // HOME-08: the streak badge takes the trailing slot (replaces the chevron).
+            when (val headerProgress = header.progress) {
+                is HeaderProgressUi.Content -> {
+                    Spacer(Modifier.width(Spacing.md))
+                    StreakBadge(
+                        days = headerProgress.streak,
+                        state = headerProgress.badge,
+                        freezeAvailable = headerProgress.freezeAvailable,
+                        ignite = true,
+                    )
+                }
+                HeaderProgressUi.Skeleton -> {
+                    Spacer(Modifier.width(Spacing.md))
+                    StreakBadgeSkeleton(alpha)
+                }
+                HeaderProgressUi.Hidden -> if (profileDescription != null) {
+                    Icon(
+                        painter = painterResource(DuelloIcons.ChevronRight),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Sizes.icon),
+                    )
+                }
             }
         }
     }
@@ -464,6 +575,7 @@ private fun HomeMessage.textRes(): Int = when (this) {
     HomeMessage.QuizInvalid -> R.string.error_quiz_invalid
     HomeMessage.DuelNeedsInternet -> R.string.home_duel_needs_internet
     HomeMessage.DuelLeft -> R.string.duel_left_snackbar
+    HomeMessage.DailyNeedsInternet -> R.string.home_daily_needs_internet
 }
 
 private fun HomeMessage.isError(): Boolean =
@@ -471,6 +583,13 @@ private fun HomeMessage.isError(): Boolean =
 
 /** home.md: 6 skeleton tiles (3 rows of 2, or 6 rows in one column). */
 private const val SKELETON_TILES = 6
+
+/** LazyColumn key and index of the daily card: after the offline and verification banners, the header and the message item (all always present). */
+private const val DAILY_KEY = "daily_card"
+private const val DAILY_ITEM_INDEX = 4
+
+/** home.md: the rating line switches to labelMedium above this font scale. */
+private const val COMPACT_RATING_FONT_SCALE = 1.15f
 
 private val previewCategories = listOf(
     CategoryUi(1, "Coğrafiya", "geography", "violet"),
@@ -480,7 +599,11 @@ private val previewCategories = listOf(
     CategoryUi(5, "İdman", "sports", "orange"),
 )
 
-private val previewHeader = ProfileHeaderUi(displayName = "Aysel", rating = 1000)
+private val previewHeader = ProfileHeaderUi(
+    displayName = "Aysel",
+    rating = 1000,
+    progress = HeaderProgressUi.Content(level = 5, fraction = 0.54f, streak = 7, badge = StreakBadgeState.ActiveToday, freezeAvailable = true),
+)
 
 @PreviewLightDark
 @Composable
@@ -493,6 +616,8 @@ private fun HomeContentPreview() {
                 startingCategoryId = 2,
                 duelEnabled = true,
                 verificationBanner = VerificationBannerUi(email = "aysel@example.com"),
+                daily = DailyCardUi.Available(number = 12, questionCount = 5),
+                message = HomeMessageUi(HomeMessageVariant.StreakHint),
             ),
             onAction = {},
         )

@@ -1,5 +1,9 @@
 package com.sabit.duelloquiz.feature.home
 
+import com.sabit.duelloquiz.core.notifications.ReminderOpens
+import com.sabit.duelloquiz.core.testing.TestDailyRepository
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
+import com.sabit.duelloquiz.core.common.WallClock
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.auth.AuthError
@@ -76,6 +80,9 @@ class HomeViewModelTest {
         Category(2, "tarix", "Tarix", "history"),
     )
     private val profile = Profile(id = "p1", displayName = "Aysel", avatarUrl = null, rating = 1000)
+    private val progressRepository = TestProgressRepository()
+    private val dailyRepository = TestDailyRepository()
+    private val reminderOpens = ReminderOpens()
 
     private fun TestScope.viewModel(): HomeViewModel {
         val vm = HomeViewModel(
@@ -88,6 +95,10 @@ class HomeViewModelTest {
             savedStateHandle,
             appConfig,
             activeDuels,
+            progressRepository,
+            dailyRepository,
+            reminderOpens,
+            WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
         return vm
@@ -110,7 +121,8 @@ class HomeViewModelTest {
 
         val content = vm.uiState.value.categories as CategoriesUi.Content
         assertEquals(listOf("Coğrafiya", "Tarix"), content.items.map { it.name })
-        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000), vm.uiState.value.header)
+        // No progress and no cache after the (failed) load: level and streak are hidden, never "0" (HOME-08).
+        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000, progress = HeaderProgressUi.Hidden), vm.uiState.value.header)
         assertFalse(vm.uiState.value.showOfflineBanner)
     }
 
@@ -174,6 +186,7 @@ class HomeViewModelTest {
         val vm = HomeViewModel(
             authRepository, bannerRepository, TestProfileRepository(initial = profile), cached,
             quizRepository, networkMonitor, savedStateHandle, appConfig, activeDuels,
+            progressRepository, dailyRepository, reminderOpens, WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
         runCurrent()

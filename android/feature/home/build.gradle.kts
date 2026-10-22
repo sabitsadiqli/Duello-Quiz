@@ -11,4 +11,6 @@ dependencies {
     implementation(project(":core:data"))
     // The saved running match (resume after process death, DUEL-16).
     implementation(project(":core:duel"))
+    // Opened from a daily reminder (NOTIF-05).
+    implementation(project(":core:notifications"))
 }
