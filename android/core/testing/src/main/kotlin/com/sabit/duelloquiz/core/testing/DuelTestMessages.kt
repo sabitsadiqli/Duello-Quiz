@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.core.testing
 
+import com.sabit.duelloquiz.core.model.ProgressGain
 import com.sabit.duelloquiz.core.model.QuizOption
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
 import com.sabit.duelloquiz.core.model.duel.DuelErrorCode
@@ -190,6 +191,7 @@ object DuelTestMessages {
         scores: DuelScores = DuelScores(640, 410),
         ratingChange: Int = 16,
         matchId: String = MATCH_ID,
+        progress: ProgressGain? = null,
     ) = DuelServerMessage.MatchResultMessage(
         seq,
         now,
@@ -207,6 +209,7 @@ object DuelTestMessages {
             suddenDeathPlayed = 0,
             calibration = listOf(CalibrationLevel(1, 2, 1), CalibrationLevel(2, 3, 2), CalibrationLevel(3, 2, 2)),
             rounds = emptyList(),
+            progress = progress,
         ),
     )
 

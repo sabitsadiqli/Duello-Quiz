@@ -87,12 +87,16 @@ class ColorTokensTest {
 
     private fun assertGradients(theme: String, gradients: DuelloGradients) {
         val group = tokens.getValue("color").jsonObject.getValue(theme).jsonObject.getValue("gradient").jsonObject
-        assertEquals(setOf("duelHero", "resultWin"), group.keys)
+        assertEquals(setOf("duelHero", "resultWin", "dailyHero"), group.keys)
         group.forEach { (name, value) ->
             val token = value.jsonObject
             val actual = when (name) {
                 "duelHero" -> gradients.duelHero
+                "dailyHero" -> gradients.dailyHero
                 else -> gradients.resultWin
+            }
+            token["depth"]?.let { depth ->
+                assertEquals("$theme.$name.depth", parseHex(depth.jsonPrimitive.content).toHex(), actual.depth.toHex())
             }
             assertEquals("$theme.$name.start", parseHex(token.getValue("start").jsonPrimitive.content).toHex(), actual.start.toHex())
             assertEquals("$theme.$name.end", parseHex(token.getValue("end").jsonPrimitive.content).toHex(), actual.end.toHex())

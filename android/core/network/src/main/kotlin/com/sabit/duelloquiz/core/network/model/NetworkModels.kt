@@ -105,6 +105,7 @@ internal data class NetworkQuizResult(
     val total: Int,
     val finishedAt: String? = null,
     val review: List<NetworkReviewItem>,
+    val progress: NetworkProgress? = null,
 )
 
 @Serializable

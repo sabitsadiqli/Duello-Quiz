@@ -7,13 +7,18 @@ import com.sabit.duelloquiz.core.auth.AuthRules
 import com.sabit.duelloquiz.core.auth.AuthValidator
 import com.sabit.duelloquiz.core.auth.DisplayNameError
 import com.sabit.duelloquiz.core.common.AppConfig
+import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.repository.DuelHistoryRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
+import com.sabit.duelloquiz.core.data.repository.ProgressRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
+import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationRules
 import com.sabit.duelloquiz.core.model.duel.DuelStats
@@ -56,6 +61,33 @@ data class ProfileHeaderUi(
 @Immutable
 data class StatsUi(val stats: DuelStats, val hint: CalibrationHint)
 
+/** One playable category with its level (PROF-10). [accent] is a category accent slot. */
+@Immutable
+data class CategoryLevelUi(
+    val name: String,
+    val iconKey: String,
+    val accent: String,
+    val level: Int,
+    val fraction: Float,
+    val xpToNext: Long,
+)
+
+/** Level, streak and category levels (PROF-09 … PROF-11), all server values. */
+@Immutable
+data class ProgressUi(
+    val level: Int,
+    val xpIntoLevel: Long,
+    val xpForNextLevel: Long,
+    val xpTotal: Long,
+    val fraction: Float,
+    val streakCurrent: Int,
+    val streakBest: Int,
+    /** Null hides the "today" line (a cache from an earlier Baku day, PROG-06). */
+    val todayActive: Boolean?,
+    val freezeAvailable: Boolean,
+    val categories: List<CategoryLevelUi>,
+)
+
 /** Why the name dialog shows a field error (PROF-06). */
 enum class NameError { REQUIRED, LENGTH, CHARACTERS, NOT_ALLOWED, INVALID, OFFLINE, FAILED }
 
@@ -74,6 +106,8 @@ data class EditNameUi(
 data class ProfileUiState(
     /** Null with [header] loading = skeleton. */
     val header: SectionUi<ProfileHeaderUi> = SectionUi.Loading,
+    /** Shown always, also with the duel flag off (PROF-07, PROF-09). */
+    val progress: SectionUi<ProgressUi> = SectionUi.Loading,
     val duelEnabled: Boolean = false,
     val stats: SectionUi<StatsUi> = SectionUi.Loading,
     val matches: SectionUi<List<MatchSummary>> = SectionUi.Loading,
@@ -92,6 +126,7 @@ sealed interface ProfileAction {
     data object RetryHeader : ProfileAction
     data object RetryStats : ProfileAction
     data object RetryMatches : ProfileAction
+    data object RetryProgress : ProfileAction
     data object EditNameClicked : ProfileAction
     data class NameChanged(val value: String) : ProfileAction
     data object SaveName : ProfileAction
@@ -119,12 +154,15 @@ class ProfileViewModel @Inject constructor(
     private val historyRepository: DuelHistoryRepository,
     networkMonitor: NetworkMonitor,
     private val appConfig: AppConfig,
+    private val progressRepository: ProgressRepository,
+    private val clock: WallClock,
 ) : ViewModel() {
 
     private data class Local(
         val headerError: DataError? = null,
         val statsError: DataError? = null,
         val matchesError: DataError? = null,
+        val progressError: DataError? = null,
         val loadsDone: Int = 0,
         val isRefreshing: Boolean = false,
         val editName: EditNameUi? = null,
@@ -139,13 +177,14 @@ class ProfileViewModel @Inject constructor(
     val events: Flow<ProfileEvent> = _events.receiveAsFlow()
 
     val uiState: StateFlow<ProfileUiState> = combine(
-        profileRepository.profile,
+        combine(profileRepository.profile, progressRepository.progress, ::Pair),
         historyRepository.stats,
         historyRepository.matches,
         isOnline,
         local,
-    ) { profile, stats, matches, online, state ->
+    ) { (profile, progress), stats, matches, online, state ->
         buildState(profile, stats, matches, online, state)
+            .copy(progress = section(progress?.toUi(clock.nowMs()), state.progressError))
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ProfileUiState(duelEnabled = appConfig.duelEnabled))
 
     init {
@@ -160,6 +199,7 @@ class ProfileViewModel @Inject constructor(
             ProfileAction.RetryHeader -> launchLoad { loadHeader() }
             ProfileAction.RetryStats -> launchLoad { loadStats() }
             ProfileAction.RetryMatches -> launchLoad { loadMatches() }
+            ProfileAction.RetryProgress -> launchLoad { loadProgress() }
             ProfileAction.EditNameClicked -> viewModelScope.launch {
                 val name = profileRepository.profile.first()?.displayName ?: return@launch
                 local.update { it.copy(editName = EditNameUi(name)) }
@@ -213,6 +253,7 @@ class ProfileViewModel @Inject constructor(
         refreshJob = viewModelScope.launch {
             val jobs = buildList {
                 add(launch { loadHeader() })
+                add(launch { loadProgress() })
                 if (appConfig.duelEnabled) {
                     add(launch { loadStats() })
                     add(launch { loadMatches() })
@@ -230,6 +271,11 @@ class ProfileViewModel @Inject constructor(
     private suspend fun loadHeader() {
         val result = profileRepository.refresh()
         local.update { it.copy(headerError = (result as? DataResult.Failure)?.error) }
+    }
+
+    private suspend fun loadProgress() {
+        val result = progressRepository.refresh()
+        local.update { it.copy(progressError = (result as? DataResult.Failure)?.error) }
     }
 
     private suspend fun loadStats() {
@@ -287,3 +333,26 @@ class ProfileViewModel @Inject constructor(
         else -> NameError.FAILED
     }
 }
+
+/** Server values only; the categories keep the server's `sortOrder` and get the home accent slots. */
+internal fun ProgressSummary.toUi(localNowMs: Long) = ProgressUi(
+    level = level,
+    xpIntoLevel = xpIntoLevel,
+    xpForNextLevel = xpForNextLevel,
+    xpTotal = xpTotal,
+    fraction = RetentionFormat.fraction(xpIntoLevel, xpForNextLevel),
+    streakCurrent = streakCurrent,
+    streakBest = streakBest,
+    todayActive = todayActive.takeUnless { isFromEarlierDay(localNowMs) },
+    freezeAvailable = freezeAvailable,
+    categories = categories.mapIndexed { index, category ->
+        CategoryLevelUi(
+            name = category.name,
+            iconKey = category.iconKey,
+            accent = CategoryAccent.resolve(index),
+            level = category.level,
+            fraction = RetentionFormat.fraction(category.xpIntoLevel, category.xpForNextLevel),
+            xpToNext = (category.xpForNextLevel - category.xpIntoLevel).coerceAtLeast(0),
+        )
+    },
+)

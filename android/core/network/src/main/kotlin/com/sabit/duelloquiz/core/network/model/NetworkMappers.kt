@@ -119,6 +119,7 @@ internal fun NetworkQuizResult.asExternalModel() = QuizResult(
     correctCount = correctCount,
     total = total,
     review = review.sortedBy { it.position }.map { it.asExternalModel() },
+    progress = progress?.asExternalModel(),
 )
 
 internal fun NetworkReviewItem.asExternalModel() = ReviewItem(

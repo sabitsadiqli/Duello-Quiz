@@ -4,12 +4,19 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.common.MonotonicClock
+import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
+import com.sabit.duelloquiz.core.data.repository.ProgressRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
+import com.sabit.duelloquiz.core.designsystem.component.toCardUi
+import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
 import com.sabit.duelloquiz.core.duel.DuelClient
 import com.sabit.duelloquiz.core.duel.DuelClientFactory
 import com.sabit.duelloquiz.core.duel.DuelConnectionState
+import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.duel.DuelClientMessage
 import com.sabit.duelloquiz.core.model.duel.DuelErrorCode
 import com.sabit.duelloquiz.core.model.duel.DuelPhase
@@ -22,6 +29,7 @@ import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundResult
+import com.sabit.duelloquiz.core.notifications.SystemNotifications
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -90,6 +98,9 @@ class DuelViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     networkMonitor: NetworkMonitor,
     private val savedStateHandle: SavedStateHandle,
+    private val progressRepository: ProgressRepository,
+    private val categoryRepository: CategoryRepository,
+    private val systemNotifications: SystemNotifications,
 ) : ViewModel() {
 
     /** The socket belongs to this screen: it is closed (1000) when viewModelScope ends. */
@@ -388,6 +399,7 @@ class DuelViewModel @Inject constructor(
                 mode = Mode.RESULT,
                 result = result,
                 pendingResult = null,
+                progressCard = null,
                 you = it.you ?: players?.you,
                 opponent = it.opponent ?: players?.opponent,
                 leaveDialog = false,
@@ -396,6 +408,46 @@ class DuelViewModel @Inject constructor(
             )
         }
         if (result.outcome == MatchOutcome.WIN) emit(DuelEvent.Haptic(DuelHaptic.STRONG))
+        loadProgressCard(result)
+    }
+
+    /**
+     * PROG-02 / DUEL-20: the progress card from `match.result.progress` (v1.1), shown once with
+     * motion. Abandoned matches get no card. Without `progress` (older server, storing failed)
+     * the app reloads `GET /v1/me/progress` and shows only the level bar and streak row.
+     */
+    private fun loadProgressCard(result: MatchResult) {
+        if (result.outcome == MatchOutcome.ABANDONED) return
+        val dayActive = result.forfeitedBy != DuelSide.SELF
+        if (dayActive) systemNotifications.cancel(ReminderType.STREAK)
+        viewModelScope.launch {
+            val gain = result.progress
+            val card = if (gain != null) {
+                val categories = categoryRepository.categories.first().orEmpty()
+                val capNote = gain.xpCapped && progressRepository.consumeCapNote(CAP_SOURCE, gain.dayKey)
+                gain.toCardUi(categories, showCapNote = capNote, dayActive = dayActive, animate = true)
+            } else {
+                (progressRepository.refresh() as? DataResult.Success)?.value?.let { summary ->
+                    val fraction = RetentionFormat.fraction(summary.xpIntoLevel, summary.xpForNextLevel)
+                    ProgressCardUi(
+                        xpGained = 0,
+                        showCapNote = false,
+                        levelBefore = summary.level,
+                        levelAfter = summary.level,
+                        fractionBefore = fraction,
+                        fractionAfter = fraction,
+                        xpIntoLevel = summary.xpIntoLevel,
+                        xpForNextLevel = summary.xpForNextLevel,
+                        categoryLevelUps = emptyList(),
+                        streakDays = summary.streakCurrent,
+                        streakExtended = false,
+                        dayActive = summary.todayActive,
+                        animate = false,
+                    )
+                }
+            }
+            if (card != null && model.result?.matchId == result.matchId) update { it.copy(progressCard = card) }
+        }
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -676,6 +728,7 @@ class DuelViewModel @Inject constructor(
         /** Navigation argument: resume a saved match (process death, DUEL-16). */
         const val ARG_RESUME = "resume"
         private const val KEY_STARTED = "duel_started"
+        private const val CAP_SOURCE = "duel"
         private const val REF_BET = "round.bet"
         private const val REF_ANSWER = "round.answer"
 

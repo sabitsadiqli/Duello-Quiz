@@ -64,6 +64,9 @@ enum class ApiErrorCode(val wire: String) {
     InternalError("internal_error"),
     AuthProviderError("auth_provider_error"),
     ServiceUnavailable("service_unavailable"),
+    DailyAlreadyPlayed("daily_already_played"),
+    DailyUnavailable("daily_unavailable"),
+    InvalidPushToken("invalid_push_token"),
     Unknown(""),
     ;
 

@@ -16,6 +16,8 @@ dependencies {
     // ObserveAsEvents (lifecycle-aware one-off UI events).
     api(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.core)
+    // rememberNotificationPermissionRequester (Android 13+ runtime permission).
+    implementation(libs.androidx.activity.compose)
     // Question images, review thumbnails and avatars (docs/mvp-spec.md §5).
     implementation(libs.coil.compose)
 

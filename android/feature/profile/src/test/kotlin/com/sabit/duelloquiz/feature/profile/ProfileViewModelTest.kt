@@ -1,7 +1,9 @@
 package com.sabit.duelloquiz.feature.profile
 
 import com.sabit.duelloquiz.core.common.AppConfig
+import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.model.ApiErrorCode
+import com.sabit.duelloquiz.core.model.CategoryProgress
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
@@ -13,6 +15,8 @@ import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestDuelHistoryRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestProfileRepository
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
+import com.sabit.duelloquiz.core.testing.testProgressSummary
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -38,6 +42,8 @@ class ProfileViewModelTest {
     private val network = TestNetworkMonitor()
     private val events = mutableListOf<ProfileEvent>()
 
+    private val progress = TestProgressRepository()
+
     private fun stats(total: Int = 22) = DuelStats(
         DuelRecord(12, 9, 1, total),
         listOf(CalibrationLevel(1, 8, 7), CalibrationLevel(2, 6, 4), CalibrationLevel(3, 6, 2)),
@@ -45,7 +51,10 @@ class ProfileViewModelTest {
 
     private fun TestScope.viewModel(duelEnabled: Boolean = true): ProfileViewModel {
         profile.nextRefresh = DataResult.Success(Profile("u1", "Aysel", null, 1016, createdAtEpochMs = 0))
-        val vm = ProfileViewModel(profile, history, network, AppConfig("1", 1, "", duelEnabled = duelEnabled))
+        val vm = ProfileViewModel(
+            profile, history, network, AppConfig("1", 1, "", duelEnabled = duelEnabled), progress,
+            WallClock { testScheduler.currentTime },
+        )
         backgroundScope.launch { vm.events.collect { events += it } }
         runCurrent()
         return vm
@@ -57,6 +66,50 @@ class ProfileViewModelTest {
         vm.onAction(ProfileAction.NameChanged(value))
         vm.onAction(ProfileAction.SaveName)
         runCurrent()
+    }
+
+    // Progress (PROF-09 … PROF-11)
+
+    @Test
+    fun levelStreakAndCategoryLevelsComeFromTheServer() = runTest {
+        progress.nextRefresh = DataResult.Success(
+            testProgressSummary(streak = 7, todayActive = true).copy(
+                freezeAvailable = true,
+                categories = listOf(
+                    CategoryProgress(1, "cografiya", "Coğrafiya", "geography", 240, 2, 140, 200),
+                    CategoryProgress(2, "tarix", "Tarix", "history", 0, 1, 0, 100),
+                ),
+            ),
+        )
+        val ui = (viewModel(duelEnabled = false).uiState.value.progress as SectionUi.Content).value
+
+        assertEquals(5, ui.level)
+        assertEquals(270L, ui.xpIntoLevel)
+        assertEquals(1_270L, ui.xpTotal)
+        assertEquals(7, ui.streakCurrent)
+        assertEquals(12, ui.streakBest)
+        assertEquals(true, ui.todayActive)
+        assertTrue(ui.freezeAvailable)
+        assertEquals(listOf("Coğrafiya", "Tarix"), ui.categories.map { it.name })
+        assertEquals(listOf(2, 1), ui.categories.map { it.level })
+        assertEquals(60L, ui.categories[0].xpToNext)
+        // Same accent slots as the home tiles (server order).
+        assertEquals(listOf("violet", "blue"), ui.categories.map { it.accent })
+    }
+
+    @Test
+    fun anOldCacheHidesTheTodayLineAndAFailureWithoutCacheIsAnError() = runTest {
+        progress.nextRefresh = DataResult.Success(testProgressSummary(todayActive = true, nextResetEpochMs = -1))
+        val stale = (viewModel().uiState.value.progress as SectionUi.Content).value
+        assertNull(stale.todayActive)
+
+        val failing = TestProgressRepository()
+        failing.nextRefresh = DataResult.Failure(DataError.Server)
+        val vm = ProfileViewModel(
+            profile, history, network, AppConfig("1", 1, ""), failing, WallClock { testScheduler.currentTime },
+        )
+        runCurrent()
+        assertEquals(SectionUi.Error, vm.uiState.value.progress)
     }
 
     // Sections (PROF-01 … PROF-08)

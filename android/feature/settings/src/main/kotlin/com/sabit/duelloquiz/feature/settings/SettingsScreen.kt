@@ -38,6 +38,9 @@ import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import com.sabit.duelloquiz.core.model.ThemeMode
+import com.sabit.duelloquiz.feature.settings.notifications.NotificationSectionRoute
+import com.sabit.duelloquiz.feature.settings.notifications.NotificationSettingsMessage
+import com.sabit.duelloquiz.feature.settings.notifications.NotificationSettingsViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,6 +48,7 @@ internal fun SettingsRoute(
     onBack: () -> Unit,
     onDeleteAccount: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationSettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -62,7 +66,26 @@ internal fun SettingsRoute(
         }
     }
 
-    SettingsScreen(uiState = uiState, onAction = viewModel::onAction, snackbarHostState = snackbarHostState)
+    SettingsScreen(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        snackbarHostState = snackbarHostState,
+        notificationSection = {
+            NotificationSectionRoute(notificationsViewModel) { message ->
+                scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarHostState.showSnackbar(
+                        resources.getString(
+                            when (message) {
+                                NotificationSettingsMessage.SaveFailed -> R.string.settings_notif_save_failed
+                                NotificationSettingsMessage.Offline -> R.string.settings_notif_offline
+                            },
+                        ),
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -70,6 +93,7 @@ internal fun SettingsScreen(
     uiState: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    notificationSection: @Composable () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -89,6 +113,8 @@ internal fun SettingsScreen(
             LazyColumn {
                 item(key = "theme") { ThemeSection(uiState.themeMode, onAction) }
                 item(key = "language") { LanguageSection() }
+                // SET-07: between "Dil" and "Hesab" (settings.md 4a–4d).
+                item(key = "notifications") { notificationSection() }
                 item(key = "account") { AccountSection(uiState, onAction) }
                 item(key = "about") { AboutSection(uiState, onAction) }
                 item(key = "bottom") { Spacer(Modifier.height(Spacing.xl)) }

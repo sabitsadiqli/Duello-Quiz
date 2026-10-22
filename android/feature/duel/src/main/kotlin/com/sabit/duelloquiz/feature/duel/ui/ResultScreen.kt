@@ -1,8 +1,11 @@
 package com.sabit.duelloquiz.feature.duel.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,23 +50,24 @@ import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
-import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCard
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
+import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
 import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
-import com.sabit.duelloquiz.core.designsystem.theme.gradients
-import com.sabit.duelloquiz.core.designsystem.theme.toBrush
-import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
+import com.sabit.duelloquiz.core.designsystem.theme.gradients
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
+import com.sabit.duelloquiz.core.designsystem.theme.toBrush
 import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
@@ -100,6 +104,13 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
                 }
                 Spacer(Modifier.height(Spacing.lg))
                 RatingCard(result)
+                // duel-result.md 3a: right below the rating card; never contains Elo.
+                AnimatedVisibility(
+                    visible = result.progress != null,
+                    enter = expandVertically(tween(Motion.MEDIUM_2, easing = Motion.EmphasizedDecelerate)) + fadeIn(tween(Motion.MEDIUM_2)),
+                ) {
+                    result.progress?.let { ProgressCard(it, modifier = Modifier.padding(top = Spacing.lg)) }
+                }
                 result.calibration?.let { levels ->
                     Spacer(Modifier.height(Spacing.xl))
                     MatchCalibrationCard(levels, result.hint)

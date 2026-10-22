@@ -1,6 +1,7 @@
 package com.sabit.duelloquiz.core.model.duel
 
 import androidx.compose.runtime.Immutable
+import com.sabit.duelloquiz.core.model.ProgressGain
 import com.sabit.duelloquiz.core.model.QuestionImage
 import com.sabit.duelloquiz.core.model.QuizOption
 
@@ -114,6 +115,8 @@ data class MatchResult(
     val suddenDeathPlayed: Int,
     val calibration: List<CalibrationLevel>,
     val rounds: List<CompactRound>,
+    /** v1.1: XP, level and streak change of the receiver; null when missing (older match). */
+    val progress: ProgressGain? = null,
 )
 
 enum class DuelPhase { INTRO, QUESTION, CONFIDENCE, ANSWER, RESULT }

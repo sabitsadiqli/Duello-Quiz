@@ -1,6 +1,7 @@
 package com.sabit.duelloquiz
 
 import android.app.UiModeManager
+import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -19,22 +20,35 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.isDarkTheme
+import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.ThemeMode
+import com.sabit.duelloquiz.core.notifications.NotificationIntents
+import com.sabit.duelloquiz.core.notifications.ReminderOpens
+import com.sabit.duelloquiz.core.notifications.SystemNotifications
 import com.sabit.duelloquiz.navigation.DuelloNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainActivityViewModel by viewModels()
 
+    @Inject
+    lateinit var reminderOpens: ReminderOpens
+
+    @Inject
+    lateinit var systemNotifications: SystemNotifications
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // NOTIF-05: opened by tapping a reminder (only on a fresh start, not after recreation).
+        if (savedInstanceState == null) handleReminderIntent(intent)
 
         // Never a blank frame or the wrong first screen: keep the splash until theme and
         // sign-in state are known, with no upper time limit (AUTH-01).
@@ -68,6 +82,24 @@ class MainActivity : ComponentActivity() {
                 DuelloNavHost(authState = ready.authState, duelEnabled = BuildConfig.DUEL_ENABLED)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleReminderIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The user may have changed the permission or channels in the system settings (NOTIF-02).
+        systemNotifications.refresh()
+    }
+
+    /** Only the reminder type is read; home shows the current server state (NOTIF-05). */
+    private fun handleReminderIntent(intent: Intent?) {
+        val type = ReminderType.fromWire(intent?.getStringExtra(NotificationIntents.EXTRA_TYPE)) ?: return
+        intent?.removeExtra(NotificationIntents.EXTRA_TYPE)
+        reminderOpens.onOpened(type)
     }
 
     /**

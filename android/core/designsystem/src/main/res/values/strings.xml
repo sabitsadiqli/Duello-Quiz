@@ -417,4 +417,141 @@
     <string name="profile_edit_saved">Adın dəyişdirildi.</string>
     <string name="profile_edit_offline">Adı dəyişmək üçün internet lazımdır.</string>
     <string name="profile_edit_failed">Adı dəyişmək alınmadı. Yenidən cəhd et.</string>
+
+    <!-- daily_ / home_daily_ (retention, 2026-10-22) -->
+    <string name="daily_title">Gündəlik çağırış</string>
+    <string name="daily_number">#%1$d</string>
+    <plurals name="home_daily_hint">
+        <item quantity="one">%1$d sual · hamı üçün eyni</item>
+        <item quantity="other">%1$d sual · hamı üçün eyni</item>
+    </plurals>
+    <string name="home_daily_in_progress_hint">Başladığın çağırışı bitir. Vaxt dayanmır.</string>
+    <string name="home_daily_start">Başla</string>
+    <string name="home_daily_resume">Davam et</string>
+    <string name="home_daily_next_countdown">Növbəti çağırış: %1$s</string>
+    <string name="home_daily_refreshing">Yeni çağırış yüklənir…</string>
+    <string name="home_daily_unavailable">Bu günün çağırışı hazır deyil. Sabah yenidən yoxla.</string>
+    <string name="home_daily_offline_unknown">Bugünkü çağırışı görmək üçün internet lazımdır.</string>
+    <string name="home_daily_error">Çağırışı yükləmək alınmadı.</string>
+    <string name="home_daily_needs_internet">Gündəlik çağırış üçün internet lazımdır.</string>
+    <plurals name="home_daily_card_cd">
+        <item quantity="one">Gündəlik çağırış %1$d, %2$d sual. Başla.</item>
+        <item quantity="other">Gündəlik çağırış %1$d, %2$d sual. Başla.</item>
+    </plurals>
+    <string name="home_daily_card_in_progress_cd">Gündəlik çağırış %1$d davam edir. Davam et.</string>
+    <string name="home_daily_card_finished_cd">Gündəlik çağırış %1$d: %3$d sualdan %2$d düzgün. Növbəti çağırışa %4$d saat %5$d dəqiqə qalıb.</string>
+    <string name="daily_score_short">%1$d / %2$d</string>
+    <string name="daily_close_cd">Çağırışdan çıx</string>
+    <string name="daily_start_error">Çağırışı başlatmaq alınmadı.</string>
+    <string name="daily_exit_title">Çağırışdan çıxmaq istəyirsən?</string>
+    <string name="daily_exit_body">Çıxsan da vaxt gedir. Bugünkü cəhdin bitəndə yenidən oynamaq olmayacaq.</string>
+    <string name="daily_exit_confirm">Çıx</string>
+    <string name="daily_result_correct_count">%1$d / %2$d düzgün</string>
+    <string name="daily_result_score_cd">Gündəlik çağırış %3$d: %2$d sualdan %1$d düzgün cavab</string>
+    <string name="daily_result_message_perfect">Hamısı düzgün! Bugünkü çağırış tam sənindir.</string>
+    <string name="daily_result_message_good">Əla nəticə! Sabah yeni çağırış səni gözləyir.</string>
+    <string name="daily_result_message_low">Başlanğıc var! Səhvlərə bax, sabah daha yaxşı olacaq.</string>
+    <string name="daily_result_message_zero">Bu dəfə alınmadı, amma hər sual yeni bilikdir. Sabah yenə gəl!</string>
+    <string name="daily_result_expired_note">Vaxt bitdi. Cavab verilməmiş suallar düzgün sayılmadı.</string>
+    <string name="daily_result_not_synced">Nəticə serverə göndərilə bilmədi. İnternet qayıdanda yenidən göndərəcəyik, XP və seriya sonra görünəcək.</string>
+    <string name="daily_share_card_title">Nəticən</string>
+    <string name="daily_share_card_hint">Paylaşanda cavablar görünmür — yalnız rənglər.</string>
+    <string name="daily_share">Paylaş</string>
+    <string name="daily_share_pending">Nəticə hələ təsdiqlənməyib</string>
+    <string name="daily_share_chooser_title">Nəticəni paylaş</string>
+    <string name="daily_share_title">Duello Quiz · Gündəlik çağırış #%1$d</string>
+    <string name="daily_share_square_correct" translatable="false">🟩</string>
+    <string name="daily_share_square_wrong" translatable="false">🟥</string>
+    <string name="daily_share_square_none" translatable="false">⬜</string>
+    <string name="daily_share_score">%1$d/%2$d</string>
+    <plurals name="daily_share_streak">
+        <item quantity="one">Seriya: %1$d gün</item>
+        <item quantity="other">Seriya: %1$d gün</item>
+    </plurals>
+    <string name="daily_share_link" translatable="false">https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="daily_squares_cd">Nəticələr: %1$s</string>
+    <string name="daily_square_item_cd">sual %1$d %2$s</string>
+    <string name="daily_square_correct_cd">düzgün</string>
+    <string name="daily_square_wrong_cd">səhv</string>
+    <string name="daily_square_none_cd">cavab verilməyib</string>
+    <string name="daily_square_pending_cd">təsdiqlənməyib</string>
+
+    <!-- progress_ / home_streak_ (retention, 2026-10-22) -->
+    <string name="progress_level">Səviyyə %1$d</string>
+    <string name="progress_level_cd">səviyyə %1$d</string>
+    <string name="progress_xp_gained">+%1$s XP</string>
+    <string name="progress_xp_into_level">%1$s / %2$s XP</string>
+    <string name="progress_level_up">Yeni səviyyə: %1$d!</string>
+    <string name="progress_level_up_cd">Yeni səviyyəyə çatdın: %1$d.</string>
+    <string name="progress_category_level_up">%1$s: səviyyə %2$d</string>
+    <string name="progress_xp_capped">Bu gün bu oyun növündən maksimum XP qazandın.</string>
+    <plurals name="progress_streak_days">
+        <item quantity="one">Seriya: %1$d gün</item>
+        <item quantity="other">Seriya: %1$d gün</item>
+    </plurals>
+    <string name="progress_streak_extended">+1 gün</string>
+    <plurals name="progress_streak_extended_cd">
+        <item quantity="one">Seriyan uzandı: %1$d gün.</item>
+        <item quantity="other">Seriyan uzandı: %1$d gün.</item>
+    </plurals>
+    <string name="progress_card_cd">%1$s XP qazandın. Səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb.</string>
+    <string name="progress_card_no_xp_cd">Səviyyə %1$d, növbəti səviyyəyə %2$s XP qalıb.</string>
+    <plurals name="progress_streak_cd_active">
+        <item quantity="one">%1$d günlük seriya, bu gün oynamısan</item>
+        <item quantity="other">%1$d günlük seriya, bu gün oynamısan</item>
+    </plurals>
+    <plurals name="progress_streak_cd_inactive">
+        <item quantity="one">%1$d günlük seriya, bu gün hələ oynamamısan</item>
+        <item quantity="other">%1$d günlük seriya, bu gün hələ oynamamısan</item>
+    </plurals>
+    <string name="progress_streak_freeze_cd">seriya qoruyucusu var</string>
+    <string name="home_streak_hint">Seriyanı qoru: bu gün bir oyun oyna.</string>
+    <string name="home_streak_freeze_used">Seriya qoruyucusu dünən seriyanı qorudu.</string>
+    <plurals name="home_streak_lost">
+        <item quantity="one">Seriyan bitdi, amma ən uzun seriyan %1$d gün olaraq qalır. Bu gün yenidən başla!</item>
+        <item quantity="other">Seriyan bitdi, amma ən uzun seriyan %1$d gün olaraq qalır. Bu gün yenidən başla!</item>
+    </plurals>
+    <string name="profile_level_title">Səviyyə %1$d</string>
+    <string name="profile_level_total">Cəmi %1$s XP</string>
+    <string name="profile_level_to_next">Növbəti səviyyəyə %1$s XP</string>
+    <string name="profile_level_cd">Səviyyə %1$d. %2$s / %3$s XP. Növbəti səviyyəyə %4$s XP qalıb. Cəmi %5$s XP.</string>
+    <plurals name="profile_streak_current">
+        <item quantity="one">Seriya: %1$d gün</item>
+        <item quantity="other">Seriya: %1$d gün</item>
+    </plurals>
+    <plurals name="profile_streak_best">
+        <item quantity="one">Ən uzun seriya: %1$d gün</item>
+        <item quantity="other">Ən uzun seriya: %1$d gün</item>
+    </plurals>
+    <string name="profile_streak_today_done">Bu gün oynamısan</string>
+    <string name="profile_streak_today_pending">Bu gün hələ oynamamısan</string>
+    <string name="profile_streak_freeze_available">Seriya qoruyucusu: var</string>
+    <string name="profile_streak_freeze_earn">Seriya qoruyucusu %1$d günlük seriyada qazanılır</string>
+    <string name="profile_streak_empty">Hələ seriyan yoxdur. Bu gün bir oyun oyna və başla.</string>
+    <string name="profile_streak_cd">Seriya %1$d gün, ən uzun seriya %2$d gün</string>
+    <string name="profile_categories_title">Kateqoriyalar</string>
+    <string name="profile_category_level_cd">%1$s: səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb</string>
+
+    <!-- notif_ / settings_notif_ (retention, 2026-10-22) -->
+    <string name="notif_prompt_title">Xatırladaq?</string>
+    <string name="notif_prompt_body">Gündəlik çağırış hazır olanda və seriyan bitmək üzrə olanda sənə xəbər verək.</string>
+    <string name="notif_prompt_allow">İcazə ver</string>
+    <string name="notif_prompt_later">Sonra</string>
+    <string name="notif_open_settings">Ayarları aç</string>
+    <string name="notif_enabled_snackbar">Bildirişlər açıldı. Parametrlərdən istədiyin vaxt dəyişə bilərsən.</string>
+    <string name="settings_section_notifications">Bildirişlər</string>
+    <string name="settings_notif_daily">Gündəlik çağırış xatırlatması</string>
+    <string name="settings_notif_daily_supporting">Səhər, bugünkü çağırışı hələ oynamamısansa</string>
+    <string name="settings_notif_streak">Seriya xatırlatması</string>
+    <string name="settings_notif_streak_supporting">Axşam, seriyan varsa və bu gün hələ oynamamısansa</string>
+    <string name="settings_notif_blocked">Bildirişlər telefonda söndürülüb.</string>
+    <string name="settings_notif_open_system">Ayarları aç</string>
+    <string name="settings_notif_channel_off">Telefonda söndürülüb</string>
+    <string name="settings_notif_load_error">Bildiriş ayarlarını yükləmək alınmadı.</string>
+    <string name="settings_notif_save_failed">Dəyişikliyi yadda saxlamaq alınmadı.</string>
+    <string name="settings_notif_offline">Bildiriş ayarlarını dəyişmək üçün internet lazımdır.</string>
+    <string name="notif_channel_daily_name">Gündəlik çağırış</string>
+    <string name="notif_channel_daily_description">Bugünkü çağırışı hələ oynamamısansa, səhər xatırladırıq.</string>
+    <string name="notif_channel_streak_name">Seriya</string>
+    <string name="notif_channel_streak_description">Seriyan bitmək üzrə olanda axşam xatırladırıq.</string>
 </resources>

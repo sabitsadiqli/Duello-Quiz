@@ -4,17 +4,25 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.model.ApiErrorCode
+import com.sabit.duelloquiz.core.model.Category
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.QuizOption
 import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
+import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.ReviewItem
-import com.sabit.duelloquiz.core.model.Category
+import com.sabit.duelloquiz.core.model.SystemNotificationState
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestCategoryRepository
+import com.sabit.duelloquiz.core.testing.TestDailyRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
+import com.sabit.duelloquiz.core.testing.TestNotificationPromptRepository
+import com.sabit.duelloquiz.core.testing.TestNotificationSettingsRepository
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import com.sabit.duelloquiz.core.testing.TestQuizRepository
+import com.sabit.duelloquiz.core.testing.TestSystemNotifications
+import com.sabit.duelloquiz.core.testing.testProgressGain
 import com.sabit.duelloquiz.core.testing.testQuizSession
 import com.sabit.duelloquiz.feature.quiz.review.QuizReviewAction
 import com.sabit.duelloquiz.feature.quiz.review.QuizReviewUiState
@@ -51,8 +59,15 @@ class QuizResultViewModelTest {
         ),
     )
 
-    private fun TestScope.viewModel(sessionClosed: Boolean = false) =
-        QuizResultViewModel(repository, categories, monitor, WallClock { testScheduler.currentTime }, handle(sessionClosed))
+    private val progress = TestProgressRepository()
+    private val system = TestSystemNotifications()
+    private val prompts = TestNotificationPromptRepository()
+    private val notificationSettings = TestNotificationSettingsRepository()
+
+    private fun TestScope.viewModel(sessionClosed: Boolean = false) = QuizResultViewModel(
+        repository, categories, progress, system, prompts, notificationSettings, monitor,
+        WallClock { testScheduler.currentTime }, handle(sessionClosed),
+    )
 
     private suspend fun answer(vararg optionIds: String) {
         optionIds.forEachIndexed { index, optionId -> repository.submitAnswer("session-1", "q${index + 1}", optionId, 1_000) }
@@ -60,6 +75,80 @@ class QuizResultViewModelTest {
 
     private fun review(count: Int) = (1..count).map {
         ReviewItem("q$it", it, "Sual $it", null, null, QuizOption("q$it-a", "A"), null)
+    }
+
+    // XP and permission card (PROG-02, PROG-09, NOTIF-01)
+
+    @Test
+    fun theProgressCardComesFromTheServerAndTheStreakReminderIsRemoved() = runTest {
+        repository.register(testQuizSession())
+        answer("q1-a")
+        system.set(SystemNotificationState.AllAllowed)
+        repository.finishResult = DataResult.Success(
+            QuizResult("session-1", QuizSessionStatus.FINISHED, 1, 1, 10, review(9), progress = testProgressGain(xp = 10, levelBefore = 4, levelAfter = 5)),
+        )
+        val vm = viewModel()
+        runCurrent()
+
+        val card = vm.uiState.value.progress
+        assertEquals(10, card?.xpGained)
+        assertTrue(card?.leveledUp == true)
+        assertTrue(card?.animate == true)
+        assertEquals(listOf(ReminderType.STREAK), system.cancelled)
+        // Granted already: no permission card.
+        assertNull(vm.uiState.value.permissionCard)
+    }
+
+    @Test
+    fun noProgressCardWhileFinishFailsAndNoXpLineForZero() = runTest {
+        repository.register(testQuizSession())
+        repository.finishResult = DataResult.Failure(DataError.Offline)
+        val offline = viewModel()
+        runCurrent()
+        assertNull(offline.uiState.value.progress)
+
+        repository.register(testQuizSession())
+        repository.finishResult = DataResult.Success(
+            QuizResult("session-1", QuizSessionStatus.EXPIRED, 0, 0, 10, review(10), progress = testProgressGain(xp = 0, extended = false)),
+        )
+        val zero = viewModel()
+        runCurrent()
+        assertEquals(0, zero.uiState.value.progress?.xpGained)
+        assertFalse(zero.uiState.value.progress?.showCapNote == true)
+    }
+
+    @Test
+    fun theCapNoteIsShownOncePerDay() = runTest {
+        repository.register(testQuizSession())
+        answer("q1-a")
+        repository.finishResult = DataResult.Success(
+            QuizResult("session-1", QuizSessionStatus.FINISHED, 1, 1, 10, review(9), progress = testProgressGain(xp = 0, capped = true)),
+        )
+        val first = viewModel()
+        runCurrent()
+        val second = viewModel()
+        runCurrent()
+
+        assertTrue(first.uiState.value.progress?.showCapNote == true)
+        assertFalse(second.uiState.value.progress?.showCapNote == true)
+    }
+
+    @Test
+    fun thePermissionCardAppearsOnTheFirstResultOnly() = runTest {
+        system.set(SystemNotificationState(permissionGranted = false, appNotificationsEnabled = true, dailyChannelEnabled = true, streakChannelEnabled = true))
+        repository.register(testQuizSession())
+        repository.finishResult = DataResult.Success(QuizResult("session-1", QuizSessionStatus.FINISHED, 0, 0, 10, review(10)))
+        val first = viewModel()
+        runCurrent()
+        assertEquals(PermissionCardUi(blocked = false), first.uiState.value.permissionCard)
+        first.onAction(QuizResultAction.PermissionLaterClicked)
+        runCurrent()
+        assertNull(first.uiState.value.permissionCard)
+
+        // The next result within 7 days: no card.
+        val next = viewModel()
+        runCurrent()
+        assertNull(next.uiState.value.permissionCard)
     }
 
     @Test
@@ -245,7 +334,7 @@ class QuizResultViewModelTest {
                 ),
             ),
         )
-        val vm = QuizReviewViewModel(repository, SavedStateHandle(mapOf("sessionId" to "session-1")))
+        val vm = QuizReviewViewModel(repository, TestDailyRepository(), SavedStateHandle(mapOf("sessionId" to "session-1")))
         runCurrent()
 
         val items = (vm.uiState.value as QuizReviewUiState.Content).items
@@ -260,7 +349,7 @@ class QuizResultViewModelTest {
     fun reviewOfflineShowsAnErrorAndRetries() = runTest {
         repository.register(testQuizSession())
         repository.finishResult = DataResult.Failure(DataError.Offline)
-        val vm = QuizReviewViewModel(repository, SavedStateHandle(mapOf("sessionId" to "session-1")))
+        val vm = QuizReviewViewModel(repository, TestDailyRepository(), SavedStateHandle(mapOf("sessionId" to "session-1")))
         runCurrent()
         assertEquals(QuizReviewUiState.Error(offline = true), vm.uiState.value)
 

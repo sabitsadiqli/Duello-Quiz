@@ -59,6 +59,23 @@ object DuelloIcons {
     @DrawableRes val Swords = R.drawable.ic_swords
     @DrawableRes val Rule = R.drawable.ic_rule
 
+    // Retention (components.md §24–§31). "Filled" variants come from Material Icons Round.
+    @DrawableRes val ArrowCircleUp = R.drawable.ic_arrow_circle_up
+    @DrawableRes val EventBusy = R.drawable.ic_event_busy
+    @DrawableRes val Flame = R.drawable.ic_local_fire_department
+    @DrawableRes val FlameFilled = R.drawable.ic_local_fire_department_filled
+    @DrawableRes val NotificationsActive = R.drawable.ic_notifications_active
+    @DrawableRes val NotificationsOff = R.drawable.ic_notifications_off
+    @DrawableRes val PlayArrow = R.drawable.ic_play_arrow
+    @DrawableRes val Remove = R.drawable.ic_remove
+    @DrawableRes val RestartAlt = R.drawable.ic_restart_alt
+    @DrawableRes val Schedule = R.drawable.ic_schedule
+    @DrawableRes val Share = R.drawable.ic_share
+    @DrawableRes val Shield = R.drawable.ic_shield
+    @DrawableRes val ShieldFilled = R.drawable.ic_shield_filled
+    @DrawableRes val StarFilled = R.drawable.ic_star_filled
+    @DrawableRes val Today = R.drawable.ic_today
+
     /**
      * Category icon by the server `iconKey` (OQ-044, components.md §5). Unknown keys get the
      * generic `category` icon, so a new server category never needs an app update (HOME-01).

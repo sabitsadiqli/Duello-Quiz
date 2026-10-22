@@ -49,7 +49,7 @@ fun ThemeMode.isDarkTheme(): Boolean = when (this) {
 }
 
 /**
- * Duello Quiz theme built from design/tokens.json 2.0.0. Dynamic colour (Material You) is off on
+ * Duello Quiz theme built from design/tokens.json 2.1.0. Dynamic colour (Material You) is off on
  * purpose: brand, game and category colours must stay consistent and contrast-checked.
  */
 @Composable

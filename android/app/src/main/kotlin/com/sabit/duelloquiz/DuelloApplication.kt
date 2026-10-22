@@ -9,6 +9,8 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import com.sabit.duelloquiz.core.data.repository.AccountRepository
+import com.sabit.duelloquiz.core.notifications.PushRegistrar
+import com.sabit.duelloquiz.core.notifications.ReminderChannels
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -18,10 +20,17 @@ class DuelloApplication : Application(), SingletonImageLoader.Factory {
     @Inject
     lateinit var accountRepository: AccountRepository
 
+    @Inject
+    lateinit var pushRegistrar: PushRegistrar
+
     override fun onCreate() {
         super.onCreate()
         // AUTH-07: no data of a signed-out account stays on the device.
         accountRepository.startSignOutCleanup()
+        // NOTIF-06: one channel per reminder type, names from resources (never asks for permission).
+        ReminderChannels.create(this)
+        // NOTIF-02: keep this device's push token registered for the signed-in account.
+        pushRegistrar.start()
     }
 
     /**

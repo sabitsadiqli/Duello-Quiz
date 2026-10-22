@@ -1,4 +1,4 @@
-// GENERATED from design/tokens.json 2.0.0 (color.<theme>.scheme, .game, .category, .gradient).
+// GENERATED from design/tokens.json 2.1.0 (color.<theme>.scheme, .game, .category, .gradient).
 // Keep 1:1 with the tokens; ColorTokensTest fails when they drift.
 package com.sabit.duelloquiz.core.designsystem.theme
 
@@ -134,6 +134,10 @@ data class GameColors(
     val bannerWarningContainer: Color,
     val onBannerWarningContainer: Color,
     val imagePlaceholderFallback: Color,
+    /** 2.1.0: the streak flame (icon colour) and its container (home badge, "+1 gün" chip). */
+    val streak: Color,
+    val streakContainer: Color,
+    val onStreakContainer: Color,
 )
 
 internal val LightGameColors = GameColors(
@@ -183,6 +187,9 @@ internal val LightGameColors = GameColors(
     bannerWarningContainer = Color(0xFFFFE3C2),
     onBannerWarningContainer = Color(0xFF3D1C00),
     imagePlaceholderFallback = Color(0xFFE4DFF7),
+    streak = Color(0xFFC2410C),
+    streakContainer = Color(0xFFFFE4D4),
+    onStreakContainer = Color(0xFF4A1500),
 )
 
 internal val DarkGameColors = GameColors(
@@ -232,6 +239,9 @@ internal val DarkGameColors = GameColors(
     bannerWarningContainer = Color(0xFF6B3300),
     onBannerWarningContainer = Color(0xFFFFDDB8),
     imagePlaceholderFallback = Color(0xFF353057),
+    streak = Color(0xFFFF9A5C),
+    streakContainer = Color(0xFF4D1F08),
+    onStreakContainer = Color(0xFFFFDCC8),
 )
 
 /** One accent slot of color.<theme>.category (components.md §5). */
@@ -266,23 +276,48 @@ internal val DarkCategoryColors: Map<String, CategoryColors> = mapOf(
     "ocean" to CategoryColors(face = Color(0xFF0B6E99), onFace = Color(0xFFFFFFFF), depth = Color(0xFF033349), container = Color(0xFF0A3447), onContainer = Color(0xFFCDEAF7)),
 )
 
-/** A two-stop linear gradient of color.<theme>.gradient; [on] is the text colour on it. */
+/**
+ * A two-stop linear gradient of color.<theme>.gradient; [on] is the text colour on it and [depth]
+ * the solid bottom edge when the token defines one (dailyHero).
+ */
 @Immutable
-data class GradientColors(val start: Color, val end: Color, val angleDegrees: Float, val on: Color)
+data class GradientColors(
+    val start: Color,
+    val end: Color,
+    val angleDegrees: Float,
+    val on: Color,
+    val depth: Color = Color.Unspecified,
+)
 
 /** color.<theme>.gradient */
 @Immutable
 data class DuelloGradients(
     val duelHero: GradientColors,
     val resultWin: GradientColors,
+    /** 2.1.0: daily challenge card and daily result hero (sky blue → teal). */
+    val dailyHero: GradientColors,
 )
 
 internal val LightGradients = DuelloGradients(
     duelHero = GradientColors(start = Color(0xFF5334E6), end = Color(0xFFC2187A), angleDegrees = 135f, on = Color(0xFFFFFFFF)),
     resultWin = GradientColors(start = Color(0xFF5334E6), end = Color(0xFF0068C9), angleDegrees = 135f, on = Color(0xFFFFFFFF)),
+    dailyHero = GradientColors(
+        start = Color(0xFF0068C9),
+        end = Color(0xFF00796B),
+        angleDegrees = 135f,
+        on = Color(0xFFFFFFFF),
+        depth = Color(0xFF004A8F),
+    ),
 )
 
 internal val DarkGradients = DuelloGradients(
     duelHero = GradientColors(start = Color(0xFF5334E6), end = Color(0xFFC2187A), angleDegrees = 135f, on = Color(0xFFFFFFFF)),
     resultWin = GradientColors(start = Color(0xFF5334E6), end = Color(0xFF0068C9), angleDegrees = 135f, on = Color(0xFFFFFFFF)),
+    dailyHero = GradientColors(
+        start = Color(0xFF0068C9),
+        end = Color(0xFF00796B),
+        angleDegrees = 135f,
+        on = Color(0xFFFFFFFF),
+        depth = Color(0xFF004A8F),
+    ),
 )

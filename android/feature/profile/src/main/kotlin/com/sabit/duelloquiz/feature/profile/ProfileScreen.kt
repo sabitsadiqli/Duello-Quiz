@@ -39,8 +39,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -50,6 +48,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -66,11 +66,11 @@ import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
 import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
-import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.DuelloStateView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextField
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
+import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
 import com.sabit.duelloquiz.core.designsystem.component.SkeletonBlock
 import com.sabit.duelloquiz.core.designsystem.component.rememberSkeletonAlpha
@@ -164,6 +164,7 @@ internal fun ProfileScreen(
                         }
                     }
                     item(key = "header") { HeaderSection(uiState.header, onAction) }
+                    progressSections(uiState.progress, onAction)
                     if (uiState.duelEnabled) duelSections(uiState, onAction)
                 }
             }
@@ -228,6 +229,28 @@ private fun HeaderSection(header: SectionUi<ProfileHeaderUi>, onAction: (Profile
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+        }
+    }
+}
+
+/** progression.md C: level card, streak card, category levels — always shown (PROF-09). */
+private fun LazyListScope.progressSections(progress: SectionUi<ProgressUi>, onAction: (ProfileAction) -> Unit) {
+    when (progress) {
+        SectionUi.Loading -> {
+            item(key = "level_skeleton") { SectionBox { CardSkeleton() } }
+            item(key = "streak_skeleton") { Box(Modifier.padding(top = Spacing.lg)) { CardSkeleton() } }
+        }
+        SectionUi.Error -> item(key = "progress_error") {
+            SectionBox { SectionError(onRetry = { onAction(ProfileAction.RetryProgress) }) }
+        }
+        is SectionUi.Content -> {
+            item(key = "level") { SectionBox { LevelCard(progress.value) } }
+            item(key = "streak") { StreakCard(progress.value, modifier = Modifier.padding(top = Spacing.lg)) }
+            if (progress.value.categories.isNotEmpty()) {
+                item(key = "category_levels") {
+                    SectionBox { CategoryLevelsSection(progress.value.categories) }
                 }
             }
         }

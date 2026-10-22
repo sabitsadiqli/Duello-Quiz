@@ -110,6 +110,14 @@ object Sizes {
     val statusLineHeight = 24.dp
     val statusIndicator = 16.dp
 
+    /** tokens 2.1.0: retention (components.md §24–§28). */
+    val resultSquare = 40.dp
+    val resultSquareCompact = 24.dp
+    val levelBadge = 56.dp
+    val streakBadgeMinWidth = 56.dp
+    val xpBarHeight = 12.dp
+    val xpBarMiniHeight = 8.dp
+
     /** Skeleton text bars (home header, category card). */
     val skeletonLineHeight = 12.dp
     val skeletonLineWidth = 120.dp
@@ -169,6 +177,27 @@ object GameSizes {
 
     /** duel player panel padding (components.md §16). */
     val playerPanelPadding = 10.dp
+
+    /** components.md §24: streak flame, freeze dot (20dp circle, 14dp shield, 2dp ring). */
+    val streakFlame = 28.dp
+    val freezeDot = 20.dp
+    val freezeDotIcon = 14.dp
+    val freezeDotRing = 2.dp
+
+    /** components.md §27: glyphs of the large and compact result squares. */
+    val resultSquareGlyph = 20.dp
+    val resultSquareGlyphCompact = 14.dp
+
+    /** components.md §26 / §30: category level-up square, permission card circle, flame on profile. */
+    val categoryLevelUpBox = 24.dp
+    val permissionIconCircle = 48.dp
+    val profileStreakFlame = 40.dp
+
+    /** components.md §25: the mini XP bar moves under the level chip below this width. */
+    val miniBarMinWidth = 48.dp
+
+    /** components.md §28: daily card vertical padding (same frame as the duel hero card). */
+    val dailyCardPaddingVertical = 18.dp
 }
 
 /** elevation from design/tokens.json (Material 3 tonal elevation levels). */

@@ -5,8 +5,11 @@ import app.cash.turbine.test
 import com.sabit.duelloquiz.core.auth.AuthError
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.auth.AuthResult
+import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
+import com.sabit.duelloquiz.core.common.WallClock
+import com.sabit.duelloquiz.core.duel.ActiveDuel
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.AuthProvider
 import com.sabit.duelloquiz.core.model.AuthUser
@@ -14,10 +17,14 @@ import com.sabit.duelloquiz.core.model.Category
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.notifications.ReminderOpens
+import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestCategoryRepository
+import com.sabit.duelloquiz.core.testing.TestDailyRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestProfileRepository
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import com.sabit.duelloquiz.core.testing.TestQuizRepository
 import com.sabit.duelloquiz.core.testing.TestVerificationBannerRepository
 import io.mockk.coEvery
@@ -38,9 +45,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
-import com.sabit.duelloquiz.core.common.AppConfig
-import com.sabit.duelloquiz.core.duel.ActiveDuel
-import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -76,6 +80,9 @@ class HomeViewModelTest {
         Category(2, "tarix", "Tarix", "history"),
     )
     private val profile = Profile(id = "p1", displayName = "Aysel", avatarUrl = null, rating = 1000)
+    private val progressRepository = TestProgressRepository()
+    private val dailyRepository = TestDailyRepository()
+    private val reminderOpens = ReminderOpens()
 
     private fun TestScope.viewModel(): HomeViewModel {
         val vm = HomeViewModel(
@@ -88,6 +95,10 @@ class HomeViewModelTest {
             savedStateHandle,
             appConfig,
             activeDuels,
+            progressRepository,
+            dailyRepository,
+            reminderOpens,
+            WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
         return vm
@@ -110,7 +121,8 @@ class HomeViewModelTest {
 
         val content = vm.uiState.value.categories as CategoriesUi.Content
         assertEquals(listOf("Coğrafiya", "Tarix"), content.items.map { it.name })
-        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000), vm.uiState.value.header)
+        // No progress and no cache after the (failed) load: level and streak are hidden, never "0" (HOME-08).
+        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000, progress = HeaderProgressUi.Hidden), vm.uiState.value.header)
         assertFalse(vm.uiState.value.showOfflineBanner)
     }
 
@@ -174,6 +186,7 @@ class HomeViewModelTest {
         val vm = HomeViewModel(
             authRepository, bannerRepository, TestProfileRepository(initial = profile), cached,
             quizRepository, networkMonitor, savedStateHandle, appConfig, activeDuels,
+            progressRepository, dailyRepository, reminderOpens, WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
         runCurrent()

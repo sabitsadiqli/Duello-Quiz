@@ -135,6 +135,7 @@ private fun WireServerMessage.MatchResult.asResult() = MatchResult(
     suddenDeathPlayed = suddenDeathPlayed,
     calibration = calibration.map { CalibrationLevel(it.level, it.picks, it.correct) }.sortedBy { it.level },
     rounds = rounds.map { it.asExternalModel() },
+    progress = progress?.asExternalModel(),
 )
 
 internal fun endReason(value: String): MatchEndReason = enumOf(

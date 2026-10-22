@@ -13,11 +13,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DuelloQuiz">
         <!-- uiMode is handled in place (Compose recomposes); the app night mode is set through
-             UiModeManager on Android 12+ so the splash uses the chosen theme (SET-01). -->
+             UiModeManager on Android 12+ so the splash uses the chosen theme (SET-01).
+             singleTop: tapping a reminder while the app is open delivers onNewIntent instead of
+             recreating the activity, so a running duel stays on screen (NOTIF-05). -->
         <activity
             android:name=".MainActivity"
             android:configChanges="uiMode"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.DuelloQuiz.Starting"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

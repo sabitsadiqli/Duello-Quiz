@@ -4,8 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.auth.AuthRepository
-import com.sabit.duelloquiz.core.auth.SignOutReason
 import com.sabit.duelloquiz.core.common.AppConfig
+import com.sabit.duelloquiz.core.data.repository.AccountRepository
 import com.sabit.duelloquiz.core.data.repository.UserPreferencesRepository
 import com.sabit.duelloquiz.core.model.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +54,7 @@ sealed interface SettingsEvent {
 class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferencesRepository,
     private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
     private val appConfig: AppConfig,
 ) : ViewModel() {
 
@@ -88,7 +89,8 @@ class SettingsViewModel @Inject constructor(
             SettingsAction.SignOutDismissed -> showSignOutDialog.value = false
             SettingsAction.SignOutConfirmed -> {
                 showSignOutDialog.value = false
-                viewModelScope.launch { authRepository.signOut(SignOutReason.UserRequested) }
+                // Removes this device's push token first (NOTIF-02), then signs out locally.
+                viewModelScope.launch { accountRepository.signOut() }
             }
             SettingsAction.DeleteAccountClicked -> _events.trySend(SettingsEvent.NavigateToDeleteAccount)
             SettingsAction.PrivacyPolicyClicked -> _events.trySend(SettingsEvent.OpenUrl(appConfig.privacyPolicyUrl))

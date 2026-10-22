@@ -74,6 +74,8 @@ data class QuizResult(
     val total: Int,
     /** Wrong and unanswered questions in session order; empty for a perfect score. */
     val review: List<ReviewItem>,
+    /** XP and streak change of this session; null for sessions closed before the feature. */
+    val progress: ProgressGain? = null,
 )
 
 @Immutable

@@ -2,8 +2,13 @@ package com.sabit.duelloquiz.core.network
 
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.Category
+import com.sabit.duelloquiz.core.model.DailyResult
+import com.sabit.duelloquiz.core.model.DailyStart
+import com.sabit.duelloquiz.core.model.DailyStatus
 import com.sabit.duelloquiz.core.model.DataResult
+import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSession
 import com.sabit.duelloquiz.core.model.duel.DuelStats
@@ -48,4 +53,40 @@ interface DuelloNetworkDataSource {
 
     /** `POST /v1/quiz/sessions/{id}/finish` (idempotent). */
     suspend fun finishQuizSession(sessionId: String): DataResult<QuizResult>
+
+    /** `GET /v1/daily`: today's state; measures the clock offset from `serverNowEpochMs`. */
+    suspend fun getDaily(): DataResult<DailyStatus>
+
+    /**
+     * `POST /v1/daily/attempt`: 201 new / 200 resumed → [DailyStart.Started]; 409
+     * `daily_already_played` → [DailyStart.AlreadyPlayed] with the stored result; 409
+     * `daily_unavailable` → failure [com.sabit.duelloquiz.core.model.ApiErrorCode.DailyUnavailable].
+     */
+    suspend fun startDailyAttempt(): DataResult<DailyStart>
+
+    /** `POST /v1/daily/attempt/{id}/answers`; same rules and codes as the quiz answer. */
+    suspend fun submitDailyAnswer(
+        attemptId: String,
+        questionId: String,
+        optionId: String?,
+        elapsedMs: Long,
+    ): DataResult<AnswerResult>
+
+    /** `POST /v1/daily/attempt/{id}/finish` (idempotent). */
+    suspend fun finishDailyAttempt(attemptId: String): DataResult<DailyResult>
+
+    /** `GET /v1/me/progress` (PROG-03 … PROG-08). */
+    suspend fun getProgress(): DataResult<ProgressSummary>
+
+    /** `PUT /v1/me/push-tokens {token, locale}` (NOTIF-02); 204. */
+    suspend fun registerPushToken(token: String, locale: String): DataResult<Unit>
+
+    /** `DELETE /v1/me/push-tokens/{token}`; idempotent, always 204. */
+    suspend fun deletePushToken(token: String): DataResult<Unit>
+
+    /** `GET /v1/me/notification-settings` (NOTIF-06). */
+    suspend fun getNotificationSettings(): DataResult<NotificationSettings>
+
+    /** `PUT /v1/me/notification-settings`; returns the stored switches. */
+    suspend fun updateNotificationSettings(settings: NotificationSettings): DataResult<NotificationSettings>
 }

@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.feature.duel
 
 import androidx.compose.runtime.Immutable
 import com.sabit.duelloquiz.core.designsystem.component.OptionCardState
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import com.sabit.duelloquiz.core.model.QuestionImage
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
@@ -273,4 +274,6 @@ data class ResultUi(
     val hint: CalibrationHint,
     val winner: DuelSide?,
     val playAgainLoading: Boolean = false,
+    /** PROG-02 progress card; null = not rendered (abandoned, not yet received). */
+    val progress: ProgressCardUi? = null,
 )

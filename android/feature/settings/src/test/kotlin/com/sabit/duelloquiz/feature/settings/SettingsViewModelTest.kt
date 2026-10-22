@@ -7,6 +7,7 @@ import com.sabit.duelloquiz.core.auth.fake.InMemoryAuthRepository
 import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
+import com.sabit.duelloquiz.core.testing.TestAccountRepository
 import com.sabit.duelloquiz.core.testing.TestUserPreferencesRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -29,7 +30,9 @@ class SettingsViewModelTest {
     private val authRepository = InMemoryAuthRepository(latencyMs = 0)
     private val appConfig = AppConfig(versionName = "1.0.0", versionCode = 12, privacyPolicyUrl = "https://example.com/privacy")
 
-    private fun viewModel() = SettingsViewModel(preferences, authRepository, appConfig)
+    private val accountRepository = TestAccountRepository(onSignOut = { authRepository.signOut(SignOutReason.UserRequested) })
+
+    private fun viewModel() = SettingsViewModel(preferences, authRepository, accountRepository, appConfig)
 
     @Test
     fun showsStoredThemeAccountAndVersion() = runTest {
