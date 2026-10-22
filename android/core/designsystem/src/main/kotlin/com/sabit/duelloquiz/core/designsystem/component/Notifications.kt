@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.core.designsystem.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,7 +105,7 @@ fun NotificationPermissionCard(
  * Switch row (components.md §31): the whole row toggles (role Switch); headline (max 2 lines) and
  * supporting text wrap, the switch stays centred. [loading] replaces the switch with a 20dp
  * progress indicator and the row is not toggleable. A disabled row always says why in
- * [supporting].
+ * [supporting]; [onDisabledClick] lets it open the place to fix it (a channel off in the system).
  */
 @Composable
 fun DuelloSwitchRow(
@@ -116,6 +117,7 @@ fun DuelloSwitchRow(
     @DrawableRes leadingIcon: Int? = null,
     enabled: Boolean = true,
     loading: Boolean = false,
+    onDisabledClick: (() -> Unit)? = null,
 ) {
     val contentAlpha = if (enabled) 1f else DisabledContentAlpha
     Row(
@@ -124,10 +126,10 @@ fun DuelloSwitchRow(
             .fillMaxWidth()
             .heightIn(min = Sizes.minTouchTarget)
             .then(
-                if (loading) {
-                    Modifier
-                } else {
-                    Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+                when {
+                    loading -> Modifier
+                    !enabled && onDisabledClick != null -> Modifier.clickable(role = Role.Switch, onClick = onDisabledClick)
+                    else -> Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
                 },
             )
             .padding(horizontal = Spacing.lg, vertical = Spacing.md),

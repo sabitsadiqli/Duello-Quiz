@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.core.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -39,6 +40,9 @@ class RetentionPreferencesDataSource @Inject constructor(
     /** Wall-clock time of the last "Sonra", or null. */
     val notificationPromptLaterAtMs: Flow<Long?> = data.map { it[PROMPT_LATER_AT] }.distinctUntilChanged()
 
+    /** The system answered the permission request with "don't ask again" (NOTIF-01). */
+    val notificationPermissionBlocked: Flow<Boolean> = data.map { it[PERMISSION_BLOCKED] ?: false }.distinctUntilChanged()
+
     val shownStreakEvents: Flow<List<String>> = data.map { it[STREAK_EVENTS].toEntries() }.distinctUntilChanged()
 
     val dismissedStreakHint: Flow<String?> = data.map { it[STREAK_HINT_DISMISSED] }.distinctUntilChanged()
@@ -51,6 +55,10 @@ class RetentionPreferencesDataSource @Inject constructor(
 
     suspend fun recordNotificationPromptShown() {
         dataStore.edit { it[PROMPT_SHOWN] = (it[PROMPT_SHOWN] ?: 0) + 1 }
+    }
+
+    suspend fun setNotificationPermissionBlocked(blocked: Boolean) {
+        dataStore.edit { it[PERMISSION_BLOCKED] = blocked }
     }
 
     suspend fun setNotificationPromptShownCount(count: Int) {
@@ -94,6 +102,7 @@ class RetentionPreferencesDataSource @Inject constructor(
         const val SEPARATOR = "\n"
         val PROMPT_SHOWN = intPreferencesKey("notif_prompt_shown_count")
         val PROMPT_LATER_AT = longPreferencesKey("notif_prompt_later_at")
+        val PERMISSION_BLOCKED = booleanPreferencesKey("notif_permission_blocked")
         val STREAK_EVENTS = stringPreferencesKey("streak_events_shown")
         val STREAK_HINT_DISMISSED = stringPreferencesKey("streak_hint_dismissed")
         val CAP_NOTES = stringPreferencesKey("xp_cap_notes_shown")

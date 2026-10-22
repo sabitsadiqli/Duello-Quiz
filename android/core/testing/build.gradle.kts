@@ -12,6 +12,7 @@ dependencies {
     api(project(":core:data"))
     api(project(":core:duel"))
     api(project(":core:model"))
+    api(project(":core:notifications"))
 
     api(libs.junit)
     api(libs.kotlin.test)

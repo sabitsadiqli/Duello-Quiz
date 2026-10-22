@@ -185,6 +185,14 @@ internal data class PushRegistration(val uid: String, val token: String, val day
  * once more at least 7 days after the first one was postponed ("Sonra" or leaving the screen).
  */
 interface NotificationPromptRepository {
+    /**
+     * The system will not show the permission dialog any more ("don't ask again"): turning a
+     * reminder on opens the app's notification settings instead (NOTIF-01, SET-07).
+     */
+    val permissionBlocked: Flow<Boolean>
+
+    suspend fun setPermissionBlocked(blocked: Boolean)
+
     /** True when the card may be shown now (system conditions are the caller's job). */
     suspend fun canShow(): Boolean
 
@@ -216,6 +224,10 @@ internal class DataStoreNotificationPromptRepository @Inject constructor(
     private val retention: RetentionPreferencesDataSource,
     private val clock: WallClock,
 ) : NotificationPromptRepository {
+
+    override val permissionBlocked: Flow<Boolean> = retention.notificationPermissionBlocked
+
+    override suspend fun setPermissionBlocked(blocked: Boolean) = retention.setNotificationPermissionBlocked(blocked)
 
     override suspend fun canShow(): Boolean = NotificationPromptPolicy.canShow(
         shownCount = retention.notificationPromptShownCount.first(),
