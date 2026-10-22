@@ -84,6 +84,36 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 | Avatar | — | Profile picture: the Google photo URL, or a placeholder circle with the first letter of the display name. No upload in the MVP. |
 | Display name | Ad | Name shown to the user and to duel opponents. 2–20 Unicode code points after trimming; letters, digits, space, `-`, `'`, `.`, no emoji (OQ-042); not unique. Source per sign-in method: OQ-011; editing: PROF-06; offensive names: OQ-030. |
 
+## Daily challenge, progression and notifications
+
+Added 2026-10-22 (`daily-challenge.md`, `progression.md`, `notifications.md`).
+Numbers marked "proposed" wait for the linked OQ. UI (az) values are proposals until
+the designer adds them to `design/copy/az.md`.
+
+| Term | UI (az) | Meaning |
+| --- | --- | --- |
+| Day (Baku day) | — | The calendar day in Asia/Baku (00:00–24:00, UTC+4, no DST) from the server clock; used for the daily challenge, streak, XP caps and notifications (OQ-074). Never the device clock or time zone. `dayKey` = `"2026-10-22"`. |
+| Daily challenge | Gündəlik çağırış | Same short set of questions for every player on a Baku day, one attempt per account (`docs/mvp-spec.md` §9). Never affects Elo. Not a "quiz session" in the UI. |
+| Daily number | Gündəlik çağırış #12 | Running number of the daily challenge: days since the configured first day (#1). |
+| Daily attempt | — | One account's play-through of a day's challenge; at most one per (user, day); resumable until its deadline (OQ-079). |
+| Daily set | — | The questions chosen by the server for one day, stored and frozen for that day (OQ-076). |
+| Result squares | — | One square per daily question in order: correct, wrong, no answer. Used on the result screen, the home card and the share text. |
+| Share text | Paylaş | Plain text with the daily number, result squares, score, streak and store link; never question, option or category data (OQ-080). |
+| XP | XP | Experience points earned from quizzes, daily challenges and duels; never decreases; independent of Elo. Always written "XP" in the UI, never "xal" (that is the score). |
+| Level | Səviyyə | Overall level derived on the server from total XP by the level curve (OQ-083). Starts at 1. Not shown to opponents. |
+| Category level | Kateqoriya səviyyəsi | Level per category from category XP (correct answers in that category, OQ-084). Same curve as the overall level. |
+| Level-up | Yeni səviyyə! | Crossing into a higher level as the result of one finished game; shown once on the result screen. |
+| Active day | — | A Baku day with real play: a quiz finished or expired with ≥ 1 answer, a finished daily attempt or a finished duel not forfeited by the user (OQ-085). Opening the app is not enough. |
+| Streak | Seriya | Number of consecutive active days up to today or yesterday. "7 günlük seriya". |
+| Best streak | Ən uzun seriya | Highest streak ever reached; never decreases. |
+| Streak freeze | Seriya qoruyucusu | Automatic protection of the streak for exactly one missed day; one earned per 7-day streak, at most 1 held (OQ-086). Never bought. |
+| Push notification | Bildiriş | A message sent by the server through FCM and shown by Android outside the app. Only the reminder types below exist in the MVP. |
+| Daily reminder | Gündəlik çağırış xatırlatması | Notification type `daily_reminder`: today's daily challenge has not been started (OQ-088). |
+| Streak reminder | Seriya xatırlatması | Notification type `streak_reminder`: streak ≥ 2 and today is not active yet (OQ-088). |
+| Quiet hours | — | Time window in which no notification is sent (proposed 22:00–09:00 Baku, OQ-089). Not user-configurable in the MVP. |
+| Notification permission | — | Android 13+ runtime permission `POST_NOTIFICATIONS`; asked only after the in-app explanation card (OQ-090). |
+| Push token | — | FCM registration token of one app install; stored on the server per device and deleted on sign-out, invalidity, staleness or account deletion. |
+
 ## Accounts and auth
 
 | Term | UI (az) | Meaning |
@@ -116,8 +146,8 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 
 | Term | UI (az) | Meaning |
 | --- | --- | --- |
-| Home | Əsas səhifə | First screen after sign-in: categories, duel entry, profile summary, settings entry. |
-| Settings | Parametrlər | Theme, language, account actions, about. |
+| Home | Əsas səhifə | First screen after sign-in: profile summary with level and streak, daily challenge card, duel entry, categories, settings entry. |
+| Settings | Parametrlər | Theme, language, notifications, account actions, about. |
 | Theme | Tema | System (Sistem), Light (İşıqlı), Dark (Qaranlıq). Default System. |
 | Language | Dil | App UI language. MVP: Azərbaycan dili only. |
 | Offline | İnternet yoxdur | The device has no usable network connection, or a request failed with a network error. |

@@ -109,6 +109,11 @@ state).
 - `DELETE /v1/me` deletes immediately: user row, quiz sessions and answers, the
   Firebase user. In past matches the player is anonymized (`player_* = NULL`, shown
   as "Silinmiş oyunçu"). Backups roll off within 30 days (OQ-014).
+- Also deleted in the same transaction (§9–§11): daily challenge attempts and answers,
+  XP events, XP totals and category XP, active days, streak and freeze, notification
+  preferences, the notification send log and every FCM push token of the user. The
+  per-day daily question sets are not personal data and stay. The privacy policy
+  and the deletion page in `docs/legal/` must list these data too.
 
 ## 4. Theme and language
 
@@ -170,6 +175,25 @@ matches, match_rounds, match_answers   -- duel tables: see docs/api/duel-protoco
                                        -- and the Flyway migrations (OQ-048)
 ```
 
+Proposed for §9–§11 (names and columns are `backend-dev`'s call; the daily attempt
+may reuse the quiz session tables with a `kind` column):
+
+```
+daily_challenges(id, day DATE UNIQUE, number INT UNIQUE, created_at)
+daily_challenge_questions(daily_id, question_id, position, PRIMARY KEY(daily_id, position))
+daily_attempts(id, user_id, daily_id, status, correct_count, started_at, deadline_at,
+               finished_at, UNIQUE(user_id, daily_id))   -- + answers like quiz_answers
+xp_events(id, user_id, source_type, source_id, category_id NULL, amount, day,
+          created_at, UNIQUE(user_id, source_type, source_id, category_id))
+user_progress(user_id PK, xp_total, streak_current, streak_best, last_active_day,
+              freeze_available, streak_broken_seen)
+user_category_xp(user_id, category_id, xp, PRIMARY KEY(user_id, category_id))
+user_active_days(user_id, day, PRIMARY KEY(user_id, day))
+push_tokens(id, user_id, token UNIQUE, locale, created_at, last_seen_at)
+notification_settings(user_id PK, daily_reminder BOOL, streak_reminder BOOL)
+notification_log(user_id, type, day, outcome, PRIMARY KEY(user_id, type, day))
+```
+
 ## 7. API outline (details in docs/api/)
 
 REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
@@ -184,6 +208,12 @@ REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 - Admin (custom claim `admin=true`): `POST /admin/questions/import` (JSON), `POST /admin/images`
 
 - `GET /me/stats` (duel record + calibration counts), `GET /me/matches` (last 20)
+- Proposed for §9–§11 (contract owned by `backend-dev`): `GET /daily`,
+  `POST /daily/attempt` (start or resume), `POST /daily/attempt/{id}/answers`,
+  `POST /daily/attempt/{id}/finish`, `GET /me/progress`, `PUT /me/push-tokens`,
+  `DELETE /me/push-tokens/{token}`, `GET|PUT /me/notification-settings`. Quiz and
+  daily `finish` and the duel `match.result` gain a `progress` object (XP gained,
+  level before/after, streak).
 
 Full REST contract: `docs/api/openapi.yaml`.
 
@@ -237,3 +267,75 @@ Rules:
   "author": "...", "alt": {"az": "..."}}`.
 - Import: `POST /v1/admin/questions/import` with the files, or a backend CLI task
   run by the deploy job. The validator runs in CI of the private content repo.
+
+## Retention features (in MVP scope since 2026-10-22)
+
+Sabit moved the daily challenge, streak/XP/levels and push notifications into the
+MVP on 2026-10-22 (retention for the 14-day closed test). Numbers marked
+**(proposed, OQ-xxx)** are recommendations waiting for Sabit's decision in
+`docs/requirements/open-questions.md`; they become final when the OQ moves to
+"Decided" and this marker is removed. Day = Baku calendar day: 00:00 Asia/Baku
+(UTC+4, no DST) from the server clock; device clock and time zone are never used
+(proposed, OQ-074). An activity counts for the day in which it started (proposed,
+OQ-087).
+
+## 9. Daily challenge ("Gündəlik çağırış")
+
+- Same set for every player each day, one attempt per account per day, resumable on
+  any device until its deadline; no archive of past days (proposed, OQ-079).
+- 5 questions, 20 s each, 1.5 s reveal after each answer, explanations in the end
+  review; deadline = 5 × (20 s + 1.5 s) + 30 s grace = 137.5 s from the attempt start
+  (proposed, OQ-075, OQ-077). Answer handling, idempotency, timeout and deadline
+  rules are those of §1.
+- Selection: the server picks the set randomly once per day and stores it (unique per
+  day; never derived from the date or a public seed): one active question per playable
+  category, random order, not used in a daily during the last 60 days; the set is
+  frozen for the day. Fewer than 5 active questions in total → no challenge that day
+  (proposed, OQ-076). No endpoint returns a future day.
+- Score = correct answers ("4 / 5"). Never affects Elo (proposed, OQ-078).
+- Day number #N = days since a configured first day (#1).
+- Share text (client-built, no answer data): title with #N, one square per question
+  (correct / wrong / no answer), "3/5", streak line, Play Store link (proposed,
+  OQ-080). No daily leaderboard (OQ-094).
+- Stories: `docs/requirements/daily-challenge.md` (DAILY-01 …).
+
+## 10. Streak, XP and levels
+
+- All progress is computed by the server when it finalizes a quiz session, daily
+  attempt or match; idempotent per (user, source); no endpoint accepts progress from
+  the client. XP never decreases; Elo is independent of XP.
+- XP (proposed, OQ-081): quiz 10 per correct answer; daily 10 per correct answer + 20
+  completion bonus; duel 20 for a `finished` match, +30 win, +15 draw; the forfeiting
+  player, abandoned and cancelled matches 0; a quiz expired with no answer 0.
+- Caps (proposed, OQ-082): quiz XP only for the first 20 sessions per day; duel XP only
+  for the first 20 matches per day and at most 3 per day against the same opponent.
+- Level curve (proposed, OQ-083): level n → n+1 needs 100 × n XP (total for level n =
+  50 × n × (n − 1)); level 1 at 0 XP; no maximum. Same curve for category levels.
+- Category XP (proposed, OQ-084): XP of correct answers goes to the question's
+  category (quiz and daily); duel XP and the daily bonus only to overall XP.
+- Active day (proposed, OQ-085): a quiz finished or expired with ≥ 1 answer, a
+  finished daily attempt, or a `finished` duel the user did not forfeit.
+- Streak: consecutive active days; best streak stored. Freeze (proposed, OQ-086): one
+  automatic freeze per 7-day streak, at most 1 held, covers exactly one missed day.
+- Start: everyone at 0 XP, level 1, streak 0; no backfill (proposed, OQ-093).
+  Opponents never see level or streak (proposed, OQ-095).
+- Stories: `docs/requirements/progression.md` (PROG-01 …).
+
+## 11. Push notifications (FCM)
+
+- Firebase Cloud Messaging via the Firebase Admin SDK (free, no card); no other
+  provider. Jobs run in the single backend replica; one send record per
+  (user, type, day) prevents duplicates.
+- Types and times (proposed, OQ-088): daily reminder at 10:00 Baku if today's daily is
+  not started; streak reminder at 20:00 Baku if streak ≥ 2 and today is not active.
+  Max 2 per user per day. Quiet hours 22:00–09:00 Baku; a missed send is skipped, not
+  delayed (proposed, OQ-089). No reminders after 7 days without an active day
+  (proposed, OQ-092).
+- Opt-in: Android 13+ `POST_NOTIFICATIONS` asked only after an in-app explanation on
+  the first quiz/daily result (proposed, OQ-090). Per-type switches stored on the
+  server per account, default on (proposed, OQ-091).
+- Payload: FCM notification message with text from backend i18n by the token's
+  locale plus a data `type` (proposed, OQ-096). No user or question data.
+- Tokens: one per device, removed on sign-out, invalid (`UNREGISTERED`) or stale
+  (60 days), and on account deletion (§3a).
+- Stories: `docs/requirements/notifications.md` (NOTIF-01 …).

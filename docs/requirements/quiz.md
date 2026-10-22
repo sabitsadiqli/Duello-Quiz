@@ -140,6 +140,10 @@ review list (QUIZ-06).
   (copy by designer); given 0 / 10, Then an encouraging, not mocking, message.
 - Given the system back button on the result screen, When pressed, Then home is
   shown (the finished quiz is not re-entered).
+- Given progression (added 2026-10-22), When `finish` returns `progress`, Then the
+  result screen shows XP gained, level-up and streak per PROG-02 / PROG-06
+  (`progression.md`); the first quiz result may show the notification card
+  (NOTIF-01).
 
 ### QUIZ-06 Wrong-answer review
 
