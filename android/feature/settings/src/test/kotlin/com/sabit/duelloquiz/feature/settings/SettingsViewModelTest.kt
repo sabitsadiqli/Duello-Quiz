@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.feature.settings
 
+import com.sabit.duelloquiz.core.testing.TestAccountRepository
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.auth.AuthState
 import com.sabit.duelloquiz.core.auth.SignOutReason
@@ -29,7 +30,9 @@ class SettingsViewModelTest {
     private val authRepository = InMemoryAuthRepository(latencyMs = 0)
     private val appConfig = AppConfig(versionName = "1.0.0", versionCode = 12, privacyPolicyUrl = "https://example.com/privacy")
 
-    private fun viewModel() = SettingsViewModel(preferences, authRepository, appConfig)
+    private val accountRepository = TestAccountRepository(onSignOut = { authRepository.signOut(SignOutReason.UserRequested) })
+
+    private fun viewModel() = SettingsViewModel(preferences, authRepository, accountRepository, appConfig)
 
     @Test
     fun showsStoredThemeAccountAndVersion() = runTest {
