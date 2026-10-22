@@ -5,6 +5,7 @@ import com.sabit.duelloquiz.backend.common.ErrorCodes
 import com.sabit.duelloquiz.backend.common.language
 import com.sabit.duelloquiz.backend.common.notFound
 import com.sabit.duelloquiz.backend.common.validationFailed
+import com.sabit.duelloquiz.backend.progress.ProgressDto
 import com.sabit.duelloquiz.backend.user.UserService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -72,6 +73,8 @@ data class QuizResultResponse(
     val total: Int,
     val finishedAt: String,
     val review: List<ReviewItemDto>,
+    /** XP, level and streak change of this session (null only for sessions closed before XP existed). */
+    val progress: ProgressDto? = null,
 )
 
 @Serializable

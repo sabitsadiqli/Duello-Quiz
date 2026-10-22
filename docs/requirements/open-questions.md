@@ -10,6 +10,214 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 
+## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
+
+Raised by `business-analyst` while writing `daily-challenge.md`, `progression.md` and
+`notifications.md` (features moved into the MVP by Sabit on 2026-10-22). Sabit accepted
+every recommendation as written on 2026-10-22; background and alternatives are in
+"Details" below. The numbers are final in `docs/mvp-spec.md` §9–§11.
+
+| ID | Question | Recommendation | Decided |
+| --- | --- | --- | --- |
+| OQ-074 | Day boundary for daily challenge, streak, XP caps and notifications | 00:00 Asia/Baku (UTC+4, no DST), server clock only; device clock and time zone ignored | Sabit 2026-10-22 |
+| OQ-075 | Daily challenge size and timer | 5 questions, 20 s each, 1.5 s reveal; deadline 5 × 21.5 s + 30 s = 137.5 s | Sabit 2026-10-22 |
+| OQ-076 | How is the daily set chosen? | Server-random once per day, stored (no date seed): one active question per playable category, random order, not reused in a daily for 60 days; frozen for the day | Sabit 2026-10-22 |
+| OQ-077 | Reveal correct/wrong after each daily answer? | Yes, same as the quiz (1.5 s); explanations in the review after finishing | Sabit 2026-10-22 |
+| OQ-078 | Does the daily challenge affect Elo? | No, never | Sabit 2026-10-22 |
+| OQ-079 | Attempts per day, interruptions, past days | One attempt per account per day; resumable on any device until its deadline (timer keeps running); no archive of past days | Sabit 2026-10-22 |
+| OQ-080 | Share text format | "Duello Quiz · Gündəlik çağırış #N", one square per question (🟩 correct, 🟥 wrong, ⬜ no answer), "3/5", streak line, Play Store link; no question, option or category data | Sabit 2026-10-22 |
+| OQ-081 | XP per action (incl. daily bonus) | Quiz 10 XP per correct; daily 10 XP per correct + 20 completion bonus; duel 20 for a finished match, +30 win, +15 draw; forfeiter, abandoned, cancelled 0 | Sabit 2026-10-22 |
+| OQ-082 | XP anti-farming caps | Quiz XP only for the first 20 sessions per day; duel XP only for the first 20 matches per day and max 3 per day vs the same opponent; beyond that 0 XP, game still stored | Sabit 2026-10-22 |
+| OQ-083 | Level curve | Level n → n+1 needs 100 × n XP (level 5 at 1 000 XP, level 10 at 4 500 XP); no max; same curve for category levels | Sabit 2026-10-22 |
+| OQ-084 | What feeds category XP? | Correct answers only: quiz → its category, daily → each question's category; duel XP and the daily bonus count only for overall XP | Sabit 2026-10-22 |
+| OQ-085 | What makes a day "active" for the streak? | A quiz finished/expired with ≥ 1 answer, a finished daily, or a finished duel not forfeited by the user; opening the app is not enough | Sabit 2026-10-22 |
+| OQ-086 | Streak freeze ("Seriya qoruyucusu") | Yes: 1 automatic freeze per 7-day streak, max 1 held, covers exactly 1 missed day; no purchase, no button | Sabit 2026-10-22 |
+| OQ-087 | Activity that crosses midnight | Counts for the Baku day in which it started; a daily started before 00:00 can be finished until its deadline | Sabit 2026-10-22 |
+| OQ-088 | Notification types, times, max per day | Two types: daily reminder 10:00 Baku (only if not played), streak reminder 20:00 (only if streak ≥ 2 and today not active); max 2 per day | Sabit 2026-10-22 |
+| OQ-089 | Quiet hours | No notifications 22:00–09:00 Baku; missed sends are skipped, not delayed; no user-chosen times in the MVP | Sabit 2026-10-22 |
+| OQ-090 | When to ask for the notification permission | Never at first launch; in-app explanation card on the first quiz/daily result; "Sonra" → one more try after 7 days, then only from settings | Sabit 2026-10-22 |
+| OQ-091 | Notification switch defaults and storage | Both types on after permission is granted; stored per account on the server (all devices) | Sabit 2026-10-22 |
+| OQ-092 | Stop reminders for inactive users | Send nothing after 7 days without an active day; resume after the next active day | Sabit 2026-10-22 |
+| OQ-093 | XP and streak for play before the release | No backfill: everyone starts at 0 XP, level 1, streak 0 | Sabit 2026-10-22 |
+| OQ-094 | Daily-challenge leaderboard or "how others did" stats | No (out of scope, `CLAUDE.md`); revisit after the closed test | Sabit 2026-10-22 |
+| OQ-095 | Do opponents see level or streak? | No; opponents keep seeing only name, avatar, rating (OQ-024 unchanged) | Sabit 2026-10-22 |
+| OQ-096 | FCM payload type and text source | "Notification" messages with text from backend i18n by the token's locale + data `type`, so they show even when the app is killed on aggressive OEM builds | Sabit 2026-10-22 |
+
+## Details (background for OQ-074 … OQ-096, all decided — see above)
+
+Added by `business-analyst` on 2026-10-22. Each item: options with trade-offs and
+the recommendation (= the row above). Stories blocked by each item are listed.
+
+### OQ-074 Day boundary
+- A. 00:00 Asia/Baku from the server clock for everything (daily, streak, caps,
+  notifications). One rule for the target audience; Baku has no DST since 2016; users
+  abroad reset at a different local hour (the UI shows only a countdown).
+- B. Device local midnight. Feels natural abroad; the client clock decides, so
+  changing the time zone or clock replays the daily and fakes streaks.
+- C. UTC midnight. Resets at 04:00 Baku, odd for the main audience.
+- Recommendation: A. Blocks DAILY-01, DAILY-07, PROG-05, NOTIF-03, NOTIF-04.
+
+### OQ-075 Daily challenge size and timer
+- A. 5 questions, 20 s, 1.5 s reveal (deadline 137.5 s). About 2 minutes; five
+  squares make a short share line; reuses the quiz screen and timer.
+- B. 10 questions like the quiz. Longer, duplicates the quiz, longer share line.
+- C. 5 questions with 15 s. Harder and more "challenge"-like; one more timer value.
+- Recommendation: A. Blocks DAILY-02, DAILY-03.
+
+### OQ-076 Daily set selection
+- A. Server picks randomly once per day, stores it (unique per day): one active
+  question per playable category (5 now), random order, a question not reused in the
+  daily for 60 days (relaxed automatically if the pool is too small); frozen for the
+  day. Not predictable from the public repo.
+- B. Deterministic seed from the date. No storage, but anyone reading the public code
+  and knowing the bank order can predict future sets.
+- C. Hand-picked by Sabit. Best quality; daily manual work, breaks on holidays.
+- Recommendation: A. Blocks DAILY-02, DAILY-09.
+
+### OQ-077 Reveal after each daily answer
+- A. Like the quiz: correct/wrong after each answer; explanations at the end. Same
+  screen and code; a player can tell friends the answers the same day (no leaderboard,
+  so only their fun is spoiled).
+- B. Reveal only at the end. Fewer spoilers; different flow from the quiz, less
+  learning feedback per question.
+- Recommendation: A. Blocks DAILY-03.
+
+### OQ-078 Daily and Elo
+- A. Never. Elo stays a duel-only skill measure (`docs/mvp-spec.md` §1 rule for
+  single player). B. Small Elo bonus. Makes Elo farmable without an opponent.
+- Recommendation: A. Blocks DAILY-10.
+
+### OQ-079 Attempts, interruptions, past days
+- A. One attempt per account per day; resumable on any device until its deadline
+  (timer never pauses); no archive. Fair for phone calls and process death, which
+  would otherwise cost the only attempt.
+- B. One attempt, no resume (like the quiz, OQ-017). Simpler; harsh for a once-a-day
+  game.
+- C. Allow playing missed past days. More content; weakens "come back every day".
+- Recommendation: A. Blocks DAILY-01, DAILY-02, DAILY-06, DAILY-08.
+
+### OQ-080 Share text format
+- A. Title with day number, squares per question, "3/5", optional streak line, Play
+  Store link. Wordle-style, no answer data, a free growth channel.
+- B. Same without the store link. Cleaner; loses the install path.
+- C. Shared image card. Nicer; image generation work, larger share, out of scope.
+- Recommendation: A (squares are Unicode characters in the string resource, not
+  images). Blocks DAILY-04, DAILY-05.
+
+### OQ-081 XP amounts
+- A. Quiz 10 per correct (0–100 per session); daily 10 per correct + 20 bonus (20–70);
+  duel 20 per finished match, +30 win, +15 draw (20–50). Rough day of a regular
+  player: daily 50 + 2 quizzes 140 + 3 duels 120 ≈ 300 XP.
+- B. XP only for wins/correct answers. Punishes beginners.
+- C. Flat XP per game. Rewards fast low-effort sessions.
+- Recommendation: A; the daily bonus is the answer to "does the daily give bonus XP"
+  (yes, 20). Blocks PROG-01, PROG-02, DAILY-04.
+
+### OQ-082 XP anti-farming caps
+- A. Quiz XP for the first 20 sessions per day, duel XP for the first 20 matches per day
+  and at most 3 matches per day against the same opponent. Real players never reach
+  it; two friends cannot farm each other.
+- B. No caps; rely on the quiz rate limit (30/hour). Simpler; a script can still earn
+  up to 3 000 XP per hour.
+- Recommendation: A. Blocks PROG-09, DAILY-10.
+
+### OQ-083 Level curve
+- A. Level n → n+1 needs 100 × n XP (total 50 × n × (n − 1)): level 2 at 100,
+  level 5 at 1 000, level 10 at 4 500, level 20 at 19 000. A regular player reaches
+  about level 10 in the 14-day closed test, then it slows down.
+- B. Flat 500 XP per level. Easy to explain; levels lose meaning for heavy players.
+- C. Exponential. Stalls too early for a small question bank.
+- Recommendation: A, same formula for category levels, no maximum. Blocks PROG-03,
+  PROG-04.
+
+### OQ-084 Category XP sources
+- A. Correct answers only (quiz → its category, daily → each question's category).
+  Category level = knowledge of that topic.
+- B. Also duel answers by category. More accurate; needs per-round XP and the duel
+  mixes categories randomly.
+- Recommendation: A. Blocks PROG-04.
+
+### OQ-085 Active day
+- A. A quiz finished or expired with ≥ 1 answer, a finished daily, or a finished duel
+  not forfeited by the user. Real play only.
+- B. Opening the app counts. Inflated streaks with no play.
+- C. Only the daily counts. Clear, but a duel-only player never has a streak.
+- Recommendation: A. Blocks PROG-05, NOTIF-04.
+
+### OQ-086 Streak freeze
+- A. 1 automatic freeze earned per 7 consecutive active days, max 1 held, covers
+  exactly one missed day. Protects long streaks; small extra logic.
+- B. No freeze: a missed day always resets. Simplest; a single missed day during the
+  closed test resets testers to 0 and may demotivate them.
+- C. Grace: a day counts until 03:00 the next morning. Hides the boundary; confusing.
+- Recommendation: A. Blocks PROG-07 (dropped if B).
+
+### OQ-087 Activity crossing midnight
+- A. Counts for the day it started; the daily of yesterday can be finished until its
+  deadline. Predictable; one timestamp per activity.
+- B. Counts for the day it ended. A 23:58 daily would count for the next day and leave
+  yesterday inactive.
+- Recommendation: A. Blocks DAILY-07, PROG-05.
+
+### OQ-088 Notification types, times, max per day
+- A. Daily reminder 10:00 Baku if not played; streak reminder 20:00 if streak ≥ 2 and
+  today inactive; max 2 per day. Morning prompt plus one rescue in the evening.
+- B. Only one notification per day (streak at 20:00, else daily). Least intrusive; a
+  new user without a streak gets only the daily at 20:00, late in the day.
+- C. Daily at 00:00 "new challenge". Night notification; Play and users dislike it.
+- Recommendation: A. Blocks NOTIF-03, NOTIF-04, NOTIF-07.
+
+### OQ-089 Quiet hours
+- A. Fixed 22:00–09:00 Baku, skipped not delayed. Safe for a 13+ audience.
+- B. User-defined quiet hours. More UI for little value now.
+- Recommendation: A. Blocks NOTIF-03, NOTIF-04, NOTIF-07.
+
+### OQ-090 Permission prompt timing
+- A. In-app card on the first quiz/daily result, system dialog only after "Bəli";
+  one retry after 7 days. Higher grant rate; Android lets the system dialog appear
+  only twice anyway.
+- B. Ask at first launch. Common, lowest grant rate, wastes one of two chances.
+- Recommendation: A. Blocks NOTIF-01.
+
+### OQ-091 Switch defaults and storage
+- A. Both on after the permission is granted; stored on the server per account.
+  Works on all devices and survives reinstall; needs one small endpoint.
+- B. Stored locally only. No endpoint; the server cannot know a type is off, so it
+  sends and the device drops it — or the device's choice is lost on reinstall.
+- Recommendation: A. Blocks NOTIF-06, SET-07.
+
+### OQ-092 Inactive users
+- A. Stop after 7 days without an active day; resume after the next active day. Avoids
+  spam and uninstalls; a lapsed tester gets no more reminders.
+- B. Keep sending forever (within the daily max). More win-backs, more opt-outs.
+- C. Stop after 14 days. Covers the closed-test window longer.
+- Recommendation: A. Blocks NOTIF-07.
+
+### OQ-093 No backfill
+- A. Everyone starts at 0. Simple; internal testers lose old effort (small group).
+- B. Recompute XP from stored quiz sessions and matches. Fair; migration work, and
+  caps and active days would have to be simulated.
+- Recommendation: A. Blocks PROG-01.
+
+### OQ-094 Daily leaderboard
+- A. Not in the MVP (`CLAUDE.md`: no leaderboards beyond Elo). B. Show "X% of players
+  got 5/5". Social proof; new endpoint and aggregation, borderline scope creep.
+- Recommendation: A; revisit after the closed test.
+
+### OQ-095 Level and streak visible to opponents
+- A. No, OQ-024 stays (name, avatar, rating). B. Show the level in the intro. More
+  identity; shows activity data to strangers; protocol change.
+- Recommendation: A.
+
+### OQ-096 FCM payload type
+- A. "Notification" messages with server-side i18n text + data `type`. The system shows
+  them even when the app process is killed (common on Xiaomi/Samsung devices popular
+  in Azerbaijan); text lives in backend i18n JSON, not `strings.xml`.
+- B. Data-only messages; the app builds the text from `strings.xml`. Text stays in app
+  resources; often not delivered when the app is killed by the OEM.
+- Recommendation: A. Blocks NOTIF-02 … NOTIF-05. Decides: backend-dev + android-dev,
+  Sabit confirms.
+
 ## Decided by Sabit (2026-10-16) — backend foundation
 
 Made by `backend-dev` while building `backend/` (PR `feat/backend-foundation`); accepted by Sabit.

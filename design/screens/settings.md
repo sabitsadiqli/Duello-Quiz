@@ -1,6 +1,7 @@
 # Settings (incl. account deletion and licences)
 
-Stories: SET-01 … SET-05, AUTH-07 (sign-out). Decisions: OQ-014, OQ-015.
+Stories: SET-01 … SET-05, SET-07 (notifications, added 2026-10-22), AUTH-07
+(sign-out), NOTIF-06. Decisions: OQ-014, OQ-015, OQ-090, OQ-091.
 SET-06 (web deletion page) is a document, not a screen; out of this spec.
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
@@ -15,7 +16,8 @@ Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
 ## Purpose
 
-Theme, language info, account actions (sign-out, delete), app information.
+Theme, language info, notification reminders, account actions (sign-out,
+delete), app information.
 
 ## Entry points
 
@@ -35,6 +37,16 @@ Theme, language info, account actions (sign-out, delete), app information.
    4. Row `settings_language_value`, leading `language` icon, **not clickable**, no
       chevron (SET-02). Trailing check icon in `scheme.primary` to show it is the
       selected language.
+   4a. Section header `settings_section_notifications` ("Bildirişlər").
+   4b. Optional blocked banner `settings_notif_blocked` + action
+       `settings_notif_open_system` (only when the phone blocks the app's
+       notifications), inset `space.lg`.
+   4c. Switch row (`components.md` §31) `settings_notif_daily` + supporting
+       `settings_notif_daily_supporting`, leading `today` icon.
+   4d. Switch row `settings_notif_streak` + supporting
+       `settings_notif_streak_supporting`, leading `local_fire_department`
+       (outlined) icon.
+       States, permission flow and API: `notifications.md` B.
    5. Section header `settings_section_account`.
    6. Info row (not clickable): leading `account_circle` icon, headline = display
       name, supporting `settings_signed_in_as` (email; 1 line, ellipsis).
@@ -49,7 +61,7 @@ Theme, language info, account actions (sign-out, delete), app information.
    12. Row `settings_licenses`, leading `description` icon, trailing chevron.
    13. Bottom `space.xl` + navigation bar inset.
 
-Section order follows `settings.md` §3: Tema, Dil, Hesab, Haqqında.
+Section order follows `settings.md` §3: Tema, Dil, Bildirişlər, Hesab, Haqqında.
 
 ## Layout — delete account screen (SET-05)
 
@@ -87,8 +99,9 @@ filled destructive button, neutral button, snackbar.
 | --- | --- |
 | Default | Stored theme selected ("Sistem" on fresh install or unreadable DataStore). |
 | Theme changed | Whole app recolours immediately with a cross-fade of `motion.duration.medium2` (none with reduced motion); scroll position and screen state kept. |
-| Loading / empty / error | Not applicable: all values are local. |
-| Offline | No visible change; sign-out works offline (AUTH-07); privacy policy opens and the browser shows its own offline page. |
+| Loading / empty / error | Theme and language are local (no states). The notification section loads from the server: loading, load error and offline states in `notifications.md` B. |
+| Offline | Theme, language and sign-out work offline (AUTH-07); privacy policy opens and the browser shows its own offline page; notification switches show cached values and revert with `settings_notif_offline` when toggled. |
+| Return from system notification settings | Notification section re-reads permission and channel state (blocked banner appears / disappears). |
 | Privacy link cannot open (no browser) | Snackbar `settings_link_open_failed`. |
 
 ### Sign-out dialog (AUTH-07)
@@ -121,6 +134,8 @@ back stack cleared. No loading state (local, fast).
 
 - Theme options are a radio group with selected state (SET-01).
 - Language row is announced as "Azərbaycan dili, seçilib", not as a button.
+- Notification rows are switches (role Switch, whole row toggles); a disabled row
+  reads its reason (`notifications.md` Accessibility).
 - Destructive actions use both colour and wording ("həmişəlik", "Sil").
 
 ## String keys
@@ -137,4 +152,6 @@ back stack cleared. No loading state (local, fast).
 `settings_delete_body_backups`, `settings_delete_confirm_button`,
 `settings_delete_dialog_title`, `settings_delete_dialog_body`,
 `settings_delete_dialog_confirm`, `settings_delete_in_progress`,
-`settings_delete_offline`, `settings_delete_failed`, `auth_account_deleted`.
+`settings_delete_offline`, `settings_delete_failed`, `auth_account_deleted`;
+notification keys in `notifications.md` (`settings_section_notifications`,
+`settings_notif_*`).

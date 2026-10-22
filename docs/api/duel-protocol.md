@@ -1,4 +1,4 @@
-# Duel WebSocket protocol (v1)
+# Duel WebSocket protocol (v1.1)
 
 Owner: `backend-dev`. Contract for the real-time confidence duel between the Android
 app and the backend. Rules: `docs/mvp-spec.md` §2; stories and acceptance criteria:
@@ -35,7 +35,9 @@ Upgrade: websocket
 ### 1.0 Changes within v1
 
 New fields are only added, never renamed or removed, so `protocolVersion` stays 1
-(clients must ignore unknown fields, servers send every documented field).
+(clients must ignore unknown fields, servers send every documented field). Minor
+versions (v1.1, …) name such additive steps for documentation only; the query
+parameter stays `protocolVersion=1` and a v1.0 client keeps working.
 
 | Date | Change |
 | --- | --- |
@@ -43,6 +45,7 @@ New fields are only added, never renamed or removed, so `protocolVersion` stays 
 | 2026-10-17 | `match.state.opponent.reconnectDeadlineEpochMs` while the opponent is disconnected |
 | 2026-10-17 | `match.result.forfeitCause` is now stored, so a result rebuilt after a restart keeps it |
 | 2026-10-17 | `error internal_error` carries `ref`, `matchId`, `roundNo` of the failed message; nothing of it was stored (OQ-D17) |
+| 2026-10-22 (v1.1) | `match.result.progress`: XP, level and streak change of the receiver (`docs/mvp-spec.md` §10), same object as `progress` in the REST quiz/daily `finish` (`openapi.yaml` schema `Progress`). `null` if it could not be stored; a v1.0 client ignores it and reloads `GET /v1/me/progress` |
 
 ### 1.1 One connection per user (newest wins)
 
@@ -454,6 +457,7 @@ for an unused level are chosen on the client.
 | `suddenDeathPlayed` | Number of sudden-death questions (0–3) |
 | `calibration` | Always 3 entries `{level, picks, correct}` for levels 1, 2, 3 (OQ-027: rounds 1–7 with an actively locked Əminlik) |
 | `rounds` | Compact list of all played rounds |
+| `progress` | v1.1. XP/level/streak change of the receiver (schema `Progress` in `openapi.yaml`), written in the same transaction as the match end, so a resent or rebuilt `match.result` carries the identical object. Duel XP (OQ-081): 20 for a `finished` match + 30 win / + 15 draw, overall XP only; 0 for the player who forfeited and for `abandoned` (both still get the object, `xpGained = 0`). Caps (OQ-082): from the 21st eligible match of the Baku day, or the 4th against the same opponent, `xpGained = 0` and `xpCapped = true`; Elo is unaffected. A `finished` match the receiver did not forfeit makes the day the match started in active. `null` only if storing failed or for matches ended before 2026-10-22. Opponents never see each other's level or streak (OQ-095) |
 
 ```json
 {"type": "match.result", "seq": 43, "serverNowEpochMs": 1792144950000,
@@ -469,7 +473,14 @@ for an unused level are chosen on the client.
              "opponent": {"bet": 1, "betDefaulted": true, "correct": false, "points": 0, "missed": true}}],
  "you": {"displayName": "Leyla", "avatarUrl": null, "ratingBefore": 1000, "ratingAfter": 1017, "deleted": false},
  "opponent": {"displayName": "Murad", "avatarUrl": "https://lh3.googleusercontent.com/a/x",
-              "ratingBefore": 1016, "ratingAfter": 999, "deleted": false}}
+              "ratingBefore": 1016, "ratingAfter": 999, "deleted": false},
+ "progress": {"dayKey": "2026-10-22", "xpGained": 50, "xpCapped": false,
+              "xpBreakdown": [{"reason": "duel_played", "categoryId": null, "amount": 20},
+                              {"reason": "duel_win", "categoryId": null, "amount": 30}],
+              "xpTotal": 1270, "levelBefore": 5, "levelAfter": 5, "xpIntoLevelBefore": 220,
+              "xpForNextLevelBefore": 500, "xpIntoLevel": 270, "xpForNextLevel": 500,
+              "categoryLevelUps": [], "streakCurrent": 7, "streakBest": 12,
+              "streakExtendedToday": true, "freezeAvailable": true}}
 ```
 
 Rebuilt after a restart, opponent deleted meanwhile (excerpt):
@@ -555,4 +566,6 @@ played round incl. sudden death, `options_sent_at`, `answer_deadline_at`) and
 `match_answers` (one row per player and round: `bet`, `bet_defaulted`, `option_id`,
 `is_correct`, `answered_ms`, `speed_bonus`, `points`, `missed`). Rounds are written
 when they resolve; the match row and ratings when it ends. `GET /v1/me/stats` and
-`GET /v1/me/matches` read these tables (`openapi.yaml`).
+`GET /v1/me/matches` read these tables (`openapi.yaml`). The duel XP award per player
+(`progress_awards`, `xp_events`, streak in `user_progress`) is written in the
+transaction that ends the match; a second end returns the stored awards.

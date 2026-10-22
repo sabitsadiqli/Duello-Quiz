@@ -1,7 +1,8 @@
 # Profile
 
-Stories: PROF-01 … PROF-08, HOME-04 (header now opens the profile), DUEL-21
-(same calibration rule). Decisions: OQ-011 / OQ-042 (display name rules), OQ-014
+Stories: PROF-01 … PROF-11, HOME-04 (header now opens the profile), DUEL-21
+(same calibration rule). PROF-09 … PROF-11 (level, category levels, streak) added
+2026-10-22; their elements are specified in `progression.md` C. Decisions: OQ-011 / OQ-042 (display name rules), OQ-014
 (deleted players), OQ-020 (duel flag), OQ-026 (record and history), OQ-027
 (calibration counting), OQ-030 (blocked names), OQ-031 (last 20 matches).
 Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, §21,
@@ -62,8 +63,15 @@ the only place to change my public name.
       - `space.xxs`, `profile_joined` ("Qoşulub: oktyabr 2026") `type.bodyMedium`
         `scheme.onSurfaceVariant`. Hidden if `createdAt` is missing.
       - The email is never shown here (PROF-02).
-   3. **Duel sections** — only when the duel build flag is on (OQ-020); with the
-      flag off the list ends after the header (no empty block, no CTA):
+   3. **Progress sections** (`progression.md` C, data `GET /v1/me/progress`) —
+      always shown, also with the duel flag off and for players without duels
+      (PROF-07, PROF-09):
+      1. `space.xl`, **level card** (PROF-09).
+      2. `space.lg`, **streak card** (PROF-11).
+      3. `space.xl`, section header `profile_categories_title` + **category levels
+         card** (PROF-10).
+   4. **Duel sections** — only when the duel build flag is on (OQ-020); with the
+      flag off the list ends after the progress sections (no empty block, no CTA):
       1. `space.xl`, **record card** (`components.md` §23): title
          `profile_record_title`, trailing `profile_record_total` ("22 oyun"); rows
          `profile_match_win`, `profile_match_loss`, `profile_match_draw` with
@@ -78,10 +86,11 @@ the only place to change my public name.
       3. `space.xl`, section header `profile_matches_title` (`type.titleMedium`,
          heading), `space.sm`, up to 20 match history rows (`components.md` §21),
          newest first, separated by `space.xs`; no "load more" (OQ-031).
-   4. Bottom `space.xl` + navigation bar inset.
+   5. Bottom `space.xl` + navigation bar inset.
 
-Order rationale: record and Əminlik statistikası are the summary (short, always
-the same height); the history list is long and goes last.
+Order rationale: level and streak concern every player (quiz, daily and duel), so
+they come first; record and Əminlik statistikası are the duel summary (short,
+always the same height); the history list is long and goes last.
 
 At ≥ 600dp: content centred, max width `space.layout.maxContentWidth`.
 
@@ -128,8 +137,10 @@ inline section error, dialog with text field, snackbar, pull-to-refresh.
 
 ### Screen
 
-The profile, stats and matches load in parallel (`GET /v1/me`, `GET
-/v1/me/stats`, `GET /v1/me/matches?limit=20`; may be merged by backend-dev). Each
+The profile, progress, stats and matches load in parallel (`GET /v1/me`, `GET
+/v1/me/progress`, `GET /v1/me/stats`, `GET /v1/me/matches?limit=20`; may be merged
+by backend-dev). Progress section states (skeleton, inline error, offline after
+Baku midnight hides the "today" line): `progression.md` States. Each
 section has its own state; the screen is never blocked by one failing section
 (PROF-08).
 
@@ -138,7 +149,7 @@ section has its own state; the screen is never blocked by one failing section
 | First load, no cache | Skeleton: avatar circle, two text bars (`scheme.surfaceContainerHighest`, shimmer as `components.md` §5) | Card skeletons with 3 bars each | 3 skeleton rows |
 | Cache exists | Cached data at once; replaced silently when fresh data arrives (no flicker). Data is always reloaded on open (PROF-01: a just-finished duel must appear). | Same | Same |
 | Success | As laid out | As laid out | Rows |
-| Empty (no counted match; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000" | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, primary button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
+| Empty (no counted match; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000"; level, streak and category cards still shown above the empty card | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, primary button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
 | Duel flag off | Normal | Hidden (no empty card, no CTA) | Hidden |
 | Section failed (5xx / 15 s timeout), others ok | — | That card shows `profile_section_error` (`type.bodyMedium`) + text button `common_retry`, card height kept | Same inline error in place of the list |
 | Offline, cache | Cached + offline banner `common_offline_banner` | Cached | Cached |
@@ -179,6 +190,8 @@ sign-up).
 
 - Header: avatar decorative; name is the heading; rating and joined date are read
   after it. The edit button is a separate element with `profile_edit_name_cd`.
+- Level card `profile_level_cd`, streak card `profile_streak_cd`, category rows
+  `profile_category_level_cd` (`progression.md` Accessibility).
 - Record card: one element `profile_record_cd`.
 - Calibration rows: one element each (`profile_calibration_row_cd` /
   `profile_calibration_row_few_cd`), e.g. "Əminlik 3: 18 dəfə seçilib, 72 faiz
@@ -216,4 +229,6 @@ sign-up).
 `profile_edit_saved`, `auth_error_name_required`, `auth_error_name_length`,
 `auth_error_name_characters`, `error_display_name_not_allowed`,
 `error_invalid_display_name`, `profile_edit_offline`, `profile_edit_failed`,
-`common_loading`.
+`common_loading`; progress section keys in `progression.md` (`profile_level_*`,
+`profile_streak_*`, `profile_categories_title`, `profile_category_level_cd`,
+`progress_level`, `progress_xp_into_level`).

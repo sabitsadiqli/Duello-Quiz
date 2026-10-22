@@ -22,7 +22,10 @@ Package by feature under `src/main/kotlin/com/sabit/duelloquiz/backend/`
 | `content` | `ContentImporter` (admin endpoint + CLI), image sources of an import (`ImageSources.kt`) |
 | `duel` | `GET /v1/duel` WebSocket (`docs/api/duel-protocol.md`): `DuelService` (sessions, queue, rejoin), `DuelMatch` (one coroutine per match, server timers), `MatchmakingQueue` (in-memory FIFO), `DbDuelStore` (rounds, results, Elo) |
 | `image` | Pipeline: `ImageProcessor` (decode, resize, WebP, dominant colour), `ImageService` (bounded dispatcher, dedupe, storage), `ImageRepository`, `POST /v1/admin/images`; `ImageStorage` interface + `LocalDiskImageStorage`, `MediaUrls` |
-| `common` | Config, errors, i18n, database, Exposed table mappings |
+| `daily` | Daily challenge (`/v1/daily*`): `DailySelector` (server-random set per Baku day), `DailyService` (attempts, answers, finish, expiry) |
+| `progress` | XP, levels, streak (`GET /v1/me/progress`): pure rules (`XpRules`, `Levels`, `Streaks`, `AwardCalculator`) and `ProgressService.award`, called inside the quiz/daily/duel finalize transaction |
+| `notification` | Push tokens and switches (`/v1/me/push-tokens`, `/v1/me/notification-settings`), `ReminderRules`, `NotificationService` jobs, `PushSender` (`FcmPushSender` via Firebase Admin SDK); texts in `src/main/resources/i18n/notifications.json` |
+| `common` | Config, errors, i18n, Baku day (`BakuTime`), database, Exposed table mappings |
 
 Database schema: Flyway migrations in `src/main/resources/db/migration/`. Never edit
 an applied migration; add a new `V<n>__*.sql`.
@@ -62,6 +65,8 @@ The server applies the Flyway migrations at startup. Without
 | `MEDIA_BASE_URL` | `http://localhost:8080/media` | Public base URL of the media files (served by Caddy) |
 | `DISPLAY_NAME_BLOCKLIST_FILE` | empty | Private display-name blocklist (OQ-030), one term per line |
 | `LOG_LEVEL` | `INFO` | Root log level (logs are JSON on stdout) |
+| `DAILY_FIRST_DAY` | `2026-10-22` | Baku date of daily challenge #1 |
+| `NOTIFICATIONS_ENABLED` | `true` | Push reminder scheduler; without a Firebase service account nothing is sent anyway |
 
 Image numbers (10 MB upload limit, 1024/400 px, quality 75/70 down to 50, targets
 80 000/20 000 bytes, 1 image processed at a time) live in the `duello.images` block.
@@ -71,6 +76,17 @@ Duel numbers (phase lengths, 250 ms grace, 30 s queue, Əminlik 3 limit, Elo K) 
 in the `duello.duel` block. The duel runs on a single instance: queue and running
 matches are in memory; on startup every match still `active` in the database is
 marked `abandoned` (a restart loses running matches, OQ-033).
+
+Retention numbers live in `duello.daily` (5 questions, 137.5 s deadline, 60-day
+reuse window), `duello.progress` (XP amounts, caps, freeze every 7 days) and
+`duello.notifications` (10:00 / 20:00 Baku, 60 min send window, quiet hours
+22:00–09:00, 7-day inactivity stop, 60-day stale tokens). All "days" are Baku days
+(`BakuTime`, 00:00 Asia/Baku from the server clock). The reminder scheduler runs in
+this single instance; each (user, type, day) send slot is claimed in
+`notification_log` before sending, so a restart or a second run never sends twice
+(at most once: a crash between claim and send skips that reminder). Running more
+than one replica would also need a job lock (e.g. `pg_try_advisory_lock`) so the
+replicas do not all scan; this is part of the multi-replica ADR (OQ-070).
 
 ## Import questions
 

@@ -652,6 +652,10 @@ calibration, rounds}` (`duel-protocol.md` §5).
   and the rating on home is refreshed (HOME-04).
 - Given "Yenidən oyna", When tapped, Then a new match is never forced against the same
   opponent (no rematch in the MVP, OQ-025).
+- Given progression (added 2026-10-22), When the result is shown, Then XP gained,
+  level-up and streak are shown per PROG-02 / PROG-06 (`progression.md`), from a
+  `progress` object in `match.result` (protocol change by `backend-dev`) or, until
+  then, from `GET /v1/me/progress`; abandoned and own-forfeit matches show no XP.
 
 ### DUEL-21 Calibration card
 

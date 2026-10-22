@@ -30,6 +30,9 @@ personal data of other players beyond their display name.
 | PROF-06 | As a player, I want to change my display name, so that opponents see the name I choose. | OQ-030 |
 | PROF-07 | As a new player without matches, I want a helpful empty profile, so that I know how to start. | — |
 | PROF-08 | As a player on a weak or missing connection, I want the profile to show the last known data, so that it never looks broken. | — |
+| PROF-09 | As a player, I want to see my level and XP progress on the profile, so that I know how far the next level is. | Blocked by OQ-083 (`progression.md` PROG-03) |
+| PROF-10 | As a player, I want to see my level in every category, so that I know my strong and weak topics. | Blocked by OQ-083, OQ-084 (PROG-04) |
+| PROF-11 | As a player, I want to see my current and best streak on the profile, so that I see my habit over time. | Blocked by OQ-085, OQ-086 (PROG-06, PROG-07) |
 
 API (`docs/api/openapi.yaml`): `GET /v1/me` (`Profile`: `id`, `displayName`,
 `avatarUrl`, `rating`, `createdAt`), `GET /v1/me/stats` (`record {wins, losses,
@@ -190,8 +193,10 @@ API: `PATCH /v1/me {displayName}` → updated profile.
   matches are not counted, PROF-03); abandoned matches still appear in "Son oyunlar"
   as "Ləğv edildi" if `GET /v1/me/matches` returns them.
 - Given category quizzes were played, When the profile is shown, Then they do not
-  appear in the record, list or stats (single player is not part of the profile in
-  the MVP).
+  appear in the duel record, list or calibration stats; they count only for XP,
+  category levels and the streak (PROF-09 … PROF-11).
+- Given the duel empty state, When the profile is shown, Then the level, category
+  and streak cards (PROF-09 … PROF-11) are still shown above it.
 
 ### PROF-08 Loading, offline and cache
 
@@ -212,8 +217,51 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 - Given account deletion, When it completes, Then the profile cache is deleted with
   all local data (SET-05).
 
+### PROF-09 Level and XP
+
+Added 2026-10-22. Data: `GET /v1/me/progress`; rules in PROG-03.
+
+- Given progress loaded, When the profile is shown, Then a "Səviyyə" card below the
+  name shows "Səviyyə 5", a progress bar and "270 / 500 XP", plus the total "Cəmi
+  1 270 XP".
+- Given a new user, When shown, Then "Səviyyə 1", an empty bar and "0 / 100 XP" are
+  shown (never hidden; it invites play).
+- Given the duel build flag is off (OQ-020), When shown, Then the level card stays
+  (XP also comes from quizzes and the daily challenge).
+- Given the profile, When the progress section fails while others load, Then only
+  this section shows "Yükləmək alınmadı" with a retry (PROF-08).
+
+### PROF-10 Category levels
+
+Added 2026-10-22. Rules in PROG-04.
+
+- Given progress loaded, When the profile is shown, Then a "Kateqoriyalar" section
+  lists every playable category in `sort_order` with its icon, name, "Səviyyə 3" and a
+  thin progress bar; unplayed categories show "Səviyyə 1" with an empty bar.
+- Given long names on 360 dp at font scale 1.3, When shown, Then the name wraps to at
+  most 2 lines and the level label never overlaps it.
+- Given TalkBack, When a row is focused, Then it reads "Coğrafiya: səviyyə 3,
+  növbəti səviyyəyə 120 XP qalıb".
+- Given a row is tapped, When tapped, Then nothing opens in the MVP (no per-category
+  detail screen).
+
+### PROF-11 Streak
+
+Added 2026-10-22. Rules in PROG-05 … PROG-08.
+
+- Given progress loaded, When the profile is shown, Then a streak card shows "Seriya:
+  7 gün", "Ən uzun seriya: 12 gün", whether today already counts ("Bu gün oynamısan"
+  / "Bu gün hələ oynamamısan") and, if OQ-086 is accepted, "Seriya qoruyucusu: var"
+  or "Seriya qoruyucusu: 7 günlük seriyada qazanılır".
+- Given streak 0 and best 0, When shown, Then "Hələ seriyan yoxdur. Bu gün bir oyun
+  oyna və başla." is shown.
+- Given offline after midnight Baku, When the cached streak is shown, Then the
+  "today" line is hidden until the server confirms it (PROG-06).
+
 ## 3. Business rules
 
+- Level, XP, category levels and streak: `docs/mvp-spec.md` §10 and `progression.md`;
+  computed on the server only; never shown to other players (OQ-095).
 - Rating: Elo from `docs/mvp-spec.md` §2 (start 1000, K = 32, draw 0.5); updated only
   by finished duels (DUEL-22); never by the category quiz.
 - Display name: 2–20 Unicode code points after NFC, trimming and collapsing spaces;
@@ -233,8 +281,10 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 ## 4. Out of scope
 
 Viewing other players' profiles, avatar upload or change, per-match detail and round
-replay, quiz history and per-category stats, achievements and badges, leaderboards,
-rating history chart, sharing the profile, reporting players, unique usernames.
+replay, quiz history and per-category accuracy stats (category levels are in scope
+since 2026-10-22, PROF-10), achievements and badges, leaderboards, rating or XP
+history charts, a streak calendar, sharing the profile, reporting players, unique
+usernames.
 
 ## 5. Analytics events
 
@@ -244,7 +294,7 @@ rating history chart, sharing the profile, reporting players, unique usernames.
 | `profile_empty_cta_tapped` | — | "Duelə başla" on the empty state |
 | `display_name_changed` | — | `PATCH /me` succeeded (never send the name) |
 | `display_name_rejected` | `reason`: `length` \| `not_allowed` \| `invalid_chars` | Validation failed (client or server) |
-| `profile_load_failed` | `section`: `profile` \| `stats` \| `matches`, `error_type`: `offline` \| `timeout` \| `server` | A section failed |
+| `profile_load_failed` | `section`: `profile` \| `stats` \| `matches` \| `progress`, `error_type`: `offline` \| `timeout` \| `server` | A section failed |
 
 Also update the user property `rating_bucket` (100-point buckets) when the profile or
 home loads, so usage can be split by skill level.
@@ -260,3 +310,5 @@ length; also resolves the designer's OQ-D13). 2026-10-16: OQ-059 (counts from th
 server, hint and percentages on the client), OQ-060 (`createdAt` in `GET /v1/me`).
 Decided and used here: OQ-011 (display name), OQ-014 (deleted players), OQ-020 (duel
 flag).
+
+Open (2026-10-22): OQ-083, OQ-084, OQ-085, OQ-086, OQ-095 (PROF-09 … PROF-11).

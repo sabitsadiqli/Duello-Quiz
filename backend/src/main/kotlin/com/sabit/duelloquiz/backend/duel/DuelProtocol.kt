@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.backend.duel
 
+import com.sabit.duelloquiz.backend.progress.ProgressDto
 import com.sabit.duelloquiz.backend.quiz.ImageDto
 import com.sabit.duelloquiz.backend.quiz.OptionDto
 import com.sabit.duelloquiz.backend.user.CalibrationLevel
@@ -306,6 +307,8 @@ sealed interface ServerMessage {
         val rounds: List<RoundSummary>,
         val you: ResultPlayer,
         val opponent: ResultPlayer,
+        /** XP/level/streak change of the receiver (protocol v1.1); null if it could not be stored. */
+        val progress: ProgressDto? = null,
     ) : ServerMessage
 
     @Serializable @SerialName("error")

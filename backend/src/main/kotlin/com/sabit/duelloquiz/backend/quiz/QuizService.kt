@@ -10,6 +10,10 @@ import com.sabit.duelloquiz.backend.common.conflict
 import com.sabit.duelloquiz.backend.common.notFound
 import com.sabit.duelloquiz.backend.common.resolve
 import com.sabit.duelloquiz.backend.image.MediaUrls
+import com.sabit.duelloquiz.backend.progress.AwardRequest
+import com.sabit.duelloquiz.backend.progress.ProgressDto
+import com.sabit.duelloquiz.backend.progress.ProgressService
+import com.sabit.duelloquiz.backend.progress.SourceType
 import com.sabit.duelloquiz.backend.user.UserRecord
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -28,6 +32,7 @@ class QuizService(
     private val mediaUrls: MediaUrls,
     private val config: QuizConfig,
     private val clock: Clock,
+    private val progress: ProgressService,
     private val random: Random = Random.Default,
 ) {
     private val log = LoggerFactory.getLogger(QuizService::class.java)
@@ -146,7 +151,11 @@ class QuizService(
     /** QUIZ-05/06: closes the session (idempotent) and returns score + review. */
     suspend fun finish(user: UserRecord, sessionId: UUID, language: String): QuizResultResponse = db.tx {
         val locked = lockOwnSession(user, sessionId)
-        val session = if (locked.status == SessionStatus.ACTIVE) finalize(locked, clock.instant()) else locked
+        val (session, progressDto) = if (locked.status == SessionStatus.ACTIVE) {
+            finalize(locked, clock.instant())
+        } else {
+            locked to with(progress) { storedAward(user.id, SourceType.QUIZ, sessionId) }
+        }
         val questionIds = with(repository) { sessionQuestionIds(sessionId) }
         val answers = with(repository) { answers(sessionId) }
         val contents = with(repository) { loadQuestions(questionIds) }
@@ -174,6 +183,7 @@ class QuizService(
             total = questionIds.size,
             finishedAt = session.finishedAt!!.toString(),
             review = review,
+            progress = progressDto,
         )
     }
 
@@ -205,14 +215,29 @@ class QuizService(
     /**
      * Closes an active session: `finished` at [now] if within the deadline, else
      * `expired` at its deadline. Unanswered questions simply have no answer row.
+     * XP and the streak are awarded in the same transaction (OQ-081, OQ-085): a session
+     * with at least one answer is real play; caps per OQ-082.
      */
-    private fun JdbcTransaction.finalize(session: SessionRecord, now: Instant): SessionRecord {
+    private fun JdbcTransaction.finalize(session: SessionRecord, now: Instant): Pair<SessionRecord, ProgressDto?> {
         val withinDeadline = !now.isAfter(session.deadlineAt)
         val status = if (withinDeadline) SessionStatus.FINISHED else SessionStatus.EXPIRED
         val finishedAt = if (withinDeadline) now else session.deadlineAt
         val correct = with(repository) { countCorrect(session.id) }
+        val answered = with(repository) { answers(session.id) }.size
         with(repository) { closeSession(session.id, status, correct, finishedAt) }
-        return session.copy(status = status, correctCount = correct, finishedAt = finishedAt)
+        val award = with(progress) {
+            award(
+                AwardRequest(
+                    userId = session.userId,
+                    sourceType = SourceType.QUIZ,
+                    sourceId = session.id,
+                    startedAt = session.startedAt,
+                    eligible = answered > 0,
+                    items = rules.quiz(session.categoryId, correct),
+                ),
+            )
+        }
+        return session.copy(status = status, correctCount = correct, finishedAt = finishedAt) to award
     }
 
     private fun ImageRecord.toDto(language: String) = ImageDto(

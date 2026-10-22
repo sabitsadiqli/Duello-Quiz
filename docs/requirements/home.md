@@ -24,6 +24,8 @@ explaining what is not available instead of showing a blank screen.
 | HOME-04 | As a player, I want to see my name, avatar and rating, so that I know my standing. | OQ-011 (name) |
 | HOME-05 | As a player on a bad connection, I want home to show the last known data and tell me I am offline, so that the app does not look broken. | — |
 | HOME-06 | As a player, I want an entry to settings, so that I can change theme or sign out. | — |
+| HOME-07 | As a player, I want today's daily challenge card at the top of home, so that I see at once whether I still have to play it. | Blocked by OQ-074, OQ-079 (`daily-challenge.md`) |
+| HOME-08 | As a player, I want my level and streak in the home header, so that I see my progress every time I open the app. | Blocked by OQ-083, OQ-085 (`progression.md`) |
 
 ### HOME-01 Category list
 
@@ -124,6 +126,44 @@ Data: `GET /v1/me` (creates the profile on first call, AUTH-06).
 - Given settings is closed with back, When home is shown again, Then scroll position
   and loaded data are kept.
 
+### HOME-07 Daily challenge card
+
+Added 2026-10-22. Behaviour and states: DAILY-01 (`daily-challenge.md`); this story
+only places the card on home.
+
+- Given home is shown, When the layout is built, Then the order from top is: header
+  (HOME-04, HOME-08), daily challenge card, duel entry (HOME-03), category list
+  (HOME-01). The designer may change the order in the screen spec.
+- Given `GET /v1/daily` is loading and no cache exists, When home is shown, Then the
+  card shows a skeleton of the same height (no layout jump when it arrives).
+- Given `GET /v1/daily` fails while categories load fine, When home is shown, Then
+  only the card shows "Yükləmək alınmadı" with a retry; the rest of home works.
+- Given home is refreshed (pull to refresh, return from a quiz, duel or daily), When
+  it reloads, Then the daily status is reloaded too, in the same single refresh
+  (HOME-01 abuse rule applies to the whole refresh).
+
+### HOME-08 Level and streak in the header
+
+Added 2026-10-22. Data: `GET /v1/me/progress` (PROG-03, PROG-06).
+
+- Given progress loaded, When the header is shown, Then next to the name and rating it
+  shows "Səviyyə 5" and the streak icon with "7" (filled when today is active,
+  outlined otherwise; content description "7 günlük seriya, bu gün oynamısan" /
+  "7 günlük seriya, bu gün hələ oynamamısan").
+- Given 360 dp at font scale 1.3 with a 20-character name, When the header is shown,
+  Then name, rating, level and streak fit without overlapping (the name truncates
+  first, HOME-04); the designer decides whether level and streak go on a second line.
+- Given the progress request fails, When a cache for this account exists, Then cached
+  values are shown (after midnight Baku without the "today" state, PROG-06); without
+  cache level and streak are hidden, not shown as "0".
+- Given the user returns from any result screen, When home is shown, Then progress is
+  reloaded (XP, level and streak may have changed).
+- Given the streak hint and the one-time messages (PROG-06 "Seriyanı qoru…", PROG-07
+  freeze used, PROG-08 streak ended), When home is shown, Then at most one of them is
+  shown at a time, in the order: streak ended, freeze used, streak hint.
+- Given the header, When the user taps level or streak, Then the profile opens (same
+  as tapping the header, PROF-01).
+
 ## 3. Business rules
 
 - Categories are database rows (`docs/mvp-spec.md` §6: `categories` with
@@ -135,8 +175,11 @@ Data: `GET /v1/me` (creates the profile on first call, AUTH-06).
 
 ## 4. Out of scope
 
-Leaderboards, friends, daily challenges, per-category progress or best scores,
-notifications, ads or purchases. Profile editing lives in `profile.md` (PROF-06).
+Leaderboards, friends, per-category best scores, ads or purchases. Profile editing
+lives in `profile.md` (PROF-06). Since 2026-10-22 the daily challenge (HOME-07),
+level and streak (HOME-08) are in scope; per-category levels are shown on the
+profile only (PROF-10), not on the category cards; notification settings live in
+settings (SET-07).
 
 ## 5. Analytics events
 
@@ -147,6 +190,10 @@ notifications, ads or purchases. Profile editing lives in `profile.md` (PROF-06)
 | `duel_entry_tapped` | `online` (bool) | Duel entry tapped |
 | `categories_load_failed` | `error_type`: `offline` \| `timeout` \| `server` | Category request failed |
 | `settings_opened` | — | Settings entry tapped |
+| `daily_card_viewed` | see `daily-challenge.md` §5 | Daily card visible (HOME-07) |
+| `home_progress_tapped` | `target`: `level` \| `streak` | Level or streak tapped (HOME-08) |
+
+`home_viewed` also gets `streak` (bucketed as `streak_bucket`) and `daily_status`.
 
 ## 6. Decisions
 
@@ -155,3 +202,5 @@ final wording is in `open-questions.md` (Decided).
 
 OQ-011 (display name), OQ-013 (categories with fewer than 10 active questions),
 OQ-020 (duel entry before the duel ships).
+
+Open (2026-10-22): OQ-074, OQ-079 (HOME-07); OQ-083, OQ-085, OQ-086 (HOME-08).

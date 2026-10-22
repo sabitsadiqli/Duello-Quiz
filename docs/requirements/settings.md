@@ -24,6 +24,7 @@ account, so it must ship before the first public (closed-test) release.
 | SET-04 | As a signed-in player, I want to sign out from settings, so that I can switch accounts. | — |
 | SET-05 | As a player, I want to delete my account and data from inside the app, so that I control my data (Google Play requirement). | OQ-014 |
 | SET-06 | As a former or current player without the app, I want a web page explaining how to request account deletion, so that I can delete my data anyway (Google Play requirement). | OQ-014, OQ-015 |
+| SET-07 | As a player, I want a "Bildirişlər" section with a switch per reminder type, so that I decide which reminders I get. | Blocked by OQ-090, OQ-091 (`notifications.md` NOTIF-06) |
 
 ### SET-01 Theme
 
@@ -85,8 +86,8 @@ Options: "Sistem" (default), "İşıqlı", "Qaranlıq". Stored in DataStore
 Recommended flow (blocked by OQ-014 for data handling details):
 
 - Given a signed-in user, When they tap "Hesabı sil", Then a screen explains what
-  will be deleted ("Profilin, reytinqin və quiz nəticələrin həmişəlik silinəcək. Bu
-  əməliyyatı geri qaytarmaq olmaz.") with a destructive button
+  will be deleted ("Profilin, reytinqin, səviyyən, seriyan və quiz nəticələrin
+  həmişəlik silinəcək. Bu əməliyyatı geri qaytarmaq olmaz.") with a destructive button
   "Hesabı həmişəlik sil" and "Ləğv et".
 - Given the user confirms, When the second confirmation dialog is accepted, Then the
   client calls `DELETE /v1/me` with the current ID token; the backend deletes or
@@ -110,7 +111,13 @@ Recommended flow (blocked by OQ-014 for data handling details):
   any queue entry, then deletes (`docs/api/openapi.yaml`).
 - Given the account is deleted, When the same Google account or email signs up again,
   Then a fresh profile with rating 1000 is created; nothing of the old account comes
-  back.
+  back (also level 1, 0 XP, streak 0).
+- Given the retention features (added 2026-10-22), When `DELETE /v1/me` runs, Then it
+  also deletes daily attempts and answers, XP, category XP, active days, streak and
+  freeze, notification settings, the notification send log and all push tokens
+  (`docs/mvp-spec.md` §3a, PROG-10, NOTIF-08); the client calls
+  `FirebaseMessaging.deleteToken()` and cancels any shown notifications during the
+  local cleanup.
 - Given a deleted user appears in an opponent's stored match, When the opponent's
   data is read, Then the deleted player is shown as "Silinmiş oyunçu" (per OQ-014).
 
@@ -125,6 +132,23 @@ Recommended flow (blocked by OQ-014 for data handling details):
   stated time with the same backend operation as SET-05 (an admin task, no new UI).
 - This story produces a document and a Play Console entry, not app code.
 
+### SET-07 Notifications
+
+Added 2026-10-22. Behaviour, states and API: NOTIF-01, NOTIF-06 (`notifications.md`).
+
+- Given settings, When shown, Then a "Bildirişlər" section between "Dil" and "Hesab"
+  has the switches "Gündəlik çağırış xatırlatması" and "Seriya xatırlatması".
+- Given Android 13+ without permission and the user turns a switch on, When tapped,
+  Then the system permission dialog is shown (or the app's system notification
+  settings if the permission is permanently denied, NOTIF-01); the switch turns on
+  only when the permission is granted.
+- Given notifications are blocked by the phone, When shown, Then the switches are
+  disabled with "Bildirişlər telefonda söndürülüb" and "Ayarları aç" (NOTIF-06).
+- Given another account signs in on the same phone, When settings are shown, Then that
+  account's own preferences are loaded from the server (preferences are per account).
+- Given a 360 dp screen at font scale 1.3, When shown, Then "Gündəlik çağırış
+  xatırlatması" wraps to at most 2 lines (`row` budget) and the switch stays aligned.
+
 ## 3. Business rules
 
 - Theme values and storage: `docs/mvp-spec.md` §4. Default "Sistem".
@@ -132,13 +156,17 @@ Recommended flow (blocked by OQ-014 for data handling details):
   `CLAUDE.md` ("No hard-coded user-facing strings").
 - Account deletion must be available inside the app and via a web resource before
   the closed test (Google Play User Data policy for apps with account creation).
-- Settings entries order (proposal): Tema, Dil, Hesab (Hesabdan çıx, Hesabı sil),
-  Haqqında. The designer decides the layout.
+- Settings entries order (proposal): Tema, Dil, Bildirişlər, Hesab (Hesabdan çıx,
+  Hesabı sil), Haqqında. The designer decides the layout.
+- Notification preferences are account settings stored on the server (OQ-091); the
+  theme stays a device setting.
 
 ## 4. Out of scope
 
-Notifications settings, sound/vibration toggles, changing email/password, editing
-display name or avatar, data export, more languages, account linking UI.
+Sound/vibration toggles, a reminder time picker or custom quiet hours (OQ-089),
+changing email/password, editing display name or avatar, data export, more
+languages, account linking UI. (Notification switches are in scope since
+2026-10-22, SET-07.)
 
 ## 5. Analytics events
 
@@ -161,3 +189,6 @@ final wording is in `open-questions.md` (Decided).
 
 OQ-014 (account deletion scope and retention), OQ-015 (privacy policy and deletion
 page hosting).
+
+Open (2026-10-22): OQ-089, OQ-090, OQ-091 (SET-07). Notification analytics events
+are listed in `notifications.md` §5.

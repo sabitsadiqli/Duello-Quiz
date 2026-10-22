@@ -22,7 +22,7 @@ class DbDuelStoreTest : DbTest() {
         val users = UserRepository(db)
         val a = users.createIfAbsent("uid-a", "Alice", null, Instant.now()).id
         val b = users.createIfAbsent("uid-b", "Bob", null, Instant.now()).id
-        Triple(DbDuelStore(db, QuizRepository()), a, b)
+        Triple(DbDuelStore(db, QuizRepository(), 32, env.progress), a, b)
     }
 
     @Test
@@ -58,10 +58,16 @@ class DbDuelStoreTest : DbTest() {
             ),
         )
         val end = MatchEnd(matchId, MatchStatus.FINISHED, EndReasons.FORFEIT, Side.A, Side.B, 331, 0, t0 + 60_000, DuelMatch.FORFEIT_MISSED)
-        val ratings = store.endMatch(end, 1000, 1000)
+        val endResult = store.endMatch(end, 1000, 1000)
+        val ratings = endResult.ratings
         assertEquals(RatingUpdate(1000, 1016, 1000, 984), ratings)
-        // Second end (retry): no second rating change.
-        assertEquals(ratings, store.endMatch(end.copy(winnerSide = Side.B), 1000, 1000))
+        // XP in the same transaction (OQ-081): winner 20 + 30, the forfeiting player 0.
+        assertEquals(50, endResult.progress.getValue(Side.A).xpGained)
+        assertEquals(0, endResult.progress.getValue(Side.B).xpGained)
+        assertEquals(1, endResult.progress.getValue(Side.A).streakCurrent)
+        assertEquals(0, endResult.progress.getValue(Side.B).streakCurrent, "a forfeit is not an active day")
+        // Second end (retry): no second rating change, the same awards.
+        assertEquals(endResult, store.endMatch(end.copy(winnerSide = Side.B), 1000, 1000))
         val profiles = store.profiles(listOf(a, b))
         assertEquals(1016, profiles.getValue(a).rating)
         assertEquals(984, profiles.getValue(b).rating)
@@ -74,6 +80,7 @@ class DbDuelStoreTest : DbTest() {
         assertEquals(DuelMatch.FORFEIT_MISSED, stored.forfeitCause)
         assertEquals(331 to 0, stored.scoreA to stored.scoreB)
         assertEquals(ratings, stored.ratings)
+        assertEquals(endResult.progress, stored.progress)
         val round = stored.rounds.single()
         assertEquals(331, round.answers.getValue(Side.A).points)
         assertEquals(3_800, round.answers.getValue(Side.A).answeredMs)

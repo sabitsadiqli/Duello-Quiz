@@ -24,6 +24,20 @@ import com.sabit.duelloquiz.backend.image.ImageRepository
 import com.sabit.duelloquiz.backend.image.ImageService
 import com.sabit.duelloquiz.backend.image.ImageStorage
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
+import com.sabit.duelloquiz.backend.daily.DailyConfig
+import com.sabit.duelloquiz.backend.daily.DailyRepository
+import com.sabit.duelloquiz.backend.daily.DailyService
+import com.sabit.duelloquiz.backend.image.MediaUrls
+import com.sabit.duelloquiz.backend.notification.NotificationConfig
+import com.sabit.duelloquiz.backend.notification.NotificationRepository
+import com.sabit.duelloquiz.backend.notification.NotificationService
+import com.sabit.duelloquiz.backend.notification.NotificationTexts
+import com.sabit.duelloquiz.backend.progress.ProgressConfig
+import com.sabit.duelloquiz.backend.quiz.QuizRepository
+import java.time.LocalDate
+import com.sabit.duelloquiz.backend.notification.PushSender
+import com.sabit.duelloquiz.backend.progress.ProgressRepository
+import com.sabit.duelloquiz.backend.progress.ProgressService
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
@@ -49,6 +63,9 @@ fun testConfig(
     quiz: QuizConfig = QuizConfig(expirySweepIntervalMs = 0),
     duel: DuelConfig = DuelConfig(),
     images: ImageConfig = ImageConfig(),
+    // Day #1 before the test clock's default date (2026-10-16).
+    daily: DailyConfig = DailyConfig(firstDay = LocalDate.of(2026, 10, 1)),
+    progress: ProgressConfig = ProgressConfig(),
 ) = AppConfig(
     db = DbConfig("unused", "unused", "", 1),
     firebase = FirebaseConfig(null, null),
@@ -58,6 +75,10 @@ fun testConfig(
     importMaxBodyBytes = 1_000_000,
     duel = duel,
     images = images,
+    daily = daily,
+    progress = progress,
+    // The scheduler is driven explicitly in tests.
+    notifications = NotificationConfig(enabled = false, tickIntervalMs = 0),
 )
 
 /** Everything a route test can control. */
@@ -67,7 +88,15 @@ class TestEnv(
     val clock: MutableClock = MutableClock(),
     val verifier: FakeTokenVerifier = FakeTokenVerifier(),
     val deleter: FakeAccountDeleter = FakeAccountDeleter(),
+    val push: FakePushSender = FakePushSender(),
 ) {
+    val progress = ProgressService(db, ProgressRepository(), config.progress, clock)
+    val daily = DailyService(
+        db, DailyRepository(), QuizRepository(), progress, config.daily, config.quiz, MediaUrls(config.media.baseUrl), clock,
+    )
+    val notifications = NotificationService(
+        db, NotificationRepository(), DailyRepository(), daily, progress, NotificationTexts.load(), push, config.notifications, clock,
+    )
     val storage = LocalDiskImageStorage(java.nio.file.Path.of(config.media.dir))
     val imageRepository = ImageRepository()
     val images = ImageService(db, imageRepository, storage, ImageProcessor(config.images), config.images, clock)
@@ -90,6 +119,7 @@ fun withTestApp(env: TestEnv, block: suspend ApplicationTestBuilder.(HttpClient)
                     single<TokenVerifier> { env.verifier }
                     single<AuthAccountDeleter> { env.deleter }
                     single<ImageStorage> { env.storage }
+                    single<PushSender> { env.push }
                 },
                 featureModule(env.config),
             )

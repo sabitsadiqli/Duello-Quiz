@@ -1,0 +1,11 @@
+{
+  "_comment": "Push reminder texts (docs/mvp-spec.md §11, OQ-096). Resolved by the token's locale, fallback az. Placeholders: {dailyNumber}, {streak}. Copy owner: designer (design/copy/az.md).",
+  "daily_reminder": {
+    "title": {"az": "Gündəlik çağırış #{dailyNumber} hazırdır"},
+    "body": {"az": "5 sual səni gözləyir. Bu gün neçəsini tapacaqsan?"}
+  },
+  "streak_reminder": {
+    "title": {"az": "{streak} günlük seriyanı qoru"},
+    "body": {"az": "Bu gün bir oyun oyna ki, seriyan davam etsin."}
+  }
+}

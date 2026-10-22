@@ -1,7 +1,8 @@
 # Duel — match result and calibration card
 
-Stories: DUEL-20, DUEL-21, DUEL-22, DUEL-14 (forfeit / abandoned texts), DUEL-11
-(sudden death / draw). Decisions: OQ-025 (no rematch: "Yenidən oyna" re-queues),
+Stories: DUEL-20 (incl. XP, added 2026-10-22), DUEL-21, DUEL-22, DUEL-14 (forfeit /
+abandoned texts), DUEL-11 (sudden death / draw), PROG-02 / PROG-06 (XP, level-up,
+streak). Decisions: OQ-025 (no rematch: "Yenidən oyna" re-queues),
 OQ-026 (forfeit and abandoned display), OQ-027 (calibration counting), OQ-038 /
 OQ-039 (Elo rounding, no floor).
 Tokens: `design/tokens.json`. Components: `components.md` §13, §20. Copy: `copy/az.md`.
@@ -85,6 +86,13 @@ card) — then make the next match one tap away.
       "0") `type.titleMedium` tabular in `game.correct` / `game.wrong` /
       `scheme.onSurfaceVariant`. Abandoned: only `duel_result_rating_unchanged`
       in `scheme.onSurfaceVariant`. TalkBack: `duel_result_rating_cd`.
+   3a. `space.lg`, **progress card** (`components.md` §26, `progression.md` A):
+      "+50 XP" win / "+35 XP" draw / "+20 XP" loss from `match.result.progress`
+      (or, until the protocol carries it, from `GET /v1/me/progress` after the
+      match: then only the level bar and streak row, no "+XP", because the gain is
+      unknown). Own forfeit: XP row hidden. **Abandoned: no progress card.** Over
+      a cap: cap note (OQ-D29). Never contains Elo — the rating card stays the
+      only place for the rating.
    4. `space.xl`, **Əminlik kartı** (`components.md` §20): title
       `duel_calibration_title`, subtitle `duel_calibration_subtitle`, rows for
       Əminlik 1, 2, 3 with `duel_calibration_value` ("2 / 3 düzgün") or
@@ -133,7 +141,9 @@ calibration card, filled and neutral buttons.
 | Opponent forfeited, cause unknown (`forfeitCause = null`) | Win hero + `duel_result_reason_opponent_forfeit`. |
 | Own forfeit (2 missed in a row) | Loss hero + `duel_result_reason_self_forfeit`; Əminlik card still shown for the rounds played. |
 | Own forfeit, cause `left` / unknown | Loss hero + `duel_result_reason_self_left` / `duel_result_reason_self_forfeit_unknown`. |
-| Abandoned | Abandoned hero + reason; rating line `duel_result_rating_unchanged`; no Əminlik card; buttons as usual. |
+| Abandoned | Abandoned hero + reason; rating line `duel_result_rating_unchanged`; no Əminlik card; no progress card; buttons as usual. |
+| Progress arrives late / not at all | Progress card expands in when available; otherwise not rendered (no "+0 XP"). |
+| Level-up | Level-up strip inside the progress card, once; duplicate `match.result` shows the final state without animation. |
 | Calibration: a level unused | Row value "—", no bar. |
 | Calibration: no counted rounds at all (e.g. all defaulted) | All rows "—", hint `duel_calibration_hint_few_data`. |
 | Opponent deleted meanwhile | Deleted-player avatar + `common_deleted_player`. |
@@ -151,7 +161,9 @@ calibration card, filled and neutral buttons.
 - Calibration bars grow from 0 to their value, staggered 50ms per row
   (`motion.duration.medium2`, `emphasizedDecelerate`).
 - Reduced motion: everything final at once, no pop, no growth.
-- Haptic: one medium tick on win, none otherwise.
+- Haptic: one medium tick on win, none otherwise (a level-up adds its own single
+  tick after the bar animation, `motion.progression.levelUp`).
+- Progress card motion starts after the rating delta has faded in.
 
 ## Accessibility
 
@@ -180,4 +192,4 @@ calibration card, filled and neutral buttons.
 `duel_calibration_hint_overconfident`, `duel_calibration_hint_underconfident`,
 `duel_calibration_hint_few_data`, `duel_calibration_hint_neutral`,
 `duel_result_play_again`, `common_home`, `common_deleted_player`,
-`home_duel_needs_internet`.
+`home_duel_needs_internet`; progress card keys in `progression.md`.
