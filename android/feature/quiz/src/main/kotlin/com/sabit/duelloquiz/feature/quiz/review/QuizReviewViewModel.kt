@@ -4,10 +4,12 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sabit.duelloquiz.core.data.repository.DailyRepository
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.QuizResult
+import com.sabit.duelloquiz.core.model.ReviewItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -60,10 +62,14 @@ sealed interface QuizReviewEvent {
 @HiltViewModel
 class QuizReviewViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
+    private val dailyRepository: DailyRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val sessionId: String = savedStateHandle.get<String>("sessionId").orEmpty()
+
+    /** The review of a daily attempt (DAILY-04, same screen as QUIZ-06). */
+    private val daily: Boolean = savedStateHandle.get<Boolean>("daily") ?: false
 
     private val _uiState = MutableStateFlow<QuizReviewUiState>(QuizReviewUiState.Loading)
     val uiState: StateFlow<QuizReviewUiState> = _uiState.asStateFlow()
@@ -86,6 +92,10 @@ class QuizReviewViewModel @Inject constructor(
 
     private fun load() {
         if (loadJob?.isActive == true) return
+        if (daily) {
+            loadDaily()
+            return
+        }
         if (quizRepository.session(sessionId) == null) {
             _events.trySend(QuizReviewEvent.NavigateBack)
             return
@@ -101,7 +111,25 @@ class QuizReviewViewModel @Inject constructor(
         }
     }
 
-    private fun QuizResult.toItems(): List<ReviewItemUi> = review.map { item ->
+    private fun loadDaily() {
+        val known = dailyRepository.result(sessionId)
+        if (known == null && dailyRepository.attempt(sessionId) == null) {
+            _events.trySend(QuizReviewEvent.NavigateBack)
+            return
+        }
+        _uiState.value = QuizReviewUiState.Loading
+        loadJob = viewModelScope.launch {
+            val result = known?.let { DataResult.Success(it) } ?: dailyRepository.finish(sessionId)
+            _uiState.value = when (result) {
+                is DataResult.Success -> QuizReviewUiState.Content(result.value.review.toItems())
+                is DataResult.Failure -> QuizReviewUiState.Error(offline = result.error == DataError.Offline)
+            }
+        }
+    }
+
+    private fun QuizResult.toItems(): List<ReviewItemUi> = review.toItems()
+
+    private fun List<ReviewItem>.toItems(): List<ReviewItemUi> = map { item ->
         ReviewItemUi(
             questionId = item.questionId,
             position = item.position,

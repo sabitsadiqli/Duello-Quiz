@@ -2,8 +2,13 @@ package com.sabit.duelloquiz.feature.quiz.result
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -47,6 +53,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
@@ -56,6 +64,8 @@ import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
+import com.sabit.duelloquiz.core.designsystem.component.NotificationPermissionCard
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCard
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.Depth
@@ -70,6 +80,8 @@ import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
+import com.sabit.duelloquiz.core.designsystem.util.rememberNotificationPermissionRequester
+import com.sabit.duelloquiz.core.designsystem.util.startSettingsIntent
 import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import kotlinx.coroutines.launch
 
@@ -84,9 +96,14 @@ internal fun QuizResultRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
+    val context = LocalContext.current
+    val requestPermission = rememberNotificationPermissionRequester { granted, blocked ->
+        viewModel.onAction(QuizResultAction.PermissionResult(granted, blocked))
+    }
 
     // System back on the result goes home; the finished quiz is never re-entered (QUIZ-05).
     BackHandler { viewModel.onAction(QuizResultAction.HomeClicked) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onAction(QuizResultAction.Resumed) }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
@@ -99,6 +116,12 @@ internal fun QuizResultRoute(
                     message = resources.getString(event.message.textRes()),
                     duration = SnackbarDuration.Long,
                 )
+            }
+            QuizResultEvent.RequestPermission -> requestPermission()
+            is QuizResultEvent.OpenSettings -> context.startSettingsIntent(event.intent)
+            QuizResultEvent.NotificationsEnabled -> scope.launch {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                snackbarHostState.showSnackbar(resources.getString(R.string.notif_enabled_snackbar), duration = SnackbarDuration.Short)
             }
         }
     }
@@ -162,6 +185,26 @@ internal fun QuizResultScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
+                }
+                AnimatedVisibility(
+                    visible = uiState.progress != null,
+                    enter = expandVertically(tween(Motion.MEDIUM_2, easing = Motion.EmphasizedDecelerate)) + fadeIn(tween(Motion.MEDIUM_2)),
+                ) {
+                    uiState.progress?.let { ProgressCard(it, modifier = Modifier.padding(top = Spacing.lg)) }
+                }
+                AnimatedVisibility(
+                    visible = uiState.permissionCard != null,
+                    enter = expandVertically(tween(Motion.MEDIUM_2, easing = Motion.EmphasizedDecelerate)) + fadeIn(tween(Motion.MEDIUM_2)),
+                    exit = shrinkVertically(tween(Motion.SHORT_4, easing = Motion.EmphasizedAccelerate)) + fadeOut(tween(Motion.SHORT_4)),
+                ) {
+                    uiState.permissionCard?.let { card ->
+                        NotificationPermissionCard(
+                            permanentlyDenied = card.blocked,
+                            onAllow = { onAction(QuizResultAction.PermissionAllowClicked) },
+                            onLater = { onAction(QuizResultAction.PermissionLaterClicked) },
+                            modifier = Modifier.padding(top = Spacing.lg),
+                        )
+                    }
                 }
                 val reviewCount = uiState.reviewCount
                 if (reviewCount != null && !uiState.isPerfect) {
@@ -285,7 +328,7 @@ private fun CategoryPill(name: String, iconKey: String, color: Color) {
 
 /** Review entry (quiz-result.md v2): white game card, 44dp wrong-tinted icon box, chevron. */
 @Composable
-private fun ReviewEntryCard(count: Int, onClick: () -> Unit) {
+internal fun ReviewEntryCard(count: Int, onClick: () -> Unit) {
     val game = MaterialTheme.gameColors
     GameCard(
         onClick = onClick,

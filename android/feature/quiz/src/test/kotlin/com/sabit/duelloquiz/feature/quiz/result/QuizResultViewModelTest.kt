@@ -1,5 +1,10 @@
 package com.sabit.duelloquiz.feature.quiz.result
 
+import com.sabit.duelloquiz.core.testing.TestDailyRepository
+import com.sabit.duelloquiz.core.testing.TestNotificationSettingsRepository
+import com.sabit.duelloquiz.core.testing.TestNotificationPromptRepository
+import com.sabit.duelloquiz.core.testing.TestSystemNotifications
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.common.WallClock
@@ -51,8 +56,15 @@ class QuizResultViewModelTest {
         ),
     )
 
-    private fun TestScope.viewModel(sessionClosed: Boolean = false) =
-        QuizResultViewModel(repository, categories, monitor, WallClock { testScheduler.currentTime }, handle(sessionClosed))
+    private val progress = TestProgressRepository()
+    private val system = TestSystemNotifications()
+    private val prompts = TestNotificationPromptRepository()
+    private val notificationSettings = TestNotificationSettingsRepository()
+
+    private fun TestScope.viewModel(sessionClosed: Boolean = false) = QuizResultViewModel(
+        repository, categories, progress, system, prompts, notificationSettings, monitor,
+        WallClock { testScheduler.currentTime }, handle(sessionClosed),
+    )
 
     private suspend fun answer(vararg optionIds: String) {
         optionIds.forEachIndexed { index, optionId -> repository.submitAnswer("session-1", "q${index + 1}", optionId, 1_000) }
@@ -245,7 +257,7 @@ class QuizResultViewModelTest {
                 ),
             ),
         )
-        val vm = QuizReviewViewModel(repository, SavedStateHandle(mapOf("sessionId" to "session-1")))
+        val vm = QuizReviewViewModel(repository, TestDailyRepository(), SavedStateHandle(mapOf("sessionId" to "session-1")))
         runCurrent()
 
         val items = (vm.uiState.value as QuizReviewUiState.Content).items
@@ -260,7 +272,7 @@ class QuizResultViewModelTest {
     fun reviewOfflineShowsAnErrorAndRetries() = runTest {
         repository.register(testQuizSession())
         repository.finishResult = DataResult.Failure(DataError.Offline)
-        val vm = QuizReviewViewModel(repository, SavedStateHandle(mapOf("sessionId" to "session-1")))
+        val vm = QuizReviewViewModel(repository, TestDailyRepository(), SavedStateHandle(mapOf("sessionId" to "session-1")))
         runCurrent()
         assertEquals(QuizReviewUiState.Error(offline = true), vm.uiState.value)
 

@@ -1,19 +1,28 @@
 package com.sabit.duelloquiz.feature.quiz.result
 
+import android.content.Intent
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
+import com.sabit.duelloquiz.core.data.repository.NotificationPromptRepository
+import com.sabit.duelloquiz.core.data.repository.NotificationSettingsRepository
+import com.sabit.duelloquiz.core.data.repository.ProgressRepository
 import com.sabit.duelloquiz.core.data.repository.QuizProgress
 import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
+import com.sabit.duelloquiz.core.designsystem.component.toCardUi
 import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
+import com.sabit.duelloquiz.core.model.QuizResult
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
+import com.sabit.duelloquiz.core.model.ReminderType
+import com.sabit.duelloquiz.core.notifications.SystemNotifications
 import com.sabit.duelloquiz.feature.quiz.navigation.QuizResultArgs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -54,6 +63,10 @@ data class QuizResultUiState(
     /** Wrong or unanswered questions from the server review; null hides the entry. */
     val reviewCount: Int? = null,
     val isPlayAgainLoading: Boolean = false,
+    /** XP, level and streak from `finish.progress` (PROG-02); null until the server confirms. */
+    val progress: ProgressCardUi? = null,
+    /** In-app notification permission card (NOTIF-01); null = hidden. */
+    val permissionCard: PermissionCardUi? = null,
 ) {
     val isPerfect: Boolean get() = total > 0 && correctCount == total
 
@@ -78,6 +91,12 @@ sealed interface QuizResultAction {
     data object PlayAgainClicked : QuizResultAction
     data object HomeClicked : QuizResultAction
     data object ReviewClicked : QuizResultAction
+    data object PermissionAllowClicked : QuizResultAction
+    data object PermissionLaterClicked : QuizResultAction
+    data class PermissionResult(val granted: Boolean, val blocked: Boolean) : QuizResultAction
+
+    /** The screen resumed (e.g. back from the system notification settings). */
+    data object Resumed : QuizResultAction
 }
 
 enum class QuizResultMessage { SessionClosed, QuizNeedsInternet, CategoryNotPlayable, RateLimited, Offline, Generic }
@@ -87,6 +106,9 @@ sealed interface QuizResultEvent {
     data class NavigateToQuiz(val categoryId: Int, val categoryName: String, val sessionId: String?) : QuizResultEvent
     data class NavigateToReview(val sessionId: String) : QuizResultEvent
     data class ShowMessage(val message: QuizResultMessage) : QuizResultEvent
+    data object RequestPermission : QuizResultEvent
+    data class OpenSettings(val intent: Intent) : QuizResultEvent
+    data object NotificationsEnabled : QuizResultEvent
 }
 
 /**
@@ -99,10 +121,18 @@ sealed interface QuizResultEvent {
 class QuizResultViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     private val categoryRepository: CategoryRepository,
+    private val progressRepository: ProgressRepository,
+    private val systemNotifications: SystemNotifications,
+    promptRepository: NotificationPromptRepository,
+    settingsRepository: NotificationSettingsRepository,
     networkMonitor: NetworkMonitor,
     private val clock: WallClock,
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    private val prompt = NotificationPrompt(promptRepository, systemNotifications, settingsRepository)
+    private var awaitingSettingsReturn = false
+    private var resultHandled = false
 
     private val args = QuizResultArgs.from(savedStateHandle)
 
@@ -148,7 +178,55 @@ class QuizResultViewModel @Inject constructor(
             QuizResultAction.HomeClicked -> _events.trySend(QuizResultEvent.NavigateHome)
             QuizResultAction.ReviewClicked -> _events.trySend(QuizResultEvent.NavigateToReview(args.sessionId))
             QuizResultAction.PlayAgainClicked -> playAgain()
+            QuizResultAction.PermissionAllowClicked -> _uiState.value.permissionCard?.let { card ->
+                when (prompt.request(card)) {
+                    PermissionCardRequest.AskSystem -> _events.trySend(QuizResultEvent.RequestPermission)
+                    PermissionCardRequest.OpenSettings -> {
+                        awaitingSettingsReturn = true
+                        _events.trySend(QuizResultEvent.OpenSettings(systemNotifications.appSettingsIntent()))
+                    }
+                }
+            }
+            QuizResultAction.PermissionLaterClicked -> {
+                _uiState.update { it.copy(permissionCard = null) }
+                viewModelScope.launch { prompt.onLater() }
+            }
+            is QuizResultAction.PermissionResult -> viewModelScope.launch {
+                _uiState.update { it.copy(permissionCard = null) }
+                if (prompt.onSystemResult(action.granted, action.blocked)) _events.send(QuizResultEvent.NotificationsEnabled)
+            }
+            QuizResultAction.Resumed -> if (awaitingSettingsReturn) {
+                awaitingSettingsReturn = false
+                viewModelScope.launch {
+                    if (prompt.onReturnFromSettings()) {
+                        _uiState.update { it.copy(permissionCard = null) }
+                        _events.send(QuizResultEvent.NotificationsEnabled)
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * The server result arrived: progress card (PROG-02; animated only the first time this
+     * result is shown), own reminders removed (NOTIF-04) and, on the first result, the permission
+     * card (NOTIF-01).
+     */
+    private suspend fun onServerResult(result: QuizResult) {
+        if (resultHandled) return
+        resultHandled = true
+        val firstTime = savedStateHandle.get<Boolean>(KEY_CELEBRATED) != true
+        savedStateHandle[KEY_CELEBRATED] = true
+        val answered = result.total - result.review.count { it.selectedOption == null }
+        val gain = result.progress
+        if (gain != null) {
+            val categories = categoryRepository.categories.first().orEmpty()
+            val capNote = gain.xpCapped && progressRepository.consumeCapNote(CAP_SOURCE, gain.dayKey)
+            val card = gain.toCardUi(categories, showCapNote = capNote, dayActive = answered > 0, animate = firstTime)
+            _uiState.update { it.copy(progress = card) }
+        }
+        if (answered > 0) systemNotifications.cancel(ReminderType.STREAK)
+        if (firstTime) prompt.offer()?.let { card -> _uiState.update { it.copy(permissionCard = card) } }
     }
 
     private fun onProgress(progress: QuizProgress) {
@@ -164,6 +242,7 @@ class QuizResultViewModel @Inject constructor(
                 notSynced = if (result != null) false else it.notSynced,
             )
         }
+        if (result != null) viewModelScope.launch { onServerResult(result) }
     }
 
     private fun finish() {
@@ -214,5 +293,7 @@ class QuizResultViewModel @Inject constructor(
     companion object {
         /** Same hand-over as home (HOME-02). */
         const val START_HANDOVER_MS = 1_000L
+        private const val KEY_CELEBRATED = "quiz_result_celebrated"
+        private const val CAP_SOURCE = "quiz"
     }
 }

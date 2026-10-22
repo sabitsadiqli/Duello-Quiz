@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -111,7 +112,7 @@ internal fun QuizRoute(
 
 /** QUIZ-01: the first two images are fetched into the disk cache; the screen never waits. */
 @Composable
-private fun PrefetchImages(urls: List<String>) {
+internal fun PrefetchImages(urls: List<String>) {
     val context = LocalContext.current
     LaunchedEffect(urls) {
         val loader = SingletonImageLoader.get(context)
@@ -121,11 +122,13 @@ private fun PrefetchImages(urls: List<String>) {
 
 @Composable
 internal fun QuizScreen(uiState: QuizUiState, onAction: (QuizAction) -> Unit) {
+    val close = { onAction(QuizAction.CloseClicked) }
+    val closeDescription = stringResource(R.string.quiz_close_cd)
     when (val phase = uiState.phase) {
-        QuizPhase.Loading -> LoadingScaffold(uiState.categoryName, onAction) {
+        QuizPhase.Loading -> LoadingScaffold(uiState.categoryName, closeDescription, close) {
             DuelloLoadingView(caption = stringResource(R.string.quiz_loading))
         }
-        is QuizPhase.StartFailed -> LoadingScaffold(uiState.categoryName, onAction) {
+        is QuizPhase.StartFailed -> LoadingScaffold(uiState.categoryName, closeDescription, close) {
             DuelloStateView(
                 icon = DuelloIcons.Error,
                 title = stringResource(R.string.quiz_start_error),
@@ -136,7 +139,16 @@ internal fun QuizScreen(uiState: QuizUiState, onAction: (QuizAction) -> Unit) {
                 onSecondaryAction = { onAction(QuizAction.CloseClicked) },
             )
         }
-        is QuizPhase.Playing -> QuestionScaffold(phase.question, uiState.showOfflineBanner, onAction)
+        is QuizPhase.Playing -> QuestionScaffold(
+            question = phase.question,
+            showOfflineBanner = uiState.showOfflineBanner,
+            onOptionClicked = { onAction(QuizAction.OptionClicked(it)) },
+            topBar = {
+                QuestionTopBar(question = phase.question, closeDescription = closeDescription, onClose = close) {
+                    ProgressLabel(phase.question)
+                }
+            },
+        )
     }
     if (uiState.showExitDialog) {
         DuelloConfirmDialog(
@@ -150,13 +162,19 @@ internal fun QuizScreen(uiState: QuizUiState, onAction: (QuizAction) -> Unit) {
     }
 }
 
+/** Loading / start-error frame: top app bar with the close icon (quiz-question.md A). */
 @Composable
-private fun LoadingScaffold(categoryName: String, onAction: (QuizAction) -> Unit, content: @Composable () -> Unit) {
+internal fun LoadingScaffold(
+    title: String,
+    closeDescription: String,
+    onClose: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     Scaffold(
         topBar = {
             DuelloTopAppBar(
-                title = categoryName,
-                navigationIcon = { CloseButton(onAction) },
+                title = title,
+                navigationIcon = { CloseButton(closeDescription, onClose) },
             )
         },
     ) { innerPadding ->
@@ -171,20 +189,31 @@ private fun LoadingScaffold(categoryName: String, onAction: (QuizAction) -> Unit
 }
 
 @Composable
-private fun CloseButton(onAction: (QuizAction) -> Unit) {
-    IconButton(onClick = { onAction(QuizAction.CloseClicked) }) {
-        Icon(painter = painterResource(DuelloIcons.Close), contentDescription = stringResource(R.string.quiz_close_cd))
+private fun CloseButton(contentDescription: String, onClose: () -> Unit) {
+    IconButton(onClick = onClose) {
+        Icon(painter = painterResource(DuelloIcons.Close), contentDescription = contentDescription)
     }
 }
 
+/**
+ * The question screen (quiz-question.md B), shared with the daily challenge: [topBar] differs,
+ * [header] sits between the top bar and the timer bar (the daily 5-step stepper).
+ */
 @Composable
-private fun QuestionScaffold(question: QuestionUi, showOfflineBanner: Boolean, onAction: (QuizAction) -> Unit) {
+internal fun QuestionScaffold(
+    question: QuestionUi,
+    showOfflineBanner: Boolean,
+    onOptionClicked: (String) -> Unit,
+    topBar: @Composable () -> Unit,
+    header: @Composable () -> Unit = {},
+) {
     RevealHaptics(question.status)
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.statusBarsPadding()) {
-            QuizTopBar(question, onAction)
+            topBar()
             ContentWidth {
                 Column {
+                    header()
                     QuizTimerBar(
                         status = question.timer.status.toComponent(),
                         totalMs = question.timer.totalMs,
@@ -206,7 +235,7 @@ private fun QuestionScaffold(question: QuestionUi, showOfflineBanner: Boolean, o
                             modifier = Modifier.padding(start = Spacing.screenGutter, end = Spacing.screenGutter, top = Spacing.md),
                         )
                     }
-                    QuestionTransition(question) { current -> QuestionBody(current, onAction) }
+                    QuestionTransition(question) { current -> QuestionBody(current, onOptionClicked) }
                 }
             }
         }
@@ -234,26 +263,23 @@ private fun QuestionTransition(question: QuestionUi, content: @Composable (Quest
     ) { content(it) }
 }
 
+/** Question top bar: close icon, [title] (progress, or the daily overline + progress), timer pill. */
 @Composable
-private fun QuizTopBar(question: QuestionUi, onAction: (QuizAction) -> Unit) {
+internal fun QuestionTopBar(
+    question: QuestionUi,
+    closeDescription: String,
+    onClose: () -> Unit,
+    title: @Composable RowScope.() -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .height(Sizes.topAppBarHeight)
+            .heightIn(min = Sizes.topAppBarHeight)
             .padding(horizontal = Spacing.xs),
     ) {
-        CloseButton(onAction)
-        val progressDescription = stringResource(R.string.quiz_progress_cd, question.position, question.total)
-        Text(
-            text = stringResource(R.string.quiz_progress, question.position, question.total),
-            style = MaterialTheme.typography.titleMedium.tabularFigures(),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .padding(start = Spacing.xs)
-                .weight(1f)
-                .clearAndSetSemantics { contentDescription = progressDescription },
-        )
+        CloseButton(closeDescription, onClose)
+        title()
         TimerAnnouncer(question.timer)
         QuizTimerPill(
             seconds = question.timer.remainingSeconds,
@@ -263,6 +289,21 @@ private fun QuizTopBar(question: QuestionUi, onAction: (QuizAction) -> Unit) {
                 .clearAndSetSemantics {},
         )
     }
+}
+
+/** "3 / 10" progress label of the quiz top bar. */
+@Composable
+private fun RowScope.ProgressLabel(question: QuestionUi) {
+    val progressDescription = stringResource(R.string.quiz_progress_cd, question.position, question.total)
+    Text(
+        text = stringResource(R.string.quiz_progress, question.position, question.total),
+        style = MaterialTheme.typography.titleMedium.tabularFigures(),
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier
+            .padding(start = Spacing.xs)
+            .weight(1f)
+            .clearAndSetSemantics { contentDescription = progressDescription },
+    )
 }
 
 /** TalkBack hears the timer at 10 s and 5 s only, politely, never every second. */
@@ -286,7 +327,7 @@ private fun TimerAnnouncer(timer: TimerUi) {
 }
 
 @Composable
-private fun QuestionBody(question: QuestionUi, onAction: (QuizAction) -> Unit) {
+private fun QuestionBody(question: QuestionUi, onOptionClicked: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -320,7 +361,7 @@ private fun QuestionBody(question: QuestionUi, onAction: (QuizAction) -> Unit) {
                     contentDescription = stringResource(optionDescriptionRes(index), option.text),
                     stateDescription = option.state.stateDescriptionRes()?.let { stringResource(it) },
                     enabled = question.acceptsAnswers,
-                    onClick = { onAction(QuizAction.OptionClicked(option.id)) },
+                    onClick = { onOptionClicked(option.id) },
                 )
             }
         }
