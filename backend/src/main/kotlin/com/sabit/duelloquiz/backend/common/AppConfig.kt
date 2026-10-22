@@ -1,8 +1,13 @@
 package com.sabit.duelloquiz.backend.common
 
+import com.sabit.duelloquiz.backend.daily.DailyConfig
 import com.sabit.duelloquiz.backend.duel.DuelConfig
+import com.sabit.duelloquiz.backend.notification.NotificationConfig
+import com.sabit.duelloquiz.backend.progress.ProgressConfig
 import io.ktor.server.config.ApplicationConfig
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalTime
 
 /** Typed view of `application.conf` (values may come from environment variables). */
 data class AppConfig(
@@ -14,6 +19,9 @@ data class AppConfig(
     val importMaxBodyBytes: Long,
     val duel: DuelConfig = DuelConfig(),
     val images: ImageConfig = ImageConfig(),
+    val daily: DailyConfig = DailyConfig(),
+    val progress: ProgressConfig = ProgressConfig(),
+    val notifications: NotificationConfig = NotificationConfig(),
 ) {
     companion object {
         fun from(config: ApplicationConfig): AppConfig {
@@ -21,6 +29,8 @@ data class AppConfig(
             fun strOrNull(path: String) = config.propertyOrNull(path)?.getString()?.takeIf { it.isNotBlank() }
             fun int(path: String) = str(path).toInt()
             fun long(path: String) = str(path).toLong()
+            fun bool(path: String) = str(path).toBooleanStrict()
+            fun time(path: String) = LocalTime.parse(str(path))
             return AppConfig(
                 db = DbConfig(
                     url = str("duello.db.url"),
@@ -75,6 +85,40 @@ data class AppConfig(
                     targetBytes = int("duello.images.targetBytes"),
                     thumbTargetBytes = int("duello.images.thumbTargetBytes"),
                     parallelism = int("duello.images.parallelism"),
+                ),
+                daily = DailyConfig(
+                    questions = int("duello.daily.questions"),
+                    questionTimeMs = long("duello.daily.questionTimeMs"),
+                    revealMs = long("duello.daily.revealMs"),
+                    graceMs = long("duello.daily.graceMs"),
+                    firstDay = LocalDate.parse(str("duello.daily.firstDay")),
+                    reuseWindowDays = int("duello.daily.reuseWindowDays"),
+                ),
+                progress = ProgressConfig(
+                    quizXpPerCorrect = int("duello.progress.quizXpPerCorrect"),
+                    dailyXpPerCorrect = int("duello.progress.dailyXpPerCorrect"),
+                    dailyCompletionBonus = int("duello.progress.dailyCompletionBonus"),
+                    duelPlayedXp = int("duello.progress.duelPlayedXp"),
+                    duelWinXp = int("duello.progress.duelWinXp"),
+                    duelDrawXp = int("duello.progress.duelDrawXp"),
+                    quizSessionsPerDay = int("duello.progress.quizSessionsPerDay"),
+                    duelMatchesPerDay = int("duello.progress.duelMatchesPerDay"),
+                    duelSameOpponentPerDay = int("duello.progress.duelSameOpponentPerDay"),
+                    freezeEveryDays = int("duello.progress.freezeEveryDays"),
+                ),
+                notifications = NotificationConfig(
+                    enabled = bool("duello.notifications.enabled"),
+                    tickIntervalMs = long("duello.notifications.tickIntervalMs"),
+                    dailyReminderAt = time("duello.notifications.dailyReminderAt"),
+                    streakReminderAt = time("duello.notifications.streakReminderAt"),
+                    sendWindowMinutes = long("duello.notifications.sendWindowMinutes"),
+                    quietStart = time("duello.notifications.quietStart"),
+                    quietEnd = time("duello.notifications.quietEnd"),
+                    inactiveAfterDays = long("duello.notifications.inactiveAfterDays"),
+                    minStreak = int("duello.notifications.minStreak"),
+                    tokenStaleDays = long("duello.notifications.tokenStaleDays"),
+                    logRetentionDays = long("duello.notifications.logRetentionDays"),
+                    maxTokensPerUser = int("duello.notifications.maxTokensPerUser"),
                 ),
             )
         }

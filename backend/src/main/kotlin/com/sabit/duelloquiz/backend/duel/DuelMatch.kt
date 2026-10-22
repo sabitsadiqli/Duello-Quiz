@@ -376,14 +376,15 @@ class DuelMatch(
         val a = seats.getValue(Side.A)
         val b = seats.getValue(Side.B)
         val end = MatchEnd(id, status, endReason, winner, forfeited, a.score, b.score, now(), cause)
-        val ratings = try {
+        val endResult = try {
             store.endMatch(end, a.profile.rating, b.profile.rating)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             log.error("duel_match_persist_failed matchId={}", id, e)
-            RatingUpdate(a.profile.rating, a.profile.rating, b.profile.rating, b.profile.rating)
+            MatchEndResult(RatingUpdate(a.profile.rating, a.profile.rating, b.profile.rating, b.profile.rating))
         }
+        val ratings = endResult.ratings
         val suddenDeathPlayed = completed.count { it.suddenDeath }
         seats.values.forEach { seat ->
             val opponent = seats.getValue(seat.side.other)
@@ -417,6 +418,7 @@ class DuelMatch(
                         ratingAfter = opponentAfter,
                         deleted = false,
                     ),
+                    progress = endResult.progress[seat.side],
                 ),
             )
         }

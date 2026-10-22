@@ -298,6 +298,7 @@ class DuelService(
             },
             you = player(if (side == Side.A) m.playerA else m.playerB, before, after),
             opponent = player(if (side == Side.A) m.playerB else m.playerA, opponentBefore, opponentAfter),
+            progress = m.progress[side],
         )
     }
 

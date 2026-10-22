@@ -7,7 +7,7 @@ import com.sabit.duelloquiz.backend.auth.FirebaseTokenVerifier
 import com.sabit.duelloquiz.backend.auth.RejectingTokenVerifier
 import com.sabit.duelloquiz.backend.auth.TokenVerifier
 import com.sabit.duelloquiz.backend.auth.UnconfiguredAccountDeleter
-import com.sabit.duelloquiz.backend.auth.createFirebaseAuth
+import com.sabit.duelloquiz.backend.auth.createFirebaseApp
 import com.sabit.duelloquiz.backend.auth.firebase
 import com.sabit.duelloquiz.backend.category.CategoryRepository
 import com.sabit.duelloquiz.backend.category.CategoryService
@@ -20,6 +20,9 @@ import com.sabit.duelloquiz.backend.common.notFoundFallback
 import com.sabit.duelloquiz.backend.content.ContentImporter
 import com.sabit.duelloquiz.backend.content.ContentRepository
 import com.sabit.duelloquiz.backend.content.adminContentRoutes
+import com.sabit.duelloquiz.backend.daily.DailyRepository
+import com.sabit.duelloquiz.backend.daily.DailyService
+import com.sabit.duelloquiz.backend.daily.dailyRoutes
 import com.sabit.duelloquiz.backend.duel.DbDuelStore
 import com.sabit.duelloquiz.backend.duel.DuelClock
 import com.sabit.duelloquiz.backend.duel.DuelService
@@ -34,6 +37,16 @@ import com.sabit.duelloquiz.backend.image.ImageStorage
 import com.sabit.duelloquiz.backend.image.adminImageRoutes
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
 import com.sabit.duelloquiz.backend.image.MediaUrls
+import com.sabit.duelloquiz.backend.notification.DisabledPushSender
+import com.sabit.duelloquiz.backend.notification.FcmPushSender
+import com.sabit.duelloquiz.backend.notification.NotificationRepository
+import com.sabit.duelloquiz.backend.notification.NotificationService
+import com.sabit.duelloquiz.backend.notification.NotificationTexts
+import com.sabit.duelloquiz.backend.notification.PushSender
+import com.sabit.duelloquiz.backend.notification.notificationRoutes
+import com.sabit.duelloquiz.backend.progress.ProgressRepository
+import com.sabit.duelloquiz.backend.progress.ProgressService
+import com.sabit.duelloquiz.backend.progress.progressRoutes
 import com.sabit.duelloquiz.backend.quiz.InMemorySlidingWindowRateLimiter
 import com.sabit.duelloquiz.backend.quiz.QuizRepository
 import com.sabit.duelloquiz.backend.quiz.QuizService
@@ -99,13 +112,18 @@ fun infrastructureModule(config: AppConfig) = module {
     single<DuelClock> { DuelClock.System }
     // Closed by Koin when the application stops.
     single { Db(Db.dataSource(config.db).also(Db::migrate)) } withOptions { onClose { it?.close() } }
-    single { FirebaseHolder(createFirebaseAuth(config.firebase)) }
+    single { FirebaseHolder(createFirebaseApp(config.firebase)) }
     single<TokenVerifier> { get<FirebaseHolder>().auth?.let(::FirebaseTokenVerifier) ?: RejectingTokenVerifier }
     single<AuthAccountDeleter> { get<FirebaseHolder>().auth?.let(::FirebaseAccountDeleter) ?: UnconfiguredAccountDeleter }
     single<ImageStorage> { LocalDiskImageStorage(Path.of(config.media.dir)) }
+    single<PushSender> { get<FirebaseHolder>().messaging?.let(::FcmPushSender) ?: DisabledPushSender }
 }
 
-class FirebaseHolder(val auth: com.google.firebase.auth.FirebaseAuth?)
+class FirebaseHolder(app: com.google.firebase.FirebaseApp?) {
+    val auth: com.google.firebase.auth.FirebaseAuth? = app?.let(com.google.firebase.auth.FirebaseAuth::getInstance)
+    val messaging: com.google.firebase.messaging.FirebaseMessaging? =
+        app?.let(com.google.firebase.messaging.FirebaseMessaging::getInstance)
+}
 
 /** Repositories and services; the same in production and tests. */
 fun featureModule(config: AppConfig) = module {
@@ -118,13 +136,20 @@ fun featureModule(config: AppConfig) = module {
     single { CategoryRepository(get()) }
     single { CategoryService(get(), get()) }
     single { QuizRepository() }
-    single { QuizService(get(), get(), get(), get(), get(), get(), get()) }
+    single { ProgressRepository() }
+    single { ProgressService(get(), get(), config.progress, get()) }
+    single { QuizService(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { DailyRepository() }
+    single { DailyService(get(), get(), get(), get(), config.daily, config.quiz, get(), get()) }
+    single { NotificationRepository() }
+    single { NotificationTexts.load() }
+    single { NotificationService(get(), get(), get(), get(), get(), get(), get(), config.notifications, get()) }
     single { ContentRepository() }
     single { ImageRepository() }
     single { ImageProcessor(config.images) }
     single { ImageService(get(), get(), get(), get(), config.images, get()) }
     single { ContentImporter(get(), get(), get(), get(), get()) }
-    single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK) }
+    single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK, get()) }
     single<MatchmakingQueue> { InMemoryMatchmakingQueue() }
     single { DuelScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) } withOptions { onClose { it?.scope?.cancel() } }
     single { DuelService(get<DuelScope>().scope, config.duel, get(), get(), get(), get()) }
@@ -165,12 +190,16 @@ fun Application.configureApp() {
                 adminContentRoutes(get(), config.importMaxBodyBytes)
                 adminImageRoutes(get(), get())
                 duelRoutes(get(), users, config.duel, get())
+                dailyRoutes(get(), users)
+                progressRoutes(get(), get(), users)
+                notificationRoutes(get(), users)
             }
         }
         notFoundFallback()
     }
 
-    startSessionExpiryJob(get(), config.quiz.expirySweepIntervalMs)
+    startSessionExpiryJob(get(), get(), config.quiz.expirySweepIntervalMs)
+    startNotificationScheduler(get(), get(), config.notifications)
     val duel = get<DuelService>()
     launch {
         try {
@@ -182,7 +211,7 @@ fun Application.configureApp() {
     }
 }
 
-private fun Application.startSessionExpiryJob(service: QuizService, intervalMs: Long) {
+private fun Application.startSessionExpiryJob(service: QuizService, daily: DailyService, intervalMs: Long) {
     if (intervalMs <= 0) return
     val log = LoggerFactory.getLogger("com.sabit.duelloquiz.backend.quiz.SessionExpiryJob")
     launch {
@@ -191,10 +220,38 @@ private fun Application.startSessionExpiryJob(service: QuizService, intervalMs: 
             try {
                 val expired = service.expireOverdueSessions()
                 if (expired > 0) log.info("quiz_sessions_expired count={}", expired)
+                val expiredDaily = daily.expireOverdueAttempts()
+                if (expiredDaily > 0) log.info("daily_attempts_expired count={}", expiredDaily)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 log.error("quiz_session_expiry_failed", e)
             }
+        }
+    }
+}
+
+/**
+ * Push reminder scheduler (docs/mvp-spec.md §11): checks every tick whether a reminder
+ * window (10:00 / 20:00 Baku + 60 min) is open and runs that job once per day. Runs in
+ * this single replica (OQ-070); the per-user send log makes a restart safe.
+ */
+private fun Application.startNotificationScheduler(
+    service: NotificationService,
+    sender: PushSender,
+    config: com.sabit.duelloquiz.backend.notification.NotificationConfig,
+) {
+    val log = LoggerFactory.getLogger("com.sabit.duelloquiz.backend.notification.NotificationScheduler")
+    if (!config.enabled || config.tickIntervalMs <= 0) return
+    if (!sender.available) log.warn("push_not_configured: reminders are not sent (no Firebase service account)")
+    launch {
+        while (isActive) {
+            try {
+                service.runDue()
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                log.error("notification_job_failed", e)
+            }
+            delay(config.tickIntervalMs)
         }
     }
 }

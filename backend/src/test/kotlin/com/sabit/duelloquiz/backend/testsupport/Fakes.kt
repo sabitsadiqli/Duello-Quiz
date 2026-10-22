@@ -5,6 +5,9 @@ import com.sabit.duelloquiz.backend.auth.AuthProviderException
 import com.sabit.duelloquiz.backend.auth.AuthUser
 import com.sabit.duelloquiz.backend.auth.InvalidTokenException
 import com.sabit.duelloquiz.backend.auth.TokenVerifier
+import com.sabit.duelloquiz.backend.notification.PushMessage
+import com.sabit.duelloquiz.backend.notification.PushResult
+import com.sabit.duelloquiz.backend.notification.PushSender
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -50,5 +53,18 @@ class FakeAccountDeleter : AuthAccountDeleter {
             throw AuthProviderException("simulated Firebase outage")
         }
         deleted += firebaseUid
+    }
+}
+
+/** Records pushes; tokens in [invalid] answer like FCM `UNREGISTERED`. */
+class FakePushSender : PushSender {
+    override val available = true
+    val sent = mutableListOf<PushMessage>()
+    val invalid = mutableSetOf<String>()
+
+    override suspend fun send(message: PushMessage): PushResult {
+        if (message.token in invalid) return PushResult.InvalidToken
+        sent += message
+        return PushResult.Sent
     }
 }

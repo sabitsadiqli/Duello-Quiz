@@ -252,7 +252,7 @@ class QuizRoutesTest : DbTest() {
             val service = QuizService(
                 env.db, QuizRepository(), com.sabit.duelloquiz.backend.category.CategoryRepository(env.db),
                 InMemorySlidingWindowRateLimiter(30, java.time.Duration.ofHours(1)),
-                com.sabit.duelloquiz.backend.image.MediaUrls("https://m"), env.config.quiz, env.clock,
+                com.sabit.duelloquiz.backend.image.MediaUrls("https://m"), env.config.quiz, env.clock, env.progress,
             )
             assertEquals(0, service.expireOverdueSessions())
             env.clock.advanceMs(245_001)
