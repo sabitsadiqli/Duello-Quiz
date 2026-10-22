@@ -83,8 +83,10 @@ class UserRepository(private val db: Db) {
     }
 
     /**
-     * Deletes the profile. The schema cascades to quiz sessions, session questions and
-     * quiz answers and sets the player to NULL in matches and match answers (OQ-014).
+     * Deletes the profile. The schema cascades to quiz sessions, session questions,
+     * quiz answers, daily attempts/answers, XP and streak data, push tokens, notification
+     * settings and the send log (V5), and sets the player to NULL in matches and match
+     * answers (OQ-014).
      * @return true if a row was deleted.
      */
     suspend fun deleteByFirebaseUid(firebaseUid: String): Boolean = db.tx {

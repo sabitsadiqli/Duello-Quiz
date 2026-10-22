@@ -33,6 +33,9 @@ class MigrationTest : DbTest() {
         listOf(
             "users", "categories", "images", "questions", "options", "quiz_sessions", "quiz_session_questions",
             "quiz_answers", "matches", "match_rounds", "match_answers",
+            "daily_challenges", "daily_challenge_questions", "daily_attempts", "daily_answers", "user_progress",
+            "user_category_xp", "user_active_days", "progress_awards", "xp_events", "push_tokens",
+            "notification_settings", "notification_log",
         ).forEach { assertTrue(it in tables, "missing table $it") }
     }
 
@@ -133,6 +136,51 @@ class MigrationTest : DbTest() {
         insert("normal", null, null)
         assertFailsWith<Exception> { insert("normal", null, "left") }
         assertFailsWith<Exception> { insert("forfeit", "a", "rage_quit") }
+        Unit
+    }
+
+    @Test
+    fun `retention constraints (V5)`() = runBlocking {
+        db.tx {
+            exec("INSERT INTO users (id, firebase_uid, display_name) VALUES ('00000000-0000-0000-0000-0000000000a1', 'u', 'Test')")
+            exec("INSERT INTO daily_challenges (id, day, number) VALUES ('00000000-0000-0000-0000-0000000000d1', DATE '2026-10-22', 1)")
+            exec(
+                """
+                INSERT INTO daily_attempts (user_id, daily_id, started_at, deadline_at)
+                VALUES ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000d1', now(), now() + interval '137 seconds')
+                """.trimIndent(),
+            )
+        }
+        // One challenge per day, one attempt per user and day.
+        assertFailsWith<Exception> { db.tx { exec("INSERT INTO daily_challenges (day, number) VALUES (DATE '2026-10-22', 2)") } }
+        assertFailsWith<Exception> {
+            db.tx {
+                exec(
+                    """
+                    INSERT INTO daily_attempts (user_id, daily_id, started_at, deadline_at)
+                    VALUES ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000d1', now(), now() + interval '1 minute')
+                    """.trimIndent(),
+                )
+            }
+        }
+        // XP ledger: idempotency key unique per user, positive amounts only.
+        suspend fun xp(key: String, amount: Int) = db.tx {
+            exec(
+                """
+                INSERT INTO xp_events (user_id, source_type, source_id, reason, amount, day, idempotency_key)
+                VALUES ('00000000-0000-0000-0000-0000000000a1', 'quiz', gen_random_uuid(), 'correct_answers', $amount, DATE '2026-10-22', '$key')
+                """.trimIndent(),
+            )
+        }
+        xp("k1", 10)
+        assertFailsWith<Exception> { xp("k1", 10) }
+        assertFailsWith<Exception> { xp("k2", 0) }
+        // One send record per user, type and day.
+        suspend fun log() = db.tx {
+            exec("INSERT INTO notification_log (user_id, type, day, outcome) VALUES ('00000000-0000-0000-0000-0000000000a1', 'daily_reminder', DATE '2026-10-22', 'sent')")
+        }
+        log()
+        assertFailsWith<Exception> { log() }
         Unit
     }
 }

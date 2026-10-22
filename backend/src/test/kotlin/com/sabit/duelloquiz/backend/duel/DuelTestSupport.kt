@@ -70,6 +70,8 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
     val rounds = mutableListOf<RoundRecord>()
     val ends = mutableListOf<MatchEnd>()
     var picks = 0
+    /** Returned as the award per side by [endMatch] (the real store computes it in the same transaction). */
+    var progress: Map<Side, com.sabit.duelloquiz.backend.progress.ProgressDto> = emptyMap()
 
     fun addUser(name: String, rating: Int = 1000): UUID {
         val id = UUID.nameUUIDFromBytes(name.toByteArray())
@@ -97,9 +99,9 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
         rounds += round
     }
 
-    override suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): RatingUpdate {
+    override suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): MatchEndResult {
         val m = matches.getValue(end.matchId)
-        if (m.status != MatchStatus.ACTIVE) return m.ratings!!
+        if (m.status != MatchStatus.ACTIVE) return MatchEndResult(m.ratings!!)
         ends += end
         val a = users[m.playerA]?.rating ?: ratingAtStartA
         val b = users[m.playerB]?.rating ?: ratingAtStartB
@@ -123,7 +125,7 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
             forfeitedSide = end.forfeitedSide, scoreA = end.scoreA, scoreB = end.scoreB, ratings = ratings,
             forfeitCause = end.forfeitCause,
         )
-        return ratings
+        return MatchEndResult(ratings, progress)
     }
 
     override suspend fun abandonActiveMatches(atMs: Long): Int {

@@ -8,6 +8,12 @@ import com.sabit.duelloquiz.backend.common.db.MatchesTable
 import com.sabit.duelloquiz.backend.common.db.QuestionsTable
 import com.sabit.duelloquiz.backend.common.db.UsersTable
 import com.sabit.duelloquiz.backend.common.db.toDb
+import com.sabit.duelloquiz.backend.progress.AwardRequest
+import com.sabit.duelloquiz.backend.progress.DuelOutcome
+import com.sabit.duelloquiz.backend.progress.ProgressDto
+import com.sabit.duelloquiz.backend.progress.ProgressService
+import com.sabit.duelloquiz.backend.progress.SourceType
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import com.sabit.duelloquiz.backend.quiz.QuizRepository
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.Random
@@ -27,6 +33,7 @@ class DbDuelStore(
     private val db: Db,
     private val quizRepository: QuizRepository,
     private val eloK: Int = 32,
+    private val progress: ProgressService,
 ) : DuelStore {
 
     private val activeQuestion = (QuestionsTable.isActive eq true) and (CategoriesTable.isActive eq true)
@@ -112,7 +119,7 @@ class DbDuelStore(
         }
     }
 
-    override suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): RatingUpdate = db.tx {
+    override suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): MatchEndResult = db.tx {
         val row = MatchesTable.selectAll().where { MatchesTable.id eq end.matchId }.forUpdate().singleOrNull()
             ?: error("Match ${end.matchId} not found")
         val stored = RatingUpdate(
@@ -121,8 +128,11 @@ class DbDuelStore(
             row[MatchesTable.ratingBBefore] ?: ratingAtStartB,
             row[MatchesTable.ratingBAfter] ?: row[MatchesTable.ratingBBefore] ?: ratingAtStartB,
         )
+        val playersBySide = mapOf(Side.A to row[MatchesTable.playerA], Side.B to row[MatchesTable.playerB])
         // Idempotent on the status: a second end never changes ratings again (DUEL-22).
-        if (row[MatchesTable.status] != MatchStatus.ACTIVE.db) return@tx stored
+        if (row[MatchesTable.status] != MatchStatus.ACTIVE.db) {
+            return@tx MatchEndResult(stored, storedAwards(end.matchId, playersBySide))
+        }
 
         val playerA = row[MatchesTable.playerA]
         val playerB = row[MatchesTable.playerB]
@@ -174,8 +184,41 @@ class DbDuelStore(
             it[ratingBAfter] = if (keepRatings) ratings.bAfter else null
             it[finishedAt] = now
         }
-        ratings
+        val startedAt = row[MatchesTable.startedAt].toInstant()
+        val awards = if (end.status == MatchStatus.FINISHED || end.status == MatchStatus.ABANDONED) {
+            playersBySide.mapNotNull { (side, userId) ->
+                if (userId == null || userId !in current) return@mapNotNull null
+                val eligible = end.status == MatchStatus.FINISHED && end.forfeitedSide != side
+                val outcome = when (end.winnerSide) {
+                    null -> DuelOutcome.DRAW
+                    side -> DuelOutcome.WIN
+                    else -> DuelOutcome.LOSS
+                }
+                val award = with(progress) {
+                    award(
+                        AwardRequest(
+                            userId = userId,
+                            sourceType = SourceType.DUEL,
+                            sourceId = end.matchId,
+                            startedAt = startedAt,
+                            eligible = eligible,
+                            items = rules.duel(outcome),
+                            opponentId = playersBySide[side.other],
+                        ),
+                    )
+                }
+                award?.let { side to it }
+            }.toMap()
+        } else {
+            emptyMap()
+        }
+        MatchEndResult(ratings, awards)
     }
+
+    private fun JdbcTransaction.storedAwards(matchId: UUID, players: Map<Side, UUID?>): Map<Side, ProgressDto> =
+        players.mapNotNull { (side, userId) ->
+            userId?.let { id -> with(progress) { storedAward(id, SourceType.DUEL, matchId) }?.let { side to it } }
+        }.toMap()
 
     override suspend fun abandonActiveMatches(atMs: Long): Int = db.tx {
         val now = Instant.ofEpochMilli(atMs).toDb()
@@ -212,6 +255,7 @@ class DbDuelStore(
         val aAfter = row[MatchesTable.ratingAAfter]
         val bBefore = row[MatchesTable.ratingBBefore]
         val bAfter = row[MatchesTable.ratingBAfter]
+        val awards = storedAwards(matchId, mapOf(Side.A to row[MatchesTable.playerA], Side.B to row[MatchesTable.playerB]))
         StoredMatch(
             id = matchId,
             playerA = row[MatchesTable.playerA],
@@ -221,6 +265,7 @@ class DbDuelStore(
             winnerSide = Side.fromDb(row[MatchesTable.winnerSide]),
             forfeitedSide = Side.fromDb(row[MatchesTable.forfeitedSide]),
             forfeitCause = row[MatchesTable.forfeitCause],
+            progress = awards,
             scoreA = row[MatchesTable.scoreA],
             scoreB = row[MatchesTable.scoreB],
             ratings = if (aBefore != null && aAfter != null && bBefore != null && bAfter != null) {

@@ -17,9 +17,10 @@ private val log = LoggerFactory.getLogger("com.sabit.duelloquiz.backend.auth.Fir
 /**
  * Creates the Firebase Admin app from the service-account file in
  * `FIREBASE_SERVICE_ACCOUNT_FILE`. Returns `null` (and logs a warning) when it is not
- * configured, so the server can still start locally; all tokens are then rejected.
+ * configured, so the server can still start locally; all tokens are then rejected and
+ * no push is sent.
  */
-fun createFirebaseAuth(config: FirebaseConfig): FirebaseAuth? {
+fun createFirebaseApp(config: FirebaseConfig): FirebaseApp? {
     val file = config.serviceAccountFile ?: run {
         log.warn("FIREBASE_SERVICE_ACCOUNT_FILE is not set: every authenticated request will get 401")
         return null
@@ -29,10 +30,11 @@ fun createFirebaseAuth(config: FirebaseConfig): FirebaseAuth? {
         .setCredentials(credentials)
         .apply { config.projectId?.let { setProjectId(it) } }
         .build()
-    val app = FirebaseApp.getApps().firstOrNull { it.name == APP_NAME }
+    return FirebaseApp.getApps().firstOrNull { it.name == APP_NAME }
         ?: FirebaseApp.initializeApp(options, APP_NAME)
-    return FirebaseAuth.getInstance(app)
 }
+
+fun createFirebaseAuth(config: FirebaseConfig): FirebaseAuth? = createFirebaseApp(config)?.let(FirebaseAuth::getInstance)
 
 private const val APP_NAME = "duello-backend"
 

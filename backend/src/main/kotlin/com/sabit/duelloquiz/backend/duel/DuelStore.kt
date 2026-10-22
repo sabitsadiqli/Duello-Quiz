@@ -1,6 +1,7 @@
 package com.sabit.duelloquiz.backend.duel
 
 import com.sabit.duelloquiz.backend.common.I18nText
+import com.sabit.duelloquiz.backend.progress.ProgressDto
 import com.sabit.duelloquiz.backend.quiz.ImageRecord
 import com.sabit.duelloquiz.backend.quiz.OptionRecord
 import java.util.UUID
@@ -76,6 +77,9 @@ data class MatchEnd(
 
 data class RatingUpdate(val aBefore: Int, val aAfter: Int, val bBefore: Int, val bAfter: Int)
 
+/** Ratings and the XP/streak award per side, written in the transaction that ends the match. */
+data class MatchEndResult(val ratings: RatingUpdate, val progress: Map<Side, ProgressDto> = emptyMap())
+
 /** A match read back from storage (rejoin after the in-memory result is gone). */
 data class StoredMatch(
     val id: UUID,
@@ -90,6 +94,8 @@ data class StoredMatch(
     val ratings: RatingUpdate?,
     val rounds: List<StoredRound>,
     val forfeitCause: String? = null,
+    /** Stored award snapshots per side (absent for matches before XP existed or deleted players). */
+    val progress: Map<Side, ProgressDto> = emptyMap(),
 )
 
 data class StoredRound(val roundNo: Int, val suddenDeath: Boolean, val answers: Map<Side, AnswerRow>)
@@ -115,10 +121,12 @@ interface DuelStore {
     /**
      * Ends an active match. For [MatchStatus.FINISHED] it updates both ratings (Elo)
      * in the same transaction; abandoned and cancelled matches keep the ratings.
+     * In the same transaction each existing player of a finished or abandoned match gets
+     * the duel XP/streak award (OQ-081, OQ-082, OQ-085).
      * Idempotent: a match that is no longer active is not changed again (returns the
-     * stored ratings). [ratingAtStartA]/[ratingAtStartB] are used for a deleted player.
+     * stored ratings and awards). [ratingAtStartA]/[ratingAtStartB] are used for a deleted player.
      */
-    suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): RatingUpdate
+    suspend fun endMatch(end: MatchEnd, ratingAtStartA: Int, ratingAtStartB: Int): MatchEndResult
 
     /** Marks every still active match as abandoned (server restart, OQ-033). */
     suspend fun abandonActiveMatches(atMs: Long): Int

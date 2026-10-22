@@ -175,22 +175,28 @@ matches, match_rounds, match_answers   -- duel tables: see docs/api/duel-protoco
                                        -- and the Flyway migrations (OQ-048)
 ```
 
-Proposed for §9–§11 (names and columns are `backend-dev`'s call; the daily attempt
-may reuse the quiz session tables with a `kind` column):
+Retention tables (§9–§11, `V5__retention.sql`; every personal table cascades on user
+deletion):
 
 ```
 daily_challenges(id, day DATE UNIQUE, number INT UNIQUE, created_at)
-daily_challenge_questions(daily_id, question_id, position, PRIMARY KEY(daily_id, position))
+daily_challenge_questions(daily_id, position, question_id, category_id,
+                          PRIMARY KEY(daily_id, position), UNIQUE(daily_id, question_id))
 daily_attempts(id, user_id, daily_id, status, correct_count, started_at, deadline_at,
-               finished_at, UNIQUE(user_id, daily_id))   -- + answers like quiz_answers
-xp_events(id, user_id, source_type, source_id, category_id NULL, amount, day,
-          created_at, UNIQUE(user_id, source_type, source_id, category_id))
+               finished_at, UNIQUE(user_id, daily_id))   -- status: active | finished | expired
+daily_answers(id, attempt_id, question_id, option_id NULL, is_correct, answered_at,
+              elapsed_ms, UNIQUE(attempt_id, question_id))
 user_progress(user_id PK, xp_total, streak_current, streak_best, last_active_day,
-              freeze_available, streak_broken_seen)
+              freeze_available, freeze_used_day, streak_lost_from, streak_lost_day)
 user_category_xp(user_id, category_id, xp, PRIMARY KEY(user_id, category_id))
 user_active_days(user_id, day, PRIMARY KEY(user_id, day))
+progress_awards(user_id, source_type, source_id, day, eligible, capped, xp_gained,
+                opponent_id NULL, snapshot JSONB,
+                PRIMARY KEY(user_id, source_type, source_id))   -- idempotency + caps
+xp_events(id, user_id, source_type, source_id, reason, category_id NULL, amount, day,
+          idempotency_key, UNIQUE(user_id, idempotency_key))     -- XP ledger
 push_tokens(id, user_id, token UNIQUE, locale, created_at, last_seen_at)
-notification_settings(user_id PK, daily_reminder BOOL, streak_reminder BOOL)
+notification_settings(user_id PK, daily_reminder, streak_reminder)
 notification_log(user_id, type, day, outcome, PRIMARY KEY(user_id, type, day))
 ```
 
@@ -208,12 +214,12 @@ REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 - Admin (custom claim `admin=true`): `POST /admin/questions/import` (JSON), `POST /admin/images`
 
 - `GET /me/stats` (duel record + calibration counts), `GET /me/matches` (last 20)
-- Proposed for §9–§11 (contract owned by `backend-dev`): `GET /daily`,
-  `POST /daily/attempt` (start or resume), `POST /daily/attempt/{id}/answers`,
-  `POST /daily/attempt/{id}/finish`, `GET /me/progress`, `PUT /me/push-tokens`,
-  `DELETE /me/push-tokens/{token}`, `GET|PUT /me/notification-settings`. Quiz and
-  daily `finish` and the duel `match.result` gain a `progress` object (XP gained,
-  level before/after, streak).
+- Retention (§9–§11): `GET /daily`, `POST /daily/attempt` (start or resume),
+  `POST /daily/attempt/{id}/answers`, `POST /daily/attempt/{id}/finish`,
+  `GET /me/progress`, `PUT /me/push-tokens`, `DELETE /me/push-tokens/{token}`,
+  `GET|PUT /me/notification-settings`. Quiz and daily `finish` and the duel
+  `match.result` (protocol v1.1) carry a `progress` object (XP gained, `xpCapped`,
+  level before/after, category level-ups, streak).
 
 Full REST contract: `docs/api/openapi.yaml`.
 
