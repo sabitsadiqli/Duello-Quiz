@@ -1,5 +1,8 @@
 package com.sabit.duelloquiz.feature.duel
 
+import com.sabit.duelloquiz.core.testing.TestCategoryRepository
+import com.sabit.duelloquiz.core.testing.TestSystemNotifications
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -78,6 +81,9 @@ class DuelViewModelTest {
 
     private fun TestScope.now(): Long = SERVER_OFFSET + testScheduler.currentTime
 
+    private val progressRepository = TestProgressRepository()
+    private val systemNotifications = TestSystemNotifications()
+
     private fun TestScope.viewModel(resume: Boolean = false): DuelViewModel {
         val clock = MonotonicClock { testScheduler.currentTime }
         // The server answers every ping, as the real one does (no 15 s silence drop).
@@ -90,6 +96,9 @@ class DuelViewModelTest {
                     profileRepository = profile,
                     networkMonitor = network,
                     savedStateHandle = SavedStateHandle(mapOf(DuelViewModel.ARG_RESUME to resume)),
+                    progressRepository = progressRepository,
+                    categoryRepository = TestCategoryRepository(),
+                    systemNotifications = systemNotifications,
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.feature.duel
 
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import com.sabit.duelloquiz.core.model.QuizOption
 import com.sabit.duelloquiz.core.model.duel.DuelPhase
 import com.sabit.duelloquiz.core.model.duel.DuelPlayer
@@ -85,5 +86,7 @@ internal data class DuelModel(
     /** `match.result` that waits for the last reveal to end (duel-reveal.md "Last round"). */
     val pendingResult: MatchResult? = null,
     val playAgainLoading: Boolean = false,
+    /** XP, level and streak card of the shown result (PROG-02); null = not rendered. */
+    val progressCard: ProgressCardUi? = null,
     val leaveDialog: Boolean = false,
 )

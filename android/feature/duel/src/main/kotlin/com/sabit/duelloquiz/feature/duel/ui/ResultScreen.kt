@@ -1,5 +1,9 @@
 package com.sabit.duelloquiz.feature.duel.ui
 
+import com.sabit.duelloquiz.core.designsystem.component.ProgressCard
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.AnimatedVisibility
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -100,6 +104,13 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
                 }
                 Spacer(Modifier.height(Spacing.lg))
                 RatingCard(result)
+                // duel-result.md 3a: right below the rating card; never contains Elo.
+                AnimatedVisibility(
+                    visible = result.progress != null,
+                    enter = expandVertically(tween(Motion.MEDIUM_2, easing = Motion.EmphasizedDecelerate)) + fadeIn(tween(Motion.MEDIUM_2)),
+                ) {
+                    result.progress?.let { ProgressCard(it, modifier = Modifier.padding(top = Spacing.lg)) }
+                }
                 result.calibration?.let { levels ->
                     Spacer(Modifier.height(Spacing.xl))
                     MatchCalibrationCard(levels, result.hint)

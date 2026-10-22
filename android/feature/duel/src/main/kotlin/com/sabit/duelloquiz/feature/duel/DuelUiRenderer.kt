@@ -331,6 +331,7 @@ internal class DuelUiRenderer(
                 else -> null
             },
             playAgainLoading = model.playAgainLoading,
+            progress = model.progressCard.takeUnless { abandoned },
         )
     }
 
