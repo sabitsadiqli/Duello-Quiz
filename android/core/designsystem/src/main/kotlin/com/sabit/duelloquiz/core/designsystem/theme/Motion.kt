@@ -6,7 +6,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 
-/** motion from design/tokens.json 2.0.0. Durations in ms. */
+/** motion from design/tokens.json 2.1.0. Durations in ms. */
 object Motion {
     const val SHORT_1 = 50
     const val SHORT_2 = 100
@@ -115,5 +115,25 @@ object Motion {
 
         /** duel-result.md: calibration bars grow staggered by 50 ms per row. */
         const val CALIBRATION_BAR_STAGGER_MS = 50
+    }
+
+    /**
+     * motion.progression (2.1.0): display-only motion for XP, levels, streak and the daily result.
+     * Never delays navigation or a request; reduced motion shows the final values at once.
+     */
+    object Progression {
+        const val XP_GAIN_POP_DELAY_MS = 300
+        const val XP_GAIN_POP_FROM = 0.6f
+        const val XP_BAR_FILL_DELAY_MS = 450
+        const val XP_BAR_FILL_MS = 800
+        const val LEVEL_UP_FILL_TO_FULL_MS = 400
+        const val LEVEL_UP_HOLD_MS = 150
+        const val LEVEL_UP_REFILL_MS = 400
+        const val LEVEL_UP_STRIP_FROM = 0.8f
+        const val STREAK_IGNITE_MS = 200
+        const val STREAK_IGNITE_FROM = 0.6f
+        const val STREAK_IGNITE_PEAK = 1.15f
+        const val RESULT_SQUARES_STAGGER_MS = 80
+        const val RESULT_SQUARES_FROM = 0.4f
     }
 }

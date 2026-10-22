@@ -2,4 +2,6 @@
 <resources>
     <!-- Window and splash background before Compose draws: color.light.scheme.surface. -->
     <color name="ds_window_background">#FFF7F5FF</color>
+    <!-- notifications.md: accent of the status bar icon = color.light.scheme.primary (both themes). -->
+    <color name="ds_notification_accent">#FF5334E6</color>
 </resources>

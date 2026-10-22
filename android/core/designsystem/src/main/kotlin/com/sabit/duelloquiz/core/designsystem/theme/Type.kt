@@ -28,7 +28,7 @@ private fun style(fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Do
     letterSpacing = letterSpacing.sp,
 )
 
-/** typography.scale from design/tokens.json 2.0.0, 1:1. */
+/** typography.scale from design/tokens.json 2.1.0, 1:1. */
 internal val DuelloTypography = Typography(
     displayLarge = style(56, 64, 900, -0.5),
     displayMedium = style(44, 52, 900, -0.25),
