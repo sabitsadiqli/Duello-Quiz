@@ -41,6 +41,7 @@ include(":core:designsystem")
 include(":core:duel")
 include(":core:model")
 include(":core:network")
+include(":core:notifications")
 include(":core:testing")
 
 include(":feature:auth")
