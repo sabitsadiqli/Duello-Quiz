@@ -119,6 +119,24 @@ GAME = [
     ("gradient.duelHero.on", "gradient.duelHero.end", TEXT, "duel hero card text, gradient end"),
     ("gradient.resultWin.on", "gradient.resultWin.start", TEXT, "win result hero text, gradient start"),
     ("gradient.resultWin.on", "gradient.resultWin.end", TEXT, "win result hero text, gradient end"),
+    # v2.1 (tokens 2.1.0): daily challenge, streak, XP, notifications
+    ("gradient.dailyHero.on", "gradient.dailyHero.start", TEXT, "daily card / daily result hero text, gradient start"),
+    ("gradient.dailyHero.on", "gradient.dailyHero.end", TEXT, "daily card / daily result hero text, gradient end"),
+    ("streak", "surfaceContainerLowest", TEXT, "streak flame icon on white game cards (profile streak card, progress card)"),
+    ("streak", "surface", UI, "streak flame icon on the page"),
+    ("streak", "streakContainer", UI, "filled flame in the active streak badge (home header)"),
+    ("onStreakContainer", "streakContainer", TEXT, "streak number in the active streak badge, streak hint banner, '+1' chip"),
+    ("onSurface", "surfaceContainerHigh", TEXT, "streak number in the inactive streak badge"),
+    ("onSurfaceVariant", "surfaceContainerHigh", UI, "outlined flame in the inactive streak badge"),
+    ("primary", "surfaceContainerHighest", UI, "XP bar fill vs track (result card, profile, home mini bar, category rows)"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "level chip (home header), level-up strip"),
+    ("onPressablePrimary", "pressablePrimary", TEXT, "level badge number (profile level card)"),
+    ("onSecondaryContainer", "secondaryContainer", TEXT, "streak freeze row / freeze-used banner"),
+    ("secondary", "surfaceContainerLowest", UI, "streak freeze shield icon on a white card"),
+    ("correct", "surfaceContainerLowest", UI, "daily result square (correct) vs white share card"),
+    ("wrong", "surfaceContainerLowest", UI, "daily result square (wrong) vs white share card"),
+    ("outline", "surfaceContainerLowest", UI, "daily result square (no answer) border vs white share card"),
+    ("onSurfaceVariant", "surfaceContainerHighest", TEXT, "dash glyph in the no-answer square, notification card supporting text"),
 ]
 CATEGORY_SLOTS = ["violet", "blue", "teal", "green", "orange", "rose", "pink", "ocean"]
 for slot in CATEGORY_SLOTS:

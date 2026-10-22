@@ -17,10 +17,13 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/sign-up.md` | Email sign-up with "Ad" (AUTH-02, OQ-011) |
 | `screens/password-reset.md` | Password reset (AUTH-04) |
 | `screens/email-verification-banner.md` | Verification banner on home (AUTH-08, OQ-010) |
-| `screens/home.md` | Home (HOME-01 … HOME-06) |
+| `screens/home.md` | Home (HOME-01 … HOME-08: header with level and streak, daily card) |
+| `screens/daily-challenge.md` | Daily challenge: home card states, loading, play, result, share text (DAILY-01 … DAILY-10, HOME-07) |
+| `screens/progression.md` | XP gain and level-up on results, streak on home, level / streak / category levels on the profile (PROG-01 … PROG-10, HOME-08, PROF-09 … PROF-11) |
+| `screens/notifications.md` | Permission card, settings switches, push texts (NOTIF-01 … NOTIF-08, SET-07) |
 | `screens/quiz-question.md` | Quiz loading + question screen + exit dialog (QUIZ-01 … QUIZ-04, QUIZ-07, QUIZ-08) |
-| `screens/quiz-result.md` | Result + wrong-answer review (QUIZ-05, QUIZ-06) |
-| `screens/settings.md` | Settings, delete account (SET-01 … SET-05, AUTH-07) |
+| `screens/quiz-result.md` | Result + wrong-answer review, XP card, permission card (QUIZ-05, QUIZ-06) |
+| `screens/settings.md` | Settings, notifications, delete account (SET-01 … SET-05, SET-07, AUTH-07) |
 | `screens/licenses.md` | Open-source licences list and detail (SET-03) |
 | `screens/duel-search.md` | Duel search / queue, timeout, retry, leave (DUEL-02 … DUEL-04) |
 | `screens/duel-intro.md` | Match found + 3 s intro (DUEL-05) |
@@ -30,7 +33,7 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/duel-interruptions.md` | Disconnect overlays, rejoin, leave dialog, session replaced, match lost (DUEL-13 … DUEL-16) |
 | `screens/duel-result.md` | Match result + calibration card (DUEL-20 … DUEL-22) |
 | `screens/duel-availability.md` | Upgrade required, duel unavailable, connection failed (DUEL-01) |
-| `screens/profile.md` | Profile, match history, calibration stats, edit name (PROF-01 … PROF-08) |
+| `screens/profile.md` | Profile, level / streak / category levels, match history, calibration stats, edit name (PROF-01 … PROF-11) |
 | `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon |
 | `screens/web-legal.md` | Public GitHub Pages: app intro, privacy policy, account deletion (`docs/legal/`, SET-06) |
 | `store/` | Google Play listing text, screenshot plan, feature graphic |
@@ -38,6 +41,12 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 Duel colours reuse existing roles (`game.confidence*`, `game.correct/wrong`,
 `scheme.primary` for self, `scheme.tertiary` for the opponent); duel timing lives
 in `motion.duel`.
+
+Retention (tokens 2.1.0, 2026-10-22): streak colours `game.streak*` (burnt-orange
+flame), `gradient.dailyHero` (sky blue → teal daily card), XP and levels on
+`scheme.primary*`, streak freeze on `scheme.secondary*`; sizes `size.resultSquare*`,
+`size.levelBadge`, `size.streakBadgeMinWidth`, `size.xpBar*`; motion
+`motion.progression`. Components §24–§31 in `screens/components.md`.
 
 ## Design direction (v2, tokens 2.0.0)
 
@@ -127,7 +136,8 @@ Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
   adding it to light and dark and adding its pair to `tools/contrast.py`, then
   regenerating `contrast-report.md`.
 - String keys: `snake_case`, prefix by screen/area: `app_`, `common_`, `error_`,
-  `auth_`, `home_`, `quiz_`, `settings_`, `duel_`, `profile_`. Keys never contain
+  `auth_`, `home_`, `quiz_`, `settings_`, `duel_`, `profile_`, `daily_`, `progress_`,
+`notif_`; `push_` = backend i18n only (never in `strings.xml`). Keys never contain
   "bet" even when the protocol code does (`bet_limit_reached` →
   `error_confidence_limit_reached`). Suffix `_cd` for content
   descriptions, `_title`, `_body`, `_label`, `_supporting`, `_button`/`_confirm`

@@ -1,7 +1,8 @@
 # UI copy — Azerbaijani (az)
 
 Owner: `designer`. Source of truth for every user-facing string of the MVP screens
-(auth, home, category quiz, settings, duel, profile). `android-dev` copies the keys 1:1 into
+(auth, home, category quiz, settings, duel, profile, daily challenge, progression,
+notifications). `android-dev` copies the keys 1:1 into
 `android/app/src/main/res/values/strings.xml`; nothing user-facing is hard-coded.
 Terms follow `docs/requirements/glossary.md`; where this file decides final wording
 that differs from a proposal in the requirements, this file wins (see "Changes
@@ -20,6 +21,9 @@ against the requirement proposals" at the end).
   `duel_answer_send_failed`) assumes **nothing** was stored and a new pick or answer
   may be sent before the deadline (like `invalid_bet` / `invalid_option`).
   `duel-protocol.md` does not say. Decides: backend-dev.
+
+- **OQ-D31 — placeholder syntax of the backend i18n push texts** (`push_` keys):
+  backend-dev decides; names `dailyNumber`, `streak` stay.
 
 ## Tone: "sən"
 
@@ -551,6 +555,149 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `profile_edit_offline` | Adı dəyişmək üçün internet lazımdır. | Field error in the dialog. |
 | `profile_edit_failed` | Adı dəyişmək alınmadı. Yenidən cəhd et. | Field error (timeout 15 s / 5xx). |
 
+### daily_ / home_daily_ (daily challenge, `daily-challenge.md`)
+
+Added 2026-10-22 (DAILY-01 … DAILY-10, HOME-07). Never show a clock time; only
+countdowns (DAILY-07). The score is "4 / 5" with spaces in the UI and "4/5" without
+spaces only in the share text (OQ-080).
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `daily_title` | Gündəlik çağırış | Overline on the home card, play top bar, result `bar` title (~245dp at 1.3, fits 264dp). |
+| `daily_number` | #%1$d | "#12". headlineMedium on the card, pill on the result hero. |
+| `home_daily_hint` | %1$d sual · hamı üçün eyni | `plurals`. Gradient card hint; value 5. U+00B7 middle dot. |
+| `home_daily_in_progress_hint` | Başladığın çağırışı bitir. Vaxt dayanmır. | Gradient card hint, in progress. No remaining time on the card. |
+| `home_daily_start` | Başla | `btn` in the daily card. |
+| `home_daily_resume` | Davam et | `btn` in the daily card. |
+| `home_daily_next_countdown` | Növbəti çağırış: %1$s | `%1$s` = "05:12:33" (HH:MM:SS, tabular). titleSmall, 1 line at 1.3 (~268dp of 274dp). |
+| `home_daily_refreshing` | Yeni çağırış yüklənir… | Countdown reached 0. |
+| `home_daily_unavailable` | Bu günün çağırışı hazır deyil. Sabah yenidən yoxla. | `wrap`. Status `unavailable`. |
+| `home_daily_offline_unknown` | Bugünkü çağırışı görmək üçün internet lazımdır. | `wrap`. Offline with a cache of an older day. |
+| `home_daily_error` | Çağırışı yükləmək alınmadı. | `wrap`. Action `common_retry`. |
+| `home_daily_needs_internet` | Gündəlik çağırış üçün internet lazımdır. | Snackbar on "Başla" / "Davam et" offline. |
+| `home_daily_card_cd` | Gündəlik çağırış %1$d, %2$d sual. Başla. | `plurals` on `%2$d`. Gradient card, available. |
+| `home_daily_card_in_progress_cd` | Gündəlik çağırış %1$d davam edir. Davam et. | |
+| `home_daily_card_finished_cd` | Gündəlik çağırış %1$d: %3$d sualdan %2$d düzgün. Növbəti çağırışa %4$d saat %5$d dəqiqə qalıb. | Finished card, recomputed on focus. |
+| `daily_score_short` | %1$d / %2$d | "4 / 5" on the finished card, tabular. |
+| `daily_close_cd` | Çağırışdan çıx | Close icon (play, loading). |
+| `daily_start_error` | Çağırışı başlatmaq alınmadı. | State title on the daily loading screen. Actions `common_retry`, `common_back`. |
+| `daily_exit_title` | Çağırışdan çıxmaq istəyirsən? | Dialog title. |
+| `daily_exit_body` | Çıxsan da vaxt gedir. Bugünkü cəhdin bitəndə yenidən oynamaq olmayacaq. | Dialog body (DAILY-03). |
+| `daily_exit_confirm` | Çıx | `dbtn`. Dismiss = `common_continue`. |
+| `daily_result_correct_count` | %1$d / %2$d düzgün | Hero line, "4 / 5 düzgün". |
+| `daily_result_score_cd` | Gündəlik çağırış %3$d: %2$d sualdan %1$d düzgün cavab | Hero content description. |
+| `daily_result_message_perfect` | Hamısı düzgün! Bugünkü çağırış tam sənindir. | 5 / 5. |
+| `daily_result_message_good` | Əla nəticə! Sabah yeni çağırış səni gözləyir. | 3–4. |
+| `daily_result_message_low` | Başlanğıc var! Səhvlərə bax, sabah daha yaxşı olacaq. | 1–2. |
+| `daily_result_message_zero` | Bu dəfə alınmadı, amma hər sual yeni bilikdir. Sabah yenə gəl! | 0 / 5, encouraging. |
+| `daily_result_expired_note` | Vaxt bitdi. Cavab verilməmiş suallar düzgün sayılmadı. | Deadline ended the attempt. |
+| `daily_result_not_synced` | Nəticə serverə göndərilə bilmədi. İnternet qayıdanda yenidən göndərəcəyik, XP və seriya sonra görünəcək. | Info banner (DAILY-04). |
+| `daily_share_card_title` | Nəticən | Share card title. |
+| `daily_share_card_hint` | Paylaşanda cavablar görünmür — yalnız rənglər. | bodySmall under the squares. |
+| `daily_share` | Paylaş | `btn` with share icon (result card and finished home card). |
+| `daily_share_pending` | Nəticə hələ təsdiqlənməyib | Replaces the hint while "Paylaş" is disabled (DAILY-05). |
+| `daily_share_chooser_title` | Nəticəni paylaş | Android share sheet title. |
+| `daily_share_title` | Duello Quiz · Gündəlik çağırış #%1$d | Share text line 1 (OQ-080). |
+| `daily_share_square_correct` | 🟩 | U+1F7E9. `translatable="false"`. |
+| `daily_share_square_wrong` | 🟥 | U+1F7E5. `translatable="false"`. |
+| `daily_share_square_none` | ⬜ | U+2B1C (no answer). `translatable="false"`. |
+| `daily_share_score` | %1$d/%2$d | Share text only, no spaces: "3/5". |
+| `daily_share_streak` | Seriya: %1$d gün | `plurals`. Share text line 3; left out when the streak is not confirmed. |
+| `daily_share_link` | https://play.google.com/store/apps/details?id=%1$s | `translatable="false"`; `%1$s` = applicationId. |
+| `daily_squares_cd` | Nəticələr: %1$s | `%1$s` = the items below joined with ", ". |
+| `daily_square_item_cd` | sual %1$d %2$s | "sual 2 səhv". |
+| `daily_square_correct_cd` | düzgün | |
+| `daily_square_wrong_cd` | səhv | |
+| `daily_square_none_cd` | cavab verilməyib | |
+| `daily_square_pending_cd` | təsdiqlənməyib | |
+
+### progress_ / home_streak_ (XP, levels, streak, `progression.md`)
+
+Added 2026-10-22 (PROG-01 … PROG-10, HOME-08). "XP" is never translated and never
+called "xal" (glossary: "xal" is the quiz/duel score). Numbers ≥ 1 000 use a
+no-break space as the thousands separator ("12 450 XP"); placeholders that carry
+such numbers are `%s` (pre-formatted).
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `progress_level` | Səviyyə %1$d | Level chip (home), progress card, category rows. |
+| `progress_level_cd` | səviyyə %1$d | Appended to the home header content description. |
+| `progress_xp_gained` | +%1$s XP | headlineSmall, e.g. "+70 XP". Never shown for 0. |
+| `progress_xp_into_level` | %1$s / %2$s XP | "270 / 500 XP", tabular. |
+| `progress_level_up` | Yeni səviyyə: %1$d! | Level-up strip, titleMedium, wraps. |
+| `progress_level_up_cd` | Yeni səviyyəyə çatdın: %1$d. | |
+| `progress_category_level_up` | %1$s: səviyyə %2$d | "Coğrafiya: səviyyə 3". `%1$s` = category name from the server. |
+| `progress_xp_capped` | Bu gün bu oyun növündən maksimum XP qazandın. | Cap note (PROG-09, needs OQ-D29). |
+| `progress_streak_days` | Seriya: %1$d gün | `plurals`. Streak row of the progress card. |
+| `progress_streak_extended` | +1 gün | Chip when `streakExtendedToday`. |
+| `progress_streak_extended_cd` | Seriyan uzandı: %1$d gün. | `plurals`. |
+| `progress_card_cd` | %1$s XP qazandın. Səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb. | Progress card with XP (PROG-02). |
+| `progress_card_no_xp_cd` | Səviyyə %1$d, növbəti səviyyəyə %2$s XP qalıb. | Progress card without the XP row. |
+| `progress_streak_cd_active` | %1$d günlük seriya, bu gün oynamısan | `plurals`. HOME-08. |
+| `progress_streak_cd_inactive` | %1$d günlük seriya, bu gün hələ oynamamısan | `plurals`. Also for streak 0 and unconfirmed cache. |
+| `progress_streak_freeze_cd` | seriya qoruyucusu var | Appended when a freeze is held. |
+| `home_streak_hint` | Seriyanı qoru: bu gün bir oyun oyna. | Home message banner (PROG-06), dismissible. |
+| `home_streak_freeze_used` | Seriya qoruyucusu dünən seriyanı qorudu. | Home message banner, once (PROG-07). |
+| `home_streak_lost` | Seriyan bitdi, amma ən uzun seriyan %1$d gün olaraq qalır. Bu gün yenidən başla! | `plurals`. Home message banner, once (PROG-08). Never mocking. |
+| `profile_level_title` | Səviyyə %1$d | Level card title (PROF-09). |
+| `profile_level_total` | Cəmi %1$s XP | "Cəmi 1 270 XP". |
+| `profile_level_to_next` | Növbəti səviyyəyə %1$s XP | |
+| `profile_level_cd` | Səviyyə %1$d. %2$s / %3$s XP. Növbəti səviyyəyə %4$s XP qalıb. Cəmi %5$s XP. | Level card, one element. |
+| `profile_streak_current` | Seriya: %1$d gün | `plurals`. Streak card (PROF-11). |
+| `profile_streak_best` | Ən uzun seriya: %1$d gün | `plurals`. |
+| `profile_streak_today_done` | Bu gün oynamısan | |
+| `profile_streak_today_pending` | Bu gün hələ oynamamısan | |
+| `profile_streak_freeze_available` | Seriya qoruyucusu: var | |
+| `profile_streak_freeze_earn` | Seriya qoruyucusu %1$d günlük seriyada qazanılır | Value 7 (OQ-086). `wrap`. |
+| `profile_streak_empty` | Hələ seriyan yoxdur. Bu gün bir oyun oyna və başla. | Streak 0 and best 0. |
+| `profile_streak_cd` | Seriya %1$d gün, ən uzun seriya %2$d gün | Streak card, one element; today and freeze lines are read after it. |
+| `profile_categories_title` | Kateqoriyalar | Section header (PROF-10). |
+| `profile_category_level_cd` | %1$s: səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb | Category row (PROF-10). |
+
+### notif_ / settings_notif_ (notifications, `notifications.md`)
+
+Added 2026-10-22 (NOTIF-01 … NOTIF-08, SET-07). No clock times, no guilt, no false
+urgency, no emoji.
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `notif_prompt_title` | Xatırladaq? | Permission card title (titleMedium). |
+| `notif_prompt_body` | Gündəlik çağırış hazır olanda və seriyan bitmək üzrə olanda sənə xəbər verək. | `wrap`. |
+| `notif_prompt_allow` | İcazə ver | Primary button; opens the system dialog (requirement proposed "Bəli"). |
+| `notif_prompt_later` | Sonra | Text button. |
+| `notif_open_settings` | Ayarları aç | Primary button when the permission is permanently denied. |
+| `notif_enabled_snackbar` | Bildirişlər açıldı. Parametrlərdən istədiyin vaxt dəyişə bilərsən. | Snackbar after "granted". |
+| `settings_section_notifications` | Bildirişlər | Section header (SET-07). |
+| `settings_notif_daily` | Gündəlik çağırış xatırlatması | Switch row, `row` (2 lines at 1.3). |
+| `settings_notif_daily_supporting` | Səhər, bugünkü çağırışı hələ oynamamısansa | Supporting text, `wrap`. |
+| `settings_notif_streak` | Seriya xatırlatması | Switch row. |
+| `settings_notif_streak_supporting` | Axşam, seriyan varsa və bu gün hələ oynamamısansa | Supporting text, `wrap`. |
+| `settings_notif_blocked` | Bildirişlər telefonda söndürülüb. | Warning banner in the section. |
+| `settings_notif_open_system` | Ayarları aç | Banner action; opens the app's system notification settings. |
+| `settings_notif_channel_off` | Telefonda söndürülüb | Supporting text of a row whose channel is off. |
+| `settings_notif_load_error` | Bildiriş ayarlarını yükləmək alınmadı. | Replaces the switch rows (no cache). Action `common_retry`. |
+| `settings_notif_save_failed` | Dəyişikliyi yadda saxlamaq alınmadı. | Snackbar; the switch reverts. |
+| `settings_notif_offline` | Bildiriş ayarlarını dəyişmək üçün internet lazımdır. | Snackbar; the switch reverts. |
+| `notif_channel_daily_name` | Gündəlik çağırış | Android channel name. |
+| `notif_channel_daily_description` | Bugünkü çağırışı hələ oynamamısansa, səhər xatırladırıq. | Android channel description. |
+| `notif_channel_streak_name` | Seriya | Android channel name. |
+| `notif_channel_streak_description` | Seriyan bitmək üzrə olanda axşam xatırladırıq. | Android channel description. |
+
+### push_ — backend i18n (not in `strings.xml`)
+
+**Backend i18n, not Android.** The server sends these texts in FCM notification
+messages (OQ-096), resolved by the token's locale with fallback `az`, in its i18n
+JSON (`{"az": "..."}`). backend-dev mirrors them 1:1; the placeholder syntax is the
+backend's (OQ-D31), the names stay `dailyNumber` and `streak`. Limits: title ≤ 40,
+body ≤ 90 characters (counted with the largest realistic values).
+
+| Key | Azerbaijani | Length | Sent when |
+| --- | --- | ---: | --- |
+| `push_daily_reminder_title` | Gündəlik çağırış #{dailyNumber} hazırdır | 31 (at #1234) | `daily_reminder`, 10:00 Baku, today's daily not started (OQ-088) |
+| `push_daily_reminder_body` | 5 sual səni gözləyir. Bu gün neçəsini tapacaqsan? | 49 | same |
+| `push_streak_reminder_title` | {streak} günlük seriyanı qoru | 25 (at 1000) | `streak_reminder`, 20:00 Baku, streak ≥ 2, today not active |
+| `push_streak_reminder_body` | Bu gün bir oyun oyna ki, seriyan davam etsin. | 45 | same |
+
 ## Truncation risks
 
 Estimated with the method above. "Used" = which form the specs use.
@@ -583,6 +730,15 @@ Estimated with the method above. "Used" = which form the specs use.
 | Calibration row "Əminlik 3" + "18 dəfə · 72% düzgün" | one row | ~260 / ~340dp | 296dp | **Would truncate** on one line at 1.3, so the label and value are stacked (`components.md` §20). |
 | History row supporting "Məğlubiyyət · −120 : 300" | `row` | ~180 / ~235dp | ~192dp | Wraps to 2 lines at 1.3 (allowed); the label line moves down. |
 | `profile_match_date_year` "12 okt 2025" | trailing column, labelSmall | ~62 / ~80dp | ~72dp | Tight at 1.3; trailing column may grow to 80dp (headline still ≥ 180dp). |
+| `home_daily_next_countdown` "Növbəti çağırış: 05:12:33" | finished daily card, titleSmall + 18dp icon | ~207 / ~268dp | 274dp | Fits on 1 line at 1.3 because the white card uses `space.lg` padding (with `space.xl` it would wrap). |
+| "Gündəlik çağırış #123" | daily card title | ~250 / ~325dp as one headline | 2 lines | Split by design: overline `daily_title` + `daily_number` on its own line, so it is always ≤ 2 lines. |
+| `home_rating` "Reytinq: 1000" in the home header with level and streak | labelLarge + icon | ~143 / ~180dp | ~176dp | **Would wrap at 1.3**: above font scale 1.15 the line uses labelMedium (~150dp) (`home.md`). |
+| `progress_level` "Səviyyə 12" chip + mini bar | home header line 3 | ~95 / ~120dp | ~176dp | Fits; the mini bar moves under the chip when < 48dp is left. |
+| `settings_notif_daily` "Gündəlik çağırış xatırlatması" | switch row | ~255 / ~330dp | ~232dp | **Wraps to 2 lines** at 1.0 and 1.3 (allowed by `row`, SET-07); switch stays centred. |
+| `notif_prompt_allow` "İcazə ver" + `notif_prompt_later` "Sonra" | two buttons in one row of the card | ~140 / ~185dp together | ~296dp | Fit side by side; stack at font scale ≥ 2.0. |
+| `home_daily_start` / `home_daily_resume` / `daily_share` | `btn` | ≤ ~70 / ~90dp | 280dp | Fit. |
+| `progress_xp_gained` "+1 250 XP" | headlineSmall + 24dp icon | ~110 / ~145dp | 296dp | Fits. |
+| `profile_category_level_cd` row: "Kinematoqrafiya" + "Səviyyə 12" | category row (name column + trailing level) | name ~140 / ~180dp, level ~85 / ~110dp | ~232dp | At 1.3 the level label moves under the bar when the name needs its full column (`progression.md` C). |
 
 ## Changes against the requirement proposals
 
@@ -623,6 +779,12 @@ requirement files when convenient. Examples:
 | Qoşulub: Oktyabr 2026 | Qoşulub: oktyabr 2026 (month lowercase inside a sentence) |
 | Əminlik 3: 18 dəfə, 72% düzgün | Label "Əminlik 3" + value "18 dəfə · 72% düzgün" |
 | Ad 2–20 simvol olmalıdır. | Ad 2–20 simvol olmalıdır. (`auth_error_name_length`, unchanged) |
+| Gündəlik çağırış #12 (one line) | Overline "Gündəlik çağırış" + "#12" (never more than 2 lines) |
+| Gündəlik çağırış hazır olanda və seriyan bitmək üzrə olanda xəbər verək? — "Bəli" / "Sonra" | Title "Xatırladaq?" + body "Gündəlik çağırış hazır olanda və seriyan bitmək üzrə olanda sənə xəbər verək." — "İcazə ver" / "Sonra" (the button names the next step: the system dialog) |
+| Seriyan təhlükədədir / 7 günlük seriyanı qorumaq üçün bu gün bir oyun oyna. | "7 günlük seriyanı qoru" / "Bu gün bir oyun oyna ki, seriyan davam etsin." (no alarm word in the title, NOTIF-07) |
+| Gündəlik çağırış #12 hazırdır / 5 sual səni gözləyir. | Title unchanged; body "5 sual səni gözləyir. Bu gün neçəsini tapacaqsan?" |
+| Bildirişlər telefonda söndürülüb (+ Ayarları aç) | Same, as a banner with a full stop; action "Ayarları aç" |
+| Seriya qoruyucusu: 7 günlük seriyada qazanılır | "Seriya qoruyucusu 7 günlük seriyada qazanılır" (no colon: it is a sentence, not a value) |
 
 ### Tone audit (2026-10-17)
 

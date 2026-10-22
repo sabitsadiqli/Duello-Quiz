@@ -30,7 +30,7 @@ not checked. Category slots are named `category.<slot>.*`, gradients
 
 ## Summary
 
-Pairs checked: 242, failures: 0.
+Pairs checked: 276, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
@@ -148,6 +148,23 @@ Pairs checked: 242, failures: 0.
 | gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
 | gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |
 | gradient.resultWin.on | gradient.resultWin.end | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | win result hero text, gradient end |
+| gradient.dailyHero.on | gradient.dailyHero.start | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | daily card / daily result hero text, gradient start |
+| gradient.dailyHero.on | gradient.dailyHero.end | #FFFFFF | #00796B | 5.32 | 4.5 | pass | daily card / daily result hero text, gradient end |
+| streak | surfaceContainerLowest | #C2410C | #FFFFFF | 5.18 | 4.5 | pass | streak flame icon on white game cards (profile streak card, progress card) |
+| streak | surface | #C2410C | #F7F5FF | 4.80 | 3.0 | pass | streak flame icon on the page |
+| streak | streakContainer | #C2410C | #FFE4D4 | 4.27 | 3.0 | pass | filled flame in the active streak badge (home header) |
+| onStreakContainer | streakContainer | #4A1500 | #FFE4D4 | 12.37 | 4.5 | pass | streak number in the active streak badge, streak hint banner, '+1' chip |
+| onSurface | surfaceContainerHigh | #1A1530 | #E4DFF7 | 13.57 | 4.5 | pass | streak number in the inactive streak badge |
+| onSurfaceVariant | surfaceContainerHigh | #4A4463 | #E4DFF7 | 7.05 | 3.0 | pass | outlined flame in the inactive streak badge |
+| primary | surfaceContainerHighest | #5334E6 | #DCD6F2 | 4.98 | 3.0 | pass | XP bar fill vs track (result card, profile, home mini bar, category rows) |
+| onPrimaryContainer | primaryContainer | #1C0A63 | #E7E1FF | 13.05 | 4.5 | pass | level chip (home header), level-up strip |
+| onPressablePrimary | pressablePrimary | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | level badge number (profile level card) |
+| onSecondaryContainer | secondaryContainer | #002A55 | #DCEBFF | 11.88 | 4.5 | pass | streak freeze row / freeze-used banner |
+| secondary | surfaceContainerLowest | #0068C9 | #FFFFFF | 5.49 | 3.0 | pass | streak freeze shield icon on a white card |
+| correct | surfaceContainerLowest | #0E7445 | #FFFFFF | 5.83 | 3.0 | pass | daily result square (correct) vs white share card |
+| wrong | surfaceContainerLowest | #C8213A | #FFFFFF | 5.62 | 3.0 | pass | daily result square (wrong) vs white share card |
+| outline | surfaceContainerLowest | #7A7394 | #FFFFFF | 4.46 | 3.0 | pass | daily result square (no answer) border vs white share card |
+| onSurfaceVariant | surfaceContainerHighest | #4A4463 | #DCD6F2 | 6.50 | 4.5 | pass | dash glyph in the no-answer square, notification card supporting text |
 | category.violet.onFace | category.violet.face | #FFFFFF | #6A3DE8 | 6.09 | 4.5 | pass | category tile name + count, slot violet |
 | category.violet.onContainer | category.violet.container | #2A0F7A | #ECE5FF | 11.89 | 4.5 | pass | category chip / quiz top bar tint, slot violet |
 | category.blue.onFace | category.blue.face | #FFFFFF | #1565D8 | 5.41 | 4.5 | pass | category tile name + count, slot blue |
@@ -274,6 +291,23 @@ Pairs checked: 242, failures: 0.
 | gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
 | gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |
 | gradient.resultWin.on | gradient.resultWin.end | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | win result hero text, gradient end |
+| gradient.dailyHero.on | gradient.dailyHero.start | #FFFFFF | #0068C9 | 5.49 | 4.5 | pass | daily card / daily result hero text, gradient start |
+| gradient.dailyHero.on | gradient.dailyHero.end | #FFFFFF | #00796B | 5.32 | 4.5 | pass | daily card / daily result hero text, gradient end |
+| streak | surfaceContainerLowest | #FF9A5C | #0C0A1C | 9.32 | 4.5 | pass | streak flame icon on white game cards (profile streak card, progress card) |
+| streak | surface | #FF9A5C | #121027 | 8.88 | 3.0 | pass | streak flame icon on the page |
+| streak | streakContainer | #FF9A5C | #4D1F08 | 6.62 | 3.0 | pass | filled flame in the active streak badge (home header) |
+| onStreakContainer | streakContainer | #FFDCC8 | #4D1F08 | 10.77 | 4.5 | pass | streak number in the active streak badge, streak hint banner, '+1' chip |
+| onSurface | surfaceContainerHigh | #EDE9FF | #2A2649 | 12.03 | 4.5 | pass | streak number in the inactive streak badge |
+| onSurfaceVariant | surfaceContainerHigh | #C3BCE0 | #2A2649 | 7.87 | 3.0 | pass | outlined flame in the inactive streak badge |
+| primary | surfaceContainerHighest | #C0B3FF | #353057 | 6.50 | 3.0 | pass | XP bar fill vs track (result card, profile, home mini bar, category rows) |
+| onPrimaryContainer | primaryContainer | #EDE8FF | #4A2FD6 | 6.59 | 4.5 | pass | level chip (home header), level-up strip |
+| onPressablePrimary | pressablePrimary | #FFFFFF | #6A4DFF | 5.10 | 4.5 | pass | level badge number (profile level card) |
+| onSecondaryContainer | secondaryContainer | #D6E8FF | #004A8F | 7.09 | 4.5 | pass | streak freeze row / freeze-used banner |
+| secondary | surfaceContainerLowest | #9ECAFF | #0C0A1C | 11.48 | 3.0 | pass | streak freeze shield icon on a white card |
+| correct | surfaceContainerLowest | #5FD39A | #0C0A1C | 10.48 | 3.0 | pass | daily result square (correct) vs white share card |
+| wrong | surfaceContainerLowest | #FF8F9C | #0C0A1C | 8.98 | 3.0 | pass | daily result square (wrong) vs white share card |
+| outline | surfaceContainerLowest | #8F88AD | #0C0A1C | 5.85 | 3.0 | pass | daily result square (no answer) border vs white share card |
+| onSurfaceVariant | surfaceContainerHighest | #C3BCE0 | #353057 | 6.77 | 4.5 | pass | dash glyph in the no-answer square, notification card supporting text |
 | category.violet.onFace | category.violet.face | #FFFFFF | #6A3DE8 | 6.09 | 4.5 | pass | category tile name + count, slot violet |
 | category.violet.onContainer | category.violet.container | #E3DAFF | #33246E | 9.73 | 4.5 | pass | category chip / quiz top bar tint, slot violet |
 | category.blue.onFace | category.blue.face | #FFFFFF | #1565D8 | 5.41 | 4.5 | pass | category tile name + count, slot blue |

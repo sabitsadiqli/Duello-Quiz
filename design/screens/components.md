@@ -624,3 +624,246 @@ title `type.titleMedium` + trailing total `type.labelLarge`
 `scheme.onSurfaceVariant`), `space.md`, label `type.bodyLarge` `scheme.onSurface`
 (full width, never truncated), trailing count `type.titleMedium` tabular. The card
 is one TalkBack element (`profile_record_cd`). No win rate in the MVP (PROF-03).
+
+---
+
+Components 24–31 were added with tokens 2.1.0 for the retention features: daily
+challenge (`daily-challenge.md`), streak / XP / levels (`progression.md`) and
+notifications (`notifications.md`). They reuse §0 and existing roles; the only new
+colour roles are `game.streak`, `game.streakContainer`, `game.onStreakContainer`
+and `gradient.dailyHero`. Visual rules for all of them: playful, never casino —
+no coins, chips, gems, gold, treasure chests, slot reels, "jackpot" counters or
+falling confetti. The flame is the only streak symbol; XP is a plain number and a
+bar.
+
+## 24. Streak badge (home header)
+
+Trailing block of the home profile header card (`home.md`). Not a separate touch
+target: it is part of the header card (taps open the profile, HOME-08).
+
+- Box: min width `size.streakBadgeMinWidth` (56dp), shape
+  `shape.component.streakBadge`, padding `space.sm` × `space.xs`, content centred,
+  column: flame icon 28dp (`local_fire_department`, Material Symbols Rounded),
+  `space.xxs`, number `type.titleMedium` tabular figures, 1 line (grows in width for
+  4-digit streaks; never truncates).
+- **Freeze dot**: when `freezeAvailable`, a 20dp circle at the top-end corner
+  (offset −`space.xs`), `scheme.secondaryContainer` with a 2dp ring of the card face
+  colour, 14dp `shield` icon (filled) in `scheme.onSecondaryContainer`.
+
+| State | Container | Flame | Number | When |
+| --- | --- | --- | --- | --- |
+| Active today | `game.streakContainer` | filled, `game.streak` | `game.onStreakContainer` | `todayActive = true` |
+| Not yet today | `scheme.surfaceContainerHigh` | outlined, `scheme.onSurfaceVariant` | `scheme.onSurface` | `streakCurrent ≥ 1`, `todayActive = false` |
+| Zero | `scheme.surfaceContainerHigh` | outlined, `scheme.onSurfaceVariant` | "0" `scheme.onSurface` | `streakCurrent = 0` (no warning colour) |
+| Unconfirmed (cache after Baku midnight) | as "Not yet today" | outlined | cached number | PROG-06: the "today" state is never claimed from cache |
+| Hidden | — | — | — | No progress and no cache (HOME-08: never show "0" as a guess); the header text column takes the width |
+| Skeleton | `scheme.surfaceContainerHighest` block, same size | — | — | First load |
+
+Motion: the first time home shows `todayActive = true` on a given Baku day, the
+flame ignites once (`motion.progression.streakIgnite`). Reduced motion: final state.
+Accessibility: merged into the header node; the header content description gets
+`progress_streak_cd_active` / `progress_streak_cd_inactive` (+
+`progress_streak_freeze_cd` when a freeze is held) appended.
+
+## 25. Level chip and mini XP bar (home header)
+
+Third line of the home header text column: a row, vertically centred:
+- **Level chip**: `shape.component.levelChip`, `scheme.primaryContainer`, padding
+  `space.sm` × `space.xxs`, text `progress_level` ("Səviyyə 5") `type.labelMedium`
+  `scheme.onPrimaryContainer`, 1 line, never truncated.
+- `space.sm`, **mini XP bar**: fills the remaining width, height
+  `size.xpBarMiniHeight`, `shape.full`, track `scheme.surfaceContainerHighest`, fill
+  `scheme.primary` = `xpIntoLevel / xpForNextLevel` (server values, never derived
+  from `xpTotal`). Decorative (the header content description reads the level). If
+  the remaining width is < 48dp (large font scale), the bar moves below the chip at
+  full column width.
+
+## 26. Progress card (XP, level, streak on result screens)
+
+Shared by the quiz result, the daily result and the duel result (PROG-02, PROG-06).
+White game card (§0 without press): `scheme.surfaceContainerLowest`, 2dp
+`game.cardBorder`, depth `game.cardDepth`, `shape.component.progressCard`, padding
+`space.lg`. Content top to bottom:
+
+1. **XP row** (only when `xpGained > 0`): 24dp `star` icon (filled) in
+   `scheme.primary`, `space.sm`, `progress_xp_gained` ("+70 XP")
+   `type.headlineSmall` `scheme.primary`, tabular. Pops in
+   (`motion.progression.xpGainPop`).
+2. `space.md`, **level row**: `progress_level` `type.titleSmall` `scheme.onSurface`
+   at the start; at the end `progress_xp_into_level` ("270 / 500 XP")
+   `type.labelMedium` `scheme.onSurfaceVariant`, tabular. If both do not fit on one
+   line (font scale), the XP text wraps under the level label.
+3. `space.sm`, **XP bar**: full width, `size.xpBarHeight`, `shape.full`, track
+   `scheme.surfaceContainerHighest`, fill `scheme.primary` with the 3dp highlight
+   stripe of §4. Animates from the old to the new fraction
+   (`motion.progression.xpBarFill`).
+4. **Level-up strip** (only when `levelAfter > levelBefore`), `space.md` above:
+   `scheme.primaryContainer`, `shape.medium`, padding `space.md`, row: 24dp
+   `arrow_circle_up` in `scheme.onPrimaryContainer`, `space.sm`,
+   `progress_level_up` ("Yeni səviyyə: 5!") `type.titleMedium`
+   `scheme.onPrimaryContainer`, wraps. Enters per `motion.progression.levelUp`.
+5. **Category level-ups** (only for entries in `categoryLevelUps[]`), `space.sm`
+   gap: row with a 24dp rounded square in `category.<slot>.container` holding the
+   16dp category icon in `category.<slot>.onContainer`, `space.sm`,
+   `progress_category_level_up` ("Coğrafiya: səviyyə 3") `type.bodyMedium`
+   `scheme.onSurface`, wraps.
+6. **Cap note** (only when the server says XP was capped for this game type today,
+   PROG-09), replaces the XP row: 20dp `info` icon + `progress_xp_capped`
+   `type.bodyMedium` `scheme.onSurfaceVariant`, wraps. Shown once per Baku day per
+   game type (client remembers the day key).
+7. `space.md`, divider `scheme.outlineVariant`, `space.md`, **streak row**: 24dp
+   flame (`game.streak` filled if `streakExtendedToday` or the day is already
+   active, else outlined `scheme.onSurfaceVariant`), `space.sm`, `progress_streak_days`
+   ("Seriya: 8 gün") `type.titleSmall` `scheme.onSurface`; when
+   `streakExtendedToday`, a trailing chip `progress_streak_extended` ("+1 gün")
+   `type.labelMedium` `game.onStreakContainer` on `game.streakContainer`,
+   `shape.full`, and the flame ignites once (`motion.progression.streakIgnite`).
+   Hidden when `streakCurrent` is not in the response.
+
+| State | Card |
+| --- | --- |
+| `progress` not yet received (finish / `match.result` running, < 2 s) | Not rendered. Nothing is reserved; when it arrives the card expands in (`motion.duration.medium2`, `emphasizedDecelerate`). The client never computes XP. |
+| Offline / `finish` failed | Not rendered (the screen shows its "not synced" banner). Rendered later if a retry succeeds while the screen is open. |
+| XP 0, not capped (forfeit, 0 correct quiz) | XP row hidden, level row + bar static, streak row as usual (PROG-02: never "+0 XP"). |
+| XP 0, capped | Cap note instead of the XP row. |
+| Level-up | Strip shown once; a reopened result (duplicate `match.result`, retried `finish`) shows the final state without the animation and without repeating analytics. |
+| Duplicate result | Final state, no animation. |
+| Reduced motion | Final values, strip without scale. |
+
+Accessibility: the card is one element with `progress_card_cd` ("70 XP qazandın.
+Səviyyə 5, növbəti səviyyəyə 230 XP qalıb."), followed by `progress_level_up_cd` and
+`progress_streak_extended_cd` when present (polite live region, announced once).
+
+## 27. Result squares (daily challenge)
+
+One square per daily question, in order. Used large on the daily result share card
+(`size.resultSquare`, 40dp, glyph 20dp, gap `space.sm`) and compact on the home
+daily card (`size.resultSquareCompact`, 24dp, glyph 14dp, gap `space.xs`). Shape
+`shape.component.resultSquare`.
+
+| Result | Face | Glyph | Border |
+| --- | --- | --- | --- |
+| Correct | `game.correct` | `check` in `game.onCorrect` | — |
+| Wrong | `game.wrong` | `close` in `game.onWrong` | — |
+| No answer (timeout, deadline) | `scheme.surfaceContainerHighest` | `remove` (dash) in `scheme.onSurfaceVariant` | 2dp `scheme.outline` |
+| Not confirmed (answered offline, result unknown) | `scheme.surfaceContainerHigh` | `cloud_upload` in `scheme.onSurfaceVariant` | 2dp dashed `scheme.outline` |
+
+The large variant shows the question number ("1"…"5", `type.labelSmall`
+`scheme.onSurfaceVariant`) under each square. The row is one TalkBack element:
+`daily_squares_cd` ("Sual 1 düzgün, sual 2 səhv, …", built from
+`daily_square_correct_cd` / `_wrong_cd` / `_none_cd` / `_pending_cd`). Enter:
+`motion.progression.resultSquaresEnter`. Glyphs are never removed: colour is never
+the only signal (the share text uses 🟩 🟥 ⬜, which is outside the app).
+
+## 28. Daily challenge card (home)
+
+Same frame as the duel hero card (§6): full-width pressable surface (§0),
+`shape.component.dailyCard` (24dp), padding `space.xl` × 18dp, gap `space.md`. The
+face depends on the state; the card keeps the **same minimum height in every state**
+(the height of the "available" layout at the current font scale) so home never
+jumps (DAILY-01, HOME-07).
+
+**Gradient face** (available, in progress): face `gradient.dailyHero` (sky blue →
+teal, 135°), depth `gradient.dailyHero.depth` 5dp, all text
+`gradient.dailyHero.on`:
+- Row: column (overline `daily_title` "Gündəlik çağırış" `type.labelLarge`, then
+  `daily_number` "#12" `type.headlineMedium`; at font scale ≥ 1.3 they stay on two
+  lines, so "Gündəlik çağırış #123" never needs more than 2 lines) + decorative 56dp
+  rounded square (white 18 %) with the 32dp `today` symbol (a calendar page — no
+  dice, no wheel).
+- Hint `type.bodyMedium`: available → `home_daily_hint` ("5 sual · hamı üçün
+  eyni"); in progress → `home_daily_in_progress_hint`.
+- Full-width white pressable button (same recipe as §6: face `#FFFFFF`, label
+  `#4426D6`, depth `scheme.primaryContainer` light value): `home_daily_start`
+  ("Başla") or `home_daily_resume` ("Davam et"), leading 20dp `play_arrow`.
+
+**White face** (finished, unavailable, offline-unknown, error): white game card
+(`game.pressableNeutral`, 2dp `game.cardBorder`, depth `game.cardDepth`), padding
+`space.lg` (not `space.xl`, so the countdown fits one line at 1.3), text
+`scheme.onSurface` / `scheme.onSurfaceVariant`, icon square in
+`scheme.secondaryContainer` / `scheme.onSecondaryContainer`:
+- **Finished**: row: column (`daily_title` overline `type.labelLarge`
+  `scheme.onSurfaceVariant` + `daily_number` `type.headlineMedium`) + trailing
+  score `daily_score_short` ("4 / 5") `type.headlineMedium` `scheme.primary`
+  tabular; `space.md`, compact result squares (§27); `space.md`, row: 18dp
+  `schedule` icon + `home_daily_next_countdown` ("Növbəti çağırış: 05:12:33")
+  `type.titleSmall` `scheme.onSurfaceVariant` tabular, 1 line (≈ 268dp at 1.3 vs
+  274dp available: 360 − 32 gutters − 32 padding − 22 icon); `space.md`, neutral
+  pressable button `daily_share` with 20dp `share` icon, full width. The card itself
+  is not pressable in this state (only the button); the countdown is not a link.
+- **Countdown at 0**: the countdown row shows a 16dp progress indicator +
+  `home_daily_refreshing` ("Yeni çağırış yüklənir…"); never negative values.
+- **Unavailable**: `event_busy` icon square, `daily_title`,
+  `home_daily_unavailable` (`type.bodyMedium`, wraps); no button.
+- **Offline, cache of an older day**: `cloud_off` icon square, `daily_title` (no
+  number), `home_daily_offline_unknown`; no button (DAILY-01: never claim
+  "finished" for a new day from old cache).
+- **Error** (`GET /v1/daily` failed, no usable cache): `error` icon square,
+  `daily_title`, `home_daily_error`, text button `common_retry`.
+- **Skeleton** (first load): `scheme.surfaceContainerHighest` face, no depth, two
+  text bars and a button-sized bar in `scheme.surfaceContainerHigh`, shimmer as §5.
+- **Start running**: the button shows its loading state (§1), the card ignores
+  further taps (no second request, DAILY-02).
+
+Accessibility: the gradient card is one node, role Button, label
+`home_daily_card_cd` / `home_daily_card_in_progress_cd`; the finished card is a
+traversal group read as `home_daily_card_finished_cd` with the share button as its
+own element; the countdown is not a live region (it would announce every second).
+
+## 29. Home message banner (streak messages)
+
+At most one under the profile header (HOME-08), in this priority: streak ended →
+freeze used → streak hint. Geometry of §8 banners (shape
+`shape.component.homeMessage`, padding `space.lg`, 24dp leading icon,
+`type.bodyMedium` text, actions on their own row), plus a trailing 48dp close icon
+button (`common_close`) for dismissible variants.
+
+| Variant | Container / content | Icon | Text | Dismiss |
+| --- | --- | --- | --- | --- |
+| Streak hint | `game.streakContainer` / `game.onStreakContainer` | `local_fire_department` (outlined) | `home_streak_hint` | Close icon; hidden for the rest of the Baku day once closed or once the day becomes active |
+| Freeze used | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | `shield` | `home_streak_freeze_used` | Close icon; shown once (server event) |
+| Streak ended | `scheme.surfaceContainerHigh` / `scheme.onSurface` | `restart_alt` | `home_streak_lost` (with the best streak) | Close icon; shown once (server event) |
+
+Enter/exit as §8. Polite live region, announced once. No red, no warning triangle,
+no sad faces: a lost streak is a fresh start, not a failure.
+
+## 30. Notification permission card (result screens)
+
+In-app explanation before the Android 13+ system dialog (NOTIF-01, OQ-090). White
+game card (§0 without press) placed **below** the score and progress cards on the
+quiz or daily result, never above or over them. Padding `space.lg`:
+1. Row: 48dp circle `scheme.primaryContainer` with 24dp `notifications_active` in
+   `scheme.onPrimaryContainer`, `space.md`, column: title `notif_prompt_title`
+   `type.titleMedium` `scheme.onSurface`; `space.xxs`, body `notif_prompt_body`
+   `type.bodyMedium` `scheme.onSurfaceVariant` (wraps).
+2. `space.lg`, row of two buttons, end-aligned: text button `notif_prompt_later`
+   ("Sonra"), `space.sm`, primary pressable button with compact height (face 44dp
+   + depth 4dp = 48dp touch target) `notif_prompt_allow` ("İcazə ver"). If both do
+   not fit side by side (font scale), they stack: primary full width on top, text
+   button under it.
+
+States: default → "İcazə ver" opens the system dialog → granted: the card collapses
+(`motion.duration.short4`) and the snackbar `notif_enabled_snackbar` appears;
+denied: the card collapses silently (NOTIF-01). Permanently denied (known before the
+tap): the primary button reads `notif_open_settings` ("Ayarları aç") and opens the
+app's system notification settings; on return the card re-checks and collapses if
+granted. "Sonra" or back: the card collapses, nothing else. Not dismissible by
+swiping. Accessibility: one traversal group, title as heading, buttons separate.
+
+## 31. Switch row (settings)
+
+Material 3 `ListItem` (§14) with a trailing `Switch`; the **whole row** is the toggle
+(`Modifier.toggleable`, role Switch), so the 48dp target is the full row. Headline
+`type.bodyLarge` (max 2 lines), supporting `type.bodyMedium`
+`scheme.onSurfaceVariant` (wraps). Switch colours: Material 3 defaults from the
+scheme (checked track `scheme.primary`, thumb `scheme.onPrimary`; unchecked track
+`scheme.surfaceContainerHighest`, border/thumb `scheme.outline`). The switch is
+vertically centred on the headline block and never pushed out by long text.
+
+| State | Visual |
+| --- | --- |
+| On / Off | Standard |
+| Saving | Switch shows the new value at once; no spinner (optimistic, NOTIF-06) |
+| Save failed / offline | Switch animates back; snackbar with the reason |
+| Disabled (blocked by the phone, channel off, loading) | M3 disabled colours; supporting text explains why (`settings_notif_channel_off`) — the reason is always written, never only greyed out |
+| Loading (first load, no cache) | Switch replaced by a 20dp progress indicator, row not toggleable |

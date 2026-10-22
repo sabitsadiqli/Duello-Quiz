@@ -1,7 +1,9 @@
 # Category quiz — result and wrong-answer review
 
-Stories: QUIZ-05, QUIZ-06, QUIZ-03/QUIZ-08 (expired and unsynced cases).
-Decision: OQ-012 (score = correct count, shown "7 / 10").
+Stories: QUIZ-05, QUIZ-06, QUIZ-03/QUIZ-08 (expired and unsynced cases), PROG-02 /
+PROG-06 (XP, level-up, streak — added 2026-10-22), NOTIF-01 (permission card).
+Decisions: OQ-012 (score = correct count, shown "7 / 10"), OQ-081 / OQ-082 (XP and
+caps), OQ-090 (permission card on the first result).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
 ## Questions and decisions
@@ -47,6 +49,13 @@ the questions they missed.
       4–6 → `_good`, 1–3 → `_low`, 0 → `_zero`.
    5. Optional `space.sm`, `quiz_result_expired_note` `type.bodyMedium`
       `scheme.onSurfaceVariant` (session deadline passed).
+   5a. `space.lg`, **progress card** (`components.md` §26, `progression.md` A):
+      "+70 XP" (10 per correct, from `finish.progress`), level bar, level-up strip,
+      category level-up ("Coğrafiya: səviyyə 3"), streak row. Not rendered until
+      the server's `progress` arrives; XP row hidden at 0 XP; cap note when the
+      server marks the session as capped (OQ-D29).
+   5b. `space.lg`, **notification permission card** (`components.md` §30,
+      `notifications.md` A) — only when its conditions hold.
    6. `space.xl`, **review entry card** (hidden when 10 / 10): white game card
       (`components.md` §0), padding 14dp, leading 44dp rounded square
       `game.wrongContainer` with the `rule` icon in `game.onWrongContainer`, title
@@ -97,12 +106,14 @@ compact option rows (correct / wrong / not answered).
 
 | State | What the user sees |
 | --- | --- |
-| Finishing (`finish` running) | Score block computed locally is shown at once; buttons enabled. No spinner screen. |
+| Finishing (`finish` running) | Score block computed locally is shown at once; buttons enabled. No spinner screen. The progress card expands in when `progress` arrives. |
 | Success | As laid out. |
 | 10 / 10 | Perfect message, no review entry (QUIZ-06). |
 | 0 / 10 | `quiz_result_message_zero` (encouraging), review lists all 10. |
 | Expired (deadline passed) | Note `quiz_result_expired_note`; unanswered questions count as wrong and are in the review as "Cavab verilməyib". |
-| `finish` failed (offline / 5xx) | Info banner `quiz_result_not_synced`; locally known score; client retries once online. |
+| `finish` failed (offline / 5xx) | Info banner `quiz_result_not_synced`; locally known score; no progress card (XP never computed on the client); client retries once online and shows the card if the retry succeeds while the screen is open. |
+| Level-up | Progress card with the level-up strip, once (no dialog, nothing covers the score). |
+| XP capped (21st session of the day) | Progress card with the cap note instead of "+XP" (OQ-D29). |
 | Review loading | The review data comes with the `finish` response; if it is not there yet, the review screen shows the loading state view; error → state view `error_generic` + `common_retry`. |
 | Review offline, no data | State view `error_offline` + `common_retry`. |
 | Empty review | Not reachable (entry hidden for 10 / 10). |
@@ -113,6 +124,7 @@ compact option rows (correct / wrong / not answered).
 
 - Score count-up from 0 to the result (`motion.game.scoreCountUp`); reduced motion:
   final number at once.
+- Progress card sequence: `progression.md` A (`motion.progression.*`).
 - "Yenidən oyna" → quiz loading (new session, same category). Double tap guarded
   (button loading state).
 - "Əsas səhifə", close icon, system back → home; home refreshes.
@@ -121,6 +133,8 @@ compact option rows (correct / wrong / not answered).
 ## Accessibility
 
 - Score block is one element read as "10 sualdan 7 düzgün cavab".
+- Progress card: `progress_card_cd` (+ level-up / streak lines), read after the
+  message.
 - Review cards: each card one traversal group; labels "Sənin cavabın", "Düzgün
   cavab" precede the option text so the meaning never relies on colour.
 
@@ -136,4 +150,5 @@ compact option rows (correct / wrong / not answered).
 `quiz_review_correct_answer`, `quiz_review_not_answered`,
 `quiz_review_explanation`, `quiz_image_cd_fallback`, `common_back`,
 `common_close`, `common_retry`, `error_generic`, `error_offline`,
-`home_quiz_needs_internet`, `error_rate_limited`, `error_rate_limited_retry`, `error_category_not_playable`.
+`home_quiz_needs_internet`, `error_rate_limited`, `error_rate_limited_retry`, `error_category_not_playable`;
+progress card keys in `progression.md`; permission card keys in `notifications.md`.
