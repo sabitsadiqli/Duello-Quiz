@@ -19,6 +19,7 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.XpBreakdownItem
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.model.duel.OwnBet
@@ -493,6 +494,14 @@ private object FakeBotServer {
             val raw = ELO_K * (score - expected)
             val change = if (outcome == MatchOutcome.ABANDONED) 0 else (abs(raw) + HALF).toInt() * if (raw < 0) -1 else 1
             val calibration = (1..LEVELS).map { CalibrationLevel(it, picks[it - 1], correctPicks[it - 1]) }
+            // OQ-081: 20 for a finished match + 30 win / 15 draw; 0 for own forfeit and abandoned.
+            val earns = outcome != MatchOutcome.ABANDONED && forfeitedBy != DuelSide.SELF
+            val bonus = buildList {
+                if (earns) add(XpBreakdownItem("duel_played", null, DUEL_PLAYED_XP))
+                if (earns && outcome == MatchOutcome.WIN) add(XpBreakdownItem("duel_win", null, DUEL_WIN_XP))
+                if (earns && outcome == MatchOutcome.DRAW) add(XpBreakdownItem("duel_draw", null, DUEL_DRAW_XP))
+            }
+            val progress = FakeProgressLedger.award(uid, "duel:$id", now(), emptyMap(), bonus, activates = earns)
             val message = DuelServerMessage.MatchResultMessage(
                 seq + 1,
                 now(),
@@ -510,6 +519,7 @@ private object FakeBotServer {
                     suddenDeathPlayed = (roundNo - REGULAR_ROUNDS).coerceAtLeast(0),
                     calibration = calibration,
                     rounds = rounds.toList(),
+                    progress = progress,
                 ),
             )
             finalResult = message
@@ -549,6 +559,9 @@ private object FakeBotServer {
     private const val BET3_LIMIT = 2
     private const val LEVELS = 3
     private const val OPTIONS = 4
+    private const val DUEL_PLAYED_XP = 20
+    private const val DUEL_WIN_XP = 30
+    private const val DUEL_DRAW_XP = 15
     private const val MISSED_FORFEIT = 2
     private const val SPEED_BONUS_MAX = 50L
     private val GAIN = intArrayOf(100, 200, 300)

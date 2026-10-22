@@ -4,6 +4,11 @@ import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.Category
+import com.sabit.duelloquiz.core.model.DailyResult
+import com.sabit.duelloquiz.core.model.DailyStart
+import com.sabit.duelloquiz.core.model.DailyStatus
+import com.sabit.duelloquiz.core.model.NotificationSettings
+import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
@@ -13,6 +18,14 @@ import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
 import com.sabit.duelloquiz.core.network.auth.TokenUnavailableException
 import com.sabit.duelloquiz.core.network.model.NetworkAnswerResult
 import com.sabit.duelloquiz.core.network.model.NetworkCategoryList
+import com.sabit.duelloquiz.core.network.model.NetworkDailyAlreadyPlayed
+import com.sabit.duelloquiz.core.network.model.NetworkDailyAttempt
+import com.sabit.duelloquiz.core.network.model.NetworkDailyResult
+import com.sabit.duelloquiz.core.network.model.NetworkDailyStatus
+import com.sabit.duelloquiz.core.network.model.NetworkNotificationSettings
+import com.sabit.duelloquiz.core.network.model.NetworkProgressSummary
+import com.sabit.duelloquiz.core.network.model.NetworkPushTokenRequest
+import com.sabit.duelloquiz.core.network.model.asNetworkModel
 import com.sabit.duelloquiz.core.network.model.NetworkError
 import com.sabit.duelloquiz.core.network.model.NetworkProfile
 import com.sabit.duelloquiz.core.network.model.NetworkQuizResult
@@ -36,6 +49,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -43,6 +57,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.encodeURLPathPart
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerializationException
 import java.io.IOException
@@ -112,16 +127,105 @@ internal class KtorDuelloNetworkDataSource(
     override suspend fun finishQuizSession(sessionId: String): DataResult<QuizResult> =
         call({ post("v1/quiz/sessions/$sessionId/finish") }) { it.body<NetworkQuizResult>().asExternalModel() }
 
+    override suspend fun getDaily(): DataResult<DailyStatus> = timed { measure ->
+        call({ get("v1/daily") }) { response ->
+            val status = response.body<NetworkDailyStatus>()
+            status.asExternalModel(clockOffsetMs = measure(status.serverNowEpochMs))
+        }
+    }
+
+    override suspend fun startDailyAttempt(): DataResult<DailyStart> = timed { measure ->
+        call(
+            request = { post("v1/daily/attempt") },
+            onError = { response ->
+                // 409 daily_already_played carries the stored result (DAILY-02).
+                if (response.status == HttpStatusCode.Conflict) {
+                    readAlreadyPlayed(response)?.let { DailyStart.AlreadyPlayed(it) }
+                } else {
+                    null
+                }
+            },
+        ) { response ->
+            val attempt = response.body<NetworkDailyAttempt>()
+            DailyStart.Started(attempt.asExternalModel(clockOffsetMs = measure(attempt.serverNowEpochMs)))
+        }
+    }
+
+    override suspend fun submitDailyAnswer(
+        attemptId: String,
+        questionId: String,
+        optionId: String?,
+        elapsedMs: Long,
+    ): DataResult<AnswerResult> = call({
+        post("v1/daily/attempt/$attemptId/answers") {
+            contentType(ContentType.Application.Json)
+            setBody(NetworkSubmitAnswerRequest(questionId = questionId, optionId = optionId, elapsedMs = elapsedMs))
+        }
+    }) { it.body<NetworkAnswerResult>().asExternalModel() }
+
+    override suspend fun finishDailyAttempt(attemptId: String): DataResult<DailyResult> =
+        call({ post("v1/daily/attempt/$attemptId/finish") }) { it.body<NetworkDailyResult>().asExternalModel() }
+
+    override suspend fun getProgress(): DataResult<ProgressSummary> = timed { measure ->
+        call({ get("v1/me/progress") }) { response ->
+            val summary = response.body<NetworkProgressSummary>()
+            summary.asExternalModel(clockOffsetMs = measure(summary.serverNowEpochMs))
+        }
+    }
+
+    override suspend fun registerPushToken(token: String, locale: String): DataResult<Unit> = call({
+        put("v1/me/push-tokens") {
+            contentType(ContentType.Application.Json)
+            setBody(NetworkPushTokenRequest(token = token, locale = locale))
+        }
+    }) { }
+
+    override suspend fun deletePushToken(token: String): DataResult<Unit> =
+        call({ delete("v1/me/push-tokens/${token.encodeURLPathPart()}") }, alsoSuccess = HttpStatusCode.NotFound) { }
+
+    override suspend fun getNotificationSettings(): DataResult<NotificationSettings> =
+        call({ get("v1/me/notification-settings") }) { it.body<NetworkNotificationSettings>().asExternalModel() }
+
+    override suspend fun updateNotificationSettings(settings: NotificationSettings): DataResult<NotificationSettings> =
+        call({
+            put("v1/me/notification-settings") {
+                contentType(ContentType.Application.Json)
+                setBody(settings.asNetworkModel())
+            }
+        }) { it.body<NetworkNotificationSettings>().asExternalModel() }
+
+    /**
+     * Runs [block] with a function that turns a response's `serverNowEpochMs` into the clock
+     * offset (server − local), assuming the server built the response half-way through the trip.
+     */
+    private suspend fun <T> timed(block: suspend (measure: (Long) -> Long) -> T): T {
+        val sentAt = clock.nowMs()
+        return block { serverNow ->
+            val receivedAt = clock.nowMs()
+            serverNow - (sentAt + (receivedAt - sentAt) / 2)
+        }
+    }
+
+    private suspend fun readAlreadyPlayed(response: HttpResponse): DailyResult? = try {
+        val body = DuelloJson.decodeFromString<NetworkDailyAlreadyPlayed>(response.bodyAsText())
+        if (body.code == ApiErrorCode.DailyAlreadyPlayed.wire) body.result.asExternalModel() else null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
     private suspend fun <T> call(
         request: suspend HttpClient.() -> HttpResponse,
         alsoSuccess: HttpStatusCode? = null,
+        onError: (suspend (HttpResponse) -> T?)? = null,
         parse: suspend (HttpResponse) -> T,
     ): DataResult<T> = try {
         val response = client.request()
         if (response.status.isSuccess() || response.status == alsoSuccess) {
             DataResult.Success(parse(response))
         } else {
-            DataResult.Failure(errorOf(response))
+            onError?.invoke(response)?.let { DataResult.Success(it) } ?: DataResult.Failure(errorOf(response))
         }
     } catch (e: TokenUnavailableException) {
         DataResult.Failure(if (e.offline) DataError.Offline else DataError.Unauthorized)

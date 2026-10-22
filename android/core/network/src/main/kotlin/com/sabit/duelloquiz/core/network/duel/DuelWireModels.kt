@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.core.network.duel
 
 import com.sabit.duelloquiz.core.network.model.NetworkImage
 import com.sabit.duelloquiz.core.network.model.NetworkOption
+import com.sabit.duelloquiz.core.network.model.NetworkProgress
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -281,6 +282,8 @@ internal sealed interface WireServerMessage {
         val suddenDeathPlayed: Int,
         val calibration: List<WireCalibration>,
         val rounds: List<WireCompactRound> = emptyList(),
+        /** v1.1 (2026-10-22): XP, level and streak change of the receiver; null if not stored. */
+        val progress: NetworkProgress? = null,
     ) : WireServerMessage
 
     @Serializable
