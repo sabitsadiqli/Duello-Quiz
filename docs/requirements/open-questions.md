@@ -10,40 +10,40 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 
-## Open (2026-10-22) — daily challenge, progression, notifications
+## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
 
 Raised by `business-analyst` while writing `daily-challenge.md`, `progression.md` and
-`notifications.md` (features moved into the MVP by Sabit on 2026-10-22). Each row is
-a yes/no on the recommendation; background and alternatives are in "Details" below.
-The numbers are written into `docs/mvp-spec.md` §9–§11 marked "proposed".
+`notifications.md` (features moved into the MVP by Sabit on 2026-10-22). Sabit accepted
+every recommendation as written on 2026-10-22; background and alternatives are in
+"Details" below. The numbers are final in `docs/mvp-spec.md` §9–§11.
 
-| ID | Question | Recommendation | Decides |
+| ID | Question | Recommendation | Decided |
 | --- | --- | --- | --- |
-| OQ-074 | Day boundary for daily challenge, streak, XP caps and notifications | 00:00 Asia/Baku (UTC+4, no DST), server clock only; device clock and time zone ignored | Sabit |
-| OQ-075 | Daily challenge size and timer | 5 questions, 20 s each, 1.5 s reveal; deadline 5 × 21.5 s + 30 s = 137.5 s | Sabit |
-| OQ-076 | How is the daily set chosen? | Server-random once per day, stored (no date seed): one active question per playable category, random order, not reused in a daily for 60 days; frozen for the day | Sabit |
-| OQ-077 | Reveal correct/wrong after each daily answer? | Yes, same as the quiz (1.5 s); explanations in the review after finishing | Sabit |
-| OQ-078 | Does the daily challenge affect Elo? | No, never | Sabit |
-| OQ-079 | Attempts per day, interruptions, past days | One attempt per account per day; resumable on any device until its deadline (timer keeps running); no archive of past days | Sabit |
-| OQ-080 | Share text format | "Duello Quiz · Gündəlik çağırış #N", one square per question (🟩 correct, 🟥 wrong, ⬜ no answer), "3/5", streak line, Play Store link; no question, option or category data | Sabit |
-| OQ-081 | XP per action (incl. daily bonus) | Quiz 10 XP per correct; daily 10 XP per correct + 20 completion bonus; duel 20 for a finished match, +30 win, +15 draw; forfeiter, abandoned, cancelled 0 | Sabit |
-| OQ-082 | XP anti-farming caps | Quiz XP only for the first 20 sessions per day; duel XP only for the first 20 matches per day and max 3 per day vs the same opponent; beyond that 0 XP, game still stored | Sabit |
-| OQ-083 | Level curve | Level n → n+1 needs 100 × n XP (level 5 at 1 000 XP, level 10 at 4 500 XP); no max; same curve for category levels | Sabit |
-| OQ-084 | What feeds category XP? | Correct answers only: quiz → its category, daily → each question's category; duel XP and the daily bonus count only for overall XP | Sabit |
-| OQ-085 | What makes a day "active" for the streak? | A quiz finished/expired with ≥ 1 answer, a finished daily, or a finished duel not forfeited by the user; opening the app is not enough | Sabit |
-| OQ-086 | Streak freeze ("Seriya qoruyucusu") | Yes: 1 automatic freeze per 7-day streak, max 1 held, covers exactly 1 missed day; no purchase, no button | Sabit |
-| OQ-087 | Activity that crosses midnight | Counts for the Baku day in which it started; a daily started before 00:00 can be finished until its deadline | Sabit |
-| OQ-088 | Notification types, times, max per day | Two types: daily reminder 10:00 Baku (only if not played), streak reminder 20:00 (only if streak ≥ 2 and today not active); max 2 per day | Sabit |
-| OQ-089 | Quiet hours | No notifications 22:00–09:00 Baku; missed sends are skipped, not delayed; no user-chosen times in the MVP | Sabit |
-| OQ-090 | When to ask for the notification permission | Never at first launch; in-app explanation card on the first quiz/daily result; "Sonra" → one more try after 7 days, then only from settings | Sabit |
-| OQ-091 | Notification switch defaults and storage | Both types on after permission is granted; stored per account on the server (all devices) | Sabit |
-| OQ-092 | Stop reminders for inactive users | Send nothing after 7 days without an active day; resume after the next active day | Sabit |
-| OQ-093 | XP and streak for play before the release | No backfill: everyone starts at 0 XP, level 1, streak 0 | Sabit |
-| OQ-094 | Daily-challenge leaderboard or "how others did" stats | No (out of scope, `CLAUDE.md`); revisit after the closed test | Sabit |
-| OQ-095 | Do opponents see level or streak? | No; opponents keep seeing only name, avatar, rating (OQ-024 unchanged) | Sabit |
-| OQ-096 | FCM payload type and text source | "Notification" messages with text from backend i18n by the token's locale + data `type`, so they show even when the app is killed on aggressive OEM builds | backend-dev + android-dev, Sabit confirms |
+| OQ-074 | Day boundary for daily challenge, streak, XP caps and notifications | 00:00 Asia/Baku (UTC+4, no DST), server clock only; device clock and time zone ignored | Sabit 2026-10-22 |
+| OQ-075 | Daily challenge size and timer | 5 questions, 20 s each, 1.5 s reveal; deadline 5 × 21.5 s + 30 s = 137.5 s | Sabit 2026-10-22 |
+| OQ-076 | How is the daily set chosen? | Server-random once per day, stored (no date seed): one active question per playable category, random order, not reused in a daily for 60 days; frozen for the day | Sabit 2026-10-22 |
+| OQ-077 | Reveal correct/wrong after each daily answer? | Yes, same as the quiz (1.5 s); explanations in the review after finishing | Sabit 2026-10-22 |
+| OQ-078 | Does the daily challenge affect Elo? | No, never | Sabit 2026-10-22 |
+| OQ-079 | Attempts per day, interruptions, past days | One attempt per account per day; resumable on any device until its deadline (timer keeps running); no archive of past days | Sabit 2026-10-22 |
+| OQ-080 | Share text format | "Duello Quiz · Gündəlik çağırış #N", one square per question (🟩 correct, 🟥 wrong, ⬜ no answer), "3/5", streak line, Play Store link; no question, option or category data | Sabit 2026-10-22 |
+| OQ-081 | XP per action (incl. daily bonus) | Quiz 10 XP per correct; daily 10 XP per correct + 20 completion bonus; duel 20 for a finished match, +30 win, +15 draw; forfeiter, abandoned, cancelled 0 | Sabit 2026-10-22 |
+| OQ-082 | XP anti-farming caps | Quiz XP only for the first 20 sessions per day; duel XP only for the first 20 matches per day and max 3 per day vs the same opponent; beyond that 0 XP, game still stored | Sabit 2026-10-22 |
+| OQ-083 | Level curve | Level n → n+1 needs 100 × n XP (level 5 at 1 000 XP, level 10 at 4 500 XP); no max; same curve for category levels | Sabit 2026-10-22 |
+| OQ-084 | What feeds category XP? | Correct answers only: quiz → its category, daily → each question's category; duel XP and the daily bonus count only for overall XP | Sabit 2026-10-22 |
+| OQ-085 | What makes a day "active" for the streak? | A quiz finished/expired with ≥ 1 answer, a finished daily, or a finished duel not forfeited by the user; opening the app is not enough | Sabit 2026-10-22 |
+| OQ-086 | Streak freeze ("Seriya qoruyucusu") | Yes: 1 automatic freeze per 7-day streak, max 1 held, covers exactly 1 missed day; no purchase, no button | Sabit 2026-10-22 |
+| OQ-087 | Activity that crosses midnight | Counts for the Baku day in which it started; a daily started before 00:00 can be finished until its deadline | Sabit 2026-10-22 |
+| OQ-088 | Notification types, times, max per day | Two types: daily reminder 10:00 Baku (only if not played), streak reminder 20:00 (only if streak ≥ 2 and today not active); max 2 per day | Sabit 2026-10-22 |
+| OQ-089 | Quiet hours | No notifications 22:00–09:00 Baku; missed sends are skipped, not delayed; no user-chosen times in the MVP | Sabit 2026-10-22 |
+| OQ-090 | When to ask for the notification permission | Never at first launch; in-app explanation card on the first quiz/daily result; "Sonra" → one more try after 7 days, then only from settings | Sabit 2026-10-22 |
+| OQ-091 | Notification switch defaults and storage | Both types on after permission is granted; stored per account on the server (all devices) | Sabit 2026-10-22 |
+| OQ-092 | Stop reminders for inactive users | Send nothing after 7 days without an active day; resume after the next active day | Sabit 2026-10-22 |
+| OQ-093 | XP and streak for play before the release | No backfill: everyone starts at 0 XP, level 1, streak 0 | Sabit 2026-10-22 |
+| OQ-094 | Daily-challenge leaderboard or "how others did" stats | No (out of scope, `CLAUDE.md`); revisit after the closed test | Sabit 2026-10-22 |
+| OQ-095 | Do opponents see level or streak? | No; opponents keep seeing only name, avatar, rating (OQ-024 unchanged) | Sabit 2026-10-22 |
+| OQ-096 | FCM payload type and text source | "Notification" messages with text from backend i18n by the token's locale + data `type`, so they show even when the app is killed on aggressive OEM builds | Sabit 2026-10-22 |
 
-## Details (background for OQ-074 … OQ-096, open)
+## Details (background for OQ-074 … OQ-096, all decided — see above)
 
 Added by `business-analyst` on 2026-10-22. Each item: options with trade-offs and
 the recommendation (= the row above). Stories blocked by each item are listed.

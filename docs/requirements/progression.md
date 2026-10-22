@@ -55,13 +55,13 @@ match).
 Blocked by OQ-081 (amounts) and OQ-093 (no backfill).
 
 - Given a category quiz session ends (finished, or expired with at least one answer),
-  When the server finalizes it, Then it awards quiz XP per OQ-081 (proposed: 10 XP
+  When the server finalizes it, Then it awards quiz XP per OQ-081 (10 XP
   per correct answer) once, in the same transaction as the session status.
 - Given a daily challenge attempt ends (finished or expired), When the server
-  finalizes it, Then it awards daily XP per OQ-081 (proposed: 10 XP per correct answer
+  finalizes it, Then it awards daily XP per OQ-081 (10 XP per correct answer
   + 20 XP completion bonus, also for 0 / 5).
 - Given a duel ends with status `finished`, When the server finalizes it, Then each
-  player gets duel XP per OQ-081 (proposed: 20 XP for playing, +30 for a win, +15 for
+  player gets duel XP per OQ-081 (20 XP for playing, +30 for a win, +15 for
   a draw); the player who forfeited (`forfeitedBy`) gets 0; `abandoned` and
   `cancelled` matches give nobody XP.
 - Given a quiz expired with 0 answers (opened and left), When it is finalized, Then
@@ -101,7 +101,7 @@ Blocked by OQ-081 (amounts) and OQ-093 (no backfill).
 Blocked by OQ-083 (curve).
 
 - Given the user's total XP, When the server computes the level, Then it uses the
-  curve of `docs/mvp-spec.md` §10 (proposed: level n → n+1 needs 100 × n XP; total
+  curve of `docs/mvp-spec.md` §10 (level n → n+1 needs 100 × n XP; total
   for level n = 50 × n × (n − 1); level 1 at 0 XP; no maximum).
 - Given the profile, When shown, Then it displays "Səviyyə 5", a progress bar and
   "270 / 500 XP" (XP into the level / XP needed for the next) (PROF-09).
@@ -117,7 +117,7 @@ Blocked by OQ-083 (curve).
 
 Blocked by OQ-083 (curve) and OQ-084 (sources).
 
-- Given category XP, When it is awarded, Then the source is per OQ-084 (proposed: XP
+- Given category XP, When it is awarded, Then the source is per OQ-084 (XP
   from correct answers of a category quiz goes to that category; XP from correct
   daily answers goes to each question's category; duel XP and the daily completion
   bonus go to the overall XP only).
@@ -135,7 +135,7 @@ Blocked by OQ-083 (curve) and OQ-084 (sources).
 
 Blocked by OQ-074 (Baku day), OQ-085 (what counts), OQ-087 (midnight).
 
-- Given an active day (OQ-085, proposed: at least one of — a category quiz finished
+- Given an active day (OQ-085: at least one of — a category quiz finished
   or expired with at least one answer, a finished daily challenge attempt, a duel
   with status `finished` that the user did not forfeit), When the server finalizes
   that activity, Then the Baku day in which the activity **started** is marked active
@@ -207,7 +207,7 @@ Blocked by OQ-082 (caps) and OQ-085.
 - Given any client request, When progress changes, Then it changes only as a
   side effect of the server finalizing a quiz session, daily attempt or match; there
   is no endpoint that accepts XP, level, streak or an "active day" from the client.
-- Given caps per OQ-082 (proposed: quiz XP only for the first 20 sessions per Baku day;
+- Given caps per OQ-082 (quiz XP only for the first 20 sessions per Baku day;
   duel XP only for the first 20 matches per day and for at most 3 matches per day
   against the same opponent), When a further session or match ends, Then it is
   played and stored normally but gives 0 XP; the result screen hides the XP line and

@@ -306,7 +306,7 @@ Blocked by OQ-078 (Elo) and OQ-082 (farming caps).
 
 ## 3. Business rules
 
-- Size, timer, reveal and deadline: `docs/mvp-spec.md` §9 (proposed: 5 questions,
+- Size, timer, reveal and deadline: `docs/mvp-spec.md` §9 (5 questions,
   20 s each, 1.5 s reveal, deadline = 5 × 21.5 s + 30 s = 137.5 s; OQ-075). One
   config value each on the server.
 - Day boundary: 00:00 Asia/Baku from the server clock (OQ-074). Day number #N:

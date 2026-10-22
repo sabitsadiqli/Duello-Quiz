@@ -27,9 +27,14 @@ In scope:
 6. Optional image per question, stored compressed.
 7. Google Play requirements: in-app account deletion, deletion web page and privacy
    policy (static pages on GitHub Pages, `docs/mvp-spec.md` §3a).
+8. Retention (added 2026-10-22): daily challenge (same 5 questions for everyone per
+   Baku day, never affects Elo), streak + XP + levels (overall and per category),
+   push reminders via FCM (free). Rules: `docs/mvp-spec.md` §9–§11, decisions
+   OQ-074…OQ-096. Day boundary is 00:00 Asia/Baku by the server clock.
 
 Out of scope for MVP (do not build, do not block): in-app purchases, ads, ghost
-duels, friends/invites, extra languages, leaderboards beyond a basic Elo rating.
+duels, friends/invites, extra languages, leaderboards beyond a basic Elo rating
+(including any daily-challenge leaderboard).
 
 ### Confidence duel in short
 7 rounds. Each round: question text only (3 s) → player picks confidence 1/2/3,

@@ -93,7 +93,7 @@ Blocked by OQ-096 (payload type).
 Blocked by OQ-088 (time and limit) and OQ-089 (quiet hours).
 
 - Given `dailyReminder = true`, a registered token and today's daily challenge not
-  started, When the daily-reminder job runs at the proposed 10:00 Baku (OQ-088), Then
+  started, When the daily-reminder job runs at 10:00 Baku (OQ-088), Then
   one notification is sent: title "Gündəlik çağırış #12 hazırdır", body "5 sual səni
   gözləyir."
 - Given the user already started or finished today's challenge, When the job runs,
@@ -112,7 +112,7 @@ Blocked by OQ-088 (time and limit) and OQ-089 (quiet hours).
 Blocked by OQ-085 (active day), OQ-088 and OQ-089.
 
 - Given `streakReminder = true`, `streakCurrent ≥ 2` and today not yet active, When the
-  streak job runs at the proposed 20:00 Baku (OQ-088), Then one notification is sent:
+  streak job runs at 20:00 Baku (OQ-088), Then one notification is sent:
   title "Seriyan təhlükədədir", body "7 günlük seriyanı qorumaq üçün bu gün bir oyun
   oyna."
 - Given a held streak freeze (OQ-086), When the job runs, Then the reminder is still
@@ -171,12 +171,12 @@ Blocked by OQ-091 (defaults, server-side storage). Settings UI: SET-07.
 
 Blocked by OQ-088 (max per day), OQ-089 (quiet hours), OQ-092 (inactivity).
 
-- Given any user, When notifications are sent, Then at most the proposed 2 per Baku
+- Given any user, When notifications are sent, Then at most 2 per Baku
   day are sent (one per type), enforced on the server by a unique record per (user,
   type, day), so a job retry or a second replica never sends twice.
-- Given quiet hours (proposed 22:00–09:00 Baku, OQ-089), When a send would fall inside
+- Given quiet hours (22:00–09:00 Baku, OQ-089), When a send would fall inside
   them, Then it is not sent (no delayed delivery into the morning).
-- Given a user without an active day for the proposed 7 days in a row (OQ-092), When
+- Given a user without an active day for 7 days in a row (OQ-092), When
   the jobs run, Then nothing is sent to them; reminders resume after their next
   active day.
 - Given notification content, When written, Then it never uses guilt or false urgency

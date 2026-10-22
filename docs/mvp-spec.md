@@ -271,32 +271,29 @@ Rules:
 ## Retention features (in MVP scope since 2026-10-22)
 
 Sabit moved the daily challenge, streak/XP/levels and push notifications into the
-MVP on 2026-10-22 (retention for the 14-day closed test). Numbers marked
-**(proposed, OQ-xxx)** are recommendations waiting for Sabit's decision in
-`docs/requirements/open-questions.md`; they become final when the OQ moves to
-"Decided" and this marker is removed. Day = Baku calendar day: 00:00 Asia/Baku
+MVP on 2026-10-22 (retention for the 14-day closed test). All numbers
+below were decided by Sabit on 2026-10-22 (OQ-074 … OQ-096 in
+`docs/requirements/open-questions.md`). Day = Baku calendar day: 00:00 Asia/Baku
 (UTC+4, no DST) from the server clock; device clock and time zone are never used
-(proposed, OQ-074). An activity counts for the day in which it started (proposed,
-OQ-087).
+(OQ-074). An activity counts for the day in which it started (OQ-087).
 
 ## 9. Daily challenge ("Gündəlik çağırış")
 
 - Same set for every player each day, one attempt per account per day, resumable on
-  any device until its deadline; no archive of past days (proposed, OQ-079).
+  any device until its deadline; no archive of past days (OQ-079).
 - 5 questions, 20 s each, 1.5 s reveal after each answer, explanations in the end
   review; deadline = 5 × (20 s + 1.5 s) + 30 s grace = 137.5 s from the attempt start
-  (proposed, OQ-075, OQ-077). Answer handling, idempotency, timeout and deadline
+  (OQ-075, OQ-077). Answer handling, idempotency, timeout and deadline
   rules are those of §1.
 - Selection: the server picks the set randomly once per day and stores it (unique per
   day; never derived from the date or a public seed): one active question per playable
   category, random order, not used in a daily during the last 60 days; the set is
   frozen for the day. Fewer than 5 active questions in total → no challenge that day
-  (proposed, OQ-076). No endpoint returns a future day.
-- Score = correct answers ("4 / 5"). Never affects Elo (proposed, OQ-078).
+  (OQ-076). No endpoint returns a future day.
+- Score = correct answers ("4 / 5"). Never affects Elo (OQ-078).
 - Day number #N = days since a configured first day (#1).
 - Share text (client-built, no answer data): title with #N, one square per question
-  (correct / wrong / no answer), "3/5", streak line, Play Store link (proposed,
-  OQ-080). No daily leaderboard (OQ-094).
+  (correct / wrong / no answer), "3/5", streak line, Play Store link (OQ-080). No daily leaderboard (OQ-094).
 - Stories: `docs/requirements/daily-challenge.md` (DAILY-01 …).
 
 ## 10. Streak, XP and levels
@@ -304,21 +301,21 @@ OQ-087).
 - All progress is computed by the server when it finalizes a quiz session, daily
   attempt or match; idempotent per (user, source); no endpoint accepts progress from
   the client. XP never decreases; Elo is independent of XP.
-- XP (proposed, OQ-081): quiz 10 per correct answer; daily 10 per correct answer + 20
+- XP (OQ-081): quiz 10 per correct answer; daily 10 per correct answer + 20
   completion bonus; duel 20 for a `finished` match, +30 win, +15 draw; the forfeiting
   player, abandoned and cancelled matches 0; a quiz expired with no answer 0.
-- Caps (proposed, OQ-082): quiz XP only for the first 20 sessions per day; duel XP only
+- Caps (OQ-082): quiz XP only for the first 20 sessions per day; duel XP only
   for the first 20 matches per day and at most 3 per day against the same opponent.
-- Level curve (proposed, OQ-083): level n → n+1 needs 100 × n XP (total for level n =
+- Level curve (OQ-083): level n → n+1 needs 100 × n XP (total for level n =
   50 × n × (n − 1)); level 1 at 0 XP; no maximum. Same curve for category levels.
-- Category XP (proposed, OQ-084): XP of correct answers goes to the question's
+- Category XP (OQ-084): XP of correct answers goes to the question's
   category (quiz and daily); duel XP and the daily bonus only to overall XP.
-- Active day (proposed, OQ-085): a quiz finished or expired with ≥ 1 answer, a
+- Active day (OQ-085): a quiz finished or expired with ≥ 1 answer, a
   finished daily attempt, or a `finished` duel the user did not forfeit.
-- Streak: consecutive active days; best streak stored. Freeze (proposed, OQ-086): one
+- Streak: consecutive active days; best streak stored. Freeze (OQ-086): one
   automatic freeze per 7-day streak, at most 1 held, covers exactly one missed day.
-- Start: everyone at 0 XP, level 1, streak 0; no backfill (proposed, OQ-093).
-  Opponents never see level or streak (proposed, OQ-095).
+- Start: everyone at 0 XP, level 1, streak 0; no backfill (OQ-093).
+  Opponents never see level or streak (OQ-095).
 - Stories: `docs/requirements/progression.md` (PROG-01 …).
 
 ## 11. Push notifications (FCM)
@@ -326,16 +323,16 @@ OQ-087).
 - Firebase Cloud Messaging via the Firebase Admin SDK (free, no card); no other
   provider. Jobs run in the single backend replica; one send record per
   (user, type, day) prevents duplicates.
-- Types and times (proposed, OQ-088): daily reminder at 10:00 Baku if today's daily is
+- Types and times (OQ-088): daily reminder at 10:00 Baku if today's daily is
   not started; streak reminder at 20:00 Baku if streak ≥ 2 and today is not active.
   Max 2 per user per day. Quiet hours 22:00–09:00 Baku; a missed send is skipped, not
-  delayed (proposed, OQ-089). No reminders after 7 days without an active day
-  (proposed, OQ-092).
+  delayed (OQ-089). No reminders after 7 days without an active day
+  (OQ-092).
 - Opt-in: Android 13+ `POST_NOTIFICATIONS` asked only after an in-app explanation on
-  the first quiz/daily result (proposed, OQ-090). Per-type switches stored on the
-  server per account, default on (proposed, OQ-091).
+  the first quiz/daily result (OQ-090). Per-type switches stored on the
+  server per account, default on (OQ-091).
 - Payload: FCM notification message with text from backend i18n by the token's
-  locale plus a data `type` (proposed, OQ-096). No user or question data.
+  locale plus a data `type` (OQ-096). No user or question data.
 - Tokens: one per device, removed on sign-out, invalid (`UNREGISTERED`) or stale
   (60 days), and on account deletion (§3a).
 - Stories: `docs/requirements/notifications.md` (NOTIF-01 …).
