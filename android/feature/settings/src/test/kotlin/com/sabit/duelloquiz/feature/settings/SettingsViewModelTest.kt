@@ -1,6 +1,5 @@
 package com.sabit.duelloquiz.feature.settings
 
-import com.sabit.duelloquiz.core.testing.TestAccountRepository
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.auth.AuthState
 import com.sabit.duelloquiz.core.auth.SignOutReason
@@ -8,6 +7,7 @@ import com.sabit.duelloquiz.core.auth.fake.InMemoryAuthRepository
 import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
+import com.sabit.duelloquiz.core.testing.TestAccountRepository
 import com.sabit.duelloquiz.core.testing.TestUserPreferencesRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch

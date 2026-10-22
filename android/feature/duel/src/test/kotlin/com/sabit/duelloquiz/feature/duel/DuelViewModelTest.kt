@@ -1,8 +1,5 @@
 package com.sabit.duelloquiz.feature.duel
 
-import com.sabit.duelloquiz.core.testing.TestCategoryRepository
-import com.sabit.duelloquiz.core.testing.TestSystemNotifications
-import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -12,7 +9,9 @@ import com.sabit.duelloquiz.core.common.MonotonicClock
 import com.sabit.duelloquiz.core.designsystem.component.OptionCardState
 import com.sabit.duelloquiz.core.duel.ActiveDuel
 import com.sabit.duelloquiz.core.duel.DuelClientFactory
+import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.DuelClientMessage
 import com.sabit.duelloquiz.core.model.duel.DuelCloseCode
@@ -34,8 +33,13 @@ import com.sabit.duelloquiz.core.testing.DuelTestMessages.player
 import com.sabit.duelloquiz.core.testing.FakeDuelServer
 import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
+import com.sabit.duelloquiz.core.testing.TestCategoryRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestProfileRepository
+import com.sabit.duelloquiz.core.testing.TestProgressRepository
+import com.sabit.duelloquiz.core.testing.TestSystemNotifications
+import com.sabit.duelloquiz.core.testing.testProgressGain
+import com.sabit.duelloquiz.core.testing.testProgressSummary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -645,6 +649,46 @@ class DuelViewModelTest {
         assertEquals(CalibrationHint.GOOD, result.hint)
         assertNull(store.duel.value)
         assertEquals(DuelEvent.Haptic(DuelHaptic.STRONG), events.last())
+    }
+
+    @Test
+    fun theResultShowsTheXpCardFromMatchResultProgress() = duelTest {
+        val vm = inRound()
+        emit(DuelTestMessages.matchResult(3, now(), progress = testProgressGain(xp = 50)))
+        runCurrent()
+
+        assertEquals(50, vm.result.progress?.xpGained)
+        assertEquals(7, vm.result.progress?.streakDays)
+        assertTrue(vm.result.progress?.animate == true)
+        assertTrue(ReminderType.STREAK in systemNotifications.cancelled)
+    }
+
+    @Test
+    fun withoutProgressTheCardShowsLevelAndStreakFromTheServerWithoutXp() = duelTest {
+        progressRepository.nextRefresh = DataResult.Success(testProgressSummary(streak = 4, todayActive = true))
+        val vm = inRound()
+        emit(DuelTestMessages.matchResult(3, now()))
+        runCurrent()
+
+        val card = vm.result.progress
+        assertEquals(0, card?.xpGained)
+        assertEquals(5, card?.levelAfter)
+        assertEquals(4, card?.streakDays)
+    }
+
+    @Test
+    fun anAbandonedMatchHasNoProgressCard() = duelTest {
+        val vm = inRound()
+        emit(
+            DuelTestMessages.matchResult(
+                3, now(), outcome = MatchOutcome.ABANDONED, endReason = MatchEndReason.ABANDONED, ratingChange = 0,
+                progress = testProgressGain(xp = 0),
+            ),
+        )
+        runCurrent()
+
+        assertNull(vm.result.progress)
+        assertTrue(systemNotifications.cancelled.isEmpty())
     }
 
     @Test
