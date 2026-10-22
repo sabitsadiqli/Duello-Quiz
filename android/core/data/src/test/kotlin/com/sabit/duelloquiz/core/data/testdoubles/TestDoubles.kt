@@ -2,13 +2,20 @@ package com.sabit.duelloquiz.core.data.testdoubles
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.data.repository.DeviceTokenSource
 import com.sabit.duelloquiz.core.datastore.DuelMatchDataSource
+import com.sabit.duelloquiz.core.datastore.RetentionPreferencesDataSource
 import com.sabit.duelloquiz.core.datastore.UserCacheDataSource
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.Category
+import com.sabit.duelloquiz.core.model.DailyResult
+import com.sabit.duelloquiz.core.model.DailyStart
+import com.sabit.duelloquiz.core.model.DailyStatus
+import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
+import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.QuizOption
 import com.sabit.duelloquiz.core.model.QuizQuestion
 import com.sabit.duelloquiz.core.model.QuizResult
@@ -109,6 +116,69 @@ internal class FakeNetworkDataSource : DuelloNetworkDataSource {
         )
     }
 
+    // Retention (openapi 0.2.0)
+
+    var daily: DataResult<DailyStatus> = DataResult.Failure(DataError.Server)
+    var dailyStart: DataResult<DailyStart> = DataResult.Failure(DataError.Server)
+    var dailyStartGate: CompletableDeferred<Unit>? = null
+    var dailyFinish: DataResult<DailyResult> = DataResult.Failure(DataError.Server)
+    var progressResult: DataResult<ProgressSummary> = DataResult.Failure(DataError.Server)
+    var pushResult: DataResult<Unit> = DataResult.Success(Unit)
+    var settingsResult: DataResult<NotificationSettings> =
+        DataResult.Success(NotificationSettings(dailyReminder = true, streakReminder = true))
+
+    override suspend fun getDaily(): DataResult<DailyStatus> {
+        calls += "getDaily"
+        return daily
+    }
+
+    override suspend fun startDailyAttempt(): DataResult<DailyStart> {
+        calls += "startDaily"
+        dailyStartGate?.await()
+        return dailyStart
+    }
+
+    override suspend fun submitDailyAnswer(
+        attemptId: String,
+        questionId: String,
+        optionId: String?,
+        elapsedMs: Long,
+    ): DataResult<AnswerResult> {
+        calls += "dailyAnswer:$questionId"
+        answers += Answer(questionId, optionId, elapsedMs)
+        return answerResults.removeFirstOrNull() ?: DataResult.Success(verdict(questionId, optionId))
+    }
+
+    override suspend fun finishDailyAttempt(attemptId: String): DataResult<DailyResult> {
+        calls += "dailyFinish"
+        return dailyFinish
+    }
+
+    override suspend fun getProgress(): DataResult<ProgressSummary> {
+        calls += "getProgress"
+        return progressResult
+    }
+
+    override suspend fun registerPushToken(token: String, locale: String): DataResult<Unit> {
+        calls += "pushPut:$token:$locale"
+        return pushResult
+    }
+
+    override suspend fun deletePushToken(token: String): DataResult<Unit> {
+        calls += "pushDelete:$token"
+        return pushResult
+    }
+
+    override suspend fun getNotificationSettings(): DataResult<NotificationSettings> {
+        calls += "getSettings"
+        return settingsResult
+    }
+
+    override suspend fun updateNotificationSettings(settings: NotificationSettings): DataResult<NotificationSettings> {
+        calls += "putSettings:${settings.dailyReminder}:${settings.streakReminder}"
+        return settingsResult.let { if (it is DataResult.Success) DataResult.Success(settings) else it }
+    }
+
     companion object {
         fun profile(name: String) = Profile(id = "p1", displayName = name, avatarUrl = null, rating = 1000)
 
@@ -146,3 +216,17 @@ internal fun testDuelMatches(scope: CoroutineScope, dir: File): DuelMatchDataSou
 internal fun testUserCache(scope: CoroutineScope, dir: File): UserCacheDataSource = UserCacheDataSource(
     PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(dir, "user_cache.preferences_pb") }),
 )
+
+internal fun testRetention(scope: CoroutineScope, dir: File): RetentionPreferencesDataSource = RetentionPreferencesDataSource(
+    PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(dir, "retention.preferences_pb") }),
+)
+
+internal class FakeDeviceTokenSource(var current: String? = "token-1") : DeviceTokenSource {
+    var deleted = 0
+
+    override suspend fun token(): String? = current
+
+    override suspend fun deleteToken() {
+        deleted++
+    }
+}

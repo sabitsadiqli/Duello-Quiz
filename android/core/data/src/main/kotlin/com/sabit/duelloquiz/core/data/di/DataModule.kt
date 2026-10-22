@@ -2,6 +2,16 @@ package com.sabit.duelloquiz.core.data.di
 
 import com.sabit.duelloquiz.core.data.repository.AccountRepository
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
+import com.sabit.duelloquiz.core.data.repository.DailyRepository
+import com.sabit.duelloquiz.core.data.repository.DataStoreNotificationPromptRepository
+import com.sabit.duelloquiz.core.data.repository.DefaultDailyRepository
+import com.sabit.duelloquiz.core.data.repository.DefaultPushTokenRepository
+import com.sabit.duelloquiz.core.data.repository.NotificationPromptRepository
+import com.sabit.duelloquiz.core.data.repository.NotificationSettingsRepository
+import com.sabit.duelloquiz.core.data.repository.OfflineFirstNotificationSettingsRepository
+import com.sabit.duelloquiz.core.data.repository.OfflineFirstProgressRepository
+import com.sabit.duelloquiz.core.data.repository.ProgressRepository
+import com.sabit.duelloquiz.core.data.repository.PushTokenRepository
 import com.sabit.duelloquiz.core.data.repository.DataStoreUserPreferencesRepository
 import com.sabit.duelloquiz.core.data.repository.DefaultAccountRepository
 import com.sabit.duelloquiz.core.data.repository.DefaultQuizRepository
@@ -50,6 +60,25 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun bindAccountRepository(impl: DefaultAccountRepository): AccountRepository
+
+    @Binds
+    abstract fun bindProgressRepository(impl: OfflineFirstProgressRepository): ProgressRepository
+
+    @Binds
+    abstract fun bindDailyRepository(impl: DefaultDailyRepository): DailyRepository
+
+    @Binds
+    abstract fun bindNotificationSettingsRepository(
+        impl: OfflineFirstNotificationSettingsRepository,
+    ): NotificationSettingsRepository
+
+    @Binds
+    abstract fun bindPushTokenRepository(impl: DefaultPushTokenRepository): PushTokenRepository
+
+    @Binds
+    abstract fun bindNotificationPromptRepository(
+        impl: DataStoreNotificationPromptRepository,
+    ): NotificationPromptRepository
 
     @Binds
     @Singleton

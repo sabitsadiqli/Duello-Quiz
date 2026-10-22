@@ -106,6 +106,9 @@ internal object CacheKeys {
     const val CATEGORIES = "categories"
     const val DUEL_STATS = "duel_stats"
     const val DUEL_MATCHES = "duel_matches"
+    const val PROGRESS = "progress"
+    const val DAILY_STATUS = "daily_status"
+    const val NOTIFICATION_SETTINGS = "notification_settings"
 }
 
 internal val CachedCategoryList: KSerializer<List<CachedCategory>> = ListSerializer(CachedCategory.serializer())
