@@ -8,9 +8,9 @@ import com.sabit.duelloquiz.core.auth.AuthError
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.auth.AuthResult
 import com.sabit.duelloquiz.core.common.AppConfig
-import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
+import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.DailyRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
@@ -250,7 +250,8 @@ class HomeViewModel @Inject constructor(
     private var progressJob: Job? = null
     private var dailyJob: Job? = null
     private var tickJob: Job? = null
-    private var lastDailyRefreshMs = 0L
+    /** Last countdown-triggered reload (DAILY-01 throttle); user and screen refreshes do not count. */
+    private var lastDailyRefreshMs = Long.MIN_VALUE / 2
 
     private val _events = Channel<HomeEvent>(Channel.BUFFERED)
     val events: Flow<HomeEvent> = _events.receiveAsFlow()
@@ -410,9 +411,11 @@ class HomeViewModel @Inject constructor(
      */
     private fun refreshDaily(force: Boolean) {
         if (dailyJob?.isActive == true) return
-        val now = clock.nowMs()
-        if (!force && now - lastDailyRefreshMs < DAILY_REFRESH_THROTTLE_MS) return
-        lastDailyRefreshMs = now
+        if (!force) {
+            val now = clock.nowMs()
+            if (now - lastDailyRefreshMs < DAILY_REFRESH_THROTTLE_MS) return
+            lastDailyRefreshMs = now
+        }
         local.update { it.copy(daily = it.daily.copy(loading = true)) }
         dailyJob = viewModelScope.launch {
             val result = dailyRepository.refreshStatus()
