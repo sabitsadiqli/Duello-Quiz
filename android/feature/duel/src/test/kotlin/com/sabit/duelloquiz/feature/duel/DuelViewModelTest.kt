@@ -17,12 +17,14 @@ import com.sabit.duelloquiz.core.model.duel.DuelClientMessage
 import com.sabit.duelloquiz.core.model.duel.DuelCloseCode
 import com.sabit.duelloquiz.core.model.duel.DuelErrorCode
 import com.sabit.duelloquiz.core.model.duel.DuelPhase
+import com.sabit.duelloquiz.core.model.duel.DuelPlayer
 import com.sabit.duelloquiz.core.model.duel.DuelScores
 import com.sabit.duelloquiz.core.model.duel.DuelServerMessage
 import com.sabit.duelloquiz.core.model.duel.DuelSide
 import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.SuddenDeathOutcome
@@ -813,6 +815,62 @@ class DuelViewModelTest {
         assertEquals(PanelStatus.RETURNED, vm.match.opponent.status)
         advanceTimeBy(2_200)
         assertNull(vm.match.opponentBanner)
+    }
+
+    @Test
+    fun aRejoinWhileTheOpponentIsAwayKeepsTheReconnectCountdown() = duelTest {
+        val vm = inRound()
+        emit(
+            DuelTestMessages.state(
+                9, now(), DuelPhase.CONFIDENCE, 1, deadline = now() + 4_000,
+                opponentConnected = false, opponentReconnectDeadline = now() + 6_000,
+            ),
+        )
+        // Countdown from the server deadline (match.state.opponent.reconnectDeadlineEpochMs).
+        assertEquals(OpponentBannerUi.Disconnected(6), vm.match.opponentBanner)
+        advanceTimeBy(6_200)
+        assertEquals(OpponentBannerUi.StillAway, vm.match.opponentBanner)
+
+        // A window that already passed (or is unknown) is "still away" at once.
+        emit(
+            DuelTestMessages.state(
+                10, now(), DuelPhase.CONFIDENCE, 1, deadline = now() + 1_000,
+                opponentConnected = false, opponentReconnectDeadline = now() - 1_000,
+            ),
+        )
+        assertEquals(OpponentBannerUi.StillAway, vm.match.opponentBanner)
+    }
+
+    @Test
+    fun aRebuiltResultUsesThePlayersItCarries() = duelTest {
+        store.duel.value = ActiveDuel(MATCH_ID, null, null)
+        val vm = viewModel(resume = true)
+        emit(DuelTestMessages.hello(now()))
+        emit(
+            DuelTestMessages.matchResult(
+                0, now(), outcome = MatchOutcome.WIN, endReason = MatchEndReason.FORFEIT,
+                forfeitedBy = DuelSide.OPPONENT, forfeitCause = ForfeitCause.MISSED_ROUNDS,
+                you = MatchResultPlayer("Leyla", null, 1000, 1016, deleted = false),
+                opponent = MatchResultPlayer("Murad", "https://example.com/a.png", 1016, 1000, deleted = false),
+            ),
+        )
+        assertEquals(DuelPlayer("Leyla", null, 1016), vm.result.you)
+        assertEquals(DuelPlayer("Murad", "https://example.com/a.png", 1000), vm.result.opponent)
+        assertEquals(ResultReason.OPPONENT_MISSED_ROUNDS, vm.result.reason)
+    }
+
+    @Test
+    fun aDeletedOpponentInTheResultIsShownAsDeleted() = duelTest {
+        store.duel.value = ActiveDuel(MATCH_ID, DuelTestMessages.YOU, DuelTestMessages.OPPONENT)
+        val vm = viewModel(resume = true)
+        emit(DuelTestMessages.hello(now()))
+        emit(
+            DuelTestMessages.matchResult(
+                0, now(),
+                opponent = MatchResultPlayer(null, null, 1016, 1000, deleted = true),
+            ),
+        )
+        assertNull(vm.result.opponent)
     }
 
     @Test

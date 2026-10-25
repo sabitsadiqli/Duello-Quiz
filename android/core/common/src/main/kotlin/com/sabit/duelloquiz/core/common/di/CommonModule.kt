@@ -1,11 +1,15 @@
 package com.sabit.duelloquiz.core.common.di
 
+import android.content.Context
 import android.os.SystemClock
+import com.sabit.duelloquiz.core.common.ConnectivityManagerDeviceConnectivity
+import com.sabit.duelloquiz.core.common.DeviceConnectivity
 import com.sabit.duelloquiz.core.common.MonotonicClock
 import com.sabit.duelloquiz.core.common.WallClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,4 +38,9 @@ object CommonModule {
     @Provides
     @Singleton
     fun provideMonotonicClock(): MonotonicClock = MonotonicClock(SystemClock::elapsedRealtime)
+
+    @Provides
+    @Singleton
+    fun provideDeviceConnectivity(@ApplicationContext context: Context): DeviceConnectivity =
+        ConnectivityManagerDeviceConnectivity(context)
 }

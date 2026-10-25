@@ -11,6 +11,7 @@ import coil3.request.crossfade
 import com.sabit.duelloquiz.core.data.repository.AccountRepository
 import com.sabit.duelloquiz.core.notifications.PushRegistrar
 import com.sabit.duelloquiz.core.notifications.ReminderChannels
+import com.sabit.duelloquiz.telemetry.TelemetryUserSync
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -23,6 +24,9 @@ class DuelloApplication : Application(), SingletonImageLoader.Factory {
     @Inject
     lateinit var pushRegistrar: PushRegistrar
 
+    @Inject
+    lateinit var telemetryUserSync: TelemetryUserSync
+
     override fun onCreate() {
         super.onCreate()
         // AUTH-07: no data of a signed-out account stays on the device.
@@ -31,6 +35,8 @@ class DuelloApplication : Application(), SingletonImageLoader.Factory {
         ReminderChannels.create(this)
         // NOTIF-02: keep this device's push token registered for the signed-in account.
         pushRegistrar.start()
+        // OQ-101: Analytics/Crashlytics user ID = backend users.id, cleared on sign-out.
+        telemetryUserSync.start()
     }
 
     /**

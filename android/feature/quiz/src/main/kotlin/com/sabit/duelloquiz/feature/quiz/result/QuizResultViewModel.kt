@@ -99,7 +99,7 @@ sealed interface QuizResultAction {
     data object Resumed : QuizResultAction
 }
 
-enum class QuizResultMessage { SessionClosed, QuizNeedsInternet, CategoryNotPlayable, RateLimited, Offline, Generic }
+enum class QuizResultMessage { SessionClosed, QuizNeedsInternet, CategoryNotPlayable, RateLimited, Offline, ServerUnreachable, Generic }
 
 sealed interface QuizResultEvent {
     data object NavigateHome : QuizResultEvent
@@ -287,6 +287,7 @@ class QuizResultViewModel @Inject constructor(
             QuizResultMessage.CategoryNotPlayable
         this is DataError.RateLimited -> QuizResultMessage.RateLimited
         this == DataError.Offline -> QuizResultMessage.Offline
+        this == DataError.ServerUnreachable -> QuizResultMessage.ServerUnreachable
         else -> QuizResultMessage.Generic
     }
 

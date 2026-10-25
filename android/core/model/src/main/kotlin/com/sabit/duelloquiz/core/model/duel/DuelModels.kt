@@ -100,6 +100,20 @@ enum class MatchEndReason { NORMAL, SUDDEN_DEATH, DRAW, FORFEIT, ABANDONED }
 
 enum class ForfeitCause { MISSED_ROUNDS, LEFT }
 
+/**
+ * `match.result.you` / `.opponent`: makes a result self-contained after process death. Live
+ * results carry the names from match start, rebuilt ones the current profile values. A deleted
+ * opponent has no name or avatar and [deleted] = true ("Silinmiş oyunçu").
+ */
+@Immutable
+data class MatchResultPlayer(
+    val displayName: String?,
+    val avatarUrl: String?,
+    val ratingBefore: Int,
+    val ratingAfter: Int,
+    val deleted: Boolean,
+)
+
 @Immutable
 data class MatchResult(
     val matchId: String,
@@ -117,6 +131,9 @@ data class MatchResult(
     val rounds: List<CompactRound>,
     /** v1.1: XP, level and streak change of the receiver; null when missing (older match). */
     val progress: ProgressGain? = null,
+    /** Null only from a server older than 2026-10-17. */
+    val you: MatchResultPlayer? = null,
+    val opponent: MatchResultPlayer? = null,
 )
 
 enum class DuelPhase { INTRO, QUESTION, CONFIDENCE, ANSWER, RESULT }
@@ -132,6 +149,11 @@ data class MatchSnapshot(
     val you: DuelPlayer,
     val opponent: DuelPlayer,
     val opponentConnected: Boolean,
+    /**
+     * `opponent.reconnectDeadlineEpochMs`: disconnect + 10 s while the opponent is away (also
+     * after it passed), null while connected. Informational countdown (OQ-032).
+     */
+    val opponentReconnectDeadlineEpochMs: Long? = null,
     val phase: DuelPhase,
     val deadlineEpochMs: Long,
     /** 0 during the intro. */

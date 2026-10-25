@@ -15,6 +15,7 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
@@ -86,6 +87,7 @@ private fun WireServerMessage.MatchState.asSnapshot() = MatchSnapshot(
     you = you.asExternalModel(),
     opponent = opponent.asExternalModel(),
     opponentConnected = opponent.connected ?: true,
+    opponentReconnectDeadlineEpochMs = opponent.reconnectDeadlineEpochMs.takeIf { opponent.connected == false },
     phase = enumOf(
         phase,
         "intro" to DuelPhase.INTRO,
@@ -136,6 +138,16 @@ private fun WireServerMessage.MatchResult.asResult() = MatchResult(
     calibration = calibration.map { CalibrationLevel(it.level, it.picks, it.correct) }.sortedBy { it.level },
     rounds = rounds.map { it.asExternalModel() },
     progress = progress?.asExternalModel(),
+    you = you?.asExternalModel(),
+    opponent = opponent?.asExternalModel(),
+)
+
+private fun WireResultPlayer.asExternalModel() = MatchResultPlayer(
+    displayName = displayName?.takeIf { !deleted },
+    avatarUrl = avatarUrl?.takeIf { !deleted },
+    ratingBefore = ratingBefore,
+    ratingAfter = ratingAfter,
+    deleted = deleted,
 )
 
 internal fun endReason(value: String): MatchEndReason = enumOf(

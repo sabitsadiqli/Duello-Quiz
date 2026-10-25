@@ -5,8 +5,9 @@ plugins {
 }
 
 // Backend base URL. Debug defaults to the host machine as seen from the Android emulator; release
-// has a placeholder until the server domain is decided (OQ-006). Override for any build type with
-// -PapiBaseUrl=https://... (cleartext http is allowed only for 10.0.2.2/localhost in debug).
+// defaults to the production API (OQ-006, ADR 0001). Override for any build type with
+// -PapiBaseUrl=https://..., e.g. https://api-dev.duelloquiz.app for the dev server (cleartext
+// http is allowed only for 10.0.2.2/localhost in debug).
 val apiBaseUrl = providers.gradleProperty("apiBaseUrl")
 fun baseUrlField(default: String) = "\"${apiBaseUrl.orElse(default).get().trimEnd('/')}/\""
 
@@ -21,7 +22,7 @@ android {
             buildConfigField("String", "API_BASE_URL", baseUrlField("http://10.0.2.2:8080"))
         }
         getByName("release") {
-            buildConfigField("String", "API_BASE_URL", baseUrlField("https://api.duelloquiz.invalid"))
+            buildConfigField("String", "API_BASE_URL", baseUrlField("https://api.duelloquiz.app"))
         }
     }
 }

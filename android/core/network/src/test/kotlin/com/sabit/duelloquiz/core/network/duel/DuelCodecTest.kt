@@ -8,8 +8,10 @@ import com.sabit.duelloquiz.core.model.duel.DuelPlayer
 import com.sabit.duelloquiz.core.model.duel.DuelScores
 import com.sabit.duelloquiz.core.model.duel.DuelServerMessage
 import com.sabit.duelloquiz.core.model.duel.DuelSide
+import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import kotlinx.serialization.json.Json
@@ -275,6 +277,50 @@ class DuelCodecTest {
         ).snapshot
         assertFalse(state.opponentConnected)
         assertEquals(231, state.lastResult?.you?.points)
+        // No deadline in this frame (older server): unknown.
+        assertNull(state.opponentReconnectDeadlineEpochMs)
+    }
+
+    @Test
+    fun matchStateCarriesTheOpponentsReconnectDeadlineWhileAway() {
+        val frame = { connected: Boolean, deadline: String ->
+            """{"type": "match.state", "seq": 14, "serverNowEpochMs": 1792144830000, "matchId": "m",
+             "you": {"displayName": "Leyla", "avatarUrl": null, "rating": 1000},
+             "opponent": {"displayName": "Murad", "avatarUrl": null, "rating": 1016, "connected": $connected,
+                          "reconnectDeadlineEpochMs": $deadline},
+             "phase": "question", "deadlineEpochMs": 1792144833000, "roundNo": 2, "allIn": false,
+             "suddenDeath": false, "suddenDeathNo": null, "question": {"text": "?", "image": null, "categoryName": "Tarix"},
+             "options": null, "ownBet": null, "ownOptionId": null, "opponentBetLocked": false,
+             "opponentAnswered": false, "bet3Left": 2, "scores": {"you": 0, "opponent": 0},
+             "missedInARow": {"you": 0, "opponent": 0}, "lastResult": null, "rounds": []}"""
+        }
+        val away = decode<DuelServerMessage.MatchState>(frame(false, "1792144836000")).snapshot
+        assertFalse(away.opponentConnected)
+        assertEquals(1792144836000, away.opponentReconnectDeadlineEpochMs)
+
+        val back = decode<DuelServerMessage.MatchState>(frame(true, "null")).snapshot
+        assertTrue(back.opponentConnected)
+        assertNull(back.opponentReconnectDeadlineEpochMs)
+    }
+
+    @Test
+    fun matchResultCarriesBothPlayersAndTheForfeitCause() {
+        val result = decode<DuelServerMessage.MatchResultMessage>(
+            """{"type": "match.result", "seq": 0, "serverNowEpochMs": 1792144950000, "matchId": "m",
+             "outcome": "win", "endReason": "forfeit", "forfeitedBy": "opponent", "forfeitCause": "left",
+             "scores": {"you": 231, "opponent": 0},
+             "ratingBefore": 1000, "ratingAfter": 1017, "ratingChange": 17, "opponentRatingAfter": 999,
+             "suddenDeathPlayed": 0,
+             "calibration": [{"level": 1, "picks": 0, "correct": 0}, {"level": 2, "picks": 1, "correct": 1},
+                             {"level": 3, "picks": 0, "correct": 0}],
+             "rounds": [],
+             "you": {"displayName": "Leyla", "avatarUrl": null, "ratingBefore": 1000, "ratingAfter": 1017, "deleted": false},
+             "opponent": {"displayName": null, "avatarUrl": null, "ratingBefore": 1016, "ratingAfter": 999, "deleted": true}}""",
+        ).result
+        assertEquals(ForfeitCause.LEFT, result.forfeitCause)
+        assertEquals(DuelSide.OPPONENT, result.forfeitedBy)
+        assertEquals(MatchResultPlayer("Leyla", null, 1000, 1017, deleted = false), result.you)
+        assertEquals(MatchResultPlayer(null, null, 1016, 999, deleted = true), result.opponent)
     }
 
     @Test

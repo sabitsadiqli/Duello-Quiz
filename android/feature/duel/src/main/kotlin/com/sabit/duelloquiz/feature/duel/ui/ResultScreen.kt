@@ -217,7 +217,11 @@ private fun ResultReason.textRes(): Int = when (this) {
     ResultReason.SUDDEN_DEATH_LOSS -> R.string.duel_result_reason_sudden_death_loss
     ResultReason.DRAW -> R.string.duel_result_reason_draw
     ResultReason.OPPONENT_FORFEIT -> R.string.duel_result_reason_opponent_forfeit
+    ResultReason.OPPONENT_LEFT -> R.string.duel_result_reason_opponent_left
+    ResultReason.OPPONENT_MISSED_ROUNDS -> R.string.duel_result_reason_opponent_missed_rounds
     ResultReason.SELF_FORFEIT -> R.string.duel_result_reason_self_forfeit
+    ResultReason.SELF_LEFT -> R.string.duel_result_reason_self_left
+    ResultReason.SELF_FORFEIT_UNKNOWN -> R.string.duel_result_reason_self_forfeit_unknown
     ResultReason.ABANDONED -> R.string.duel_result_reason_abandoned
     ResultReason.LOSS_MESSAGE -> R.string.duel_result_message_loss
 }

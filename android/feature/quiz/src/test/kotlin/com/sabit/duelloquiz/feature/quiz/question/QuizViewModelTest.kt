@@ -103,6 +103,12 @@ class QuizViewModelTest {
         runCurrent()
         assertEquals(QuizPhase.StartFailed(QuizStartError.Offline), offline.uiState.value.phase)
 
+        // Online but the backend cannot be reached: "Serverə qoşulmaq mümkün olmadı", not "no internet".
+        repository.startResult = DataResult.Failure(DataError.ServerUnreachable)
+        val unreachable = viewModel()
+        runCurrent()
+        assertEquals(QuizPhase.StartFailed(QuizStartError.ServerUnreachable), unreachable.uiState.value.phase)
+
         repository.startResult = DataResult.Success(testQuizSession())
         offline.onAction(QuizAction.RetryStartClicked)
         runCurrent()

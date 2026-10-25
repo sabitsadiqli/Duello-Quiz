@@ -22,6 +22,7 @@
     <!-- error_ -->
     <string name="error_offline">İnternet bağlantısı yoxdur. Yenidən cəhd et.</string>
     <string name="error_generic">Xəta baş verdi. Yenidən cəhd et.</string>
+    <string name="error_server_unreachable">Serverə qoşulmaq mümkün olmadı. Bir az sonra yenidən cəhd et.</string>
     <string name="error_sign_in_expired">Giriş müddəti bitib. Yenidən daxil ol.</string>
     <string name="error_category_not_playable">Bu kateqoriya hazırda əlçatan deyil.</string>
     <string name="error_rate_limited">Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et.</string>
@@ -182,6 +183,19 @@
     <string name="settings_section_about">Haqqında</string>
     <string name="settings_version">Versiya %1$s (%2$d)</string>
     <string name="settings_privacy_policy">Məxfilik siyasəti</string>
+    <string name="settings_licenses">Açıq mənbə lisenziyaları</string>
+    <string name="settings_licenses_title">Lisenziyalar</string>
+    <string name="settings_licenses_intro">Duello Quiz açıq mənbə layihələrdən istifadə edir. Onların müəlliflərinə təşəkkür edirik!</string>
+    <string name="settings_licenses_section_assets">Şriftlər və ikonlar</string>
+    <string name="settings_licenses_section_libraries">Kitabxanalar</string>
+    <string name="settings_licenses_item_supporting">%1$s · %2$s</string>
+    <string name="settings_licenses_version">Versiya %1$s</string>
+    <string name="settings_licenses_unknown">Lisenziya göstərilməyib</string>
+    <string name="settings_licenses_item_cd">%1$s, versiya %2$s, lisenziya %3$s</string>
+    <string name="settings_licenses_open_website">Veb səhifə</string>
+    <string name="settings_licenses_open_license">Lisenziya mətni</string>
+    <string name="settings_licenses_text_missing">Bu kitabxananın lisenziya mətni tətbiqə daxil edilməyib. Mətni linkdən oxuya bilərsən.</string>
+    <string name="settings_licenses_error">Kitabxanaların siyahısını göstərmək alınmadı.</string>
     <string name="settings_link_open_failed">Səhifəni açmaq mümkün olmadı.</string>
     <string name="settings_delete_title">Hesabı sil</string>
     <string name="settings_delete_body">Profilin, reytinqin və quiz nəticələrin həmişəlik silinəcək. Bu əməliyyatı geri qaytarmaq olmaz.</string>
@@ -318,8 +332,12 @@
     <string name="duel_result_reason_sudden_death_win">Əlavə sualda qalib gəldin.</string>
     <string name="duel_result_reason_sudden_death_loss">Əlavə sualda uduzdun.</string>
     <string name="duel_result_reason_draw">3 əlavə sualdan sonra da hesab bərabər qaldı.</string>
+    <string name="duel_result_reason_opponent_left">Rəqib oyundan çıxdı. Qələbə sənindir!</string>
+    <string name="duel_result_reason_opponent_missed_rounds">Rəqib ardıcıl 2 raund buraxdı. Qələbə sənindir!</string>
     <string name="duel_result_reason_opponent_forfeit">Rəqib oyunu tərk etdi. Qələbə sənindir!</string>
     <string name="duel_result_reason_self_forfeit">Ardıcıl 2 raund buraxdığın üçün oyun başa çatdı.</string>
+    <string name="duel_result_reason_self_left">Oyundan çıxdın. Məğlubiyyət sayıldı.</string>
+    <string name="duel_result_reason_self_forfeit_unknown">Oyun texniki məğlubiyyətlə bitdi.</string>
     <string name="duel_result_reason_abandoned">Oyun texniki səbəbdən dayandırıldı.</string>
     <string name="duel_result_message_loss">Növbəti dəfə alınacaq. Əminlik kartına bax.</string>
     <string name="duel_result_winner_badge">Qalib</string>

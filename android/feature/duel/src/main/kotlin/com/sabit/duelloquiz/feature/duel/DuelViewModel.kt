@@ -26,6 +26,7 @@ import com.sabit.duelloquiz.core.model.duel.DuelSide
 import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundResult
@@ -334,7 +335,7 @@ class DuelViewModel @Inject constructor(
                     opponent = snapshot.opponent,
                     introDeadline = snapshot.deadlineEpochMs,
                     overlay = null,
-                    presence = if (snapshot.opponentConnected) Presence.Connected else Presence.Away,
+                    presence = snapshot.presence(it.presence),
                 )
             }
             return
@@ -369,14 +370,13 @@ class DuelViewModel @Inject constructor(
                 round = round,
                 scores = snapshot.scores,
                 overlay = null,
-                presence = when {
-                    !snapshot.opponentConnected -> Presence.Away
-                    it.presence is Presence.Returned -> it.presence
-                    else -> Presence.Connected
-                },
+                presence = snapshot.presence(it.presence),
             )
         }
     }
+
+    private fun MatchSnapshot.presence(current: Presence?): Presence =
+        snapshotPresence(opponentConnected, opponentReconnectDeadlineEpochMs, client.serverNowMs(), current)
 
     private fun onMatchResult(result: MatchResult) {
         if (result.matchId == shownResultMatchId) return
@@ -400,8 +400,14 @@ class DuelViewModel @Inject constructor(
                 result = result,
                 pendingResult = null,
                 progressCard = null,
-                you = it.you ?: players?.you,
-                opponent = it.opponent ?: players?.opponent,
+                // match.result is self-contained (names, avatars after process death); a deleted
+                // opponent stays null ("Silinmiş oyunçu").
+                you = result.you?.toDuelPlayer() ?: it.you ?: players?.you,
+                opponent = if (result.opponent?.deleted == true) {
+                    null
+                } else {
+                    result.opponent?.toDuelPlayer() ?: it.opponent ?: players?.opponent
+                },
                 leaveDialog = false,
                 overlay = null,
                 playAgainLoading = false,

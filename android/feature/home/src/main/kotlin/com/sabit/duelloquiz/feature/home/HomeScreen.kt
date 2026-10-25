@@ -568,6 +568,7 @@ private fun HomeMessage.textRes(): Int = when (this) {
     HomeMessage.VerificationDone -> R.string.auth_verify_done
     HomeMessage.TooManyRequests -> R.string.auth_error_too_many_requests
     HomeMessage.Offline -> R.string.error_offline
+    HomeMessage.ServerUnreachable -> R.string.error_server_unreachable
     HomeMessage.Generic -> R.string.error_generic
     HomeMessage.QuizNeedsInternet -> R.string.home_quiz_needs_internet
     HomeMessage.CategoryNotPlayable -> R.string.error_category_not_playable

@@ -15,6 +15,13 @@ sealed interface DataError {
     /** No connection, DNS failure or the connection broke before a response arrived. */
     data object Offline : DataError
 
+    /**
+     * The device has internet but the backend cannot be reached: DNS failure for the API host,
+     * connection refused or connect timeout (server down, wrong domain). Shown as
+     * `error_server_unreachable`, never as "no internet".
+     */
+    data object ServerUnreachable : DataError
+
     /** No response within the 15 s request timeout. */
     data object Timeout : DataError
 
@@ -33,7 +40,10 @@ sealed interface DataError {
 
 /** True for failures where retrying the same request later can succeed (network, 5xx). */
 val DataError.isTransient: Boolean
-    get() = this == DataError.Offline || this == DataError.Timeout || this == DataError.Server
+    get() = this == DataError.Offline ||
+        this == DataError.ServerUnreachable ||
+        this == DataError.Timeout ||
+        this == DataError.Server
 
 inline fun <T, R> DataResult<T>.map(transform: (T) -> R): DataResult<R> = when (this) {
     is DataResult.Success -> DataResult.Success(transform(value))

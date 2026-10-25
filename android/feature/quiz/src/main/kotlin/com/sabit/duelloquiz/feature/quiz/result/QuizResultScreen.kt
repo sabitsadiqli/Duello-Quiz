@@ -382,6 +382,7 @@ private fun QuizResultMessage.textRes(): Int = when (this) {
     QuizResultMessage.CategoryNotPlayable -> R.string.error_category_not_playable
     QuizResultMessage.RateLimited -> R.string.error_rate_limited
     QuizResultMessage.Offline -> R.string.error_offline
+    QuizResultMessage.ServerUnreachable -> R.string.error_server_unreachable
     QuizResultMessage.Generic -> R.string.error_generic
 }
 

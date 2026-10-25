@@ -87,9 +87,15 @@ internal fun DailyPlayScreen(uiState: DailyPlayUiState, onAction: (DailyPlayActi
         }
         is DailyPhase.StartFailed -> LoadingScaffold(title, closeDescription, close) {
             DuelloStateView(
-                icon = if (phase.offline) DuelloIcons.CloudOff else DuelloIcons.Error,
+                icon = if (phase.offline || phase.serverUnreachable) DuelloIcons.CloudOff else DuelloIcons.Error,
                 title = stringResource(R.string.daily_start_error),
-                body = stringResource(if (phase.offline) R.string.error_offline else R.string.error_generic),
+                body = stringResource(
+                    when {
+                        phase.offline -> R.string.error_offline
+                        phase.serverUnreachable -> R.string.error_server_unreachable
+                        else -> R.string.error_generic
+                    },
+                ),
                 primaryActionText = stringResource(R.string.common_retry),
                 onPrimaryAction = { onAction(DailyPlayAction.RetryClicked) },
                 secondaryActionText = stringResource(R.string.common_back),

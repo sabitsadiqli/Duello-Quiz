@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 internal fun SettingsRoute(
     onBack: () -> Unit,
     onDeleteAccount: () -> Unit,
+    onOpenLicenses: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
     notificationsViewModel: NotificationSettingsViewModel = hiltViewModel(),
 ) {
@@ -60,6 +61,7 @@ internal fun SettingsRoute(
         when (event) {
             SettingsEvent.NavigateBack -> onBack()
             SettingsEvent.NavigateToDeleteAccount -> onDeleteAccount()
+            SettingsEvent.NavigateToLicenses -> onOpenLicenses()
             is SettingsEvent.OpenUrl -> if (!context.openExternalUrl(event.url)) {
                 scope.launch { snackbarHostState.showSnackbar(resources.getString(R.string.settings_link_open_failed)) }
             }
@@ -221,6 +223,12 @@ private fun AboutSection(uiState: SettingsUiState, onAction: (SettingsAction) ->
             leadingIcon = DuelloIcons.Policy,
             trailingIcon = DuelloIcons.OpenInNew,
             onClick = { onAction(SettingsAction.PrivacyPolicyClicked) },
+        )
+        DuelloListRow(
+            headline = stringResource(R.string.settings_licenses),
+            leadingIcon = DuelloIcons.Description,
+            trailingIcon = DuelloIcons.ChevronRight,
+            onClick = { onAction(SettingsAction.LicensesClicked) },
         )
     }
 }

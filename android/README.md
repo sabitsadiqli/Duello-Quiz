@@ -32,7 +32,7 @@ cd android && ./gradlew lint test assembleDebug
 | `:feature:quiz` | Quiz loading and question screen, result, wrong-answer review; the daily challenge (play, result with share card, review) on the shared `QuestionRunner`; XP/streak card and notification permission card on results |
 | `:feature:duel` | The whole duel flow as one destination: search, intro, question → Əminlik → answer → reveal, round 7 and sudden death, disconnect overlays, leave dialog, result with the Əminlik kartı, upgrade/unavailable/connection states |
 | `:feature:profile` | Name, avatar, rating, Qoşulub, level, streak and category levels, duel record, Əminlik statistikası, last 20 matches, name editing |
-| `:feature:settings` | Theme, language, notification reminders, account (sign-out, delete via `DELETE /v1/me`), about |
+| `:feature:settings` | Theme, language, notification reminders, account (sign-out, delete via `DELETE /v1/me`), about, open-source licences (list + detail) |
 | `:core:notifications` | FCM messaging service (token refresh, reminders shown in the foreground), reminder channels `daily_reminder` / `streak_reminder`, phone notification state, push token registration, reminder taps → home |
 | `:core:network` | Ktor client (OkHttp) for `docs/api/openapi.yaml`: Bearer ID token with one refresh on 401, `Accept-Language`, error `code` mapping, DTOs (internal) → `:core:model`; the duel WebSocket (`/v1/duel?protocolVersion=1`) with its internal wire types and codec |
 | `:core:duel` | `DuelClient` for `docs/api/duel-protocol.md`: ping, 15 s silence watchdog, clock offset on the monotonic clock, `seq` ordering with `match.rejoin` on gaps, `hello`/`match.state` resync, close codes (no reconnect after 4000/4001), reconnect with backoff in a match, saved running match and "left while offline" marker |
@@ -67,6 +67,15 @@ Google sign-in returns a test user. With the file present, the Google services p
 applied and the Firebase implementations are used. CI release builds decode the file from the
 `GOOGLE_SERVICES_JSON_BASE64` secret (`infra/README.md`).
 
+Crashlytics (OQ-101) follows the same rule: the `com.google.firebase.crashlytics` plugin is
+applied only together with the Google services plugin, and without a Firebase app the
+`Telemetry` binding in `:app` is a no-op. Collection is off in debug builds
+(`firebase_crashlytics_collection_enabled` from a manifest placeholder per build type). The
+Analytics and Crashlytics user ID is the backend `users.id` (`TelemetryUserSync`, auth.md §5),
+cleared on sign-out; no custom keys, never email, name or Firebase UID. Analytics never collects
+the Advertising ID: `AD_ID` and the Privacy Sandbox ad permissions are removed from the merged
+manifest (OQ-100).
+
 Firebase project setup needed: Email/Password and Google providers enabled, password policy
 minimum 8 characters (OQ-018), email enumeration protection on, SHA-1/SHA-256 of the debug and
 release (Play App Signing) keys registered for Google sign-in.
@@ -75,8 +84,15 @@ release (Play App Signing) keys registered for Google sign-in.
 
 The base URL is `BuildConfig.API_BASE_URL` of `:core:network`: debug defaults to
 `http://10.0.2.2:8080` (the host machine from the emulator, `infra/docker-compose.yml`), release
-has the placeholder `https://api.duelloquiz.invalid` until the domain is decided (OQ-006).
-Override for every build type with `-PapiBaseUrl=https://...`. Cleartext `http` is allowed only
+defaults to the production API `https://api.duelloquiz.app` (OQ-006, ADR 0001). Override for
+every build type with `-PapiBaseUrl=https://...`; against the dev server (Hetzner, `infra/README.md`):
+
+```
+./gradlew assembleDebug -PapiBaseUrl=https://api-dev.duelloquiz.app
+```
+
+A debug build without `google-services.json` still uses the in-process fakes below, whatever the
+URL. Cleartext `http` is allowed only
 to `10.0.2.2`, `localhost` and `127.0.0.1` in debug (`app/src/debug/res/xml/network_security_config.xml`);
 on a physical device use `adb reverse tcp:8080 tcp:8080` and `-PapiBaseUrl=http://localhost:8080`.
 
@@ -103,7 +119,10 @@ The socket belongs to the duel screen (`DuelViewModel`): it survives rotation, i
 user leaves the flow, keeps running in the background during a match and sends `queue.leave` when
 the app is backgrounded while searching. Countdowns are server deadlines minus the clock offset,
 read from `SystemClock.elapsedRealtime`; the client never computes points or correctness. After a
-process death home reopens the duel on the saved running match (`resume = true`).
+process death home reopens the duel on the saved running match (`resume = true`). The result
+screen takes names and avatars from `match.result.you/opponent` (a deleted opponent shows as
+"Silinmiş oyunçu") and names the forfeit cause (`forfeitCause`); a rejoin snapshot keeps the
+opponent's reconnect countdown from `match.state.opponent.reconnectDeadlineEpochMs`.
 
 Without Firebase a debug build plays against `FakeDuelSocketFactory` (`core/network/src/debug`): an
 in-process server with a bot that picks Əminlik and answers at random times (about 70 % right); every
@@ -120,7 +139,20 @@ Push: `firebase-messaging` from the Firebase BoM. Without `google-services.json`
 source is bound and nothing is registered. The permission (Android 13+) is never asked at start;
 the in-app card appears on the first quiz/daily result and once more 7 days after "Sonra".
 
-## Privacy policy URL
+## Open-source licences
 
-`BuildConfig.PRIVACY_POLICY_URL` defaults to the GitHub Pages URL in `app/build.gradle.kts`;
-override with `-PprivacyPolicyUrl=...`.
+"Açıq mənbə lisenziyaları" (`design/screens/licenses.md`) lists two manual entries (Nunito with
+the full OFL text, Material Symbols) and the libraries generated by the AboutLibraries Gradle
+plugin in `:app` from each variant's runtime classpath into `res/raw/aboutlibraries.json`, so the
+release list always matches the shipped dependencies. `:core:designsystem` copies
+`third_party/nunito/OFL.txt` into the asset `licenses/nunito/OFL.txt` at build time.
+`LicenseRepository` (`:core:data`) parses both; unreadable metadata is a Crashlytics non-fatal and
+the screen shows only the manual section.
+
+## Legal pages
+
+`BuildConfig.PRIVACY_POLICY_URL` defaults to `https://duelloquiz.app/legal/privacy-policy.html`
+(`docs/legal/` on GitHub Pages under the custom domain, `app/build.gradle.kts`); override with
+`-PprivacyPolicyUrl=...`. It must be the same URL as in Play Console. The account deletion page
+`https://duelloquiz.app/legal/account-deletion.html` is entered only in Play Console (Data safety);
+inside the app, deletion is the in-app flow in settings.

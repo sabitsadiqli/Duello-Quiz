@@ -17,6 +17,18 @@ internal data class WirePlayer(
     val rating: Int,
     /** Only in `match.state.opponent`. */
     val connected: Boolean? = null,
+    /** Only in `match.state.opponent`, while it is disconnected. */
+    val reconnectDeadlineEpochMs: Long? = null,
+)
+
+/** `match.result.you` / `.opponent` (2026-10-17). */
+@Serializable
+internal data class WireResultPlayer(
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    val ratingBefore: Int,
+    val ratingAfter: Int,
+    val deleted: Boolean = false,
 )
 
 @Serializable
@@ -284,6 +296,8 @@ internal sealed interface WireServerMessage {
         val rounds: List<WireCompactRound> = emptyList(),
         /** v1.1 (2026-10-22): XP, level and streak change of the receiver; null if not stored. */
         val progress: NetworkProgress? = null,
+        val you: WireResultPlayer? = null,
+        val opponent: WireResultPlayer? = null,
     ) : WireServerMessage
 
     @Serializable

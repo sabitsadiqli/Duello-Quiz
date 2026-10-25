@@ -20,6 +20,7 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
 import com.sabit.duelloquiz.core.model.duel.OwnBet
@@ -520,6 +521,8 @@ private object FakeBotServer {
                     calibration = calibration,
                     rounds = rounds.toList(),
                     progress = progress,
+                    you = MatchResultPlayer(you.displayName, you.avatarUrl, you.rating, you.rating + change, deleted = false),
+                    opponent = MatchResultPlayer(bot.displayName, bot.avatarUrl, bot.rating, bot.rating - change, deleted = false),
                 ),
             )
             finalResult = message

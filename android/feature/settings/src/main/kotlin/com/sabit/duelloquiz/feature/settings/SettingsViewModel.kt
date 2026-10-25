@@ -37,12 +37,14 @@ sealed interface SettingsAction {
     data object SignOutDismissed : SettingsAction
     data object DeleteAccountClicked : SettingsAction
     data object PrivacyPolicyClicked : SettingsAction
+    data object LicensesClicked : SettingsAction
     data object BackClicked : SettingsAction
 }
 
 sealed interface SettingsEvent {
     data object NavigateBack : SettingsEvent
     data object NavigateToDeleteAccount : SettingsEvent
+    data object NavigateToLicenses : SettingsEvent
     data class OpenUrl(val url: String) : SettingsEvent
 }
 
@@ -94,6 +96,7 @@ class SettingsViewModel @Inject constructor(
             }
             SettingsAction.DeleteAccountClicked -> _events.trySend(SettingsEvent.NavigateToDeleteAccount)
             SettingsAction.PrivacyPolicyClicked -> _events.trySend(SettingsEvent.OpenUrl(appConfig.privacyPolicyUrl))
+            SettingsAction.LicensesClicked -> _events.trySend(SettingsEvent.NavigateToLicenses)
             SettingsAction.BackClicked -> _events.trySend(SettingsEvent.NavigateBack)
         }
     }

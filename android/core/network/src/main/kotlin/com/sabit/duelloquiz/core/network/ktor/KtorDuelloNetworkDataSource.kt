@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.core.network.ktor
 
+import com.sabit.duelloquiz.core.common.DeviceConnectivity
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.ApiErrorCode
@@ -41,8 +42,6 @@ import com.sabit.duelloquiz.core.network.model.asExternalModelOrNull
 import com.sabit.duelloquiz.core.network.model.asNetworkModel
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.network.sockets.ConnectTimeoutException
-import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -66,6 +65,8 @@ import kotlin.coroutines.cancellation.CancellationException
 /** [DuelloNetworkDataSource] over Ktor. See [createDuelloHttpClient] for headers and auth. */
 internal class KtorDuelloNetworkDataSource(
     private val client: HttpClient,
+    /** Without a real check every connect failure reads as [DataError.Offline] (tests). */
+    private val connectivity: DeviceConnectivity = DeviceConnectivity { false },
     private val clock: WallClock,
 ) : DuelloNetworkDataSource {
 
@@ -229,16 +230,13 @@ internal class KtorDuelloNetworkDataSource(
         }
     } catch (e: TokenUnavailableException) {
         DataResult.Failure(if (e.offline) DataError.Offline else DataError.Unauthorized)
-    } catch (_: HttpRequestTimeoutException) {
-        DataResult.Failure(DataError.Timeout)
-    } catch (_: ConnectTimeoutException) {
-        DataResult.Failure(DataError.Timeout)
-    } catch (_: SocketTimeoutException) {
-        DataResult.Failure(DataError.Timeout)
+    } catch (e: HttpRequestTimeoutException) {
+        DataResult.Failure(classifyTransportFailure(e, connectivity::hasInternet))
     } catch (e: CancellationException) {
         throw e
-    } catch (_: IOException) {
-        DataResult.Failure(DataError.Offline)
+    } catch (e: IOException) {
+        // Connect timeout, DNS failure, refused: "server unreachable" when the device is online.
+        DataResult.Failure(classifyTransportFailure(e, connectivity::hasInternet))
     } catch (_: SerializationException) {
         DataResult.Failure(DataError.Server)
     } catch (_: IllegalArgumentException) {

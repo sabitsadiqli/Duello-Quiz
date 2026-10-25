@@ -81,8 +81,14 @@ internal fun QuizReviewScreen(uiState: QuizReviewUiState, onAction: (QuizReviewA
             }
             is QuizReviewUiState.Error -> Box(contentAlignment = Alignment.Center, modifier = modifier) {
                 DuelloStateView(
-                    icon = if (uiState.offline) DuelloIcons.CloudOff else DuelloIcons.Error,
-                    title = stringResource(if (uiState.offline) R.string.error_offline else R.string.error_generic),
+                    icon = if (uiState.offline || uiState.serverUnreachable) DuelloIcons.CloudOff else DuelloIcons.Error,
+                    title = stringResource(
+                        when {
+                            uiState.offline -> R.string.error_offline
+                            uiState.serverUnreachable -> R.string.error_server_unreachable
+                            else -> R.string.error_generic
+                        },
+                    ),
                     primaryActionText = stringResource(R.string.common_retry),
                     onPrimaryAction = { onAction(QuizReviewAction.RetryClicked) },
                 )

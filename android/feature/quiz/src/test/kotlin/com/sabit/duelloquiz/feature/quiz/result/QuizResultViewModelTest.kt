@@ -346,6 +346,15 @@ class QuizResultViewModelTest {
     }
 
     @Test
+    fun reviewWithUnreachableServerSaysSo() = runTest {
+        repository.register(testQuizSession())
+        repository.finishResult = DataResult.Failure(DataError.ServerUnreachable)
+        val vm = QuizReviewViewModel(repository, TestDailyRepository(), SavedStateHandle(mapOf("sessionId" to "session-1")))
+        runCurrent()
+        assertEquals(QuizReviewUiState.Error(offline = false, serverUnreachable = true), vm.uiState.value)
+    }
+
+    @Test
     fun reviewOfflineShowsAnErrorAndRetries() = runTest {
         repository.register(testQuizSession())
         repository.finishResult = DataResult.Failure(DataError.Offline)

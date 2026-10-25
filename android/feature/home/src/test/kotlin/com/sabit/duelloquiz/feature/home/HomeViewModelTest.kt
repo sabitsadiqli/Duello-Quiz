@@ -278,6 +278,7 @@ class HomeViewModelTest {
             DataError.Api(ApiErrorCode.CategoryNotFound) to HomeMessage.CategoryNotPlayable,
             DataError.RateLimited(retryAfterSeconds = 600) to HomeMessage.RateLimited,
             DataError.Offline to HomeMessage.Offline,
+            DataError.ServerUnreachable to HomeMessage.ServerUnreachable,
             DataError.Timeout to HomeMessage.Generic,
             DataError.Server to HomeMessage.Generic,
         )
