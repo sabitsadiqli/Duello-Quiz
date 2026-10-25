@@ -64,13 +64,20 @@ fun Routing.notFoundFallback() {
 }
 
 @Serializable
-data class HealthResponse(val status: String, val database: String)
+data class HealthResponse(
+    val status: String,
+    val database: String,
+    /** Gradle project version of the build, or `unknown`. */
+    val version: String,
+    /** Git commit of the image (`APP_GIT_SHA`), null when not set (local runs). */
+    val commit: String?,
+)
 
-fun Route.healthRoutes(db: Db) {
+fun Route.healthRoutes(db: Db, build: BuildInfo = BuildInfo.current) {
     get("/health") {
         val ok = runCatching { db.tx { exec("SELECT 1") { it.next() } } }.getOrNull() == true
         if (ok) {
-            call.respond(HealthResponse(status = "ok", database = "ok"))
+            call.respond(HealthResponse(status = "ok", database = "ok", version = build.version, commit = build.commit))
         } else {
             call.respondError(HttpStatusCode.ServiceUnavailable, ErrorCodes.SERVICE_UNAVAILABLE, "Database unreachable")
         }

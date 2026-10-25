@@ -52,6 +52,11 @@ WORKDIR /app
 # Application files stay owned by root (read-only for the app user).
 COPY --from=build /src/build/install/duello-backend/ /app/
 
+# Commit shown by GET /health ("commit"); CI passes --build-arg GIT_SHA=<sha>. Declared
+# after the COPY so a new SHA only rebuilds this small layer. Empty = not reported.
+ARG GIT_SHA=""
+ENV APP_GIT_SHA=${GIT_SHA}
+
 # -Djava.awt.headless=true is also in the start script (applicationDefaultJvmArgs);
 # java.io.tmpdir must be writable: libwebp extracts its .so there on first use.
 ENV PORT=8080 \

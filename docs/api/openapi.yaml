@@ -102,8 +102,10 @@ paths:
     get:
       tags: [system]
       operationId: getHealth
-      summary: Liveness and database check
-      description: Used by Docker, Caddy and the deploy job. No authentication.
+      summary: Liveness and database check, with the running build version
+      description: |
+        Used by Docker, Caddy, uptime monitoring and the deploy job (which can compare
+        `commit` with the deployed SHA). No authentication.
       security: []
       responses:
         "200":
@@ -934,7 +936,7 @@ components:
 
     Health:
       type: object
-      required: [status, database]
+      required: [status, database, version, commit]
       properties:
         status:
           type: string
@@ -942,6 +944,16 @@ components:
         database:
           type: string
           enum: [ok]
+        version:
+          type: string
+          description: Backend build version (Gradle project version), `unknown` if not available.
+          example: 0.1.0
+        commit:
+          type: [string, "null"]
+          description: |
+            Git commit SHA the image was built from (Docker build argument `GIT_SHA`);
+            null for local runs. Nothing else about the build or its configuration is exposed.
+          example: 699c1da3f0b1e2d4c5a6b7c8d9e0f1a2b3c4d5e6
 
     Profile:
       type: object

@@ -24,6 +24,22 @@ application {
     applicationDefaultJvmArgs = listOf("-Djava.awt.headless=true")
 }
 
+// build-info.properties on the classpath: the version shown by GET /health. The commit
+// comes from APP_GIT_SHA at runtime (set by the Docker build), so a new commit does not
+// invalidate the Gradle cache.
+val generateBuildInfo = tasks.register("generateBuildInfo") {
+    val appVersion = project.version.toString()
+    val outDir = layout.buildDirectory.dir("generated/build-info")
+    inputs.property("version", appVersion)
+    outputs.dir(outDir)
+    doLast {
+        val file = outDir.get().file("build-info.properties").asFile
+        file.parentFile.mkdirs()
+        file.writeText("version=$appVersion\n")
+    }
+}
+sourceSets.main { resources.srcDir(generateBuildInfo) }
+
 dependencies {
     implementation(platform(libs.ktor.bom))
     implementation(libs.ktor.server.core)
