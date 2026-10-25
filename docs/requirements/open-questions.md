@@ -8,6 +8,76 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 
+## Details (OQ-097 … OQ-105) — legal pages (OQ-097, OQ-099, OQ-103 decided above)
+
+Added by `business-analyst` on 2026-10-25 while writing `docs/legal/privacy-policy.html`
+and `docs/legal/account-deletion.html` (SET-03, SET-05, SET-06). The pages are written
+with the recommendations below; each item says what has to change if Sabit decides
+otherwise. Data safety summary: `docs/legal/README.md`.
+
+### OQ-097 Public contact email
+- A. New dedicated address (e.g. a separate Gmail). Keeps the personal inbox private,
+  can be handed over later; one more inbox to check.
+- B. Sabit's existing address. No setup; the address becomes public on Play and the web.
+- Recommendation: A. Blocks publishing both pages (`{{CONTACT_EMAIL}}` placeholder) and
+  SET-06.
+
+### OQ-098 Developer name on the pages
+- A. The name shown in Play Console (for a personal account usually the legal name).
+  Matches what Play users see; required for the deletion page to "name the developer".
+- B. Keep "Duello Quiz tərtibatçısı". No personal name on the web; may not match Play.
+- Recommendation: A once Play Console is set up; B until then (current text).
+
+### OQ-099 Server region in the policy
+- A. Name the Oracle home region ("Almaniya (AB)") once chosen. Precise.
+- B. Keep the neutral sentence. Always true; less precise.
+- Recommendation: A after OQ-005; text in §5 of the policy, AZ and EN.
+
+### OQ-100 Firebase Analytics settings
+The policy says: no Advertising ID, Analytics kept 2 months, no sharing.
+- `firebase-analytics` merges the `AD_ID` permission (OQ-D25): android-dev removes it
+  (`tools:node="remove"`) and sets `google_analytics_adid_collection_enabled = false`.
+- Data retention: GA4 default is 2 months; 14 months gives longer trends but the pages
+  must then say 14 months.
+- Data-sharing settings ("Google products and services", benchmarking, etc.) and
+  Google signals: off, otherwise "no sharing" is doubtful.
+- Recommendation: as in the table. Blocks publishing the policy.
+
+### OQ-101 Crashlytics
+`CLAUDE.md` lists Crashlytics; the build has only Auth, Analytics, Messaging.
+- A. Add it before the closed test, together with the prepared policy text. Crash
+  data from testers; two extra Data safety rows.
+- B. Leave it out of the MVP. Simpler form; no crash visibility.
+- Recommendation: A.
+
+### OQ-102 Executing an email deletion request
+SET-06 promises deletion "with the same backend operation as SET-05"; no admin command
+exists yet (only `DELETE /v1/me` with the user's own token).
+- A. Backend CLI task (`delete-user --email` / `--uid`), run on the VM like the import.
+  Same code path, auditable in the logs.
+- B. Manual: delete the Firebase user in the console + SQL `DELETE FROM users`. No
+  code; error-prone (forgets the running-duel forfeit, OQ-069).
+- Recommendation: A. Blocks SET-06 operationally (the page itself is ready).
+
+### OQ-103 Off-VM backup location
+- A. Oracle Object Storage (Always Free, private bucket). Same processor as the server.
+- B. Google Drive behind `rclone crypt`. Survives losing the Oracle account; Google
+  becomes a storage provider to name in the policy.
+- Recommendation: A (the policy names only Oracle for backups).
+
+### OQ-104 Analytics data after deletion
+- A. Expire with the retention period (2 months). Zero work; stated on both pages.
+- B. Call the Google Analytics User Deletion API from `DELETE /v1/me`. Immediate;
+  needs a Google Cloud service account with Analytics access and extra code.
+- Recommendation: A for the MVP.
+
+### OQ-105 Target audience
+- A. 13+ (13–15, 16–17, 18+). Matches the brief, quiet hours (OQ-089) and the pages;
+  Play does not apply the Families policy.
+- B. Include under-13. Families policy, stricter SDK rules (Analytics settings),
+  parental consent; out of scope.
+- Recommendation: A.
+
 ## Decided by Sabit (2026-10-25) — hosting and domain
 
 Background, alternatives and costs: `docs/adr/0001-hosting-hetzner-duelloquiz-app.md`;
@@ -18,14 +88,18 @@ runbook: `infra/README.md`.
 | OQ-005 | Hosting account: Oracle Cloud Always Free or a paid ~5 €/month VM? | Paid **Hetzner Cloud CAX11** (ARM64, 2 vCPU, 4 GB, Ubuntu 24.04), approx. €4–5/month; CX22 (x86) if ARM capacity is missing. Oracle only as a fallback note | Sabit 2026-10-25 |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | Bought **`duelloquiz.app`** at Cloudflare Registrar, DNS on Cloudflare: `api-dev.` (dev, now), `api.` (prod, later), apex/`www` for GitHub Pages; API records DNS only (grey cloud) | Sabit 2026-10-25 |
 | OQ-099 | Server region named in the privacy policy | Hetzner **Falkenstein (`fsn1`), Germany (EU)** → "Almaniya (AB)"; Nuremberg is also Germany, Helsinki would be "Finlandiya (AB)" | follows OQ-005 (devops 2026-10-25) |
-| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size but needs a payment method and bills above 10 GB — **pending Sabit's confirmation**. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
+| OQ-097 | Public contact email on the legal pages and in Play Console | **`support@duelloquiz.app`** via Cloudflare Email Routing (free, receive-only) to Sabit's inbox; the personal address is never published | Sabit 2026-10-25 |
+| OQ-098 | Developer name on the legal pages | **Sabit Sadiqli** (individual developer, same as Play Console) | Sabit 2026-10-25 |
+| OQ-100 | Firebase Analytics privacy settings | Remove `AD_ID` from the manifest; Analytics data retention 2 months; data sharing and Google signals off | Sabit 2026-10-25 |
+| OQ-101 | Crashlytics | Add Firebase Crashlytics before the closed test; enable the prepared policy text in the same release | Sabit 2026-10-25 |
+| OQ-102 | Email deletion request (SET-06) | Backend admin CLI task (`delete-user --email`) doing the same as `DELETE /v1/me` plus the Firebase account | Sabit 2026-10-25 |
+| OQ-104 | Analytics data after account deletion | Expires with the 2-month retention; no deletion API call in the MVP | Sabit 2026-10-25 |
+| OQ-105 | Target audience | 13+ in Play Console | Sabit 2026-10-25 |
+| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size (bills above 10 GB). Confirmed by Sabit 2026-10-25. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
 
-OQ-097 (contact e-mail) stays open; infra proposal: `support@duelloquiz.app` through
-Cloudflare Email Routing (free, receive-only) to a dedicated inbox, never the
-personal one. Note: OQ-097 … OQ-105 were added on the branch `docs/legal-texts`, which
-is not merged yet; when both branches are in `main`, remove the OQ-099 and OQ-103 rows
-from "Open" (they are answered here) and update their "Details" items, which still
-name Oracle.
+The privacy policy names Hetzner (Germany) for hosting and Cloudflare (EU) for DNS,
+e-mail forwarding and backups. The "Details" items for OQ-097, OQ-099 and OQ-103
+below are background only; the decisions are in this table.
 
 ## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
 
