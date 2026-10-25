@@ -47,13 +47,13 @@ into Play Console.
 | Notification send log (type, day, outcome) | `notification_log` | 90 days, or account deletion | `V5__retention.sql`, `application.conf` `logRetentionDays = 90` |
 | Daily question sets | `daily_challenges`, `daily_challenge_questions` | Kept (not personal) | `V5__retention.sql` |
 | Server logs (time, path, status, internal user ID; IP only in Caddy error entries) | Docker JSON logs on the VM | Size rotation 5 × 20 MB; not in backups | `infra/README.md`, `infra/prod/Caddyfile`, `backend/src/main/resources/logback.xml` |
-| Database + media backups | VM disk + off-VM copy (Oracle Object Storage assumed, OQ-103) | 14 days (script refuses > 30) | `infra/README.md` §10 |
+| Database + media backups | VM disk (Hetzner, Germany) + off-VM copy in Cloudflare R2, EU (OQ-103) | 14 days (script refuses > 30) | `infra/README.md` §10 |
 | Analytics events, app-instance ID, device / app info, Analytics user ID = `users.id` | Firebase Analytics | 2 months (to be set, OQ-100) | `android/app/build.gradle.kts`, `docs/requirements/auth.md` §5 |
 | Crash reports | — (Crashlytics not in the build yet) | — | `android/gradle/libs.versions.toml` (no Crashlytics) |
 
 ## Play Console Data safety summary
 
-Not legal advice. "Collected" = leaves the device. Google Firebase and Oracle act as
+Not legal advice. "Collected" = leaves the device. Google Firebase, Hetzner and Cloudflare act as
 our service providers, which Play does not count as "sharing". "Optional" in Play's
 sense = the user can use the app without it.
 
@@ -90,6 +90,5 @@ Notes for the form:
 - "Ephemeral processing" does not apply to any type above: all are stored.
 - If Crashlytics is added, update the two "App info and performance" rows and the
   "CRASHLYTICS" blocks of `privacy-policy.html` in the same release.
-- If the off-VM backup goes to Google Drive instead of Oracle Object Storage (OQ-103),
-  name Google as the storage provider in `privacy-policy.html` §5; the form does not
-  change (service provider, not sharing).
+- If the off-VM backup target changes from Cloudflare R2 (OQ-103), update the provider
+  in `privacy-policy.html` §5; the form does not change (service provider, not sharing).

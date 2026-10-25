@@ -21,7 +21,7 @@
       backend/src/main/resources/application.conf (notifications); infra/README.md (hosting, logs, backups);
       android/app/build.gradle.kts and android/gradle/libs.versions.toml (Firebase SDKs).
       The Data safety summary in docs/legal/README.md must stay in sync with this page.
-    - Placeholders left: {{CONTACT_EMAIL}} (OQ-097). Before publishing: grep -n '{{' docs/legal/*.html must print nothing.
+    - Contact e-mail decided (OQ-097): support@duelloquiz.app. Hosting: Hetzner Germany, backups Cloudflare R2 EU (ADR 0001).
     - Crashlytics is NOT in the app yet, so it is not listed. When android-dev adds it, add the prepared
       paragraphs marked "CRASHLYTICS" below (AZ and EN) and update docs/legal/README.md in the same PR (OQ-101).
     - The page says the app does not use the Advertising ID. This is only true once the AD_ID permission is
@@ -80,7 +80,7 @@
         <h2 id="who">1. Biz kimik</h2>
         <!-- Developer name: "Duello Quiz tərtibatçısı" until Sabit decides the public name (OQ-098); then use the name shown in Play Console. -->
         <p>Duello Quiz-i fərdi tərtibatçı hazırlayır və Google Play-də dərc edir (bu siyasətdə «Duello Quiz tərtibatçısı» və ya «biz»). Tətbiqdə toplanan məlumatlara görə məsuliyyət daşıyan tərəf Duello Quiz tərtibatçısıdır.</p>
-        <p>Əlaqə: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+        <p>Əlaqə: <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a>.</p>
       </section>
 
       <section aria-labelledby="data">
@@ -162,9 +162,10 @@
         <p>Aşağıdakı xidmətlər məlumatları yalnız bizim tapşırığımızla, tətbiqin işləməsi üçün emal edir:</p>
         <ul>
           <li><strong>Google Firebase</strong> (Google): Authentication (giriş, şifrələrin saxlanması, təsdiq və şifrə bərpası məktubları), Google ilə giriş, Analytics (istifadə statistikası) və Cloud Messaging (bildirişlərin çatdırılması). Ətraflı: <a href="https://firebase.google.com/support/privacy" lang="en">Privacy and Security in Firebase</a>, <a href="https://policies.google.com/privacy?hl=az">Google Məxfilik Siyasəti</a>.</li>
-          <li><strong>Oracle Cloud Infrastructure</strong> (Oracle): serverimiz Oracle Cloud-da icarəyə götürülmüş virtual serverdir. Hesab, oyun və bildiriş məlumatları, sual şəkilləri və ehtiyat nüsxələr orada, yalnız bizim idarə etdiyimiz verilənlər bazasında və yaddaşda saxlanılır. Ətraflı: <a href="https://www.oracle.com/legal/privacy/" lang="en">Oracle Privacy</a>.</li>
+          <li><strong>Hetzner Online GmbH</strong> (Almaniya): serverimiz Hetzner Cloud-da, Almaniyada (Falkenstein) icarəyə götürülmüş virtual serverdir. Hesab, oyun və bildiriş məlumatları və sual şəkilləri orada, yalnız bizim idarə etdiyimiz verilənlər bazasında və yaddaşda saxlanılır. Ətraflı: <a href="https://www.hetzner.com/legal/privacy-policy/" lang="en">Hetzner Privacy Policy</a>.</li>
+          <li><strong>Cloudflare, Inc.</strong>: domen adımızın DNS-i, <code>support@duelloquiz.app</code> ünvanına gələn məktubların yönləndirilməsi və şifrələnmiş ehtiyat nüsxələrin Avropa İttifaqında saxlanması (Cloudflare R2). Ətraflı: <a href="https://www.cloudflare.com/privacypolicy/" lang="en">Cloudflare Privacy Policy</a>.</li>
         </ul>
-        <p>Google və Oracle-ın serverləri Azərbaycandan kənarda, məsələn, Avropa İttifaqında və ya ABŞ-da yerləşə bilər. Bu halda məlumatların həmin ölkələrə ötürülür; bu xidmətlər onları öz məxfilik şərtlərinə uyğun qoruyur.</p>
+        <p>Serverimiz və ehtiyat nüsxələr Avropa İttifaqındadır; Google və Cloudflare-in serverləri Azərbaycandan kənarda, məsələn, Avropa İttifaqında və ya ABŞ-da yerləşə bilər. Bu halda məlumatların həmin ölkələrə ötürülür; bu xidmətlər onları öz məxfilik şərtlərinə uyğun qoruyur.</p>
         <p>Google hesabının profil şəkli Google-un serverlərindən yüklənir, sual şəkilləri isə bizim serverdən. Bu veb səhifələr GitHub Pages-də yerləşir; səhifələrdə kuki, analitika və reklam yoxdur, amma GitHub təhlükəsizlik üçün IP ünvanı kimi texniki məlumatları qeyd edə bilər (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" lang="en">GitHub Privacy Statement</a>).</p>
         <p>Başqa üçüncü tərəf yoxdur. Məlumatlarını yalnız qanun tələb etdikdə səlahiyyətli dövlət orqanlarına verə bilərik.</p>
       </section>
@@ -206,7 +207,7 @@
         <h2 id="children">9. Uşaqlar</h2>
         <!-- 13+ per tech-lead brief 2026-10-25; must match Play Console "Target audience and content" (OQ-D22, OQ-105). -->
         <p>Duello Quiz 13 yaş və yuxarı istifadəçilər üçündür və 13 yaşdan kiçik uşaqlara yönəlməyib. 13 yaşın tamam deyilsə, tətbiqdən istifadə etmə. Yaşadığın ölkənin qanunu sənin yaşında valideyn razılığı tələb edirsə, tətbiqdən yalnız valideyninin razılığı ilə istifadə et.</p>
-        <p>13 yaşdan kiçik uşağın hesab yaratdığını bilsək, həmin hesabı silirik. Valideynlər bunun üçün <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a> ünvanına yaza bilər.</p>
+        <p>13 yaşdan kiçik uşağın hesab yaratdığını bilsək, həmin hesabı silirik. Valideynlər bunun üçün <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a> ünvanına yaza bilər.</p>
       </section>
 
       <section aria-labelledby="rights">
@@ -228,7 +229,7 @@
 
       <section aria-labelledby="contact">
         <h2 id="contact">12. Əlaqə</h2>
-        <p>Məxfilik, məlumatların və ya hesabın silinməsi ilə bağlı sualların üçün yaz: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+        <p>Məxfilik, məlumatların və ya hesabın silinməsi ilə bağlı sualların üçün yaz: <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a>.</p>
       </section>
 
       <section class="lang-en" lang="en" aria-labelledby="en">
@@ -238,7 +239,7 @@
         <p>Duello Quiz is an Azerbaijani-language quiz game for Android: category quizzes, a daily challenge and a real-time 1v1 confidence duel ("Əminlik"). This policy explains which data the app and its server collect, why, who processes it and how long it is kept. In short: we collect only what the game needs to work. There are no ads and no in-app purchases, we do not use the advertising ID, and we never sell your data.</p>
 
         <h3>1. Who we are</h3>
-        <p>Duello Quiz is built and published on Google Play by an individual developer ("the Duello Quiz developer", "we"), who is responsible for the data collected in the app. Contact: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+        <p>Duello Quiz is built and published on Google Play by an individual developer ("the Duello Quiz developer", "we"), who is responsible for the data collected in the app. Contact: <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a>.</p>
 
         <h3>2. Data we collect</h3>
         <ul>
@@ -266,9 +267,10 @@
         <p>These services process data only on our behalf, to make the app work:</p>
         <ul>
           <li><strong>Google Firebase</strong> (Google): Authentication (sign-in, password storage, verification and password-reset emails), Google sign-in, Analytics and Cloud Messaging (notification delivery). See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a> and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</li>
-          <li><strong>Oracle Cloud Infrastructure</strong> (Oracle): our server is a virtual machine rented from Oracle Cloud. Account, game and notification data, question images and backups are stored there, in a database and storage that only we control. See <a href="https://www.oracle.com/legal/privacy/">Oracle Privacy</a>.</li>
+          <li><strong>Hetzner Online GmbH</strong> (Germany): our server is a virtual machine rented from Hetzner Cloud in Germany (Falkenstein). Account, game and notification data and question images are stored there, in a database and storage that only we control. See <a href="https://www.hetzner.com/legal/privacy-policy/">Hetzner Privacy Policy</a>.</li>
+          <li><strong>Cloudflare, Inc.</strong>: DNS for our domain, forwarding of e-mail sent to <code>support@duelloquiz.app</code>, and storage of encrypted backups in the European Union (Cloudflare R2). See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare Privacy Policy</a>.</li>
         </ul>
-        <p>Google's and Oracle's servers may be located outside Azerbaijan, for example in the European Union or the United States; your data is then transferred there and protected under their privacy terms. Google profile photos load from Google's servers, question images from ours. These web pages are hosted on GitHub Pages; they use no cookies, analytics or ads, but GitHub may log technical data such as IP addresses for security (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>). There are no other third parties. We disclose data to authorities only when the law requires it.</p>
+        <p>Our server and backups are in the European Union; Google's and Cloudflare's servers may be located outside Azerbaijan, for example in the European Union or the United States; your data is then transferred there and protected under their privacy terms. Google profile photos load from Google's servers, question images from ours. These web pages are hosted on GitHub Pages; they use no cookies, analytics or ads, but GitHub may log technical data such as IP addresses for security (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>). There are no other third parties. We disclose data to authorities only when the law requires it.</p>
 
         <h3>6. Retention</h3>
         <ul>
@@ -289,7 +291,7 @@
         <p>You can delete your account in the app at any time: "Parametrlər" → "Hesabı sil". Deletion is immediate and covers your profile, rating, quiz and daily challenge results, XP, levels, streak, notification settings and tokens, and your Firebase sign-in account. Past duels stay in your opponents' history, where you appear as "Silinmiş oyunçu" (deleted player). Data disappears from backups within 30 days. How to request deletion without the app, and what is kept: <a href="account-deletion.html#en">Account deletion</a>.</p>
 
         <h3>9. Children</h3>
-        <p>Duello Quiz is meant for users aged 13 and over and is not directed at children under 13. If you are under 13, do not use the app. If the law of your country requires parental consent at your age, use the app only with your parent's consent. If we learn that a child under 13 has created an account, we delete it; parents can write to <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+        <p>Duello Quiz is meant for users aged 13 and over and is not directed at children under 13. If you are under 13, do not use the app. If the law of your country requires parental consent at your age, use the app only with your parent's consent. If we learn that a child under 13 has created an account, we delete it; parents can write to <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a>.</p>
 
         <h3>10. Your rights</h3>
         <p>You can see your profile, statistics, history and progress in the app, and ask by email for a copy of all data we hold about you. You can change your display name in the app ("Profil" → "Adı dəyiş") and ask us to correct anything else. You can delete your account in the app or by email. You can switch reminders off in "Parametrlər" → "Bildirişlər" or in your phone's settings. You may also complain to the data protection authority of your country. We answer requests within 30 days and may ask you to write from, or confirm from, the email address of your account.</p>
@@ -298,7 +300,7 @@
         <p>When we update this policy, we change the date at the top. We announce significant changes, for example a new type of data being collected, in the app or on this page before they take effect. Earlier versions remain in the project's public GitHub history.</p>
 
         <h3>12. Contact</h3>
-        <p>Questions about privacy, your data or account deletion: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+        <p>Questions about privacy, your data or account deletion: <a href="mailto:support@duelloquiz.app">support@duelloquiz.app</a>.</p>
       </section>
     </div>
   </main>
@@ -308,7 +310,7 @@
       <ul>
         <li><a href="index.html">Duello Quiz</a></li>
         <li><a href="account-deletion.html">Hesabın silinməsi</a></li>
-        <li><a href="mailto:{{CONTACT_EMAIL}}">Əlaqə</a></li>
+        <li><a href="mailto:support@duelloquiz.app">Əlaqə</a></li>
       </ul>
       <!-- Developer name: add it here when OQ-098 is decided (same as in Play Console). -->
       <p>© 2026 Duello Quiz</p>

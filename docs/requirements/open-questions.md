@@ -7,17 +7,14 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-097 | Public contact email on the legal pages and in Play Console (designer's OQ-D20) | A new dedicated address (e.g. a separate Gmail), not the personal one; replaces `{{CONTACT_EMAIL}}` in `docs/legal/*.html` | Sabit |
 | OQ-098 | Developer name on the legal pages | The developer name exactly as shown in Play Console; until then "Duello Quiz tərtibatçısı" (fərdi tərtibatçı) | Sabit |
-| OQ-099 | Server region named in the privacy policy | After the Oracle account exists (OQ-005), name the home region (recommended Germany Central, Frankfurt → "Almaniya, AB"); until then the neutral "outside Azerbaijan, e.g. EU or US" wording stays | Sabit |
 | OQ-100 | Firebase Analytics privacy settings that the policy relies on | Remove `AD_ID` and disable ad-ID collection (OQ-D25); set data retention to 2 months; turn off data-sharing settings and Google signals; keep `users.id` as Analytics user ID (never email/UID) | Sabit (settings), android-dev (manifest) |
 | OQ-101 | Crashlytics is in the tech stack but not in the build | Add it before the closed test; the same PR uncomments the prepared "CRASHLYTICS" text in `privacy-policy.html` and updates `docs/legal/README.md` | Sabit, android-dev |
 | OQ-102 | How is an email deletion request (SET-06) executed? | Admin CLI task in the backend, e.g. `delete-user --email <address>`: looks up the Firebase UID with the Admin SDK and runs the same code as `DELETE /v1/me`; needed before the Play submission | Sabit, backend-dev |
-| OQ-103 | Off-VM backup location (`infra/README.md` §10 offers two) | Oracle Object Storage (same provider as the server, no extra processor in the policy); Google Drive only behind `rclone crypt` and then named in the policy | Sabit, devops |
 | OQ-104 | Firebase Analytics data after account deletion | Let it expire with the 2-month retention (stated on both pages); no Analytics User Deletion API call in the MVP | Sabit |
 | OQ-105 | Target audience 13+ (designer's OQ-D22) | 13+ in Play Console "Target audience and content" (13–15, 16–17, 18+), not in the Families program; the pages already say 13+ | Sabit |
 
-## Details (OQ-097 … OQ-105, open) — legal pages
+## Details (OQ-097 … OQ-105) — legal pages (OQ-097, OQ-099, OQ-103 decided above)
 
 Added by `business-analyst` on 2026-10-25 while writing `docs/legal/privacy-policy.html`
 and `docs/legal/account-deletion.html` (SET-03, SET-05, SET-06). The pages are written
@@ -97,14 +94,12 @@ runbook: `infra/README.md`.
 | OQ-005 | Hosting account: Oracle Cloud Always Free or a paid ~5 €/month VM? | Paid **Hetzner Cloud CAX11** (ARM64, 2 vCPU, 4 GB, Ubuntu 24.04), approx. €4–5/month; CX22 (x86) if ARM capacity is missing. Oracle only as a fallback note | Sabit 2026-10-25 |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | Bought **`duelloquiz.app`** at Cloudflare Registrar, DNS on Cloudflare: `api-dev.` (dev, now), `api.` (prod, later), apex/`www` for GitHub Pages; API records DNS only (grey cloud) | Sabit 2026-10-25 |
 | OQ-099 | Server region named in the privacy policy | Hetzner **Falkenstein (`fsn1`), Germany (EU)** → "Almaniya (AB)"; Nuremberg is also Germany, Helsinki would be "Finlandiya (AB)" | follows OQ-005 (devops 2026-10-25) |
+| OQ-097 | Public contact email on the legal pages and in Play Console | **`support@duelloquiz.app`** via Cloudflare Email Routing (free, receive-only) to Sabit's inbox; the personal address is never published | Sabit 2026-10-25 |
 | OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size but needs a payment method and bills above 10 GB — **pending Sabit's confirmation**. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
 
-OQ-097 (contact e-mail) stays open; infra proposal: `support@duelloquiz.app` through
-Cloudflare Email Routing (free, receive-only) to a dedicated inbox, never the
-personal one. Note: OQ-097 … OQ-105 were added on the branch `docs/legal-texts`, which
-is not merged yet; when both branches are in `main`, remove the OQ-099 and OQ-103 rows
-from "Open" (they are answered here) and update their "Details" items, which still
-name Oracle.
+The privacy policy names Hetzner (Germany) for hosting and Cloudflare (EU) for DNS,
+e-mail forwarding and backups. The "Details" items for OQ-097, OQ-099 and OQ-103
+below are background only; the decisions are in this table.
 
 ## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
 
