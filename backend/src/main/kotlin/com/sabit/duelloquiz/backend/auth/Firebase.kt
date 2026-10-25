@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.AuthErrorCode
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.UidIdentifier
 import com.sabit.duelloquiz.backend.common.FirebaseConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -63,6 +64,31 @@ class FirebaseAccountDeleter(private val auth: FirebaseAuth) : AuthAccountDelete
         } catch (e: FirebaseAuthException) {
             if (e.authErrorCode != AuthErrorCode.USER_NOT_FOUND) {
                 throw AuthProviderException("Firebase user deletion failed: ${e.authErrorCode}", e)
+            }
+        }
+    }
+}
+
+class FirebaseAuthDirectory(private val auth: FirebaseAuth) : AuthDirectory {
+    override suspend fun findUidByEmail(email: String): String? = withContext(Dispatchers.IO) {
+        try {
+            auth.getUserByEmail(email).uid
+        } catch (e: FirebaseAuthException) {
+            if (e.authErrorCode != AuthErrorCode.USER_NOT_FOUND) {
+                throw AuthProviderException("Firebase user lookup failed: ${e.authErrorCode}", e)
+            }
+            null
+        }
+    }
+
+    override suspend fun existingUids(uids: Collection<String>): Set<String> {
+        require(uids.size <= AuthDirectory.MAX_BATCH) { "at most ${AuthDirectory.MAX_BATCH} uids per call" }
+        if (uids.isEmpty()) return emptySet()
+        return withContext(Dispatchers.IO) {
+            try {
+                auth.getUsers(uids.map(::UidIdentifier)).users.mapTo(mutableSetOf()) { it.uid }
+            } catch (e: FirebaseAuthException) {
+                throw AuthProviderException("Firebase batch lookup failed: ${e.authErrorCode}", e)
             }
         }
     }

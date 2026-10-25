@@ -11,6 +11,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.lessEq
@@ -162,12 +163,47 @@ class UserRepository(private val db: Db) {
         )
     }
 
+    /** True if [userId] plays a match that is still `active` (possibly in the running server). */
+    suspend fun hasActiveMatch(userId: UUID): Boolean = db.tx {
+        MatchesTable.select(MatchesTable.id)
+            .where { ((MatchesTable.playerA eq userId) or (MatchesTable.playerB eq userId)) and (MatchesTable.status eq MATCH_ACTIVE) }
+            .limit(1)
+            .any()
+    }
+
+    /** One page of (internal id, Firebase uid), ordered by id, strictly after [afterId] (keyset paging). */
+    suspend fun firebaseUidPage(afterId: UUID?, limit: Int): List<Pair<UUID, String>> = db.tx {
+        UsersTable.select(UsersTable.id, UsersTable.firebaseUid)
+            .apply { if (afterId != null) where { UsersTable.id greater afterId } }
+            .orderBy(UsersTable.id to SortOrder.ASC)
+            .limit(limit)
+            .map { it[UsersTable.id] to it[UsersTable.firebaseUid] }
+    }
+
+    /**
+     * Row counts a deletion of [userId] would remove (cascade) or anonymize (matches), for
+     * the `delete-user --dry-run` output. Table names are constants; the id is a UUID.
+     */
+    suspend fun deletionPreview(userId: UUID): Map<String, Long> = db.tx {
+        fun count(sql: String): Long = exec(sql) { rs -> if (rs.next()) rs.getLong(1) else 0L } ?: 0L
+        val id = "'$userId'::uuid"
+        CASCADE_TABLES.associateWith { table -> count("SELECT count(*) FROM $table WHERE user_id = $id") } +
+            ("matches (anonymized)" to count("SELECT count(*) FROM matches WHERE player_a = $id OR player_b = $id"))
+    }
+
     companion object {
         const val DEFAULT_RATING = 1000
         const val SIDE_A = "a"
         const val SIDE_B = "b"
+        const val MATCH_ACTIVE = "active"
         const val MATCH_FINISHED = "finished"
         const val MATCH_ABANDONED = "abandoned"
+
+        /** Tables with `user_id ... ON DELETE CASCADE` (V1, V5); children of these go with them. */
+        val CASCADE_TABLES = listOf(
+            "quiz_sessions", "daily_attempts", "user_progress", "user_category_xp", "user_active_days",
+            "progress_awards", "xp_events", "push_tokens", "notification_settings", "notification_log",
+        )
         const val REGULAR_ROUNDS: Short = 7
     }
 }

@@ -55,16 +55,33 @@ class UserService(
      * be retried with the same (still valid) token. Never creates a profile.
      */
     suspend fun deleteAccount(auth: AuthUser) {
-        val user = repository.findByFirebaseUid(auth.firebaseUid)
-        if (user != null) deletionListeners.forEach { it.beforeAccountDeletion(user.id) }
-        repository.deleteByFirebaseUid(auth.firebaseUid)
         try {
-            accountDeleter.deleteAccount(auth.firebaseUid)
+            deleteAccount(auth.firebaseUid)
         } catch (e: AuthProviderException) {
-            log.error("account_deletion_firebase_failed userId={}", user?.id, e)
             throw ApiException(HttpStatusCode.BadGateway, ErrorCodes.AUTH_PROVIDER_ERROR, "Firebase user could not be deleted")
         }
+    }
+
+    /**
+     * The one account deletion (SET-05/SET-06, OQ-014): used by `DELETE /v1/me` and by the
+     * admin CLI tasks `delete-user` and `prune-orphans` (OQ-102). Idempotent: an unknown
+     * uid or an already deleted Firebase user is not an error. Logs only the internal id.
+     * @return the internal id of the deleted profile, or null if there was none.
+     * @throws AuthProviderException if the Firebase user could not be deleted (the
+     *   database data is already gone; a retry completes the deletion).
+     */
+    suspend fun deleteAccount(firebaseUid: String): UUID? {
+        val user = repository.findByFirebaseUid(firebaseUid)
+        if (user != null) deletionListeners.forEach { it.beforeAccountDeletion(user.id) }
+        repository.deleteByFirebaseUid(firebaseUid)
+        try {
+            accountDeleter.deleteAccount(firebaseUid)
+        } catch (e: AuthProviderException) {
+            log.error("account_deletion_firebase_failed userId={}", user?.id, e)
+            throw e
+        }
         log.info("account_deleted userId={}", user?.id)
+        return user?.id
     }
 
     suspend fun stats(auth: AuthUser): StatsResponse {

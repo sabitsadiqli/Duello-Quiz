@@ -56,6 +56,29 @@ class FakeAccountDeleter : AuthAccountDeleter {
     }
 }
 
+/**
+ * Firebase accounts by uid (value: email or null). Accounts deleted through [deleter]
+ * disappear, like in Firebase. Records the size of every batch lookup.
+ */
+class FakeAuthDirectory(private val deleter: FakeAccountDeleter) : com.sabit.duelloquiz.backend.auth.AuthDirectory {
+    val accounts = ConcurrentHashMap<String, String>()
+    val batchSizes = mutableListOf<Int>()
+
+    fun add(uid: String, email: String = "$uid@example.test") {
+        accounts[uid] = email
+    }
+
+    private fun live() = accounts.filterKeys { it !in deleter.deleted }
+
+    override suspend fun findUidByEmail(email: String): String? = live().entries.firstOrNull { it.value == email }?.key
+
+    override suspend fun existingUids(uids: Collection<String>): Set<String> {
+        require(uids.size <= com.sabit.duelloquiz.backend.auth.AuthDirectory.MAX_BATCH)
+        batchSizes += uids.size
+        return uids.filterTo(mutableSetOf()) { it in live() }
+    }
+}
+
 /** Records pushes; tokens in [invalid] answer like FCM `UNREGISTERED`. */
 class FakePushSender : PushSender {
     override val available = true
