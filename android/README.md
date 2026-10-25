@@ -84,8 +84,15 @@ release (Play App Signing) keys registered for Google sign-in.
 
 The base URL is `BuildConfig.API_BASE_URL` of `:core:network`: debug defaults to
 `http://10.0.2.2:8080` (the host machine from the emulator, `infra/docker-compose.yml`), release
-has the placeholder `https://api.duelloquiz.invalid` until the domain is decided (OQ-006).
-Override for every build type with `-PapiBaseUrl=https://...`. Cleartext `http` is allowed only
+defaults to the production API `https://api.duelloquiz.app` (OQ-006, ADR 0001). Override for
+every build type with `-PapiBaseUrl=https://...`; against the dev server (Hetzner, `infra/README.md`):
+
+```
+./gradlew assembleDebug -PapiBaseUrl=https://api-dev.duelloquiz.app
+```
+
+A debug build without `google-services.json` still uses the in-process fakes below, whatever the
+URL. Cleartext `http` is allowed only
 to `10.0.2.2`, `localhost` and `127.0.0.1` in debug (`app/src/debug/res/xml/network_security_config.xml`);
 on a physical device use `adb reverse tcp:8080 tcp:8080` and `-PapiBaseUrl=http://localhost:8080`.
 
@@ -129,7 +136,10 @@ Push: `firebase-messaging` from the Firebase BoM. Without `google-services.json`
 source is bound and nothing is registered. The permission (Android 13+) is never asked at start;
 the in-app card appears on the first quiz/daily result and once more 7 days after "Sonra".
 
-## Privacy policy URL
+## Legal pages
 
-`BuildConfig.PRIVACY_POLICY_URL` defaults to the GitHub Pages URL in `app/build.gradle.kts`;
-override with `-PprivacyPolicyUrl=...`.
+`BuildConfig.PRIVACY_POLICY_URL` defaults to `https://duelloquiz.app/legal/privacy-policy.html`
+(`docs/legal/` on GitHub Pages under the custom domain, `app/build.gradle.kts`); override with
+`-PprivacyPolicyUrl=...`. It must be the same URL as in Play Console. The account deletion page
+`https://duelloquiz.app/legal/account-deletion.html` is entered only in Play Console (Data safety);
+inside the app, deletion is the in-app flow in settings.

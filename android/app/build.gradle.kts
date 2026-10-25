@@ -19,10 +19,12 @@ fun signingValue(property: String, env: String): String? =
     providers.gradleProperty(property).orElse(providers.environmentVariable(env)).orNull
 val releaseStoreFile = signingValue("releaseStoreFile", "ANDROID_KEYSTORE_PATH")
 
-// Public privacy policy page (GitHub Pages from docs/legal/, OQ-015). Override with
-// -PprivacyPolicyUrl=... until the final URL is known.
+// Public privacy policy page (docs/legal/ on GitHub Pages under the custom domain duelloquiz.app,
+// OQ-006, OQ-015, ADR 0001). Must match the URL in Play Console (OQ-D18). Override with
+// -PprivacyPolicyUrl=... The account deletion page (.../legal/account-deletion.html) is entered
+// only in Play Console; in the app, deletion is the in-app flow (SET-05).
 val privacyPolicyUrl: String = providers.gradleProperty("privacyPolicyUrl")
-    .orElse("https://sabitsadiqli.github.io/DuelloQuiz/legal/privacy-policy.html")
+    .orElse("https://duelloquiz.app/legal/privacy-policy.html")
     .get()
 
 // Duel build flag (OQ-020): on in debug, off in release until the duel ships. Override for every
