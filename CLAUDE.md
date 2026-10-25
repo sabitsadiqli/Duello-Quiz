@@ -47,7 +47,7 @@ UI never uses the word "bet" or casino visuals; the mechanic is called "Əminlik
 ### Images in short
 Backend converts uploads to WebP (long side ≤ 1024 px, quality ≈ 75, metadata
 stripped) plus a 400 px thumbnail and keeps only metadata in PostgreSQL. Target
-≤ 80 KB per image. No zipping. **Zero cost:** files live on the server's own disk
+≤ 80 KB per image. No zipping. **No extra cost:** files live on the server's own disk
 behind an `ImageStorage` interface and Caddy serves them with immutable cache
 headers; no paid storage or CDN in the MVP. Details: `docs/mvp-spec.md` §5.
 
@@ -71,7 +71,8 @@ docs/               Spec, API contract, ADRs               shared
 | --- | --- |
 | Android | Kotlin 2.x, Jetpack Compose, Material 3, Hilt, Coroutines/Flow, type-safe Navigation Compose, Room, DataStore, Coil 3, Ktor Client (HTTP + WebSocket), kotlinx.serialization |
 | Backend | Kotlin, Ktor 3 (Netty), Koin, Exposed + PostgreSQL, Flyway, HikariCP, Ktor WebSockets, Firebase Admin SDK |
-| Storage | PostgreSQL; images on the server's local disk (Docker volume) behind `ImageStorage` |
+| Storage | PostgreSQL; images on the server's local disk (Docker volume) behind `ImageStorage`; off-VM backups in Cloudflare R2 (free tier) |
+| Hosting | Hetzner Cloud VM (docker compose + Caddy), domain `duelloquiz.app` on Cloudflare; ADR `docs/adr/0001-hosting-hetzner-duelloquiz-app.md` |
 | Auth | Firebase Auth on device; backend verifies Firebase ID tokens |
 | CI/CD | GitHub Actions; backend images in GitHub Container Registry (ghcr.io) |
 | Release | Signed AAB uploaded from GitHub Actions to Google Play testing tracks |
@@ -132,8 +133,10 @@ Play developer account needs a closed test with at least 12 testers opted in for
 - This repository is **public**. The real question bank (answers!) never goes into
   it; it lives in the private repo cloned to `content/bank/`. Only the format,
   a few sample questions and tooling are public.
-- Zero running cost is a goal of the MVP. Do not add a paid service, or one that
-  needs a payment card, without Sabit's approval; record it in `infra/README.md`.
+- Low running cost is a goal of the MVP. Approved paid items (Hetzner VM, domain
+  `duelloquiz.app`) are listed with their cost in `infra/README.md`. Do not add any
+  other paid service, or one that needs a payment card, without Sabit's approval;
+  record it there.
 
 ## Common commands
 

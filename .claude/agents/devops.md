@@ -56,11 +56,11 @@ in Play Console; document this in `infra/README.md`.
 One small VM with docker compose: backend, PostgreSQL and Caddy (automatic TLS,
 long-lived WebSockets for `/v1/duel`, and `file_server` for `/media/*` from the
 `media` volume with `Cache-Control: public, max-age=31536000, immutable`).
-Zero-cost target: Oracle Cloud "Always Free" Ampere A1 VM (ARM64 — build the backend
-image for `linux/arm64` too). It needs a card for identity verification only; Sabit
-creates the account. Fallback if that is not possible: any ~5 €/month VM; write the
-choice and cost in `infra/README.md`. Free TLS from Let's Encrypt through Caddy; a
-free DuckDNS subdomain is fine until there is a real domain. Deploy job: SSH with `DEPLOY_SSH_KEY`,
+Hosting (ADR 0001, decided by Sabit 2026-10-25): Hetzner Cloud CAX11 (ARM64, fsn1;
+CX22 x86 as fallback — the backend image is built for `linux/amd64` and `linux/arm64`),
+domain `duelloquiz.app` on Cloudflare (DNS only, no proxy, for the API hosts), off-VM
+backups in Cloudflare R2. Costs are listed in `infra/README.md`; any new paid item
+needs Sabit's approval. Free TLS from Let's Encrypt through Caddy. Deploy job: SSH with `DEPLOY_SSH_KEY`,
 `docker compose pull && docker compose up -d`, then check `/health` and fail the job
 if unhealthy. Separate `dev` and `prod` GitHub Environments with their own secrets;
 use environment protection rules for prod if the plan supports them, otherwise prod
