@@ -12,6 +12,19 @@
   <link rel="stylesheet" href="legal.css">
 </head>
 <body>
+  <!--
+    INTERNAL NOTE (business-analyst, 2026-10-25):
+    - NOT reviewed by a lawyer; not legal advice. Sabit reviews it before the URL goes into Play Console.
+    - Tone: "sən" (OQ-041), same as the app and privacy-policy.html.
+    - Facts: docs/mvp-spec.md §3a (OQ-014, OQ-052, OQ-069), V1/V5 migrations (ON DELETE CASCADE / SET NULL),
+      infra/README.md §10 (backups 14 days, never more than 30), SET-05 / SET-06 in docs/requirements/settings.md.
+    - UI labels in bold must match design/copy/az.md: home_settings_cd, settings_section_account,
+      settings_delete_account, settings_delete_confirm_button, settings_delete_dialog_confirm.
+    - Placeholder left: {{CONTACT_EMAIL}} (OQ-097).
+    - Email requests need a backend admin command that deletes by email (OQ-102); until it exists Sabit cannot
+      fulfil the "without the app" path with the same operation as DELETE /v1/me.
+    - Keep consistent with privacy-policy.html §6 and §8.
+  -->
   <a class="skip-link" href="#main">Məzmuna keç</a>
 
   <header class="site-header">
@@ -38,52 +51,103 @@
   <main id="main">
     <div class="wrap">
       <h1>Duello Quiz hesabının silinməsi</h1>
-      <!-- TEXT: effective date. Replace both the datetime attribute (YYYY-MM-DD) and the visible date. -->
-      <p class="meta">Son yenilənmə: <time datetime="2026-01-01">[tarix]</time></p>
+      <p class="meta">Son yenilənmə: <time datetime="2026-10-25">25 oktyabr 2026</time> · <a href="#en" lang="en">English version</a></p>
 
-      <!-- TEXT: intro (1–2 sentences): this page explains how to delete a Duello Quiz account and its data, with or without the app. Must name the app "Duello Quiz" and the developer as in Play Console (Google Play requirement). -->
-      <p class="placeholder">Giriş: bu səhifə Duello Quiz hesabını necə silməyi izah edir; tərtibatçının adı.</p>
+      <!-- Developer name: "Duello Quiz tərtibatçısı" until OQ-098 is decided; then the name shown in Play Console. -->
+      <p>Bu səhifə Duello Quiz tətbiqində hesabını və ona bağlı məlumatları necə silə biləcəyini izah edir — tətbiqdə və ya tətbiq olmadan. Duello Quiz-i fərdi tərtibatçı (Duello Quiz tərtibatçısı) dərc edir. Əlaqə: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
 
       <section aria-labelledby="in-app">
         <h2 id="in-app">Tətbiqdə hesabı sil</h2>
-        <!-- TEXT: steps written by the designer from design/copy/az.md (UI labels in bold must match the app). business-analyst may edit the wording, not the labels. -->
         <ol class="steps">
           <li>Duello Quiz tətbiqini aç və hesabına daxil ol.</li>
           <li>Əsas səhifədə yuxarıdakı <strong>Parametrlər</strong> ikonuna toxun.</li>
           <li><strong>Hesab</strong> bölməsində <strong>Hesabı sil</strong> seç.</li>
           <li><strong>Hesabı həmişəlik sil</strong> düyməsinə toxun və pəncərədə <strong>Sil</strong> ilə təsdiqlə.</li>
         </ol>
-        <p>Hesab dərhal silinir. Silmək üçün internet lazımdır.</p>
+        <p>Hesab dərhal silinir. Silmək üçün internet lazımdır. Başqa telefonda davam edən duelin varsa, o, sənin məğlubiyyətinlə bitir.</p>
+        <p>Yalnız tətbiqi telefondan silmək hesabı silmir.</p>
       </section>
 
       <section aria-labelledby="no-app">
         <h2 id="no-app">Tətbiq olmadan silmə sorğusu</h2>
-        <!-- TEXT: how to request deletion without the app: send an email from the address of the account (or name the Google account) to the contact address, subject line to use, what to include, how identity is checked, response time (e.g. within 30 days). Contact email as a mailto: link. -->
-        <p class="placeholder">E-poçtla sorğu: hansı ünvana, mövzu sətri, nə yazmalı, nə qədər vaxta icra olunur.</p>
+        <p>Tətbiqə daxil ola bilmirsənsə və ya tətbiq artıq telefonunda yoxdursa, hesabını e-poçtla silə bilərsən:</p>
+        <ol class="steps">
+          <li>Hesabının bağlı olduğu e-poçt ünvanından yaz. Google ilə daxil olmusansa, həmin Google hesabının ünvanından yaz.</li>
+          <li>Ünvan: <a href="mailto:{{CONTACT_EMAIL}}?subject=Duello%20Quiz%20hesab%C4%B1n%C4%B1n%20silinm%C9%99si">{{CONTACT_EMAIL}}</a>.</li>
+          <li>Mövzu: «Duello Quiz hesabının silinməsi».</li>
+          <li>Məktubda oyundakı adını və hesabını silmək istədiyini yaz. Şifrəni heç vaxt göndərmə.</li>
+        </ol>
+        <p>Sorğunun səndən gəldiyini yoxlamaq üçün həmin ünvana cavab yazıb təsdiq istəyə bilərik. Başqa ünvandan yazsan və hesabın sahibi olduğunu təsdiqləyə bilməsək, hesabı silə bilmərik.</p>
+        <p>Sorğunu aldıqdan sonra hesabı 30 gün ərzində silirik və sənə e-poçtla xəbər veririk. Silmə tətbiqdəki ilə eynidir: aşağıdakı məlumatların hamısı silinir.</p>
       </section>
 
       <section aria-labelledby="deleted">
         <h2 id="deleted">Nələr silinir</h2>
-        <!-- TEXT: deleted immediately (OQ-014): profile (display name, email, avatar link, rating), quiz sessions and answers, the Firebase sign-in account. -->
-        <p class="placeholder">Dərhal silinənlər: profil, reytinq, quiz nəticələri, giriş hesabı.</p>
+        <p>Dərhal və həmişəlik silinir:</p>
+        <ul>
+          <li>profilin: adın, profil şəklinin linki, reytinqin, hesabın yaradılma tarixi;</li>
+          <li>Firebase-dəki giriş hesabın: e-poçt ünvanın, şifrən və Google ilə giriş əlaqən;</li>
+          <li>bütün kateqoriya quizləri, onların sualları və cavabların;</li>
+          <li>gündəlik çağırış cəhdlərin, cavabların və nəticələrin;</li>
+          <li>XP, ümumi və kateqoriya səviyyələrin, XP qeydləri, aktiv günlərin, seriyan və seriya qoruyucun;</li>
+          <li>bildiriş ayarların, bildirişlərin göndərmə qeydi və bütün cihazlarının bildiriş tokenləri;</li>
+          <li>telefonunda saxlanan hesab məlumatları (tətbiq onları silmədən sonra təmizləyir).</li>
+        </ul>
       </section>
 
       <section aria-labelledby="kept">
         <h2 id="kept">Nələr qalır və nə qədər</h2>
-        <!-- TEXT: kept without a link to the person (OQ-014): past duel matches stay for the opponents, the deleted player is shown as "Silinmiş oyunçu"; backups roll off within 30 days; server logs / Analytics retention if any. -->
-        <p class="placeholder">Anonim qalanlar: keçmiş duellər rəqiblər üçün «Silinmiş oyunçu» kimi; ehtiyat nüsxələr 30 gün ərzində silinir.</p>
+        <ul>
+          <li><strong>Keçmiş duellər</strong> — hesab, raundların nəticəsi və reytinq dəyişiklikləri rəqiblərinin tarixçəsi düzgün qalsın deyə saxlanılır, amma artıq sənin hesabına bağlı deyil. Rəqiblər səni «Silinmiş oyunçu» kimi görür; adın və şəklin göstərilmir.</li>
+          <li><strong>Ehtiyat nüsxələr</strong> — verilənlər bazasının gündəlik nüsxələri 14 gün saxlanılır. Məlumatların ən gec 30 gün ərzində ehtiyat nüsxələrdən də yox olur. Bu müddətdə nüsxələrdən yalnız sistemi bərpa etmək üçün istifadə olunur.</li>
+          <li><strong>İstifadə statistikası (Firebase Analytics)</strong> — adına və e-poçtuna bağlı deyil və 2 aydan sonra avtomatik silinir.</li>
+          <li><strong>Server qeydləri</strong> — yalnız daxili hesab nömrəsini saxlayır və ölçü limitinə çatanda avtomatik silinir.</li>
+          <li><strong>Gündəlik çağırışın sualları</strong> — hər gün hamı üçün eyni olan sual dəstləri şəxsi məlumat deyil və qalır.</li>
+        </ul>
+        <p>Google hesabın özü silinmir. Google ilə daxil olmusansa, Duello Quiz-in hesabına bağlantısını <a href="https://myaccount.google.com/connections">Google hesabının ayarlarında</a> da silə bilərsən.</p>
       </section>
 
       <div class="callout">
         <h2>Diqqət</h2>
-        <!-- TEXT: one-sentence warning, e.g. deletion cannot be undone; signing up again with the same email or Google account creates a new profile with rating 1000. -->
-        <p class="placeholder">Silinmə geri qaytarılmır; yenidən qeydiyyat yeni profil yaradır.</p>
+        <p>Hesabın silinməsini geri qaytarmaq olmaz. Eyni e-poçtla və ya Google hesabı ilə yenidən qeydiyyatdan keçsən, tamamilə yeni profil yaranır: reytinq 1000, səviyyə 1, 0 XP və seriya 0.</p>
       </div>
 
       <section class="lang-en" lang="en" aria-labelledby="en">
         <h2 id="en">Delete your Duello Quiz account (English)</h2>
-        <!-- TEXT: English version of this page (SET-06 asks for Azerbaijani and English): in-app steps (keep the Azerbaijani UI labels in quotes: "Parametrlər" → "Hesabı sil" → "Hesabı həmişəlik sil" → "Sil"), request without the app, what is deleted, what is kept and for how long. -->
-        <p class="placeholder">English version: in-app steps, request without the app, deleted and kept data.</p>
+        <p class="meta">Last updated: <time datetime="2026-10-25">25 October 2026</time>. Translation of the Azerbaijani text above; if they differ, the Azerbaijani text applies.</p>
+        <p>This page explains how to delete your Duello Quiz account and the data linked to it, with or without the app. Duello Quiz is published by an individual developer (the Duello Quiz developer). Contact: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+
+        <h3>Delete in the app</h3>
+        <ol class="steps">
+          <li>Open Duello Quiz and sign in.</li>
+          <li>On the home screen, tap the <strong lang="az">Parametrlər</strong> (settings) icon at the top.</li>
+          <li>In the <strong lang="az">Hesab</strong> (account) section, choose <strong lang="az">Hesabı sil</strong> (delete account).</li>
+          <li>Tap <strong lang="az">Hesabı həmişəlik sil</strong> (delete account permanently) and confirm with <strong lang="az">Sil</strong> (delete).</li>
+        </ol>
+        <p>The account is deleted immediately; an internet connection is needed. A duel still running on another phone ends as your loss. Uninstalling the app does not delete your account.</p>
+
+        <h3>Request deletion without the app</h3>
+        <ol class="steps">
+          <li>Write from the email address of your account. If you signed in with Google, use the address of that Google account.</li>
+          <li>Address: <a href="mailto:{{CONTACT_EMAIL}}?subject=Duello%20Quiz%20account%20deletion">{{CONTACT_EMAIL}}</a>.</li>
+          <li>Subject: "Duello Quiz account deletion" (Azerbaijani or English is fine).</li>
+          <li>In the message, give your in-game display name and ask for your account to be deleted. Never send your password.</li>
+        </ol>
+        <p>We may reply to that address to confirm the request comes from you. If you write from another address and we cannot confirm that you own the account, we cannot delete it. We delete the account within 30 days of receiving the request and confirm by email. The deletion is the same as in the app.</p>
+
+        <h3>What is deleted</h3>
+        <p>Immediately and permanently: your profile (display name, profile photo URL, rating, account creation date); your Firebase sign-in account (email address, password, Google sign-in link); all category quizzes with their questions and your answers; your daily challenge attempts, answers and results; your XP, overall and category levels, XP records, active days, streak and streak freeze; your notification settings, notification send log and the notification tokens of all your devices; the account data stored on your phone (the app clears it after deletion).</p>
+
+        <h3>What is kept, and for how long</h3>
+        <ul>
+          <li><strong>Past duels:</strong> the score, round results and rating changes stay so that your opponents' history remains correct, but they are no longer linked to your account. Opponents see you as "Silinmiş oyunçu" (deleted player); your name and photo are not shown.</li>
+          <li><strong>Backups:</strong> daily database backups are kept for 14 days; your data is gone from backups within 30 days at the latest. Until then, backups are used only to restore the system.</li>
+          <li><strong>Usage statistics (Firebase Analytics):</strong> not linked to your name or email; deleted automatically after 2 months.</li>
+          <li><strong>Server logs:</strong> contain only our internal account number and are deleted automatically when the size limit is reached.</li>
+          <li><strong>Daily challenge questions:</strong> the question sets, the same for everyone each day, are not personal data and stay.</li>
+        </ul>
+        <p>Your Google account itself is not deleted. If you used Google sign-in, you can also remove Duello Quiz's access in your <a href="https://myaccount.google.com/connections">Google Account settings</a>.</p>
+        <p><strong>Deletion cannot be undone.</strong> Signing up again with the same email or Google account creates a completely new profile: rating 1000, level 1, 0 XP and streak 0.</p>
       </section>
     </div>
   </main>
@@ -93,8 +157,9 @@
       <ul>
         <li><a href="index.html">Duello Quiz</a></li>
         <li><a href="privacy-policy.html">Məxfilik siyasəti</a></li>
+        <li><a href="mailto:{{CONTACT_EMAIL}}">Əlaqə</a></li>
       </ul>
-      <!-- TEXT: developer name and contact email as entered in Play Console. -->
+      <!-- Developer name: add it here when OQ-098 is decided (same as in Play Console). -->
       <p>© 2026 Duello Quiz</p>
     </div>
   </footer>

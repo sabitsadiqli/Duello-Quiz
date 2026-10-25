@@ -12,6 +12,21 @@
   <link rel="stylesheet" href="legal.css">
 </head>
 <body>
+  <!--
+    INTERNAL NOTE (business-analyst, 2026-10-25):
+    - This text was written from the project docs and code; it has NOT been reviewed by a lawyer.
+      It is not legal advice. Sabit reviews it before the URL goes into Play Console (OQ-015).
+    - Tone: "sən", the same as the app (OQ-041) and the other pages in docs/legal/.
+    - Facts come from: docs/mvp-spec.md §3, §3a, §9–§11; backend/src/main/resources/db/migration/V1, V4, V5;
+      backend/src/main/resources/application.conf (notifications); infra/README.md (hosting, logs, backups);
+      android/app/build.gradle.kts and android/gradle/libs.versions.toml (Firebase SDKs).
+      The Data safety summary in docs/legal/README.md must stay in sync with this page.
+    - Placeholders left: {{CONTACT_EMAIL}} (OQ-097). Before publishing: grep -n '{{' docs/legal/*.html must print nothing.
+    - Crashlytics is NOT in the app yet, so it is not listed. When android-dev adds it, add the prepared
+      paragraphs marked "CRASHLYTICS" below (AZ and EN) and update docs/legal/README.md in the same PR (OQ-101).
+    - The page says the app does not use the Advertising ID. This is only true once the AD_ID permission is
+      removed and ad-ID collection is disabled in the Android build (OQ-D25, OQ-100). Do not publish before that.
+  -->
   <a class="skip-link" href="#main">Məzmuna keç</a>
 
   <header class="site-header">
@@ -38,11 +53,10 @@
   <main id="main">
     <div class="wrap">
       <h1>Məxfilik siyasəti</h1>
-      <!-- TEXT: effective date. Replace both the datetime attribute (YYYY-MM-DD) and the visible date, e.g. "17 oktyabr 2026". -->
-      <p class="meta">Son yenilənmə: <time datetime="2026-01-01">[tarix]</time></p>
+      <p class="meta">Son yenilənmə: <time datetime="2026-10-25">25 oktyabr 2026</time> · <a href="#en" lang="en">English version</a></p>
 
-      <!-- TEXT: intro (2–4 sentences): who publishes Duello Quiz, what this policy covers (the Android app and its backend), plain-language promise. -->
-      <p class="placeholder">Giriş: tətbiqi kim dərc edir, siyasət nəyi əhatə edir.</p>
+      <p>Duello Quiz Android üçün Azərbaycan dilində bilik oyunudur: kateqoriya quizləri, gündəlik çağırış və canlı 1-ə 1 Əminlik dueli. Bu siyasət tətbiqin və onun serverinin hansı məlumatları topladığını, nə üçün istifadə etdiyini, kimə ötürdüyünü və nə qədər saxladığını izah edir.</p>
+      <p>Qısaca: yalnız oyunun işləməsi üçün lazım olan məlumatları toplayırıq. Tətbiqdə reklam və tətbiqdaxili ödəniş yoxdur, reklam identifikatorundan istifadə etmirik və məlumatlarını heç kimə satmırıq.</p>
 
       <nav class="toc" aria-labelledby="toc-title">
         <h2 id="toc-title">Mündəricat</h2>
@@ -64,85 +78,227 @@
 
       <section aria-labelledby="who">
         <h2 id="who">1. Biz kimik</h2>
-        <!-- TEXT: developer / data controller name (as in Play Console), country, contact email. -->
-        <p class="placeholder">Tərtibatçının adı, ölkəsi və əlaqə e-poçtu.</p>
+        <!-- Developer name: "Duello Quiz tərtibatçısı" until Sabit decides the public name (OQ-098); then use the name shown in Play Console. -->
+        <p>Duello Quiz-i fərdi tərtibatçı hazırlayır və Google Play-də dərc edir (bu siyasətdə «Duello Quiz tərtibatçısı» və ya «biz»). Tətbiqdə toplanan məlumatlara görə məsuliyyət daşıyan tərəf Duello Quiz tərtibatçısıdır.</p>
+        <p>Əlaqə: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
       </section>
 
       <section aria-labelledby="data">
         <h2 id="data">2. Hansı məlumatları toplayırıq</h2>
-        <!-- TEXT: data collected, per category. Must match the Play Data safety form (design/store/listing-az.md, "Data safety hints"):
-             account (email, display name "Ad", Google profile photo URL for Google sign-in, Firebase user ID),
-             game data (quiz answers and results, duel picks, answers, scores, rating, match history),
-             app activity and diagnostics (Firebase Analytics; crash reports once Crashlytics is added),
-             device/technical (IP address in server logs, app version). State what is NOT collected (contacts, location, payments, ads). -->
-        <p class="placeholder">Hesab məlumatları, oyun məlumatları, istifadə və diaqnostika məlumatları; nələri toplamadığımız.</p>
+
+        <h3>Hesab məlumatları</h3>
+        <ul>
+          <li><strong>E-poçt ünvanı və şifrə</strong> — e-poçtla qeydiyyatdan keçəndə. Şifrəni Google-un Firebase Authentication xidməti qorunan şəkildə saxlayır; o, bizim serverə heç vaxt gəlmir və biz onu görə bilmirik. E-poçt ünvanın da Firebase-də saxlanılır, bizim verilənlər bazasında yox.</li>
+          <li><strong>Google ilə giriş</strong> — Google hesabının adı, e-poçt ünvanı, profil şəklinin linki və Google hesab identifikatoru. Bunları Google Firebase-ə ötürür.</li>
+          <li><strong>Ad</strong> — qeydiyyatda yazdığın ad («Ad», 2–20 simvol) və ya Google profilindəki ad. Ad uyğun deyilsə, «Oyunçu 1234» kimi ad verilir. Adı profildə dəyişə bilərsən.</li>
+          <li><strong>Profil</strong> — reytinq (1000-dən başlayır), hesabın yaradılma tarixi və Google hesabında profil şəklinin linki (şəklin özü yox).</li>
+          <li><strong>İdentifikatorlar</strong> — Firebase istifadəçi ID-si və serverimizdəki daxili hesab nömrəsi.</li>
+        </ul>
+
+        <h3>Oyun məlumatları</h3>
+        <ul>
+          <li><strong>Kateqoriya quizləri</strong> — kateqoriya, başlama və bitmə vaxtı, verilən suallar, seçdiyin cavablar, cavabın düz və ya səhv olması, cavab müddəti və nəticə.</li>
+          <li><strong>Gündəlik çağırış</strong> — hər günün cəhdi: cavabların, cavab müddəti və nəticə.</li>
+          <li><strong>Duellər</strong> — rəqibin, hər raundda seçdiyin Əminlik, cavabın, cavabın serverə çatma vaxtı, xallar və sürət bonusu, buraxılmış raundlar, oyunun nəticəsi (o cümlədən tərk etmə), reytinqin oyundan əvvəl və sonra.</li>
+          <li><strong>İrəliləyiş</strong> — qazandığın hər XP-nin qeydi, ümumi və kateqoriya üzrə XP və səviyyələr, aktiv günlər, seriya (cari və ən uzun), seriya qoruyucusu. Gündəlik XP limitləri üçün hər gün neçə oyun oynadığını və duellərdə kimlə oynadığını da qeyd edirik.</li>
+        </ul>
+
+        <h3>Bildirişlər</h3>
+        <ul>
+          <li><strong>Bildiriş tokeni</strong> — xatırlatmaları telefonuna göndərmək üçün Firebase Cloud Messaging-in verdiyi identifikator, tətbiqin dili (məsələn, «az»), tokenin yaradılma və son istifadə vaxtı. Token serverə yalnız bildirişlərə icazə vermisənsə göndərilir.</li>
+          <li><strong>Bildiriş ayarların</strong> — «Gündəlik çağırış xatırlatması» və «Seriya xatırlatması» açıqdır, yoxsa bağlı.</li>
+          <li><strong>Göndərmə qeydi</strong> — hansı gün hansı xatırlatmanın göndərildiyi (eyni bildirişin iki dəfə gəlməməsi üçün).</li>
+        </ul>
+        <p>Bildirişlərin mətnində şəxsi məlumat, sual və ya cavab olmur.</p>
+
+        <h3>İstifadə statistikası (Firebase Analytics)</h3>
+        <ul>
+          <li>Tətbiqdən istifadə haqqında hadisələr: tətbiqin açılması, açılan ekranlar, quizin və ya duelin başlaması və bitməsi kimi. Hadisələr daxili hesab nömrəsinə bağlana bilər, amma e-poçt ünvanına və ya ada heç vaxt bağlanmır.</li>
+          <li>Cihaz və tətbiq haqqında texniki məlumat: cihazın modeli, Android versiyası, tətbiqin versiyası, dil, təxmini ölkə və şəhər (Google bunu IP ünvanından müəyyən edir) və Analytics-in tətbiq nüsxəsi identifikatoru (app instance ID).</li>
+        </ul>
+        <!-- CRASHLYTICS (add only when Firebase Crashlytics is in the release build, OQ-101):
+        <h3>Xəta hesabatları (Firebase Crashlytics)</h3>
+        <ul>
+          <li>Tətbiq çökəndə və ya ciddi xəta olanda: xətanın texniki təsviri, cihazın modeli, Android versiyası, tətbiqin versiyası, yaddaş vəziyyəti, Crashlytics quraşdırma identifikatoru və daxili hesab nömrəsi. Hesabatlarda e-poçt, ad və şifrə olmur.</li>
+        </ul>
+        -->
+
+        <h3>Server qeydləri</h3>
+        <p>Xətaları tapmaq üçün serverimiz sorğuların texniki qeydini (log) aparır: vaxt, sorğunun növü, nəticə kodu və daxili hesab nömrəsi. Bu qeydlərə e-poçt ünvanı, ad və şifrə yazılmır. Adi sorğularda IP ünvanı da qeyd olunmur; yalnız server xətası baş verəndə veb serverin xəta qeydində sorğunun IP ünvanı ola bilər.</p>
+
+        <h3>Telefonunda saxlananlar</h3>
+        <p>Tətbiq telefonunda tema seçimini, giriş sessiyasını, offline göstərmək üçün son yüklənmiş məlumatları və davam edən duelin nömrəsini saxlayır. Bunlar hesabdan çıxanda, hesabı silərkən və tətbiqi silərkən təmizlənir.</p>
+
+        <h3>Nələri toplamırıq</h3>
+        <p>Məkan (GPS), kontaktlar, mesajlar, şəkillər və fayllar, kamera və mikrofon, ödəniş məlumatları və reklam identifikatoru (Advertising ID) toplanmır. Tətbiqdə reklam, tətbiqdaxili ödəniş və oyunçular arasında yazışma yoxdur.</p>
       </section>
 
       <section aria-labelledby="use">
         <h2 id="use">3. Məlumatlardan necə istifadə edirik</h2>
-        <!-- TEXT: purposes: sign-in, running quizzes and duels, matchmaking, rating and statistics, fixing errors, improving the app. No ads, no selling of data. Legal basis if needed. -->
-        <p class="placeholder">Məqsədlər: giriş, quiz və duel, reytinq, xətaların düzəldilməsi. Reklam və məlumat satışı yoxdur.</p>
+        <ul>
+          <li>Hesab yaratmaq, daxil olmaq, e-poçtu təsdiqləmək və şifrəni bərpa etmək.</li>
+          <li>Quiz, gündəlik çağırış və duel oynatmaq, rəqib tapmaq, xalları və reytinqi hesablamaq.</li>
+          <li>XP, səviyyə və seriyanı hesablamaq; profilini, statistikanı və oyun tarixçəni göstərmək.</li>
+          <li>Xatırlatma göndərmək — yalnız icazə vermisənsə və həmin xatırlatma ayarlarda açıqdırsa.</li>
+          <li>Oyunu ədalətli saxlamaq: hiylənin və sui-istifadənin qarşısını almaq (məsələn, eyni cavabın iki dəfə sayılmaması, gündəlik XP limitləri, uyğunsuz adların bloklanması).</li>
+          <li>Xətaları tapmaq və tətbiqi yaxşılaşdırmaq (server qeydləri və Firebase Analytics).</li>
+        </ul>
+        <p>Hesab və oyun məlumatlarını sənə xidmət göstərmək üçün, təhlükəsizlik və tətbiqin yaxşılaşdırılması üçün bizim qanuni marağımız əsasında, bildirişləri isə sənin razılığınla emal edirik. Məlumatlarından reklam üçün istifadə etmirik, reklam profili yaratmırıq və məlumatları satmırıq.</p>
       </section>
 
       <section aria-labelledby="others">
         <h2 id="others">4. Başqa oyunçular nəyi görür</h2>
-        <!-- TEXT: in a duel the opponent sees the display name, avatar (Google photo or first letter) and rating; never the email. Match history shows the opponent's current name; after deletion "Silinmiş oyunçu" (OQ-014, OQ-024). -->
-        <p class="placeholder">Duel zamanı rəqibin gördükləri: ad, avatar, reytinq. E-poçt heç vaxt göstərilmir.</p>
+        <ul>
+          <li>Duel başlayanda rəqib sənin adını, profil şəklini (Google hesabında; şəkil yoxdursa, adının ilk hərfi) və reytinqini görür.</li>
+          <li>Raund gedərkən rəqib yalnız seçim etdiyini və ya cavab verdiyini görür, nəyi seçdiyini yox. Raundun sonunda hər iki oyunçunun Əminliyi, cavabı və xalları eyni anda göstərilir.</li>
+          <li>Oyundan sonra rəqibin profilindəki oyun tarixçəsində sənin cari adın, şəklin, hesab və reytinq dəyişikliyi görünür.</li>
+          <li>Rəqib heç vaxt e-poçt ünvanını, hesab identifikatorlarını, səviyyəni, XP-ni və seriyanı görmür.</li>
+          <li>Gündəlik çağırışın nəticəsini yalnız sən özün paylaşa bilərsən; paylaşma mətnində sual və cavab olmur. Tətbiqdə reytinq cədvəli yoxdur.</li>
+        </ul>
       </section>
 
       <section aria-labelledby="services">
         <h2 id="services">5. Üçüncü tərəf xidmətləri</h2>
-        <!-- TEXT: Google Firebase Authentication, Google Sign-In, Firebase Analytics (and Crashlytics when added) with links to Google's privacy policy; server hosting provider and location (OQ-005); question images served from our own server. -->
-        <p class="placeholder">Firebase Authentication, Google ilə giriş, Firebase Analytics, server hostinqi; onların məxfilik siyasətlərinə linklər.</p>
+        <p>Aşağıdakı xidmətlər məlumatları yalnız bizim tapşırığımızla, tətbiqin işləməsi üçün emal edir:</p>
+        <ul>
+          <li><strong>Google Firebase</strong> (Google): Authentication (giriş, şifrələrin saxlanması, təsdiq və şifrə bərpası məktubları), Google ilə giriş, Analytics (istifadə statistikası) və Cloud Messaging (bildirişlərin çatdırılması). Ətraflı: <a href="https://firebase.google.com/support/privacy" lang="en">Privacy and Security in Firebase</a>, <a href="https://policies.google.com/privacy?hl=az">Google Məxfilik Siyasəti</a>.</li>
+          <li><strong>Oracle Cloud Infrastructure</strong> (Oracle): serverimiz Oracle Cloud-da icarəyə götürülmüş virtual serverdir. Hesab, oyun və bildiriş məlumatları, sual şəkilləri və ehtiyat nüsxələr orada, yalnız bizim idarə etdiyimiz verilənlər bazasında və yaddaşda saxlanılır. Ətraflı: <a href="https://www.oracle.com/legal/privacy/" lang="en">Oracle Privacy</a>.</li>
+        </ul>
+        <p>Google və Oracle-ın serverləri Azərbaycandan kənarda, məsələn, Avropa İttifaqında və ya ABŞ-da yerləşə bilər. Bu halda məlumatların həmin ölkələrə ötürülür; bu xidmətlər onları öz məxfilik şərtlərinə uyğun qoruyur.</p>
+        <p>Google hesabının profil şəkli Google-un serverlərindən yüklənir, sual şəkilləri isə bizim serverdən. Bu veb səhifələr GitHub Pages-də yerləşir; səhifələrdə kuki, analitika və reklam yoxdur, amma GitHub təhlükəsizlik üçün IP ünvanı kimi texniki məlumatları qeyd edə bilər (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" lang="en">GitHub Privacy Statement</a>).</p>
+        <p>Başqa üçüncü tərəf yoxdur. Məlumatlarını yalnız qanun tələb etdikdə səlahiyyətli dövlət orqanlarına verə bilərik.</p>
       </section>
 
       <section aria-labelledby="retention">
         <h2 id="retention">6. Saxlama müddəti</h2>
-        <!-- TEXT: data kept while the account exists; deleted immediately on account deletion; backups roll off within 30 days; server logs retention; Analytics retention setting. -->
-        <p class="placeholder">Hesab mövcud olduqca saxlanılır; silinmədən sonra dərhal silinir; ehtiyat nüsxələr 30 gün ərzində.</p>
+        <!-- Sources: §3a (OQ-014), application.conf duello.notifications (tokenStaleDays 60, logRetentionDays 90),
+             infra/README.md (backups 14 days, max 30; Docker log rotation 5 × 20 MB). Analytics 2 months = GA4 default, OQ-100. -->
+        <ul>
+          <li><strong>Hesab, profil, oyun və irəliləyiş məlumatları</strong> — hesabın mövcud olduğu müddətdə. Hesabı silərkən dərhal silinir.</li>
+          <li><strong>Keçmiş duellər</strong> — hesab silinəndə anonimləşdirilir: rəqiblərin tarixçəsi üçün qalır, amma sənə bağlı olmur (8-ci bölmə).</li>
+          <li><strong>Bildiriş tokeni</strong> — hesabdan çıxanda, token etibarsız olanda, 60 gün istifadə olunmayanda və hesab silinəndə silinir.</li>
+          <li><strong>Bildirişlərin göndərmə qeydi</strong> — 90 gün, sonra avtomatik silinir.</li>
+          <li><strong>Ehtiyat nüsxələr</strong> — verilənlər bazasının gündəlik nüsxəsi 14 gün saxlanılır. Silinmiş məlumatlar ən gec 30 gün ərzində ehtiyat nüsxələrdən də yox olur.</li>
+          <li><strong>Server qeydləri</strong> — ölçü limitinə çatanda avtomatik silinir və ehtiyat nüsxələrə düşmür.</li>
+          <li><strong>Firebase Analytics</strong> — istifadəçi səviyyəli statistika 2 aydan sonra avtomatik silinir.</li>
+          <li><strong>Firebase Authentication</strong> — giriş hesabı sənin hesabınla birlikdə silinir.</li>
+        </ul>
       </section>
 
       <section aria-labelledby="security">
         <h2 id="security">7. Təhlükəsizlik</h2>
-        <!-- TEXT: HTTPS/WSS encryption in transit, passwords handled by Firebase (never stored by us), access limited to the developer. -->
-        <p class="placeholder">Ötürmə zamanı şifrələmə (HTTPS), şifrələrin Firebase tərəfindən idarə olunması.</p>
+        <ul>
+          <li>Tətbiqlə server arasında bütün əlaqə, duel bağlantısı da daxil olmaqla, şifrələnir (HTTPS/TLS).</li>
+          <li>Şifrələri Firebase Authentication saxlayır; onlar bizə heç vaxt gəlmir.</li>
+          <li>Server hər sorğuda Firebase giriş tokenini yoxlayır. Verilənlər bazası internetdən birbaşa əlçatan deyil, yalnız serverin özü ona qoşulur.</li>
+          <li>Serverə və ehtiyat nüsxələrə yalnız tərtibatçının girişi var.</li>
+        </ul>
+        <p>Heç bir sistem tam təhlükəsiz deyil, amma məlumatlarını qorumaq üçün ağlabatan tədbirlər görürük. Məlumatlarına təsir edən ciddi bir hadisə baş versə, sənə xəbər verəcəyik.</p>
       </section>
 
       <section aria-labelledby="deletion">
         <h2 id="deletion">8. Hesabın və məlumatların silinməsi</h2>
         <p>Hesabını istənilən vaxt tətbiqdə silə bilərsən: <strong>Parametrlər → Hesabı sil</strong>. Tətbiq olmadan necə silmək olar, nələr silinir və nələr qalır — <a href="account-deletion.html">Hesabın silinməsi</a> səhifəsində.</p>
-        <!-- TEXT: short summary of what is deleted and what is anonymized (OQ-014); keep consistent with account-deletion.html. -->
-        <p class="placeholder">Qısa xülasə: nələr silinir, nələr anonimləşdirilir.</p>
+        <p>Hesab dərhal silinir: profil, reytinq, quiz və gündəlik çağırış nəticələri, XP, səviyyələr, seriya, bildiriş ayarları və tokenləri, həmçinin Firebase-dəki giriş hesabın. Keçmiş duellər rəqiblərin tarixçəsində qalır, amma orada «Silinmiş oyunçu» kimi görünürsən. Ehtiyat nüsxələrdən məlumatlar ən gec 30 gün ərzində silinir.</p>
       </section>
 
       <section aria-labelledby="children">
         <h2 id="children">9. Uşaqlar</h2>
-        <!-- TEXT: minimum age / target audience as declared in Play Console (Target audience and content). Needs Sabit's decision. -->
-        <p class="placeholder">Minimum yaş və hədəf auditoriya (Play Console ilə eyni).</p>
+        <!-- 13+ per tech-lead brief 2026-10-25; must match Play Console "Target audience and content" (OQ-D22, OQ-105). -->
+        <p>Duello Quiz 13 yaş və yuxarı istifadəçilər üçündür və 13 yaşdan kiçik uşaqlara yönəlməyib. 13 yaşın tamam deyilsə, tətbiqdən istifadə etmə. Yaşadığın ölkənin qanunu sənin yaşında valideyn razılığı tələb edirsə, tətbiqdən yalnız valideyninin razılığı ilə istifadə et.</p>
+        <p>13 yaşdan kiçik uşağın hesab yaratdığını bilsək, həmin hesabı silirik. Valideynlər bunun üçün <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a> ünvanına yaza bilər.</p>
       </section>
 
       <section aria-labelledby="rights">
         <h2 id="rights">10. Hüquqların</h2>
-        <!-- TEXT: access, correction (display name in the app), deletion, how to ask by email; response time. -->
-        <p class="placeholder">Məlumatlara baxmaq, düzəltmək, silmək hüququ və necə müraciət etmək.</p>
+        <ul>
+          <li><strong>Baxmaq</strong> — profilini, statistikanı, oyun tarixçəni və irəliləyişini tətbiqdə görə bilərsən. Haqqında saxladığımız bütün məlumatların surətini e-poçtla istəyə bilərsən.</li>
+          <li><strong>Düzəltmək</strong> — adını tətbiqdə dəyiş: <strong>Profil → Adı dəyiş</strong>. Başqa bir məlumat səhvdirsə, bizə yaz.</li>
+          <li><strong>Silmək</strong> — hesabını tətbiqdə və ya e-poçtla silə bilərsən (8-ci bölmə).</li>
+          <li><strong>Razılığı geri götürmək</strong> — xatırlatmaları <strong>Parametrlər → Bildirişlər</strong> bölməsində və ya telefonun ayarlarında söndürə bilərsən.</li>
+          <li><strong>Şikayət</strong> — ölkəndəki fərdi məlumatların qorunması üzrə səlahiyyətli orqana müraciət edə bilərsən.</li>
+        </ul>
+        <p>Sorğuya 30 gün ərzində cavab veririk. Sorğunun səndən gəldiyini yoxlamaq üçün onu hesabının e-poçt ünvanından göndərməyini və ya həmin ünvandan təsdiqləməyini xahiş edə bilərik.</p>
       </section>
 
       <section aria-labelledby="changes">
         <h2 id="changes">11. Dəyişikliklər</h2>
-        <!-- TEXT: how users are told about changes (date at the top, in-app notice for material changes). -->
-        <p class="placeholder">Siyasət dəyişəndə necə xəbər verəcəyik.</p>
+        <p>Siyasəti yeniləyəndə səhifənin yuxarısındakı tarixi dəyişirik. Əhəmiyyətli dəyişiklikləri, məsələn, yeni məlumat növü toplanacaqsa, qüvvəyə minməzdən əvvəl tətbiqdə və ya bu səhifədə bildiririk. Əvvəlki versiyalar layihənin açıq GitHub tarixçəsində qalır.</p>
       </section>
 
       <section aria-labelledby="contact">
         <h2 id="contact">12. Əlaqə</h2>
-        <!-- TEXT: contact email as a mailto: link, e.g. <a href="mailto:ADDRESS">ADDRESS</a> (same address as in Play Console). -->
-        <p class="placeholder">Əlaqə üçün e-poçt ünvanı.</p>
+        <p>Məxfilik, məlumatların və ya hesabın silinməsi ilə bağlı sualların üçün yaz: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
       </section>
 
       <section class="lang-en" lang="en" aria-labelledby="en">
-        <h2 id="en">Privacy policy (English summary)</h2>
-        <!-- TEXT: optional English summary of the policy above (same facts, shorter). Remove this section if Sabit decides the page is Azerbaijani only. -->
-        <p class="placeholder">English summary of the privacy policy.</p>
+        <h2 id="en">Privacy policy (English version)</h2>
+        <p class="meta">Last updated: <time datetime="2026-10-25">25 October 2026</time>. This is a translation of the Azerbaijani text above; if they differ, the Azerbaijani text applies.</p>
+
+        <p>Duello Quiz is an Azerbaijani-language quiz game for Android: category quizzes, a daily challenge and a real-time 1v1 confidence duel ("Əminlik"). This policy explains which data the app and its server collect, why, who processes it and how long it is kept. In short: we collect only what the game needs to work. There are no ads and no in-app purchases, we do not use the advertising ID, and we never sell your data.</p>
+
+        <h3>1. Who we are</h3>
+        <p>Duello Quiz is built and published on Google Play by an individual developer ("the Duello Quiz developer", "we"), who is responsible for the data collected in the app. Contact: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+
+        <h3>2. Data we collect</h3>
+        <ul>
+          <li><strong>Account:</strong> email address and password when you sign up with email (the password is stored only by Google's Firebase Authentication and never reaches our server; your email is stored by Firebase, not in our database); with Google sign-in, your Google name, email address, profile photo URL and Google account ID, passed on by Google to Firebase; your display name ("Ad", 2–20 characters, or your Google name; otherwise a name like "Oyunçu 1234"); your rating (starts at 1000), account creation date and, for Google accounts, the URL of your profile photo (not the photo itself); your Firebase user ID and our internal account number.</li>
+          <li><strong>Gameplay:</strong> category quizzes (category, start and end time, questions, chosen answers, right or wrong, answer time, score); daily challenge attempts (answers, answer time, score); duels (opponent, your Əminlik choice and answer in each round, when your answer reached the server, points and speed bonus, missed rounds, the result including forfeits, your rating before and after); progress (a record of every XP award, overall and per-category XP and levels, active days, current and best streak, streak freeze, and the number of games per day and your duel opponents, used for the daily XP limits).</li>
+          <li><strong>Notifications:</strong> the Firebase Cloud Messaging token of your device, the app language (e.g. "az"), when the token was created and last used (sent to our server only if you allowed notifications); your reminder switches ("Gündəlik çağırış xatırlatması", "Seriya xatırlatması"); a send log of which reminder went out on which day, so you never get the same one twice. Notifications contain no personal data, questions or answers.</li>
+          <li><strong>Usage statistics (Firebase Analytics):</strong> events such as app opened, screens viewed, quiz or duel started and finished, which may be linked to our internal account number but never to your email or name; device model, Android version, app version, language, approximate country and city (derived by Google from your IP address) and the Analytics app instance ID.</li>
+          <li><strong>Server logs:</strong> time, type of request, result code and internal account number, to find errors. No email, name or password is written to them. IP addresses are not logged for normal requests; only when a server error occurs, the web server's error log may contain the IP address of that request.</li>
+          <li><strong>On your phone:</strong> theme choice, sign-in session, the last loaded data for offline display and the number of a running duel; removed when you sign out, delete your account or uninstall the app.</li>
+          <li><strong>Not collected:</strong> location, contacts, messages, photos and files, camera and microphone, payment data and the advertising ID. The app has no ads, no in-app purchases and no chat between players.</li>
+        </ul>
+        <!-- CRASHLYTICS (add only when Firebase Crashlytics is in the release build, OQ-101):
+        <ul>
+          <li><strong>Crash reports (Firebase Crashlytics):</strong> when the app crashes or hits a serious error: a technical description of the error, device model, Android version, app version, memory state, the Crashlytics installation ID and our internal account number. No email, name or password.</li>
+        </ul>
+        -->
+
+        <h3>3. How we use data</h3>
+        <p>To create your account and sign you in, verify your email and reset your password; to run quizzes, the daily challenge and duels, find opponents and compute points and rating; to compute XP, levels and streaks and show your profile, statistics and history; to send reminders, only if you allowed notifications and the reminder is switched on; to keep the game fair (for example, an answer counts only once, daily XP limits, blocking offensive names); and to find errors and improve the app. We process account and game data to provide the service to you, security and improvement data on the basis of our legitimate interest, and notifications with your consent. We do not use your data for advertising, build no advertising profiles and never sell data.</p>
+
+        <h3>4. What other players see</h3>
+        <p>When a duel starts, your opponent sees your display name, your profile photo (Google accounts; otherwise the first letter of your name) and your rating. During a round they only see that you have made a choice or answered, not what you chose; at the end of each round both players' Əminlik choices, answers and points are revealed at the same time. Afterwards the match appears in your opponent's history with your current name, photo, the score and the rating change. Opponents never see your email address, account IDs, level, XP or streak. Only you can share your daily challenge result; the share text contains no questions or answers. There are no leaderboards.</p>
+
+        <h3>5. Third-party services</h3>
+        <p>These services process data only on our behalf, to make the app work:</p>
+        <ul>
+          <li><strong>Google Firebase</strong> (Google): Authentication (sign-in, password storage, verification and password-reset emails), Google sign-in, Analytics and Cloud Messaging (notification delivery). See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a> and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</li>
+          <li><strong>Oracle Cloud Infrastructure</strong> (Oracle): our server is a virtual machine rented from Oracle Cloud. Account, game and notification data, question images and backups are stored there, in a database and storage that only we control. See <a href="https://www.oracle.com/legal/privacy/">Oracle Privacy</a>.</li>
+        </ul>
+        <p>Google's and Oracle's servers may be located outside Azerbaijan, for example in the European Union or the United States; your data is then transferred there and protected under their privacy terms. Google profile photos load from Google's servers, question images from ours. These web pages are hosted on GitHub Pages; they use no cookies, analytics or ads, but GitHub may log technical data such as IP addresses for security (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>). There are no other third parties. We disclose data to authorities only when the law requires it.</p>
+
+        <h3>6. Retention</h3>
+        <ul>
+          <li>Account, profile, game and progress data: as long as your account exists; deleted immediately when you delete the account.</li>
+          <li>Past duels: anonymized on account deletion; they stay in your opponents' history but are no longer linked to you.</li>
+          <li>Notification token: deleted on sign-out, when it becomes invalid, after 60 days without use and on account deletion.</li>
+          <li>Notification send log: 90 days, then deleted automatically.</li>
+          <li>Backups: a daily database backup is kept for 14 days; deleted data is gone from backups within 30 days at the latest.</li>
+          <li>Server logs: deleted automatically when the size limit is reached; not included in backups.</li>
+          <li>Firebase Analytics: user-level statistics are deleted automatically after 2 months.</li>
+          <li>Firebase Authentication: your sign-in account is deleted together with your account.</li>
+        </ul>
+
+        <h3>7. Security</h3>
+        <p>All traffic between the app and the server, including the duel connection, is encrypted (HTTPS/TLS). Passwords are kept by Firebase Authentication and never reach us. The server verifies the Firebase sign-in token on every request; the database is not reachable from the internet, only the server itself connects to it. Only the developer has access to the server and the backups. No system is perfectly secure, but we take reasonable measures to protect your data and will inform you of a serious incident that affects it.</p>
+
+        <h3>8. Deleting your account and data</h3>
+        <p>You can delete your account in the app at any time: "Parametrlər" → "Hesabı sil". Deletion is immediate and covers your profile, rating, quiz and daily challenge results, XP, levels, streak, notification settings and tokens, and your Firebase sign-in account. Past duels stay in your opponents' history, where you appear as "Silinmiş oyunçu" (deleted player). Data disappears from backups within 30 days. How to request deletion without the app, and what is kept: <a href="account-deletion.html#en">Account deletion</a>.</p>
+
+        <h3>9. Children</h3>
+        <p>Duello Quiz is meant for users aged 13 and over and is not directed at children under 13. If you are under 13, do not use the app. If the law of your country requires parental consent at your age, use the app only with your parent's consent. If we learn that a child under 13 has created an account, we delete it; parents can write to <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+
+        <h3>10. Your rights</h3>
+        <p>You can see your profile, statistics, history and progress in the app, and ask by email for a copy of all data we hold about you. You can change your display name in the app ("Profil" → "Adı dəyiş") and ask us to correct anything else. You can delete your account in the app or by email. You can switch reminders off in "Parametrlər" → "Bildirişlər" or in your phone's settings. You may also complain to the data protection authority of your country. We answer requests within 30 days and may ask you to write from, or confirm from, the email address of your account.</p>
+
+        <h3>11. Changes</h3>
+        <p>When we update this policy, we change the date at the top. We announce significant changes, for example a new type of data being collected, in the app or on this page before they take effect. Earlier versions remain in the project's public GitHub history.</p>
+
+        <h3>12. Contact</h3>
+        <p>Questions about privacy, your data or account deletion: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
       </section>
     </div>
   </main>
@@ -152,8 +308,9 @@
       <ul>
         <li><a href="index.html">Duello Quiz</a></li>
         <li><a href="account-deletion.html">Hesabın silinməsi</a></li>
+        <li><a href="mailto:{{CONTACT_EMAIL}}">Əlaqə</a></li>
       </ul>
-      <!-- TEXT: developer name and contact email as entered in Play Console. -->
+      <!-- Developer name: add it here when OQ-098 is decided (same as in Play Console). -->
       <p>© 2026 Duello Quiz</p>
     </div>
   </footer>

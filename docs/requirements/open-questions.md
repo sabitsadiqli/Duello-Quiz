@@ -9,6 +9,85 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
+| OQ-097 | Public contact email on the legal pages and in Play Console (designer's OQ-D20) | A new dedicated address (e.g. a separate Gmail), not the personal one; replaces `{{CONTACT_EMAIL}}` in `docs/legal/*.html` | Sabit |
+| OQ-098 | Developer name on the legal pages | The developer name exactly as shown in Play Console; until then "Duello Quiz tərtibatçısı" (fərdi tərtibatçı) | Sabit |
+| OQ-099 | Server region named in the privacy policy | After the Oracle account exists (OQ-005), name the home region (recommended Germany Central, Frankfurt → "Almaniya, AB"); until then the neutral "outside Azerbaijan, e.g. EU or US" wording stays | Sabit |
+| OQ-100 | Firebase Analytics privacy settings that the policy relies on | Remove `AD_ID` and disable ad-ID collection (OQ-D25); set data retention to 2 months; turn off data-sharing settings and Google signals; keep `users.id` as Analytics user ID (never email/UID) | Sabit (settings), android-dev (manifest) |
+| OQ-101 | Crashlytics is in the tech stack but not in the build | Add it before the closed test; the same PR uncomments the prepared "CRASHLYTICS" text in `privacy-policy.html` and updates `docs/legal/README.md` | Sabit, android-dev |
+| OQ-102 | How is an email deletion request (SET-06) executed? | Admin CLI task in the backend, e.g. `delete-user --email <address>`: looks up the Firebase UID with the Admin SDK and runs the same code as `DELETE /v1/me`; needed before the Play submission | Sabit, backend-dev |
+| OQ-103 | Off-VM backup location (`infra/README.md` §10 offers two) | Oracle Object Storage (same provider as the server, no extra processor in the policy); Google Drive only behind `rclone crypt` and then named in the policy | Sabit, devops |
+| OQ-104 | Firebase Analytics data after account deletion | Let it expire with the 2-month retention (stated on both pages); no Analytics User Deletion API call in the MVP | Sabit |
+| OQ-105 | Target audience 13+ (designer's OQ-D22) | 13+ in Play Console "Target audience and content" (13–15, 16–17, 18+), not in the Families program; the pages already say 13+ | Sabit |
+
+## Details (OQ-097 … OQ-105, open) — legal pages
+
+Added by `business-analyst` on 2026-10-25 while writing `docs/legal/privacy-policy.html`
+and `docs/legal/account-deletion.html` (SET-03, SET-05, SET-06). The pages are written
+with the recommendations below; each item says what has to change if Sabit decides
+otherwise. Data safety summary: `docs/legal/README.md`.
+
+### OQ-097 Public contact email
+- A. New dedicated address (e.g. a separate Gmail). Keeps the personal inbox private,
+  can be handed over later; one more inbox to check.
+- B. Sabit's existing address. No setup; the address becomes public on Play and the web.
+- Recommendation: A. Blocks publishing both pages (`{{CONTACT_EMAIL}}` placeholder) and
+  SET-06.
+
+### OQ-098 Developer name on the pages
+- A. The name shown in Play Console (for a personal account usually the legal name).
+  Matches what Play users see; required for the deletion page to "name the developer".
+- B. Keep "Duello Quiz tərtibatçısı". No personal name on the web; may not match Play.
+- Recommendation: A once Play Console is set up; B until then (current text).
+
+### OQ-099 Server region in the policy
+- A. Name the Oracle home region ("Almaniya (AB)") once chosen. Precise.
+- B. Keep the neutral sentence. Always true; less precise.
+- Recommendation: A after OQ-005; text in §5 of the policy, AZ and EN.
+
+### OQ-100 Firebase Analytics settings
+The policy says: no Advertising ID, Analytics kept 2 months, no sharing.
+- `firebase-analytics` merges the `AD_ID` permission (OQ-D25): android-dev removes it
+  (`tools:node="remove"`) and sets `google_analytics_adid_collection_enabled = false`.
+- Data retention: GA4 default is 2 months; 14 months gives longer trends but the pages
+  must then say 14 months.
+- Data-sharing settings ("Google products and services", benchmarking, etc.) and
+  Google signals: off, otherwise "no sharing" is doubtful.
+- Recommendation: as in the table. Blocks publishing the policy.
+
+### OQ-101 Crashlytics
+`CLAUDE.md` lists Crashlytics; the build has only Auth, Analytics, Messaging.
+- A. Add it before the closed test, together with the prepared policy text. Crash
+  data from testers; two extra Data safety rows.
+- B. Leave it out of the MVP. Simpler form; no crash visibility.
+- Recommendation: A.
+
+### OQ-102 Executing an email deletion request
+SET-06 promises deletion "with the same backend operation as SET-05"; no admin command
+exists yet (only `DELETE /v1/me` with the user's own token).
+- A. Backend CLI task (`delete-user --email` / `--uid`), run on the VM like the import.
+  Same code path, auditable in the logs.
+- B. Manual: delete the Firebase user in the console + SQL `DELETE FROM users`. No
+  code; error-prone (forgets the running-duel forfeit, OQ-069).
+- Recommendation: A. Blocks SET-06 operationally (the page itself is ready).
+
+### OQ-103 Off-VM backup location
+- A. Oracle Object Storage (Always Free, private bucket). Same processor as the server.
+- B. Google Drive behind `rclone crypt`. Survives losing the Oracle account; Google
+  becomes a storage provider to name in the policy.
+- Recommendation: A (the policy names only Oracle for backups).
+
+### OQ-104 Analytics data after deletion
+- A. Expire with the retention period (2 months). Zero work; stated on both pages.
+- B. Call the Google Analytics User Deletion API from `DELETE /v1/me`. Immediate;
+  needs a Google Cloud service account with Analytics access and extra code.
+- Recommendation: A for the MVP.
+
+### OQ-105 Target audience
+- A. 13+ (13–15, 16–17, 18+). Matches the brief, quiet hours (OQ-089) and the pages;
+  Play does not apply the Families policy.
+- B. Include under-13. Families policy, stricter SDK rules (Analytics settings),
+  parental consent; out of scope.
+- Recommendation: A.
 
 ## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
 
