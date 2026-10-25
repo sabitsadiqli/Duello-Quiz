@@ -203,6 +203,8 @@ paths:
         still returns 204, also when the profile row is already gone. A user is
         never created by this endpoint. A running duel is ended first as a forfeit
         by this user (`forfeitCause = left`), and a queue entry is removed.
+        Email deletion requests (SET-06) use the same operation through the admin CLI
+        task `delete-user` (OQ-102, `backend/README.md`); there is no admin HTTP endpoint.
       responses:
         "204":
           description: Account deleted (or already deleted).

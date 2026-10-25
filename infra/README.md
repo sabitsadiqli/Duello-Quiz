@@ -448,19 +448,77 @@ sudo -u deploy bash -c 'set -a; . /opt/duello/backup.env; \
 then `sudo -u deploy /opt/duello/scripts/restore.sh <db.dump> <media.tar>` (type
 `restore` to confirm; it stops the backend, replaces database and media, starts it).
 Accounts deleted after that backup are back in the database while their Firebase
-users stay deleted: delete those rows again (OQ-014). A purge command for that is
-still to come from `backend-dev`.
+users stay deleted: delete those rows again (OQ-014) with `prune-orphans` right after
+the restore, once the backend is healthy:
+```sh
+cd /opt/duello
+sudo -u deploy docker compose run --rm --no-deps -T backend prune-orphans            # dry run: lists user ids
+sudo -u deploy docker compose run --rm --no-deps -T backend prune-orphans --yes      # delete them
+```
+It checks every profile against Firebase (100 uids per call, paced) and deletes the
+orphans with the same code as `DELETE /v1/me`. A real run refuses more than 20 orphans
+(exit 3) because a wrong `FIREBASE_SERVICE_ACCOUNT_FILE` / project would make every
+profile look orphaned: check the dry-run list first, then add `--max <n>`.
+Details: [`backend/README.md`](../backend/README.md#admin-cli-account-deletion).
 
 ### 11. Monitoring
 
 - Uptime: a free monitor (e.g. UptimeRobot free plan, no card) on
   `https://api-dev.duelloquiz.app/health` every 5 min with e-mail alerts to
-  `support@duelloquiz.app`. `/health` is 200 only when the database answers.
+  `support@duelloquiz.app`. `/health` is 200 only when the database answers; its body
+  also has `version` and `commit` of the running image. `commit` is filled only when
+  the image is built with `--build-arg GIT_SHA=<sha>` (`deploy-backend.yml`:
+  `build-args: GIT_SHA=${{ github.sha }}`), otherwise it is null.
 - Logs: `cd /opt/duello && docker compose logs -f backend` (JSON lines); Caddy logs
   JSON too.
 - Container health: `docker compose ps` (the backend image has a `HEALTHCHECK`).
 - VM: Hetzner console → Server → Graphs (CPU, disk, network).
 - Android crashes: Firebase Crashlytics.
+
+### 12. Account deletion request by email (SET-06, OQ-102)
+
+Promise on the public deletion page (`docs/legal/account-deletion.html`): the account
+is deleted **within 30 days** of receiving the request, the same way as in the app, and
+the person gets an email confirmation. Aim for a few days; the 30 days are the limit.
+
+1. **Receive.** The request arrives at `support@duelloquiz.app` (§4a). Note the date
+   received; the deadline is that date + 30 days.
+2. **Check the sender.** The page asks people to write from the account's email (the
+   Google address for Google sign-in). If the sender differs from the address you would
+   delete, reply to the account address and ask for confirmation from there; without
+   it, do not delete. Never ask for a password.
+3. **Dry run on the VM** (the email is read from the terminal so it does not land in
+   the shell history; the tool itself never prints or logs it):
+   ```sh
+   ssh <admin>@<vm>
+   cd /opt/duello
+   read -r -p "account email: " EMAIL
+   sudo -u deploy docker compose run --rm --no-deps -T backend \
+     delete-user --email "$EMAIL" --dry-run
+   ```
+   It prints the Firebase uid, whether the Firebase account exists, the internal user
+   id and how many rows would be deleted or anonymized. "No Firebase account has this
+   email" (exit 0) means there is nothing to delete under that address: reply asking
+   which address they used to sign in.
+4. **Delete:**
+   ```sh
+   sudo -u deploy docker compose run --rm --no-deps -T backend \
+     delete-user --email "$EMAIL" --yes
+   unset EMAIL
+   ```
+   Exit 0 = done (profile and Firebase account). Exit 3 = the user is in a running
+   duel: retry in a few minutes. Exit 1 = database/Firebase error: run it again (it is
+   idempotent; the database part may already be done). By uid instead of email:
+   `delete-user --uid <firebaseUid> --yes` (uid from the Firebase console).
+5. **Confirm** to the person by email that the account and its data are deleted, and
+   that backups expire within 30 days (the page says so). Keep only the date and the
+   internal user id as your record (private notes, not GitHub issues or this repo).
+6. **Next day (optional check):** `prune-orphans` (dry run). A phone that was still
+   signed in can recreate an empty profile with its last ID token (valid up to an hour);
+   if the dry run lists ids, run it with `--yes`.
+
+Backups: the deleted data stays in the daily dumps until they expire (14 days, never
+more than 30, §10). If you restore one of them, run `prune-orphans` (§10).
 
 ## Costs
 
