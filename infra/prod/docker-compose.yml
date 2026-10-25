@@ -65,7 +65,7 @@ services:
       replicas: 1
       resources:
         limits:
-          memory: ${BACKEND_MEMORY_LIMIT:-3g}
+          memory: ${BACKEND_MEMORY_LIMIT:-2g}
     stop_grace_period: 20s
 
   caddy:

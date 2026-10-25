@@ -1,7 +1,9 @@
 # Caddy for Duello Quiz (infra/prod/docker-compose.yml).
-# DUELLO_DOMAIN: e.g. duello-dev.duckdns.org (OQ-006: DuckDNS until a real domain).
-# Caddy gets and renews the Let's Encrypt certificate itself (HTTP-01 on port 80),
-# so ports 80 and 443 must be open in the Oracle VCN security list and on the VM.
+# DUELLO_DOMAIN (from /opt/duello/.env): api-dev.duelloquiz.app or api.duelloquiz.app
+# (ADR 0001). Caddy gets and renews the Let's Encrypt certificate itself (HTTP-01 on
+# port 80, TLS-ALPN on 443), so ports 80 and 443 must be open in the Hetzner Cloud
+# Firewall and on the VM, and the Cloudflare record must be "DNS only" (grey cloud).
+# .app is HSTS-preloaded: browsers only ever use HTTPS for it.
 {
 	email {$ACME_EMAIL}
 	# Structured JSON logs (errors and Caddy's own events) on stdout.
