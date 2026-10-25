@@ -67,6 +67,15 @@ Google sign-in returns a test user. With the file present, the Google services p
 applied and the Firebase implementations are used. CI release builds decode the file from the
 `GOOGLE_SERVICES_JSON_BASE64` secret (`infra/README.md`).
 
+Crashlytics (OQ-101) follows the same rule: the `com.google.firebase.crashlytics` plugin is
+applied only together with the Google services plugin, and without a Firebase app the
+`Telemetry` binding in `:app` is a no-op. Collection is off in debug builds
+(`firebase_crashlytics_collection_enabled` from a manifest placeholder per build type). The
+Analytics and Crashlytics user ID is the backend `users.id` (`TelemetryUserSync`, auth.md §5),
+cleared on sign-out; no custom keys, never email, name or Firebase UID. Analytics never collects
+the Advertising ID: `AD_ID` and the Privacy Sandbox ad permissions are removed from the merged
+manifest (OQ-100).
+
 Firebase project setup needed: Email/Password and Google providers enabled, password policy
 minimum 8 characters (OQ-018), email enumeration protection on, SHA-1/SHA-256 of the debug and
 release (Play App Signing) keys registered for Google sign-in.

@@ -33,6 +33,11 @@
         <meta-data
             android:name="google_analytics_default_allow_ad_personalization_signals"
             android:value="false" />
+        <!-- OQ-101: Crashlytics reports only from release builds (placeholder per build type in
+             app/build.gradle.kts). -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${crashlyticsCollectionEnabled}" />
         <!-- uiMode is handled in place (Compose recomposes); the app night mode is set through
              UiModeManager on Android 12+ so the splash uses the chosen theme (SET-01).
              singleTop: tapping a reminder while the app is open delivers onNewIntent instead of
