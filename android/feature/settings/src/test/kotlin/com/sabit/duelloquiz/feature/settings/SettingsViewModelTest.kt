@@ -111,6 +111,8 @@ class SettingsViewModelTest {
             assertEquals(SettingsEvent.NavigateToDeleteAccount, awaitItem())
             vm.onAction(SettingsAction.PrivacyPolicyClicked)
             assertEquals(SettingsEvent.OpenUrl("https://example.com/privacy"), awaitItem())
+            vm.onAction(SettingsAction.LicensesClicked)
+            assertEquals(SettingsEvent.NavigateToLicenses, awaitItem())
             vm.onAction(SettingsAction.BackClicked)
             assertEquals(SettingsEvent.NavigateBack, awaitItem())
         }

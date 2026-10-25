@@ -1,5 +1,7 @@
 package com.sabit.duelloquiz.core.data.di
 
+import com.sabit.duelloquiz.core.data.licenses.BundledLicenseRepository
+import com.sabit.duelloquiz.core.data.licenses.LicenseRepository
 import com.sabit.duelloquiz.core.data.repository.AccountRepository
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.DailyRepository
@@ -57,6 +59,9 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun bindDuelHistoryRepository(impl: OfflineFirstDuelHistoryRepository): DuelHistoryRepository
+
+    @Binds
+    abstract fun bindLicenseRepository(impl: BundledLicenseRepository): LicenseRepository
 
     @Binds
     abstract fun bindAccountRepository(impl: DefaultAccountRepository): AccountRepository

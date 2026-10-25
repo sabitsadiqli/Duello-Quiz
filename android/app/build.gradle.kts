@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.duelloquiz.android.application)
     alias(libs.plugins.duelloquiz.android.compose)
     alias(libs.plugins.duelloquiz.hilt)
+    // Licence list for "Açıq mənbə lisenziyaları" (licenses.md): res/raw/aboutlibraries.json.
+    alias(libs.plugins.aboutlibraries.android)
 }
 
 // Firebase is configured only when android/app/google-services.json exists (git-ignored; CI

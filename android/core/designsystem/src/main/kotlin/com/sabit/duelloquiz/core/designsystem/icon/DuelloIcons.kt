@@ -15,6 +15,7 @@ object DuelloIcons {
     @DrawableRes val CloudOff = R.drawable.ic_cloud_off
     @DrawableRes val CloudUpload = R.drawable.ic_cloud_upload
     @DrawableRes val Delete = R.drawable.ic_delete
+    @DrawableRes val Description = R.drawable.ic_description
     @DrawableRes val Error = R.drawable.ic_error
     @DrawableRes val FactCheck = R.drawable.ic_fact_check
     @DrawableRes val Inbox = R.drawable.ic_inbox

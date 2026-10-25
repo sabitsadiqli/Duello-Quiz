@@ -8,6 +8,8 @@ ksp = "2.3.12"
 hilt = "2.60.1"
 googleServices = "4.5.0"
 firebaseCrashlyticsPlugin = "3.0.8"
+# Generates the open-source licence list (licenses.md) from the release runtime classpath.
+aboutLibraries = "15.3.0"
 
 # AndroidX
 activityCompose = "1.13.0"
@@ -110,6 +112,7 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
 
 # Convention plugins from build-logic
 duelloquiz-android-application = { id = "duelloquiz.android.application" }
