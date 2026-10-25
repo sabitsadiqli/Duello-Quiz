@@ -102,6 +102,7 @@ it matters.
 | Key | Azerbaijani | Notes |
 | --- | --- | --- |
 | `error_offline` | İnternet bağlantısı yoxdur. Yenidən cəhd et. | `wrap`. Any network failure before a request reached the server. |
+| `error_server_unreachable` | Serverə qoşulmaq mümkün olmadı. Bir az sonra yenidən cəhd et. | `wrap`. Device has validated internet but the server cannot be reached (DNS failure, connection refused, no route, connect timeout). Without internet `error_offline` is used. |
 | `error_generic` | Xəta baş verdi. Yenidən cəhd et. | `wrap`. 5xx, timeout (15 s), unknown codes. |
 | `error_sign_in_expired` | Giriş müddəti bitib. Yenidən daxil ol. | `wrap`. HTTP 401 after one refresh+retry (AUTH-09), snackbar on welcome. |
 | `error_category_not_playable` | Bu kateqoriya hazırda əlçatan deyil. | `wrap`. Server codes `category_not_playable` (409) and `category_not_found` (404). |
