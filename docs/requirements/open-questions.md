@@ -7,12 +7,6 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-098 | Developer name on the legal pages | The developer name exactly as shown in Play Console; until then "Duello Quiz tərtibatçısı" (fərdi tərtibatçı) | Sabit |
-| OQ-100 | Firebase Analytics privacy settings that the policy relies on | Remove `AD_ID` and disable ad-ID collection (OQ-D25); set data retention to 2 months; turn off data-sharing settings and Google signals; keep `users.id` as Analytics user ID (never email/UID) | Sabit (settings), android-dev (manifest) |
-| OQ-101 | Crashlytics is in the tech stack but not in the build | Add it before the closed test; the same PR uncomments the prepared "CRASHLYTICS" text in `privacy-policy.html` and updates `docs/legal/README.md` | Sabit, android-dev |
-| OQ-102 | How is an email deletion request (SET-06) executed? | Admin CLI task in the backend, e.g. `delete-user --email <address>`: looks up the Firebase UID with the Admin SDK and runs the same code as `DELETE /v1/me`; needed before the Play submission | Sabit, backend-dev |
-| OQ-104 | Firebase Analytics data after account deletion | Let it expire with the 2-month retention (stated on both pages); no Analytics User Deletion API call in the MVP | Sabit |
-| OQ-105 | Target audience 13+ (designer's OQ-D22) | 13+ in Play Console "Target audience and content" (13–15, 16–17, 18+), not in the Families program; the pages already say 13+ | Sabit |
 
 ## Details (OQ-097 … OQ-105) — legal pages (OQ-097, OQ-099, OQ-103 decided above)
 
@@ -95,7 +89,13 @@ runbook: `infra/README.md`.
 | OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | Bought **`duelloquiz.app`** at Cloudflare Registrar, DNS on Cloudflare: `api-dev.` (dev, now), `api.` (prod, later), apex/`www` for GitHub Pages; API records DNS only (grey cloud) | Sabit 2026-10-25 |
 | OQ-099 | Server region named in the privacy policy | Hetzner **Falkenstein (`fsn1`), Germany (EU)** → "Almaniya (AB)"; Nuremberg is also Germany, Helsinki would be "Finlandiya (AB)" | follows OQ-005 (devops 2026-10-25) |
 | OQ-097 | Public contact email on the legal pages and in Play Console | **`support@duelloquiz.app`** via Cloudflare Email Routing (free, receive-only) to Sabit's inbox; the personal address is never published | Sabit 2026-10-25 |
-| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size but needs a payment method and bills above 10 GB — **pending Sabit's confirmation**. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
+| OQ-098 | Developer name on the legal pages | **Sabit Sadiqli** (individual developer, same as Play Console) | Sabit 2026-10-25 |
+| OQ-100 | Firebase Analytics privacy settings | Remove `AD_ID` from the manifest; Analytics data retention 2 months; data sharing and Google signals off | Sabit 2026-10-25 |
+| OQ-101 | Crashlytics | Add Firebase Crashlytics before the closed test; enable the prepared policy text in the same release | Sabit 2026-10-25 |
+| OQ-102 | Email deletion request (SET-06) | Backend admin CLI task (`delete-user --email`) doing the same as `DELETE /v1/me` plus the Firebase account | Sabit 2026-10-25 |
+| OQ-104 | Analytics data after account deletion | Expires with the 2-month retention; no deletion API call in the MVP | Sabit 2026-10-25 |
+| OQ-105 | Target audience | 13+ in Play Console | Sabit 2026-10-25 |
+| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size (bills above 10 GB). Confirmed by Sabit 2026-10-25. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
 
 The privacy policy names Hetzner (Germany) for hosting and Cloudflare (EU) for DNS,
 e-mail forwarding and backups. The "Details" items for OQ-097, OQ-099 and OQ-103
