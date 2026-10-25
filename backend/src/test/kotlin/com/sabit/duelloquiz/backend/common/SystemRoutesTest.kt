@@ -20,7 +20,11 @@ class SystemRoutesTest : DbTest() {
         withTestApp(TestEnv(db)) { client ->
             val response = client.get("/health")
             assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(HealthResponse("ok", "ok"), response.body<HealthResponse>())
+            val body = response.body<HealthResponse>()
+            assertEquals("ok", body.status)
+            assertEquals("ok", body.database)
+            assertEquals(BuildInfo.current.version, body.version)
+            assertEquals(BuildInfo.current.commit, body.commit)
         }
     }
 

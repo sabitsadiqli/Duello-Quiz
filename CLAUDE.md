@@ -146,6 +146,8 @@ docker compose -f infra/docker-compose.yml up -d     # Postgres
 docker compose -f infra/docker-compose.yml --profile backend up -d --build  # + backend (once backend/ exists)
 cd backend && ./gradlew test build
 cd backend && ./gradlew run --args="import ../content/bank"   # import the question bank
+cd backend && ./gradlew run --args="delete-user --email <address> --dry-run"  # email deletion request (then --yes)
+cd backend && ./gradlew run --args="prune-orphans"            # after a DB restore (dry run; --yes deletes)
 cd android && ./gradlew lint test assembleDebug
 ```
 Release: push tag `vX.Y.Z` (internal) or `vX.Y.Z-closed` (closed track); secrets and

@@ -25,7 +25,8 @@ Package by feature under `src/main/kotlin/com/sabit/duelloquiz/backend/`
 | `daily` | Daily challenge (`/v1/daily*`): `DailySelector` (server-random set per Baku day), `DailyService` (attempts, answers, finish, expiry) |
 | `progress` | XP, levels, streak (`GET /v1/me/progress`): pure rules (`XpRules`, `Levels`, `Streaks`, `AwardCalculator`) and `ProgressService.award`, called inside the quiz/daily/duel finalize transaction |
 | `notification` | Push tokens and switches (`/v1/me/push-tokens`, `/v1/me/notification-settings`), `ReminderRules`, `NotificationService` jobs, `PushSender` (`FcmPushSender` via Firebase Admin SDK); texts in `src/main/resources/i18n/notifications.json` |
-| `common` | Config, errors, i18n, Baku day (`BakuTime`), database, Exposed table mappings |
+| `admin` | CLI tasks `delete-user` and `prune-orphans` (`AccountAdmin`, `AdminCli.kt`); every deletion goes through `UserService.deleteAccount` |
+| `common` | Config, errors, i18n, Baku day (`BakuTime`), database, Exposed table mappings, access log (`CallLog.kt`), `BuildInfo` |
 
 Database schema: Flyway migrations in `src/main/resources/db/migration/`. Never edit
 an applied migration; add a new `V<n>__*.sql`.
@@ -139,6 +140,67 @@ curl -X POST http://localhost:8080/v1/admin/questions/import \
 Set the admin claim once with the Firebase Admin SDK (e.g. a small script with the
 service account): `auth.setCustomUserClaims(uid, {admin: true})`.
 
+## Admin CLI: account deletion
+
+Two tasks of the same distribution, run like `import` (same `DB_*` variables) and
+additionally needing `FIREBASE_SERVICE_ACCOUNT_FILE`. Both delete through
+`UserService.deleteAccount(firebaseUid)`, the code behind `DELETE /v1/me`: database
+rows first (cascade / anonymized matches, OQ-014), then the Firebase account
+(already gone = fine). They print and log only internal ids (user id, Firebase uid),
+never the email. Running them twice is safe.
+
+**`delete-user`** (OQ-102, SET-06: deletion requests by email):
+
+```sh
+cd backend
+./gradlew run --args="delete-user --email someone@example.com --dry-run"   # what would be deleted
+./gradlew run --args="delete-user --email someone@example.com --yes"       # delete
+./gradlew run --args="delete-user --uid <firebaseUid> --yes"               # by uid (Firebase console)
+# distribution / Docker image:
+bin/duello-backend delete-user --email someone@example.com --dry-run
+```
+
+- Exactly one of `--email` / `--uid`, and exactly one of `--dry-run` / `--yes`.
+- `--email` looks the account up with the Admin SDK (`getUserByEmail`). No account with
+  that email → "Nothing deleted", exit 0. A profile whose Firebase account is already
+  gone cannot be found by email (the database has no emails): use `prune-orphans`.
+- The dry run prints the Firebase uid, whether the Firebase account exists, the user id
+  and the row counts per table that would be deleted or anonymized.
+- A user in an `active` match is refused (exit 3): the match runs inside the server
+  process, which alone can end it as a forfeit (OQ-069). Retry in a few minutes.
+
+**`prune-orphans`** (after a database restore: accounts deleted after the backup are
+back in the database while their Firebase users stay deleted, OQ-014):
+
+```sh
+./gradlew run --args="prune-orphans"                  # dry run (default): lists user ids
+./gradlew run --args="prune-orphans --yes"            # delete them
+./gradlew run --args="prune-orphans --yes --max 100"  # allow more than 20
+```
+
+- Pages through `users` by id and asks Firebase `getUsers` for 100 uids per call, with
+  `--pause-ms` (default 250) between calls; deletions are paced the same way.
+- `--max` (default 20) refuses a larger real run (exit 3): a wrong Firebase project in
+  the service account would make every profile look orphaned.
+- Users in an `active` match are skipped and reported.
+
+Exit codes: 0 done / nothing to do / dry run, 1 runtime error (database or Firebase;
+run again), 2 usage or configuration error, 3 refused (nothing deleted).
+
+## Logging
+
+JSON logs on stdout (`logback.xml`). Never log tokens, emails or display names; log
+internal ids. The access log (`CallLog.kt`, logger
+`com.sabit.duelloquiz.backend.http.CallLog`) writes `<status>: <METHOD> - <path> in <ms>ms`
+without the query string and masks sensitive path segments
+(`/v1/me/push-tokens/***`). `/health` is not logged.
+
+## Build info
+
+`GET /health` returns `version` (Gradle `version` in `build.gradle.kts`, written to the
+generated `build-info.properties`) and `commit` (env `APP_GIT_SHA`, set by the Docker
+build argument `GIT_SHA`; null locally).
+
 ## Images
 
 Pipeline (`docs/mvp-spec.md` §5), used by `POST /v1/admin/images` and the importer:
@@ -194,5 +256,8 @@ bundles libwebp for Linux x86_64/aarch64, macOS and Windows. No system package o
   stripped, orientation, sizes, quality steps, dominant colour, rejected types),
   `AdminImageRoutesTest` (endpoint, dedupe, errors, admin import + quiz API) and the
   importer tests with an image directory.
+- Admin CLI: `AdminCliArgsTest` (argument rules, no DB) and `AccountAdminTest` (dry run,
+  deletion by email/uid, active-match refusal, orphan batches of 100, `--max`) with a
+  fake `AuthDirectory`; `CallLogTest` checks the masked access log.
 - `ContentValidatorTest` checks that the importer and
   `content/schema/question.schema.json` agree on the public samples and fixtures.
