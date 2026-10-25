@@ -8,13 +8,22 @@
 #   - optional off-VM copy with rclone (BACKUP_RCLONE_REMOTE), same retention there.
 #     A backup that only lives on this VM is not a backup.
 #
-# Settings (environment, e.g. /opt/duello/backup.env read by the systemd unit):
+# Settings (environment; /opt/duello/backup.env from backup.env.example is read by
+# the systemd unit and, when the script is run by hand, by the script itself):
 #   BACKUP_DIR            default /opt/duello/backups
 #   RETENTION_DAYS        default 14 (1..30)
-#   BACKUP_RCLONE_REMOTE  e.g. oci:duello-backups or gdrive-crypt:duello (empty = no off-VM copy)
+#   BACKUP_RCLONE_REMOTE  e.g. r2:duello-backups (Cloudflare R2, OQ-103; the remote is
+#                         defined by RCLONE_CONFIG_R2_* variables); empty = no off-VM copy
 set -euo pipefail
 
 DUELLO_DIR="${DUELLO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+if [ -z "${BACKUP_RCLONE_REMOTE:-}" ] && [ -r "$DUELLO_DIR/backup.env" ]; then
+  # Manual run outside systemd: load the same settings as the timer.
+  set -a
+  # shellcheck disable=SC1091
+  . "$DUELLO_DIR/backup.env"
+  set +a
+fi
 BACKUP_DIR="${BACKUP_DIR:-$DUELLO_DIR/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 BACKUP_RCLONE_REMOTE="${BACKUP_RCLONE_REMOTE:-}"
@@ -57,6 +66,9 @@ if [ -n "$BACKUP_RCLONE_REMOTE" ]; then
   echo "backup $stamp: off-VM copy to $BACKUP_RCLONE_REMOTE"
   rclone copy --no-traverse "$BACKUP_DIR" "$BACKUP_RCLONE_REMOTE" \
     --include "duello-*$stamp*"
+  # The upload must match the local files, otherwise the run fails (and the timer shows it).
+  rclone check --one-way "$BACKUP_DIR" "$BACKUP_RCLONE_REMOTE" --include "duello-*$stamp*"
+  # Same retention off-VM; the R2 lifecycle rule (30 days) is the safety net (OQ-014).
   rclone delete --min-age "${RETENTION_DAYS}d" "$BACKUP_RCLONE_REMOTE" --include 'duello-*'
 else
   echo "WARNING: BACKUP_RCLONE_REMOTE is not set; backups exist only on this VM" >&2

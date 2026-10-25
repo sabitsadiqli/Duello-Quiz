@@ -1,6 +1,7 @@
 name: Deploy Backend
 
-# Builds the backend image (linux/amd64 + linux/arm64 for the Oracle Ampere A1 VM),
+# Builds the backend image (linux/arm64 for the Hetzner CAX11 VM, linux/amd64 for CX22
+# or any x86 host; ADR 0001),
 # pushes it to ghcr.io and deploys it over SSH (runbook: infra/README.md).
 #   push to main (backend/**, infra/prod/**) -> image :<sha> + :main -> GitHub Environment "dev"
 #   workflow_dispatch with a version         -> image :<sha> + :<version> -> "prod"
@@ -210,7 +211,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh duello-vm "mkdir -p '$DEPLOY_PATH/scripts'"
-          scp -q docker-compose.yml Caddyfile .env.example "duello-vm:$DEPLOY_PATH/"
+          scp -q docker-compose.yml Caddyfile .env.example backup.env.example "duello-vm:$DEPLOY_PATH/"
           scp -q scripts/*.sh "duello-vm:$DEPLOY_PATH/scripts/"
           ssh duello-vm "chmod 755 '$DEPLOY_PATH'/scripts/*.sh"
 

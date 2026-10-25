@@ -6,9 +6,26 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| OQ-005 | Hosting account: Oracle Cloud Always Free (card for verification only) or a paid ~5 €/month VM? | Oracle Always Free; paid VM only if the account cannot be created | Sabit |
-| OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | DuckDNS until production release | Sabit |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
+
+## Decided by Sabit (2026-10-25) — hosting and domain
+
+Background, alternatives and costs: `docs/adr/0001-hosting-hetzner-duelloquiz-app.md`;
+runbook: `infra/README.md`.
+
+| ID | Question | Decision | Decided |
+| --- | --- | --- | --- |
+| OQ-005 | Hosting account: Oracle Cloud Always Free or a paid ~5 €/month VM? | Paid **Hetzner Cloud CAX11** (ARM64, 2 vCPU, 4 GB, Ubuntu 24.04), approx. €4–5/month; CX22 (x86) if ARM capacity is missing. Oracle only as a fallback note | Sabit 2026-10-25 |
+| OQ-006 | Domain: free DuckDNS subdomain or a bought domain? | Bought **`duelloquiz.app`** at Cloudflare Registrar, DNS on Cloudflare: `api-dev.` (dev, now), `api.` (prod, later), apex/`www` for GitHub Pages; API records DNS only (grey cloud) | Sabit 2026-10-25 |
+| OQ-099 | Server region named in the privacy policy | Hetzner **Falkenstein (`fsn1`), Germany (EU)** → "Almaniya (AB)"; Nuremberg is also Germany, Helsinki would be "Finlandiya (AB)" | follows OQ-005 (devops 2026-10-25) |
+| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size but needs a payment method and bills above 10 GB — **pending Sabit's confirmation**. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
+
+OQ-097 (contact e-mail) stays open; infra proposal: `support@duelloquiz.app` through
+Cloudflare Email Routing (free, receive-only) to a dedicated inbox, never the
+personal one. Note: OQ-097 … OQ-105 were added on the branch `docs/legal-texts`, which
+is not merged yet; when both branches are in `main`, remove the OQ-099 and OQ-103 rows
+from "Open" (they are answered here) and update their "Details" items, which still
+name Oracle.
 
 ## Decided by Sabit (2026-10-22) — daily challenge, progression, notifications
 
