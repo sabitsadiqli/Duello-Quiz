@@ -119,7 +119,10 @@ The socket belongs to the duel screen (`DuelViewModel`): it survives rotation, i
 user leaves the flow, keeps running in the background during a match and sends `queue.leave` when
 the app is backgrounded while searching. Countdowns are server deadlines minus the clock offset,
 read from `SystemClock.elapsedRealtime`; the client never computes points or correctness. After a
-process death home reopens the duel on the saved running match (`resume = true`).
+process death home reopens the duel on the saved running match (`resume = true`). The result
+screen takes names and avatars from `match.result.you/opponent` (a deleted opponent shows as
+"Silinmiş oyunçu") and names the forfeit cause (`forfeitCause`); a rejoin snapshot keeps the
+opponent's reconnect countdown from `match.state.opponent.reconnectDeadlineEpochMs`.
 
 Without Firebase a debug build plays against `FakeDuelSocketFactory` (`core/network/src/debug`): an
 in-process server with a bot that picks Əminlik and answers at random times (about 70 % right); every

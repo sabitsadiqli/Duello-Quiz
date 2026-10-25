@@ -14,6 +14,7 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
@@ -146,6 +147,7 @@ object DuelTestMessages {
         ownBet: OwnBet? = null,
         ownOptionId: String? = null,
         opponentConnected: Boolean = true,
+        opponentReconnectDeadline: Long? = null,
         scores: DuelScores = DuelScores(0, 0),
         lastResult: RoundResult? = null,
         bet3Left: Int = 2,
@@ -159,6 +161,7 @@ object DuelTestMessages {
             you = YOU,
             opponent = OPPONENT,
             opponentConnected = opponentConnected,
+            opponentReconnectDeadlineEpochMs = opponentReconnectDeadline,
             phase = phase,
             deadlineEpochMs = deadline,
             roundNo = roundNo,
@@ -192,6 +195,8 @@ object DuelTestMessages {
         ratingChange: Int = 16,
         matchId: String = MATCH_ID,
         progress: ProgressGain? = null,
+        you: MatchResultPlayer? = null,
+        opponent: MatchResultPlayer? = null,
     ) = DuelServerMessage.MatchResultMessage(
         seq,
         now,
@@ -210,6 +215,8 @@ object DuelTestMessages {
             calibration = listOf(CalibrationLevel(1, 2, 1), CalibrationLevel(2, 3, 2), CalibrationLevel(3, 2, 2)),
             rounds = emptyList(),
             progress = progress,
+            you = you,
+            opponent = opponent,
         ),
     )
 

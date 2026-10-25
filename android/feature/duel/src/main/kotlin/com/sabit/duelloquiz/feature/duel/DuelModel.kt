@@ -7,6 +7,7 @@ import com.sabit.duelloquiz.core.model.duel.DuelPlayer
 import com.sabit.duelloquiz.core.model.duel.DuelQuestion
 import com.sabit.duelloquiz.core.model.duel.DuelScores
 import com.sabit.duelloquiz.core.model.duel.MatchResult
+import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundResult
 
@@ -28,6 +29,27 @@ internal sealed interface Presence {
     /** "Rəqib qayıtdı." until [untilElapsed] (monotonic). */
     data class Returned(val untilElapsed: Long) : Presence
 }
+
+/**
+ * Presence after a `match.state` (DUEL-13): an opponent who is away with a reconnect window still
+ * running keeps the countdown from `opponent.reconnectDeadlineEpochMs`; an expired or unknown
+ * window is [Presence.Away]. A running "Rəqib qayıtdı." stays.
+ */
+internal fun snapshotPresence(
+    connected: Boolean,
+    reconnectDeadline: Long?,
+    serverNow: Long,
+    current: Presence?,
+): Presence = when {
+    !connected && reconnectDeadline != null && reconnectDeadline > serverNow -> Presence.Disconnected(reconnectDeadline)
+    !connected -> Presence.Away
+    current is Presence.Returned -> current
+    else -> Presence.Connected
+}
+
+/** `match.result.you/opponent` as a result-screen player; null for a deleted account. */
+internal fun MatchResultPlayer.toDuelPlayer(): DuelPlayer? =
+    displayName?.takeUnless { deleted }?.let { DuelPlayer(it, avatarUrl, ratingAfter) }
 
 internal data class RoundModel(
     val roundNo: Int,

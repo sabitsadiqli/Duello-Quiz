@@ -332,8 +332,12 @@
     <string name="duel_result_reason_sudden_death_win">Əlavə sualda qalib gəldin.</string>
     <string name="duel_result_reason_sudden_death_loss">Əlavə sualda uduzdun.</string>
     <string name="duel_result_reason_draw">3 əlavə sualdan sonra da hesab bərabər qaldı.</string>
+    <string name="duel_result_reason_opponent_left">Rəqib oyundan çıxdı. Qələbə sənindir!</string>
+    <string name="duel_result_reason_opponent_missed_rounds">Rəqib ardıcıl 2 raund buraxdı. Qələbə sənindir!</string>
     <string name="duel_result_reason_opponent_forfeit">Rəqib oyunu tərk etdi. Qələbə sənindir!</string>
     <string name="duel_result_reason_self_forfeit">Ardıcıl 2 raund buraxdığın üçün oyun başa çatdı.</string>
+    <string name="duel_result_reason_self_left">Oyundan çıxdın. Məğlubiyyət sayıldı.</string>
+    <string name="duel_result_reason_self_forfeit_unknown">Oyun texniki məğlubiyyətlə bitdi.</string>
     <string name="duel_result_reason_abandoned">Oyun texniki səbəbdən dayandırıldı.</string>
     <string name="duel_result_message_loss">Növbəti dəfə alınacaq. Əminlik kartına bax.</string>
     <string name="duel_result_winner_badge">Qalib</string>

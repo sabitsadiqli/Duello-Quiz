@@ -335,21 +335,7 @@ internal class DuelUiRenderer(
         )
     }
 
-    private fun reason(result: MatchResult): ResultReason? = when (result.outcome) {
-        MatchOutcome.WIN -> when {
-            result.endReason == MatchEndReason.SUDDEN_DEATH -> ResultReason.SUDDEN_DEATH_WIN
-            result.endReason == MatchEndReason.FORFEIT -> ResultReason.OPPONENT_FORFEIT
-            else -> null
-        }
-        MatchOutcome.LOSS -> when {
-            result.endReason == MatchEndReason.SUDDEN_DEATH -> ResultReason.SUDDEN_DEATH_LOSS
-            result.endReason == MatchEndReason.FORFEIT &&
-                (result.forfeitCause == ForfeitCause.MISSED_ROUNDS || result.forfeitCause == null) -> ResultReason.SELF_FORFEIT
-            else -> ResultReason.LOSS_MESSAGE
-        }
-        MatchOutcome.DRAW -> ResultReason.DRAW
-        MatchOutcome.ABANDONED -> ResultReason.ABANDONED
-    }
+    private fun reason(result: MatchResult): ResultReason? = resultReason(result)
 
     companion object {
         const val REGULAR_ROUNDS = 7
@@ -376,4 +362,31 @@ internal class DuelUiRenderer(
         private const val WARNING_CONFIDENCE_MS = 2_000L
         private const val WARNING_ANSWER_MS = 3_000L
     }
+}
+
+/**
+ * The reason line of the result hero (duel-result.md, az.md `duel_result_reason_*`). A forfeit
+ * names its cause (`forfeitCause`); `null` (rebuilt old forfeit) falls back to a generic line.
+ */
+internal fun resultReason(result: MatchResult): ResultReason? = when (result.outcome) {
+    MatchOutcome.WIN -> when (result.endReason) {
+        MatchEndReason.SUDDEN_DEATH -> ResultReason.SUDDEN_DEATH_WIN
+        MatchEndReason.FORFEIT -> when (result.forfeitCause) {
+            ForfeitCause.LEFT -> ResultReason.OPPONENT_LEFT
+            ForfeitCause.MISSED_ROUNDS -> ResultReason.OPPONENT_MISSED_ROUNDS
+            null -> ResultReason.OPPONENT_FORFEIT
+        }
+        else -> null
+    }
+    MatchOutcome.LOSS -> when (result.endReason) {
+        MatchEndReason.SUDDEN_DEATH -> ResultReason.SUDDEN_DEATH_LOSS
+        MatchEndReason.FORFEIT -> when (result.forfeitCause) {
+            ForfeitCause.MISSED_ROUNDS -> ResultReason.SELF_FORFEIT
+            ForfeitCause.LEFT -> ResultReason.SELF_LEFT
+            null -> ResultReason.SELF_FORFEIT_UNKNOWN
+        }
+        else -> ResultReason.LOSS_MESSAGE
+    }
+    MatchOutcome.DRAW -> ResultReason.DRAW
+    MatchOutcome.ABANDONED -> ResultReason.ABANDONED
 }

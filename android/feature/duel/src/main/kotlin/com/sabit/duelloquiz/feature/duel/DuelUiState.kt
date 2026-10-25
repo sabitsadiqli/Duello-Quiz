@@ -253,8 +253,19 @@ enum class ResultReason {
     SUDDEN_DEATH_WIN,
     SUDDEN_DEATH_LOSS,
     DRAW,
+    /** `forfeitCause = null` (rebuilt result of an old forfeit): generic fallback. */
     OPPONENT_FORFEIT,
+    OPPONENT_LEFT,
+    OPPONENT_MISSED_ROUNDS,
+
+    /** Own forfeit through 2 missed rounds in a row (DUEL-14). */
     SELF_FORFEIT,
+
+    /** Defensive: the leaver normally goes home and never sees the result (DUEL-15). */
+    SELF_LEFT,
+
+    /** Own forfeit with `forfeitCause = null`. */
+    SELF_FORFEIT_UNKNOWN,
     ABANDONED,
     LOSS_MESSAGE,
 }
