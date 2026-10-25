@@ -471,6 +471,7 @@ private fun optionDescriptionRes(index: Int): Int = when (index) {
 @StringRes
 private fun QuizStartError.bodyRes(): Int = when (this) {
     QuizStartError.Offline -> R.string.error_offline
+    QuizStartError.ServerUnreachable -> R.string.error_server_unreachable
     QuizStartError.Generic -> R.string.error_generic
     QuizStartError.RateLimited -> R.string.error_rate_limited
 }

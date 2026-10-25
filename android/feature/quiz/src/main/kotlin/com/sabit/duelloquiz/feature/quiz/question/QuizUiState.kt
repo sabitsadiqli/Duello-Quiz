@@ -27,6 +27,9 @@ sealed interface QuizPhase {
 
 enum class QuizStartError {
     Offline,
+
+    /** Device online, backend unreachable. */
+    ServerUnreachable,
     Generic,
 
     /** 429: only "Geri" is offered (quiz-question.md). */

@@ -130,6 +130,7 @@ class QuizViewModel @Inject constructor(
         val startError = when (error) {
             is DataError.RateLimited -> QuizStartError.RateLimited
             DataError.Offline -> QuizStartError.Offline
+            DataError.ServerUnreachable -> QuizStartError.ServerUnreachable
             else -> QuizStartError.Generic
         }
         _uiState.update { it.copy(phase = QuizPhase.StartFailed(startError)) }

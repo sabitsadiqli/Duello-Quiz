@@ -22,6 +22,7 @@
     <!-- error_ -->
     <string name="error_offline">İnternet bağlantısı yoxdur. Yenidən cəhd et.</string>
     <string name="error_generic">Xəta baş verdi. Yenidən cəhd et.</string>
+    <string name="error_server_unreachable">Serverə qoşulmaq mümkün olmadı. Bir az sonra yenidən cəhd et.</string>
     <string name="error_sign_in_expired">Giriş müddəti bitib. Yenidən daxil ol.</string>
     <string name="error_category_not_playable">Bu kateqoriya hazırda əlçatan deyil.</string>
     <string name="error_rate_limited">Qısa müddətdə çox quiz başlatdın. Bir az sonra yenidən cəhd et.</string>

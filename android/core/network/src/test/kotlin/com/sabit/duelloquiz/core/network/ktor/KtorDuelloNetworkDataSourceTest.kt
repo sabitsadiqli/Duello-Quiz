@@ -34,6 +34,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import java.net.ConnectException
+import java.net.UnknownHostException
 
 class KtorDuelloNetworkDataSourceTest {
 
@@ -48,6 +50,7 @@ class KtorDuelloNetworkDataSourceTest {
 
     private fun dataSource(
         tokenProvider: IdTokenProvider = tokens,
+        deviceHasInternet: Boolean = false,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): KtorDuelloNetworkDataSource {
         val engine = MockEngine { request ->
@@ -55,7 +58,7 @@ class KtorDuelloNetworkDataSourceTest {
             handler(request)
         }
         val client = createDuelloHttpClient(engine, "http://test/", tokenProvider) { "az" }
-        return KtorDuelloNetworkDataSource(client) { now }
+        return KtorDuelloNetworkDataSource(client, connectivity = { deviceHasInternet }) { now }
     }
 
     private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK, extra: Map<String, String> = emptyMap()) =
@@ -145,6 +148,27 @@ class KtorDuelloNetworkDataSourceTest {
     @Test
     fun connectionFailureIsOffline() = runTest {
         val source = dataSource { throw IOException("no route to host") }
+
+        assertEquals(DataResult.Failure(DataError.Offline), source.getProfile())
+    }
+
+    @Test
+    fun unknownHostWhileOnlineIsServerUnreachable() = runTest {
+        val source = dataSource(deviceHasInternet = true) { throw UnknownHostException("api.duelloquiz.app") }
+
+        assertEquals(DataResult.Failure(DataError.ServerUnreachable), source.getProfile())
+    }
+
+    @Test
+    fun refusedConnectionWithoutInternetIsOffline() = runTest {
+        val source = dataSource(deviceHasInternet = false) { throw ConnectException("Connection refused") }
+
+        assertEquals(DataResult.Failure(DataError.Offline), source.getProfile())
+    }
+
+    @Test
+    fun brokenConnectionWhileOnlineStaysOffline() = runTest {
+        val source = dataSource(deviceHasInternet = true) { throw IOException("unexpected end of stream") }
 
         assertEquals(DataResult.Failure(DataError.Offline), source.getProfile())
     }

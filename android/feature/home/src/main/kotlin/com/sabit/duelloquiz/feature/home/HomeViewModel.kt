@@ -161,6 +161,9 @@ enum class HomeMessage {
     VerificationDone,
     TooManyRequests,
     Offline,
+
+    /** Device online, backend unreachable (DataError.ServerUnreachable). */
+    ServerUnreachable,
     Generic,
     QuizNeedsInternet,
     CategoryNotPlayable,
@@ -639,6 +642,7 @@ class HomeViewModel @Inject constructor(
                 HomeMessage.CategoryNotPlayable
             error is DataError.RateLimited -> HomeMessage.RateLimited
             error == DataError.Offline -> HomeMessage.Offline
+            error == DataError.ServerUnreachable -> HomeMessage.ServerUnreachable
             else -> HomeMessage.Generic
         }
         _events.send(HomeEvent.ShowMessage(message))

@@ -14,7 +14,8 @@ sealed interface DailyPhase {
     /** Start or resume running; the loading view shows after its own delay. */
     data object Loading : DailyPhase
 
-    data class StartFailed(val offline: Boolean) : DailyPhase
+    /** [serverUnreachable]: the device is online but the backend cannot be reached. */
+    data class StartFailed(val offline: Boolean, val serverUnreachable: Boolean = false) : DailyPhase
 
     /** The status became `unavailable` meanwhile (409 `daily_unavailable`). */
     data object Unavailable : DailyPhase

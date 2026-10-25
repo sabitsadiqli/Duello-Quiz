@@ -3,6 +3,7 @@ package com.sabit.duelloquiz.core.network.di
 import android.util.Log
 import com.sabit.duelloquiz.core.auth.AuthBackend
 import com.sabit.duelloquiz.core.auth.AuthRepository
+import com.sabit.duelloquiz.core.common.DeviceConnectivity
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.network.AcceptLanguageProvider
 import com.sabit.duelloquiz.core.network.AppLocaleAcceptLanguageProvider
@@ -70,6 +71,7 @@ internal object NetworkModule {
         tokenProvider: IdTokenProvider,
         languageProvider: AcceptLanguageProvider,
         clock: WallClock,
+        connectivity: DeviceConnectivity,
     ): KtorDuelloNetworkDataSource = KtorDuelloNetworkDataSource(
         client = createDuelloHttpClient(
             engine = OkHttp.create(),
@@ -78,6 +80,7 @@ internal object NetworkModule {
             languageProvider = languageProvider,
         ),
         clock = clock,
+        connectivity = connectivity,
     )
 
     /**

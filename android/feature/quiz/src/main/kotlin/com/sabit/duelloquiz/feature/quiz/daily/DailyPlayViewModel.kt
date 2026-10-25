@@ -144,7 +144,10 @@ class DailyPlayViewModel @Inject constructor(
     private fun onStartFailed(error: DataError) {
         val phase = when {
             error is DataError.Api && error.code == ApiErrorCode.DailyUnavailable -> DailyPhase.Unavailable
-            else -> DailyPhase.StartFailed(offline = error == DataError.Offline)
+            else -> DailyPhase.StartFailed(
+                offline = error == DataError.Offline,
+                serverUnreachable = error == DataError.ServerUnreachable,
+            )
         }
         _uiState.update { it.copy(phase = phase) }
     }

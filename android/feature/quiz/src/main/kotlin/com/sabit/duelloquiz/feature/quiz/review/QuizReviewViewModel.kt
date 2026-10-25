@@ -41,7 +41,7 @@ data class ReviewItemUi(
 sealed interface QuizReviewUiState {
     data object Loading : QuizReviewUiState
 
-    data class Error(val offline: Boolean) : QuizReviewUiState
+    data class Error(val offline: Boolean, val serverUnreachable: Boolean = false) : QuizReviewUiState
 
     data class Content(val items: List<ReviewItemUi>) : QuizReviewUiState
 }
@@ -106,7 +106,7 @@ class QuizReviewViewModel @Inject constructor(
             val result = known?.let { DataResult.Success(it) } ?: quizRepository.finish(sessionId)
             _uiState.value = when (result) {
                 is DataResult.Success -> QuizReviewUiState.Content(result.value.toItems())
-                is DataResult.Failure -> QuizReviewUiState.Error(offline = result.error == DataError.Offline)
+                is DataResult.Failure -> result.error.toErrorState()
             }
         }
     }
@@ -122,7 +122,7 @@ class QuizReviewViewModel @Inject constructor(
             val result = known?.let { DataResult.Success(it) } ?: dailyRepository.finish(sessionId)
             _uiState.value = when (result) {
                 is DataResult.Success -> QuizReviewUiState.Content(result.value.review.toItems())
-                is DataResult.Failure -> QuizReviewUiState.Error(offline = result.error == DataError.Offline)
+                is DataResult.Failure -> result.error.toErrorState()
             }
         }
     }
@@ -143,3 +143,8 @@ class QuizReviewViewModel @Inject constructor(
         )
     }
 }
+
+private fun DataError.toErrorState() = QuizReviewUiState.Error(
+    offline = this == DataError.Offline,
+    serverUnreachable = this == DataError.ServerUnreachable,
+)
