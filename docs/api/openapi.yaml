@@ -656,7 +656,9 @@ paths:
       tags: [notifications]
       operationId: deletePushToken
       summary: Remove this device's token (sign-out, permission revoked)
-      description: Deletes the token if it belongs to the caller. Idempotent; always 204.
+      description: |
+        Deletes the token if it belongs to the caller. Idempotent; always 204.
+        The server logs this path as `/v1/me/push-tokens/***` (the token is never logged).
       parameters:
         - name: token
           in: path

@@ -14,6 +14,7 @@ import com.sabit.duelloquiz.backend.category.CategoryService
 import com.sabit.duelloquiz.backend.category.categoryRoutes
 import com.sabit.duelloquiz.backend.common.AppConfig
 import com.sabit.duelloquiz.backend.common.Db
+import com.sabit.duelloquiz.backend.common.configureCallLogging
 import com.sabit.duelloquiz.backend.common.configureErrorHandling
 import com.sabit.duelloquiz.backend.common.healthRoutes
 import com.sabit.duelloquiz.backend.common.notFoundFallback
@@ -61,9 +62,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.authenticate
-import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.request.path
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
@@ -82,7 +81,6 @@ import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.KoinIsolated
 import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
@@ -164,11 +162,7 @@ fun Application.configureApp() {
     val db = get<Db>()
 
     install(ContentNegotiation) { json(ApiJson) }
-    install(CallLogging) {
-        level = Level.INFO
-        disableDefaultColors()
-        filter { it.request.path() != "/health" }
-    }
+    configureCallLogging()
     configureErrorHandling()
     install(WebSockets) {
         // Protocol limit is 4096 bytes (checked per message); larger frames close the socket.
