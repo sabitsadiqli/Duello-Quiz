@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
 # One-time (and safe to re-run) setup of a fresh Ubuntu 24.04 VM for Duello Quiz,
-# made for the Oracle Cloud Always Free Ampere A1 shape (ARM64); also works on amd64.
+# made for a Hetzner Cloud CAX11 (ARM64); works the same on amd64 (CX22).
 #
 # Run as root from a checkout of this repo on the VM (runbook: infra/README.md):
-#   sudo infra/prod/scripts/bootstrap-vm.sh --deploy-pubkey-file ~/duello-deploy.pub \
-#        [--deploy-user deploy] [--duckdns duello-dev]
+#   infra/prod/scripts/bootstrap-vm.sh --deploy-pubkey-file ~/duello-deploy.pub \
+#        [--domain api-dev.duelloquiz.app] [--acme-email support@duelloquiz.app] \
+#        [--deploy-user deploy] [--swap-size 2G]
 #
 # What it does (every step checks first, so a second run changes nothing):
 #   1. Docker Engine + compose plugin from Docker's apt repository, log rotation.
-#   2. Opens 80/tcp, 443/tcp, 443/udp on the VM firewall (Oracle image: iptables
-#      rules file; firewalld if active; otherwise UFW). The Oracle VCN security list
-#      needs the same ingress rules — that is done in the Oracle console.
-#   3. Deploy user (docker group, SSH key for GitHub Actions).
-#   4. /opt/duello with compose file, Caddyfile, scripts, .env (random DB password),
-#      secrets/ (UID 10001 = backend user), backups/, content/.
-#   5. Daily backup systemd timer.
-#   6. Optional DuckDNS updater (asks for the token, stores it root-only).
+#   2. Swap file (CAX11 has 4 GB RAM and no swap), SSH key-only login.
+#   3. UFW: allow 22/tcp, 80/tcp, 443/tcp, 443/udp. The Hetzner Cloud Firewall needs
+#      the same inbound rules — that is done in the Hetzner console.
+#   4. Deploy user (docker group, SSH key for GitHub Actions).
+#   5. /opt/duello with compose file, Caddyfile, scripts, .env (random DB password;
+#      --domain / --acme-email fill it in when .env is created), secrets/
+#      (UID 10001 = backend user), backups/, content/.
+#   6. Daily backup systemd timer.
 set -euo pipefail
 
 DEPLOY_USER="deploy"
 PUBKEY_FILE=""
-DUCKDNS_SUBDOMAIN=""
+DOMAIN=""
+ACME_EMAIL=""
+SWAP_SIZE="2G"
 DUELLO_DIR="/opt/duello"
 BACKEND_UID=10001
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # infra/prod
 
 usage() {
-  sed -n '2,20p' "$0" >&2
+  sed -n '2,19p' "$0" >&2
   exit 2
 }
 
@@ -34,7 +37,9 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --deploy-user) DEPLOY_USER="${2:?}"; shift 2 ;;
     --deploy-pubkey-file) PUBKEY_FILE="${2:?}"; shift 2 ;;
-    --duckdns) DUCKDNS_SUBDOMAIN="${2:?}"; shift 2 ;;
+    --domain) DOMAIN="${2:?}"; shift 2 ;;
+    --acme-email) ACME_EMAIL="${2:?}"; shift 2 ;;
+    --swap-size) SWAP_SIZE="${2:?}"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "unknown option: $1" >&2; usage ;;
   esac
@@ -49,8 +54,20 @@ log() { printf '\n==> %s\n' "$*"; }
 if ! [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
   echo "invalid user name: $DEPLOY_USER" >&2; exit 2
 fi
-if [ -n "$DUCKDNS_SUBDOMAIN" ] && ! [[ "$DUCKDNS_SUBDOMAIN" =~ ^[a-z0-9-]+$ ]]; then
-  echo "--duckdns takes the subdomain only, e.g. duello-dev (not duello-dev.duckdns.org)" >&2; exit 2
+if [ -n "$DOMAIN" ] && ! [[ "$DOMAIN" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+  echo "--domain takes a host name, e.g. api-dev.duelloquiz.app (no https://)" >&2; exit 2
+fi
+if [ -n "$ACME_EMAIL" ] && ! [[ "$ACME_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+  echo "--acme-email does not look like an e-mail address" >&2; exit 2
+fi
+if [ "$SWAP_SIZE" != "0" ] && ! [[ "$SWAP_SIZE" =~ ^[1-9][0-9]*[MG]$ ]]; then
+  echo "--swap-size takes e.g. 2G or 1024M, or 0 for no swap" >&2; exit 2
+fi
+if [ -f /etc/iptables/rules.v4 ] && dpkg -s iptables-persistent > /dev/null 2>&1; then
+  # e.g. Oracle Cloud images: their iptables rules end in REJECT and conflict with UFW.
+  echo "this image manages the firewall with iptables-persistent (/etc/iptables/rules.v4);" >&2
+  echo "the script uses UFW and is made for Hetzner/plain Ubuntu images. Open 80/443 by hand." >&2
+  exit 1
 fi
 
 export DEBIAN_FRONTEND=noninteractive
@@ -65,7 +82,7 @@ if ! command -v docker > /dev/null || ! docker compose version > /dev/null 2>&1;
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
   fi
-  arch="$(dpkg --print-architecture)"   # arm64 on Ampere A1
+  arch="$(dpkg --print-architecture)"   # arm64 on CAX, amd64 on CX
   echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" \
     > /etc/apt/sources.list.d/docker.list
   apt-get update -q
@@ -86,58 +103,65 @@ JSON
 fi
 systemctl enable --now docker > /dev/null
 
-# ---------------------------------------------------------------- 2. Firewall -----
-log "Firewall: allow 80/tcp, 443/tcp, 443/udp (SSH stays open)"
-open_iptables_rules_file() {
-  # Oracle's Ubuntu images ship /etc/iptables/rules.v4 (netfilter-persistent) with an
-  # INPUT chain that ends in "-j REJECT". Oracle advises against UFW on these images.
-  # New ACCEPT rules must come BEFORE that REJECT. We edit the rules file (so Docker's
-  # own chains are never saved into it) and apply the same rules live.
-  local file=/etc/iptables/rules.v4 spec proto port line
-  for spec in tcp:80 tcp:443 udp:443; do
-    proto="${spec%%:*}"; port="${spec##*:}"
-    line="-A INPUT -p ${proto} -m state --state NEW -m ${proto} --dport ${port} -j ACCEPT"
-    if ! grep -qF -- "$line" "$file"; then
-      if grep -q '^-A INPUT -j REJECT' "$file"; then
-        # GNU sed: insert before the first REJECT line of INPUT only.
-        sed -i "0,/^-A INPUT -j REJECT/s//${line//\//\\/}\n&/" "$file"
-      else
-        sed -i "/^COMMIT/i ${line}" "$file"
-      fi
-    fi
-    if ! iptables -C INPUT -p "$proto" -m state --state NEW -m "$proto" --dport "$port" -j ACCEPT 2> /dev/null; then
-      reject_no="$(iptables -L INPUT --line-numbers -n | awk '$2 == "REJECT" { print $1; exit }')"
-      if [ -n "$reject_no" ]; then
-        iptables -I INPUT "$reject_no" -p "$proto" -m state --state NEW -m "$proto" --dport "$port" -j ACCEPT
-      else
-        iptables -A INPUT -p "$proto" -m state --state NEW -m "$proto" --dport "$port" -j ACCEPT
-      fi
-    fi
-  done
-  echo "updated $file and the live INPUT chain"
-}
-
-if systemctl is-active --quiet firewalld 2> /dev/null; then
-  # Oracle Linux style images (firewall-cmd); not expected on Ubuntu, handled anyway.
-  firewall-cmd --permanent --add-service=http --add-service=https > /dev/null
-  firewall-cmd --permanent --add-port=443/udp > /dev/null
-  firewall-cmd --reload > /dev/null
-  echo "firewalld: http, https, 443/udp allowed"
-elif [ -f /etc/iptables/rules.v4 ]; then
-  open_iptables_rules_file
-else
-  apt-get install -y -q ufw
-  ufw allow OpenSSH > /dev/null
-  ufw allow 80/tcp > /dev/null
-  ufw allow 443/tcp > /dev/null
-  ufw allow 443/udp > /dev/null
-  ufw --force enable > /dev/null
-  echo "ufw enabled: OpenSSH, 80/tcp, 443/tcp, 443/udp"
-  # Note: Docker-published ports bypass UFW. Only Caddy publishes ports (80/443);
-  # PostgreSQL and the backend publish none.
+# ---------------------------------------------------------------- 2. Swap, SSH -----
+if [ "$SWAP_SIZE" != "0" ]; then
+  log "Swap file (${SWAP_SIZE})"
+  if swapon --show --noheadings | grep -q .; then
+    echo "swap already active: $(swapon --show --noheadings | awk '{print $1, $3}' | tr '\n' ' ')"
+  else
+    [ -f /swapfile ] || { fallocate -l "$SWAP_SIZE" /swapfile; chmod 0600 /swapfile; mkswap /swapfile > /dev/null; }
+    swapon /swapfile
+    grep -qE '^/swapfile[[:space:]]' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    echo "swap enabled"
+  fi
+  # Use swap only as a safety net against OOM kills, not for the JVM's working set.
+  sysctl_conf=/etc/sysctl.d/99-duello.conf
+  if [ "$(cat "$sysctl_conf" 2> /dev/null)" != "vm.swappiness=10" ]; then
+    echo "vm.swappiness=10" > "$sysctl_conf"
+    sysctl -q -p "$sysctl_conf"
+  fi
 fi
 
-# ---------------------------------------------------------------- 3. Deploy user --
+log "SSH: key-only login"
+# Hetzner puts the SSH key chosen at creation into root's authorized_keys. Passwords
+# are turned off only when a key exists, so this can never lock you out.
+admin_home="$(getent passwd "${SUDO_USER:-root}" | cut -d: -f6)"
+if [ -s /root/.ssh/authorized_keys ] || [ -s "${admin_home}/.ssh/authorized_keys" ]; then
+  sshd_dropin=/etc/ssh/sshd_config.d/10-duello.conf
+  desired="$(printf '%s\n' \
+    '# Managed by infra/prod/scripts/bootstrap-vm.sh' \
+    'PasswordAuthentication no' \
+    'KbdInteractiveAuthentication no' \
+    'PermitRootLogin prohibit-password')"
+  if [ "$(cat "$sshd_dropin" 2> /dev/null)" != "$desired" ]; then
+    printf '%s\n' "$desired" > "$sshd_dropin"
+    if ! sshd -t; then
+      rm -f "$sshd_dropin"   # never leave sshd with a config it rejects
+      echo "sshd rejected the drop-in; removed it, SSH unchanged" >&2; exit 1
+    fi
+    systemctl try-reload-or-restart ssh.service
+    echo "password login disabled"
+  else
+    echo "already key-only"
+  fi
+else
+  echo "WARNING: no authorized_keys for root or ${SUDO_USER:-root}; password login left as it is" >&2
+fi
+
+# ---------------------------------------------------------------- 3. Firewall -----
+log "Firewall (UFW): allow 22/tcp, 80/tcp, 443/tcp, 443/udp"
+apt-get install -y -q ufw
+# SSH is allowed BEFORE enabling, so the current session survives.
+ufw allow OpenSSH > /dev/null
+ufw allow 80/tcp > /dev/null
+ufw allow 443/tcp > /dev/null
+ufw allow 443/udp > /dev/null
+ufw --force enable > /dev/null
+echo "ufw active: OpenSSH, 80/tcp, 443/tcp, 443/udp"
+# Docker-published ports bypass UFW. Only Caddy publishes ports (80/443); PostgreSQL
+# and the backend publish none. The Hetzner Cloud Firewall is the outer layer.
+
+# ---------------------------------------------------------------- 4. Deploy user --
 log "Deploy user '${DEPLOY_USER}'"
 if ! id "$DEPLOY_USER" > /dev/null 2>&1; then
   useradd --create-home --shell /bin/bash "$DEPLOY_USER"
@@ -162,7 +186,7 @@ elif [ ! -s "$auth_keys" ]; then
   echo "WARNING: no SSH key for ${DEPLOY_USER}; re-run with --deploy-pubkey-file" >&2
 fi
 
-# ---------------------------------------------------------------- 4. /opt/duello --
+# ---------------------------------------------------------------- 5. /opt/duello --
 log "Directories and files in ${DUELLO_DIR}"
 install -d -m 0755 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$DUELLO_DIR" "$DUELLO_DIR/scripts" "$DUELLO_DIR/content"
 install -d -m 0750 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$DUELLO_DIR/backups"
@@ -170,7 +194,7 @@ install -d -m 0750 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$DUELLO_DIR/backups"
 install -d -m 0700 -o "$BACKEND_UID" -g "$BACKEND_UID" "$DUELLO_DIR/secrets"
 
 # Repo files: copied only when missing; every deploy refreshes them afterwards.
-for f in docker-compose.yml Caddyfile .env.example; do
+for f in docker-compose.yml Caddyfile .env.example backup.env.example; do
   [ -e "$DUELLO_DIR/$f" ] || install -m 0644 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$SRC_DIR/$f" "$DUELLO_DIR/$f"
 done
 for f in "$SRC_DIR"/scripts/*.sh; do
@@ -180,15 +204,25 @@ done
 
 if [ ! -e "$DUELLO_DIR/.env" ]; then
   db_password="$(openssl rand -base64 36 | tr -d '/+=\n' | cut -c1-40)"
-  sed "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${db_password}/" "$SRC_DIR/.env.example" > "$DUELLO_DIR/.env"
+  sed_args=(-e "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${db_password}/")
+  if [ -n "$DOMAIN" ]; then
+    sed_args+=(-e "s/^DUELLO_DOMAIN=.*/DUELLO_DOMAIN=${DOMAIN}/"
+               -e "s#^MEDIA_BASE_URL=.*#MEDIA_BASE_URL=https://${DOMAIN}/media#")
+  fi
+  [ -z "$ACME_EMAIL" ] || sed_args+=(-e "s|^ACME_EMAIL=.*|ACME_EMAIL=${ACME_EMAIL}|")
+  (umask 077; sed "${sed_args[@]}" "$SRC_DIR/.env.example" > "$DUELLO_DIR/.env")
   chown "$DEPLOY_USER:$DEPLOY_USER" "$DUELLO_DIR/.env"
   chmod 0600 "$DUELLO_DIR/.env"
-  echo "created ${DUELLO_DIR}/.env with a random POSTGRES_PASSWORD — edit DUELLO_DOMAIN, ACME_EMAIL, MEDIA_BASE_URL"
+  echo "created ${DUELLO_DIR}/.env with a random POSTGRES_PASSWORD"
 else
   echo "${DUELLO_DIR}/.env exists, left unchanged"
+  if [ -n "$DOMAIN" ] && ! grep -qx "DUELLO_DOMAIN=${DOMAIN}" "$DUELLO_DIR/.env"; then
+    echo "NOTE: --domain ${DOMAIN} differs from DUELLO_DOMAIN in .env; edit .env by hand" >&2
+  fi
 fi
+grep -E '^(DUELLO_DOMAIN|ACME_EMAIL|MEDIA_BASE_URL)=' "$DUELLO_DIR/.env"
 
-# ---------------------------------------------------------------- 5. Backups ------
+# ---------------------------------------------------------------- 6. Backups ------
 log "Daily backup timer"
 for unit in duello-backup.service duello-backup.timer; do
   sed -e "s/@DEPLOY_USER@/${DEPLOY_USER}/g" -e "s#@DUELLO_DIR@#${DUELLO_DIR}#g" \
@@ -203,40 +237,14 @@ systemctl daemon-reload
 systemctl enable --now duello-backup.timer > /dev/null
 systemctl list-timers duello-backup.timer --no-pager || true
 
-# ---------------------------------------------------------------- 6. DuckDNS ------
-if [ -n "$DUCKDNS_SUBDOMAIN" ]; then
-  log "DuckDNS updater for ${DUCKDNS_SUBDOMAIN}.duckdns.org"
-  install -d -m 0700 /etc/duello
-  if [ ! -s /etc/duello/duckdns.env ]; then
-    if [ -t 0 ]; then
-      read -r -s -p "DuckDNS token (input hidden): " duck_token; echo
-    else
-      echo "no terminal to ask for the DuckDNS token; re-run interactively" >&2; exit 1
-    fi
-    umask 077
-    printf 'DUCKDNS_SUBDOMAIN=%s\nDUCKDNS_TOKEN=%s\n' "$DUCKDNS_SUBDOMAIN" "$duck_token" > /etc/duello/duckdns.env
-    umask 022
-  fi
-  cat > /usr/local/bin/duello-duckdns-update <<'SH'
-#!/bin/sh
-# Updates the DuckDNS A record to this VM's public IP (DuckDNS detects it).
-set -eu
-. /etc/duello/duckdns.env
-# Token is passed on stdin (curl -K -), so it never shows up in the process list.
-printf 'url = "https://www.duckdns.org/update?domains=%s&token=%s&ip="\n' \
-  "$DUCKDNS_SUBDOMAIN" "$DUCKDNS_TOKEN" | curl -fsS --max-time 30 -K - -o /dev/null
-SH
-  chmod 0755 /usr/local/bin/duello-duckdns-update
-  echo '*/10 * * * * root /usr/local/bin/duello-duckdns-update > /dev/null 2>&1' > /etc/cron.d/duello-duckdns
-  /usr/local/bin/duello-duckdns-update && echo "DuckDNS record updated"
-fi
-
 log "Done"
 cat <<EOF
-Next steps (infra/README.md, "First deploy"):
-  1. Edit ${DUELLO_DIR}/.env (DUELLO_DOMAIN, ACME_EMAIL, MEDIA_BASE_URL).
+Next steps (infra/README.md, runbook):
+  1. Check ${DUELLO_DIR}/.env (DUELLO_DOMAIN, ACME_EMAIL, MEDIA_BASE_URL above).
   2. Put the Firebase Admin JSON into ${DUELLO_DIR}/secrets/ (owner ${BACKEND_UID}, mode 0400)
      and set FIREBASE_SERVICE_ACCOUNT_FILE in .env.
-  3. Check the Oracle VCN security list allows TCP 80 and 443 from 0.0.0.0/0.
-  4. Run the "Deploy backend" workflow (or: sudo -u ${DEPLOY_USER} ${DUELLO_DIR}/scripts/deploy.sh <tag>).
+  3. Off-VM backups: create ${DUELLO_DIR}/backup.env from backup.env.example (R2 keys).
+  4. Check: Hetzner Cloud Firewall allows TCP 22, 80, 443 (+ UDP 443); DNS A/AAAA of the
+     domain point to this VM (Cloudflare, DNS only).
+  5. Run the "Deploy Backend" workflow (or: sudo -u ${DEPLOY_USER} ${DUELLO_DIR}/scripts/deploy.sh <tag>).
 EOF

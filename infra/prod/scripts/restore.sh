@@ -8,8 +8,9 @@
 #   restore.sh [--yes] <db.dump> [<media.tar>]  # REAL restore: replaces the database
 #                                               # (and the media volume if a tar is given)
 #
-# Get files from the off-VM copy first if the VM was lost, e.g.
-#   rclone copy oci:duello-backups/duello-db-20261019T233000Z.dump /opt/duello/backups/
+# Get files from the off-VM copy (Cloudflare R2) first if the VM was lost, e.g.
+#   set -a; . /opt/duello/backup.env; set +a
+#   rclone copy r2:duello-backups/duello-db-20261019T233000Z.dump /opt/duello/backups/
 # A real restore stops the backend (running matches are abandoned) and starts it again.
 # Accounts deleted after the backup was taken come back in the database (their
 # Firebase users stay deleted): remove those rows again (OQ-014), infra/README.md.
@@ -18,7 +19,7 @@ set -euo pipefail
 DUELLO_DIR="${DUELLO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SCRATCH_DB="duello_restore_check"
 
-usage() { sed -n '4,15p' "$0" >&2; exit 2; }
+usage() { sed -n '4,16p' "$0" >&2; exit 2; }
 
 mode="restore"; assume_yes="false"
 while [ $# -gt 0 ]; do
