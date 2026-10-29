@@ -24,8 +24,8 @@ into Play Console.
      `google_analytics_adid_collection_enabled = false` (OQ-D25, OQ-100);
    - Firebase Analytics data retention set to **2 months**, data-sharing settings and
      Google signals off (OQ-100);
-   - no Crashlytics, or the "CRASHLYTICS" blocks in `privacy-policy.html` are
-     uncommented and the table below updated (OQ-101).
+   - Crashlytics blocks in `privacy-policy.html` active and the table below updated
+     (OQ-101, done 2026-10-29).
 4. An admin path exists to delete an account requested by email (OQ-102).
 5. GitHub Pages is switched on (OQ-D19) and the Android `PRIVACY_POLICY_URL` points to
    `.../Duello-Quiz/legal/privacy-policy.html` (OQ-D18).
@@ -49,7 +49,7 @@ into Play Console.
 | Server logs (time, path, status, internal user ID; IP only in Caddy error entries) | Docker JSON logs on the VM | Size rotation 5 × 20 MB; not in backups | `infra/README.md`, `infra/prod/Caddyfile`, `backend/src/main/resources/logback.xml` |
 | Database + media backups | VM disk (Hetzner, Germany) + off-VM copy in Cloudflare R2, EU (OQ-103) | 14 days (script refuses > 30) | `infra/README.md` §10 |
 | Analytics events, app-instance ID, device / app info, Analytics user ID = `users.id` | Firebase Analytics | 2 months (to be set, OQ-100) | `android/app/build.gradle.kts`, `docs/requirements/auth.md` §5 |
-| Crash reports | — (Crashlytics not in the build yet) | — | `android/gradle/libs.versions.toml` (no Crashlytics) |
+| Crash reports (error description, device model, Android/app version, memory state, Crashlytics installation ID, internal user ID) | Firebase Crashlytics (release builds only) | 90 days (Crashlytics default) | `android/app/build.gradle.kts`, `android/gradle/libs.versions.toml` |
 
 ## Play Console Data safety summary
 
@@ -80,8 +80,8 @@ Data types (everything not listed: **not collected**):
 | Personal info → User IDs | Yes (Firebase UID, internal account ID, Google account ID on Google sign-in) | No | Required | App functionality, Account management, Analytics | Yes | Yes |
 | Personal info → Other info | Yes (Google profile photo **URL**, Google sign-in only) — or skip if Sabit treats it as part of Name/User IDs | No | Optional (Google sign-in only) | App functionality | Yes | Yes |
 | App activity → App interactions | Yes (quiz, daily and duel answers and results, rating, XP, streak; Analytics events) | No | Required | App functionality, Analytics, Fraud prevention, security and compliance | Yes | Yes (Analytics part expires after 2 months) |
-| App info and performance → Crash logs | **No** today; **Yes** once Crashlytics ships (OQ-101) | No | Required | Analytics | Yes | — |
-| App info and performance → Diagnostics | **No** today; **Yes** once Crashlytics ships | No | Required | Analytics | Yes | — |
+| App info and performance → Crash logs | Yes (Crashlytics) | No | Required | Analytics | Yes | — (expire after 90 days) |
+| App info and performance → Diagnostics | Yes (Crashlytics) | No | Required | Analytics | Yes | — (expire after 90 days) |
 | Device or other IDs | Yes (Analytics app-instance ID, FCM token / Firebase installation ID). **Not** the Advertising ID (OQ-D25) | No | Required for Analytics; FCM token only with notifications allowed | Analytics, App functionality (notifications) | Yes | Yes (token deleted with the account; Analytics IDs expire after 2 months) |
 | Location (approximate, precise) | No (Analytics derives country/city from IP on Google's side and does not store the IP; check Google's per-SDK answers at https://firebase.google.com/docs/android/play-data-disclosure before submitting — Sabit to confirm) | — | — | — | — | — |
 | Financial info, Health, Messages, Photos and videos, Audio, Files and docs, Calendar, Contacts, Web browsing, Installed apps | No | — | — | — | — | — |
