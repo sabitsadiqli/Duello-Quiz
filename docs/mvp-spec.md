@@ -84,7 +84,7 @@ for both.
 - When: a player alone in the queue for 15 s (server clock, from `queue.joined`) gets
   a bot match; never while another real player is waiting. Server config switch,
   default on; off → the 30 s timeout above.
-- Transparency: fixed name "Duello Bot" (proposal, OQ-107), a "Bot" badge on every
+- Transparency: fixed name "Duello Bot" (OQ-107), a "Bot" badge on every
   screen, the app mark as avatar, no rating shown; never a fake human name or photo.
 - Rules: exactly the rules of this section (phases, timers, scoring, Əminlik 3 limit,
   round 7, sudden death, missed rounds, leave = forfeit by the player). The bot never
@@ -108,7 +108,7 @@ Protocol (message names, fields, error and close codes, heartbeat, grace and pha
 closing): `docs/api/duel-protocol.md` — the only source for duel message names.
 User stories and acceptance criteria: `docs/requirements/duel.md` (DUEL-01 …) and
 `docs/requirements/profile.md` (PROF-01 …); decisions OQ-024 … OQ-040,
-OQ-053 … OQ-072 and OQ-106 (bot; open details OQ-107 … OQ-111) in
+OQ-053 … OQ-072 and OQ-106 (bot; details OQ-107 … OQ-111) in
 `docs/requirements/open-questions.md`.
 
 Deployment note (OQ-070): the duel runs on a **single backend replica**. The queue
@@ -344,7 +344,7 @@ below were decided by Sabit on 2026-10-22 (OQ-074 … OQ-096 in
 - Caps (OQ-082): quiz XP only for the first 20 sessions per day; duel XP only
   for the first 20 matches per day and at most 3 per day against the same opponent.
 - Bot matches (§2, OQ-106): half the duel XP — 10 for a `finished` match, +15 win,
-  draw +8 (7.5 rounded up, proposal OQ-109); forfeit, abandoned, cancelled 0. Proposal
+  draw +8 (7.5 rounded up, OQ-109); forfeit, abandoned, cancelled 0. Per
   OQ-109: they count toward the 20-per-day duel cap and are exempt from the
   3-per-opponent rule. A finished bot match not forfeited by the user is an active
   day (OQ-085). Never any Elo change.

@@ -65,7 +65,7 @@ Blocked by OQ-081 (amounts) and OQ-093 (no backfill).
   a draw); the player who forfeited (`forfeitedBy`) gets 0; `abandoned` and
   `cancelled` matches give nobody XP.
 - Given a bot match (OQ-106) ends `finished`, When the server finalizes it, Then the
-  player gets half the duel XP (10 / +15 win / +8 draw, proposal OQ-109) and the day
+  player gets half the duel XP (10 / +15 win / +8 draw, OQ-109) and the day
   becomes active unless the player forfeited (DUEL-27 in `duel.md`).
 - Given a quiz expired with 0 answers (opened and left), When it is finalized, Then
   no XP is awarded.
@@ -217,7 +217,7 @@ Blocked by OQ-082 (caps) and OQ-085.
   shows "Bu gün bu oyun növündən maksimum XP qazandın." once per day.
 - Given two friends play many duels to farm XP, When they exceed the same-opponent
   cap, Then further matches between them give 0 XP (Elo still changes as usual).
-- Given bot matches (proposal OQ-109), When caps are counted, Then they count toward
+- Given bot matches (OQ-109), When caps are counted, Then they count toward
   the 20-per-day duel cap together with real matches and are exempt from the
   3-per-opponent rule (DUEL-27).
 - Given a modified client sends many quiz answers fast, When the quiz rate limit

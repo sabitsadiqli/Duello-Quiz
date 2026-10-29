@@ -20,7 +20,9 @@ Azerbaijani quiz app for Android with category quizzes and a real-time 1v1
 In scope:
 1. Category quizzes (single player): Coğrafiya, Tarix, Biologiya, Fizika, İdman.
    Categories are rows in the database, not code.
-2. Real-time 1v1 duel with the confidence score mechanic (summary below).
+2. Real-time 1v1 duel with the confidence score mechanic (summary below); a clearly
+   labelled server-side bot ("Duello Bot") fills the queue after 15 s (added 2026-10-30,
+   OQ-106 … OQ-111).
 3. Auth: Firebase Authentication — email/password, password reset, Google sign-in.
 4. Light and dark theme (System default, manual override in settings).
 5. Azerbaijani UI only, fully i18n-ready (a new language = configuration, no refactor).
@@ -33,7 +35,7 @@ In scope:
    OQ-074…OQ-096. Day boundary is 00:00 Asia/Baku by the server clock.
 
 Out of scope for MVP (do not build, do not block): in-app purchases, ads, ghost
-duels, friends/invites, extra languages, leaderboards beyond a basic Elo rating
+duels (replaying real players; the bot opponent is in scope), friends/invites, extra languages, leaderboards beyond a basic Elo rating
 (including any daily-challenge leaderboard).
 
 ### Confidence duel in short
@@ -41,7 +43,8 @@ duels, friends/invites, extra languages, leaderboards beyond a basic Elo rating
 hidden (5 s) → server sends 4 options (10 s) → simultaneous reveal (3 s).
 Correct: +100/+200/+300; wrong or timeout: 0/−100/−200. Speed bonus 0–50 on correct
 answers, not multiplied. Bet 3 max twice per match. Round 7 doubled. Tie → sudden
-death. Full rules, disconnect handling and matchmaking: `docs/mvp-spec.md` §2.
+death. No real opponent in 15 s → "Duello Bot" (Bot badge, no Elo change, half XP).
+Full rules, disconnect handling and matchmaking: `docs/mvp-spec.md` §2.
 UI never uses the word "bet" or casino visuals; the mechanic is called "Əminlik".
 
 ### Images in short

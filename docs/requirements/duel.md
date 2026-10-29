@@ -723,8 +723,8 @@ the protocol wins on names once written.
 
 ### DUEL-23 Bot fallback in matchmaking
 
-Blocked by OQ-111 for the search-screen copy and countdown only; the server behaviour
-is decided.
+Decided: OQ-111 (Sabit 2026-10-30) for the search-screen copy and countdown; the server
+behaviour is decided (OQ-106).
 
 - Given the bot is enabled (server config, default on) and a user is alone in the
   queue, When 15 s (server clock) have passed since their `queue.joined` and no other
@@ -761,7 +761,7 @@ is decided.
   they get the new `queue.joined`, Then their bot wait restarts at that join + 15 s.
 - Given "Yenidən oyna" or "Yenidən axtar", When the user joins again, Then the normal
   queue starts; the next opponent may be a real player or the bot again (no limit).
-- Given the search screen (OQ-111 recommendation), When `queue.joined` carries
+- Given the search screen (OQ-111), When `queue.joined` carries
   `botAtEpochMs`, Then the screen shows "Rəqib axtarılır…", the countdown to
   `botAtEpochMs` and the line "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə
   oynayacaqsan."; with `botAtEpochMs = null` (bot disabled) it shows the 30 s
@@ -769,7 +769,7 @@ is decided.
 
 ### DUEL-24 Bot identity and transparency
 
-Blocked by OQ-107 (name, avatar, no rating).
+Decided: OQ-107 (Sabit 2026-10-30).
 
 - Given a bot match, When `match.found` arrives, Then the intro shows "Rəqib
   tapıldı!" with the bot's fixed name "Duello Bot", the bot avatar (the app mark from
@@ -794,7 +794,7 @@ Blocked by OQ-107 (name, avatar, no rating).
 
 ### DUEL-25 Bot play behaviour
 
-Blocked by OQ-108 (exact formula and distributions); the ranges are decided.
+Decided: OQ-108 (Sabit 2026-10-30).
 
 - Given a bot match, When it is created, Then it uses the same 10 questions, phases,
   timers, scoring, Əminlik 3 limit, All-in round, sudden death, grace and phase
@@ -858,15 +858,15 @@ Blocked by OQ-108 (exact formula and distributions); the ranges are decided.
 
 ### DUEL-27 XP and streak for bot matches
 
-Blocked by OQ-109 (draw rounding, caps).
+Decided: OQ-109 (Sabit 2026-10-30).
 
 - Given a bot match ends `finished`, When the server finalizes it, Then the player
   gets half of the duel XP of OQ-081: 10 for playing, +15 for a win, +8 for a draw
-  (OQ-109 recommendation: 7.5 rounded up); a win gives 25, a loss 10, a draw 18. All
+  (OQ-109: 7.5 rounded up); a win gives 25, a loss 10, a draw 18. All
   of it is overall XP only (OQ-084).
 - Given the player forfeited (left or missed rounds), or the match was abandoned or
   cancelled, When finalized, Then 0 XP (same as OQ-081).
-- Given caps (OQ-109 recommendation), When the bot match is the 21st or later duel
+- Given caps (OQ-109), When the bot match is the 21st or later duel
   with XP on that Baku day (real and bot matches together), Then it gives 0 XP with
   `xpCapped = true`; the 3-per-opponent cap of OQ-082 does not apply to the bot.
 - Given a finished bot match the player did not forfeit, When finalized, Then the Baku
@@ -882,12 +882,12 @@ Blocked by OQ-109 (draw rounding, caps).
 
 ### DUEL-28 Bot matches in history, record and calibration
 
-Blocked by OQ-110 (which stats include bot matches).
+Decided: OQ-110 (Sabit 2026-10-30).
 
 - Given "Son oyunlar" (PROF-04), When a bot match is listed, Then it appears among the
   last 20 like other matches, with the bot avatar, "Duello Bot", the "Bot" badge, the
   result label and the scores; the rating column shows "—" instead of "+0".
-- Given the duel record (PROF-03), When computed (OQ-110 recommendation), Then
+- Given the duel record (PROF-03), When computed (OQ-110), Then
   "Qələbə / Məğlubiyyət / Heç-heçə" and the total count only matches against real
   players; bot matches are shown in a separate line "Bota qarşı: 3 qələbə, 2
   məğlubiyyət, 0 heç-heçə" (hidden when there are none).
@@ -1034,7 +1034,7 @@ OQ-054 (haptic, no sound), OQ-056 (`round.confidence`), OQ-057
 (calibration hint on the client), OQ-061 … OQ-072 (engine decisions).
 
 Decided by Sabit on 2026-10-30: OQ-106 (bot opponent; supersedes the "no bots" part
-of OQ-028). Open, with recommendations: OQ-107 (bot identity), OQ-108 (bot strength
+of OQ-028). Decided by Sabit 2026-10-30 (recommendations accepted): OQ-107 (bot identity), OQ-108 (bot strength
 model), OQ-109 (bot XP rounding and caps), OQ-110 (bot matches in history and stats),
 OQ-111 (search-screen hint, no opt-out).
 

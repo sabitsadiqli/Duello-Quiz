@@ -7,13 +7,8 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
-| OQ-107 | Bot identity: name, avatar, rating shown? | Name "Duello Bot" for every match, "Bot" badge, app mark as avatar, **no rating** (badge instead); bot not offered to apps that do not know `opponentType` | Sabit |
-| OQ-108 | Bot strength model (exact formula) | `p` = clamp(0.62 + 0.0005 × (rating − 1000) + {+0.10, 0, −0.10} by difficulty 1/2/3 + form ±0.05, 0.45, 0.80); Əminlik and pick/answer times as in the details; all config values | Sabit |
-| OQ-109 | Bot XP rounding and caps | Play 10, win +15, draw **+8** (round half up); counts toward the 20/day duel cap; exempt from 3-per-opponent | Sabit |
-| OQ-110 | Bot matches in history and profile stats | In "Son oyunlar" with the Bot badge; **excluded** from the record vs players, shown as a separate "Bota qarşı" line; **included** in calibration | Sabit |
-| OQ-111 | Search screen: announce the bot? Opt-out? | Announce: countdown to the bot + "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan."; no opt-out setting (cancel before 15 s is the opt-out) | Sabit |
 
-## Details (OQ-107 … OQ-111) — bot opponent
+## Details (OQ-107 … OQ-111) — bot opponent (all decided by Sabit 2026-10-30, recommendation accepted)
 
 Added by `business-analyst` on 2026-10-30 after Sabit's bot decision (OQ-106). The
 stories DUEL-23 … DUEL-29 in `duel.md` are written with the recommendations; each
@@ -164,6 +159,11 @@ exists yet (only `DELETE /v1/me` with the user's own token).
 | ID | Question | Decision | Decided |
 | --- | --- | --- | --- |
 | OQ-106 | Bot opponent for empty queues (supersedes the "no bots" part of OQ-028) | Server-side bot when no real opponent is found within **15 s**; a real player is always preferred and the bot is never matched while another real player waits; the 30 s "Rəqib tapılmadı" stays only as fallback when the bot is unavailable. Always transparent: "Bot" badge and a fixed bot name, no fake human names or avatars. **No Elo change** for anyone. XP = **half** of OQ-081 duel XP (play 10, win +15, draw ≈ half of 15, OQ-109), inside the OQ-082 caps (details OQ-109); a finished bot match not forfeited by the user is an active day (OQ-085). Strength adaptive to the player's Elo and question difficulty: 45–80 % correct, answer time 3–9 s, Əminlik consistent with its knowledge, same rules incl. max two 3s and round 7 (formula OQ-108); target ≈ 50 % player wins; server-authoritative, no advantage beyond its probability model. Bot matches are deleted with the user. Ghost duels and friends/invites stay out of scope. Stories DUEL-23 … DUEL-29; `docs/mvp-spec.md` §2 "Bot opponent", §3a, §10 | Sabit 2026-10-30 |
+| OQ-107 | Bot identity: name, avatar, rating shown? | Name "Duello Bot" for every match, "Bot" badge, app mark as avatar, **no rating** (badge instead); bot not offered to apps that do not know `opponentType` | Sabit 2026-10-30 |
+| OQ-108 | Bot strength model (exact formula) | `p` = clamp(0.62 + 0.0005 × (rating − 1000) + {+0.10, 0, −0.10} by difficulty 1/2/3 + form ±0.05, 0.45, 0.80); Əminlik and pick/answer times as in the details; all config values | Sabit 2026-10-30 |
+| OQ-109 | Bot XP rounding and caps | Play 10, win +15, draw **+8** (round half up); counts toward the 20/day duel cap; exempt from 3-per-opponent | Sabit 2026-10-30 |
+| OQ-110 | Bot matches in history and profile stats | In "Son oyunlar" with the Bot badge; **excluded** from the record vs players, shown as a separate "Bota qarşı" line; **included** in calibration | Sabit 2026-10-30 |
+| OQ-111 | Search screen: announce the bot? Opt-out? | Announce: countdown to the bot + "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan."; no opt-out setting (cancel before 15 s is the opt-out) | Sabit 2026-10-30 |
 
 ## Decided by Sabit (2026-10-25) — hosting and domain
 

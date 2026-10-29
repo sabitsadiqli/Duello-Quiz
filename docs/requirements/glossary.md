@@ -53,7 +53,7 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 | Queue entry | — | One user's place in the matchmaking queue. At most one per user; a newer connection of the same user replaces the older one (DUEL-04). |
 | Queue timeout | Rəqib tapılmadı | The queue deadline (join + 30 s, server clock) passed without a match; the server removes the entry. Since OQ-106 only reached when the bot is disabled or cannot be started. |
 | Bot opponent | Bot rəqib | Server-side player that fills an empty queue after 15 s (OQ-106, DUEL-23 … DUEL-29). No account, no Elo rating, never disconnects or forfeits; plays by the same rules with a probability model (OQ-108). Always shown as "Duello Bot" with the "Bot" badge. Never call it "AI", "kompüter" or a person's name in the UI. Not a ghost duel. |
-| Duello Bot | Duello Bot | The single fixed display name of the bot opponent (proposal OQ-107); "duello" is a reserved word for human names (OQ-051). |
+| Duello Bot | Duello Bot | The single fixed display name of the bot opponent (OQ-107); "duello" is a reserved word for human names (OQ-051). |
 | Bot badge | Bot | Small label shown next to the bot's name on every duel screen and in history, in place of the rating (OQ-107). |
 | Bot match | Bot oyunu | A match against the bot opponent (`opponentType = bot`). Never changes Elo; half duel XP (`docs/mvp-spec.md` §10); counts as an active day if finished and not forfeited by the user; deleted with the user's account. Counting in profile stats: OQ-110. |
 | Real match | — | A match between two human players (`opponentType = human`). Used where a rule differs from a bot match. |
