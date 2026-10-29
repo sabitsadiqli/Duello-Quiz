@@ -204,6 +204,9 @@ quiz_answers(id, session_id, question_id, option_id NULL, is_correct BOOL, answe
              elapsed_ms INT, UNIQUE(session_id, question_id))
 matches, match_rounds, match_answers   -- duel tables: see docs/api/duel-protocol.md §8
                                        -- and the Flyway migrations (OQ-048)
+matches.opponent_type  human | bot     -- V6: bot match = player on side a, player_b NULL,
+                                       -- no side-b ratings (NULL player_b in a human match
+                                       -- = deleted user); bot matches are deleted with the user
 ```
 
 Retention tables (§9–§11, `V5__retention.sql`; every personal table cascades on user
@@ -222,7 +225,7 @@ user_progress(user_id PK, xp_total, streak_current, streak_best, last_active_day
 user_category_xp(user_id, category_id, xp, PRIMARY KEY(user_id, category_id))
 user_active_days(user_id, day, PRIMARY KEY(user_id, day))
 progress_awards(user_id, source_type, source_id, day, eligible, capped, xp_gained,
-                opponent_id NULL, snapshot JSONB,
+                opponent_id NULL, is_bot (V6), snapshot JSONB,
                 PRIMARY KEY(user_id, source_type, source_id))   -- idempotency + caps
 xp_events(id, user_id, source_type, source_id, reason, category_id NULL, amount, day,
           idempotency_key, UNIQUE(user_id, idempotency_key))     -- XP ledger
@@ -244,7 +247,8 @@ REST, prefix `/v1`, `Authorization: Bearer <Firebase ID token>`:
 - `POST /quiz/sessions/{id}/finish`
 - Admin (custom claim `admin=true`): `POST /admin/questions/import` (JSON), `POST /admin/images`
 
-- `GET /me/stats` (duel record + calibration counts), `GET /me/matches` (last 20)
+- `GET /me/stats` (duel record vs real players, `botRecord`, calibration counts),
+  `GET /me/matches` (last 20, with `opponentType`; OQ-110)
 - Retention (§9–§11): `GET /daily`, `POST /daily/attempt` (start or resume),
   `POST /daily/attempt/{id}/answers`, `POST /daily/attempt/{id}/finish`,
   `GET /me/progress`, `PUT /me/push-tokens`, `DELETE /me/push-tokens/{token}`,
@@ -257,7 +261,8 @@ Full REST contract: `docs/api/openapi.yaml`.
 WebSocket `GET /v1/duel?protocolVersion=1` (token in the handshake header): JSON
 messages for the queue (`queue.*`), the match (`match.*`), each round phase
 (`round.*`) and presence, with server-side sequence numbers, a 5 s heartbeat and a
-`match.state` snapshot for rejoin. Every server message carries `serverNowEpochMs`,
+`match.state` snapshot for rejoin. The bot opponent is offered only to apps that send
+`capabilities: ["bot"]` in `queue.join` (protocol v1.2, §7a). Every server message carries `serverNowEpochMs`,
 every timed one `deadlineEpochMs` from the server clock. Message names, fields,
 error codes and close codes: `docs/api/duel-protocol.md` (source of truth).
 

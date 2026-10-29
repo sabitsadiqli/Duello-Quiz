@@ -70,15 +70,23 @@ class DuelMatch(
     private val store: DuelStore,
     private val mediaUrls: MediaUrls,
     private val listener: MatchListener,
+    /** Set for a bot match (§7a): side A is the player, side B ([playerB]) is the bot. */
+    private val bot: BotPlayer? = null,
+    private val botIdentity: BotIdentity = BotIdentity.DEFAULT,
 ) {
     enum class Phase { WAITING, QUESTION, CONFIDENCE, ANSWER, RESULT, FINISHED }
 
     private val log = LoggerFactory.getLogger(DuelMatch::class.java)
     private val inbox = Channel<MatchEvent>(Channel.UNLIMITED)
     private val seats = mapOf(
-        Side.A to Seat(Side.A, playerA, connectionA),
-        Side.B to Seat(Side.B, playerB, connectionB),
+        Side.A to Seat(Side.A, playerA, connectionA, isBot = false),
+        Side.B to Seat(Side.B, playerB, if (bot == null) connectionB else null, isBot = bot != null),
     )
+
+    /** The bot's next move, run by [waitUntil] at its server time. */
+    private class BotAction(val atMs: Long, val run: () -> Unit)
+    private var botAction: BotAction? = null
+    private val botRounds = mutableListOf<BotRoundPlan>()
     private val completed = mutableListOf<CompletedRound>()
     private var current: RoundState? = null
     private var introDeadline = 0L
@@ -90,7 +98,11 @@ class DuelMatch(
         require(questions.map { it.id }.toSet().size == questions.size) { "Questions must be distinct" }
     }
 
-    val userIds: List<UUID> get() = seats.values.map { it.profile.userId }
+    val userIds: List<UUID> get() = seats.values.filterNot { it.isBot }.map { it.profile.userId }
+
+    val isBotMatch: Boolean get() = bot != null
+
+    private val opponentType: String get() = if (bot != null) OpponentTypes.BOT else OpponentTypes.HUMAN
 
     /** Delivers an event to the match; false once the match has ended. */
     fun submit(event: MatchEvent): Boolean = inbox.trySend(event).isSuccess
@@ -110,23 +122,31 @@ class DuelMatch(
     private suspend fun run() {
         try {
             introDeadline = now() + config.introMs
-            // A player without a socket at the start is already "disconnected".
-            seats.values.filter { it.connection == null }.forEach { it.reconnectDeadline = now() + config.reconnectWindowMs }
+            // A player without a socket at the start is already "disconnected" (the bot never is).
+            seats.values.filter { it.connection == null && !it.isBot }.forEach { it.reconnectDeadline = now() + config.reconnectWindowMs }
             seats.values.forEach { seat ->
                 val opponent = seats.getValue(seat.side.other)
                 emit(
                     seat,
                     ServerMessage.MatchFound(
                         matchId = id.toString(),
-                        you = seat.card(),
-                        opponent = opponent.card(),
+                        you = seat.card(seat.language),
+                        opponent = opponent.card(seat.language),
                         rounds = config.regularRounds,
                         bet3Limit = config.maxBet3PerMatch,
                         deadlineEpochMs = introDeadline,
+                        opponentType = opponentType,
                     ),
                 )
             }
-            log.info("duel_match_started matchId={} playerA={} playerB={}", id, seats.getValue(Side.A).profile.userId, seats.getValue(Side.B).profile.userId)
+            if (bot != null) {
+                log.info(
+                    "duel_match_started matchId={} playerA={} opponentType=bot playerRating={} botForm={}",
+                    id, seats.getValue(Side.A).profile.userId, bot.playerRating, bot.form,
+                )
+            } else {
+                log.info("duel_match_started matchId={} playerA={} playerB={}", id, seats.getValue(Side.A).profile.userId, seats.getValue(Side.B).profile.userId)
+            }
             waitUntil(introDeadline) { over }
             var roundNo = 0
             while (!over) {
@@ -153,6 +173,16 @@ class DuelMatch(
         val question = questions[roundNo - 1]
         val round = RoundState(roundNo, suddenDeathNo, question, allIn = suddenDeathNo == null && roundNo == config.regularRounds)
         current = round
+        // The bot decides at the start of the round, before the player can do anything (DUEL-25).
+        val botSeat = seats.values.firstOrNull { it.isBot }
+        val botPlan = botSeat?.let { bot!!.plan(roundNo, question, round.allIn, round.suddenDeath, it.bet3Left()) }
+        if (botPlan != null) {
+            botRounds += botPlan
+            log.info(
+                "duel_bot_round matchId={} roundNo={} difficulty={} p={} knows={} bet={}",
+                id, roundNo, question.difficulty, "%.3f".format(java.util.Locale.ROOT, botPlan.p), botPlan.knows, botPlan.bet,
+            )
+        }
 
         // QUESTION: text only.
         round.phase = Phase.QUESTION
@@ -186,7 +216,16 @@ class DuelMatch(
                     ServerMessage.RoundConfidence(id.toString(), roundNo, round.allIn, seat.bet3Left(), round.deadline),
                 )
             }
+            if (botSeat != null && botPlan?.bet != null) {
+                val bet = botPlan.bet
+                botAction = BotAction(round.deadline - config.confidenceMs + botPlan.pickDelayMs!!.coerceAtMost(config.confidenceMs)) {
+                    if (round.phase == Phase.CONFIDENCE && round.players.getValue(botSeat.side).bet == null) {
+                        lockBet(botSeat, round, bet, now())
+                    }
+                }
+            }
             waitUntil(lateFrom(round.deadline)) { over || round.players.values.all { it.bet != null } }
+            botAction = null
             if (over) return
             round.players.values.filter { it.bet == null }.forEach {
                 it.bet = 1
@@ -209,7 +248,15 @@ class DuelMatch(
                 ServerMessage.RoundOptions(id.toString(), roundNo, options.getValue(seat.side), own.bet!!, own.betDefaulted, round.deadline),
             )
         }
+        if (botSeat != null && botPlan != null) {
+            botAction = BotAction(sentAt + botPlan.answerDelayMs.coerceAtMost(config.answerMs)) {
+                if (round.phase == Phase.ANSWER && round.players.getValue(botSeat.side).optionId == null) {
+                    lockAnswer(botSeat, round, botPlan.optionId, now())
+                }
+            }
+        }
         waitUntil(lateFrom(round.deadline)) { over || round.players.values.all { it.optionId != null } }
+        botAction = null
         if (over) return
 
         resolve(round)
@@ -386,10 +433,12 @@ class DuelMatch(
         }
         val ratings = endResult.ratings
         val suddenDeathPlayed = completed.count { it.suddenDeath }
-        seats.values.forEach { seat ->
+        seats.values.filterNot { it.isBot }.forEach { seat ->
             val opponent = seats.getValue(seat.side.other)
             val (before, after) = if (seat.side == Side.A) ratings.aBefore to ratings.aAfter else ratings.bBefore to ratings.bAfter
-            val opponentAfter = if (seat.side == Side.A) ratings.bAfter else ratings.aAfter
+            // The bot has no rating (OQ-107).
+            val opponentAfter = if (opponent.isBot) null else if (seat.side == Side.A) ratings.bAfter else ratings.aAfter
+            val opponentBefore = if (opponent.isBot) null else if (seat.side == Side.A) ratings.bBefore else ratings.aBefore
             seat.result = emit(
                 seat,
                 ServerMessage.MatchResult(
@@ -413,19 +462,35 @@ class DuelMatch(
                     rounds = summaries(seat.side),
                     you = ResultPlayer(seat.profile.displayName, seat.profile.avatarUrl, before, after, deleted = false),
                     opponent = ResultPlayer(
-                        opponent.profile.displayName, opponent.profile.avatarUrl,
-                        ratingBefore = if (seat.side == Side.A) ratings.bBefore else ratings.aBefore,
+                        opponent.displayName(seat.language), opponent.avatarUrl,
+                        ratingBefore = opponentBefore,
                         ratingAfter = opponentAfter,
                         deleted = false,
                     ),
                     progress = endResult.progress[seat.side],
+                    opponentType = opponentType,
                 ),
             )
         }
         log.info(
-            "duel_match_ended matchId={} status={} endReason={} winner={} forfeited={} scoreA={} scoreB={}",
-            id, status.db, endReason, winner?.db, forfeited?.db, a.score, b.score,
+            "duel_match_ended matchId={} status={} endReason={} winner={} forfeited={} scoreA={} scoreB={} opponentType={}",
+            id, status.db, endReason, winner?.db, forfeited?.db, a.score, b.score, opponentType,
         )
+        if (bot != null) {
+            // Tuning data (DUEL-25): target ≈ 50 % player wins.
+            val playerOutcome = when {
+                status == MatchStatus.ABANDONED -> "abandoned"
+                winner == null -> "draw"
+                winner == Side.A -> "win"
+                else -> "loss"
+            }
+            log.info(
+                "duel_bot_match_ended matchId={} userId={} playerRating={} botForm={} rounds={} botKnew={} meanP={} playerOutcome={} endReason={} scorePlayer={} scoreBot={}",
+                id, a.profile.userId, bot.playerRating, bot.form, botRounds.size, botRounds.count { it.knows },
+                "%.3f".format(java.util.Locale.ROOT, if (botRounds.isEmpty()) 0.0 else botRounds.map { it.p }.average()),
+                playerOutcome, endReason, a.score, b.score,
+            )
+        }
         listener.onMatchEnded(this)
     }
 
@@ -441,10 +506,10 @@ class DuelMatch(
         } catch (e: Exception) {
             log.error("duel_match_persist_failed matchId={}", id, e)
         }
-        seats.values.forEach { seat ->
+        seats.values.filterNot { it.isBot }.forEach { seat ->
             emit(seat, ServerMessage.MatchCancelled(id.toString(), if (seat.side == leaver) Who.SELF else Who.OPPONENT))
         }
-        log.info("duel_match_cancelled matchId={} by={}", id, seats.getValue(leaver).profile.userId)
+        log.info("duel_match_cancelled matchId={} by={} opponentType={}", id, seats.getValue(leaver).profile.userId, opponentType)
         listener.onMatchCancelled(this, seats.getValue(leaver).profile.userId, seats.getValue(leaver.other).profile.userId)
     }
 
@@ -470,7 +535,19 @@ class DuelMatch(
     /** Waits until [done] or the server time reaches [deadlineMs], handling events meanwhile. */
     private suspend fun waitUntil(deadlineMs: Long, done: () -> Boolean) {
         while (!done()) {
-            val remaining = deadlineMs - now()
+            val action = botAction?.takeIf { it.atMs <= deadlineMs }
+            if (action != null && now() >= action.atMs) {
+                botAction = null
+                // Player events received before the bot's moment are handled first.
+                while (true) {
+                    val event = inbox.tryReceive().getOrNull() ?: break
+                    handle(event)
+                }
+                if (over) return
+                action.run()
+                continue
+            }
+            val remaining = (action?.atMs ?: deadlineMs) - now()
             if (remaining <= 0) {
                 // Events already queued were received before this moment; their receive time decides.
                 while (true) {
@@ -511,8 +588,9 @@ class DuelMatch(
                 if (over) {
                     seat.result?.let(event.connection::send)
                 } else {
-                    if (wasAway) {
-                        emit(seats.getValue(seat.side.other), ServerMessage.OpponentConnection(id.toString(), "connected", null))
+                    val other = seats.getValue(seat.side.other)
+                    if (wasAway && !other.isBot) {
+                        emit(other, ServerMessage.OpponentConnection(id.toString(), "connected", null))
                     }
                     emit(seat, snapshot(seat))
                 }
@@ -521,8 +599,9 @@ class DuelMatch(
                 seat.connection = null
                 val deadline = now() + config.reconnectWindowMs
                 seat.reconnectDeadline = deadline
-                if (!over) {
-                    emit(seats.getValue(seat.side.other), ServerMessage.OpponentConnection(id.toString(), "disconnected", deadline))
+                val other = seats.getValue(seat.side.other)
+                if (!over && !other.isBot) {
+                    emit(other, ServerMessage.OpponentConnection(id.toString(), "disconnected", deadline))
                 }
             }
         }
@@ -546,8 +625,15 @@ class DuelMatch(
         val bet = e.bet
         if (bet == null || bet !in 1..3) return reject(DuelErrorCodes.INVALID_BET, "Confidence must be 1, 2 or 3")
         if (bet == 3 && seat.bet3Used >= config.maxBet3PerMatch) return reject(DuelErrorCodes.BET_LIMIT_REACHED, "Confidence 3 already used twice")
+        lockBet(seat, round, bet, e.receivedAtMs)
+    }
+
+    /** Stores a valid pick and tells both players (the opponent without the value). */
+    private fun lockBet(seat: Seat, round: RoundState, bet: Int, atMs: Long) {
+        check(bet in 1..3 && (bet != 3 || seat.bet3Used < config.maxBet3PerMatch)) { "invalid bet $bet" }
+        val p = round.players.getValue(seat.side)
         p.bet = bet
-        p.betAt = e.receivedAtMs
+        p.betAt = atMs
         if (bet == 3) seat.bet3Used++
         emit(seat, ServerMessage.RoundBetLocked(id.toString(), round.roundNo, Who.SELF, bet))
         emit(seats.getValue(seat.side.other), ServerMessage.RoundBetLocked(id.toString(), round.roundNo, Who.OPPONENT, null))
@@ -577,8 +663,14 @@ class DuelMatch(
         if (optionId == null || round.question.options.none { it.id == optionId }) {
             return reject(DuelErrorCodes.INVALID_OPTION, "Option does not belong to this question")
         }
+        lockAnswer(seat, round, optionId, e.receivedAtMs)
+    }
+
+    /** Stores a valid answer received at [atMs] and tells both players (the opponent without the option). */
+    private fun lockAnswer(seat: Seat, round: RoundState, optionId: UUID, atMs: Long) {
+        val p = round.players.getValue(seat.side)
         p.optionId = optionId
-        p.answerAt = e.receivedAtMs
+        p.answerAt = atMs
         emit(seat, ServerMessage.RoundAnswerLocked(id.toString(), round.roundNo, Who.SELF, optionId.toString()))
         emit(seats.getValue(seat.side.other), ServerMessage.RoundAnswerLocked(id.toString(), round.roundNo, Who.OPPONENT, null))
     }
@@ -595,13 +687,13 @@ class DuelMatch(
         val phase = round?.phase ?: Phase.WAITING
         return ServerMessage.MatchState(
             matchId = id.toString(),
-            you = seat.card(),
+            you = seat.card(seat.language),
             opponent = OpponentCard(
-                displayName = opponent.profile.displayName,
-                avatarUrl = opponent.profile.avatarUrl,
-                rating = opponent.profile.rating,
-                connected = opponent.connection != null,
-                reconnectDeadlineEpochMs = opponent.reconnectDeadline.takeIf { opponent.connection == null },
+                displayName = opponent.displayName(seat.language),
+                avatarUrl = opponent.avatarUrl,
+                rating = opponent.rating,
+                connected = opponent.isBot || opponent.connection != null,
+                reconnectDeadlineEpochMs = opponent.reconnectDeadline.takeIf { !opponent.isBot && opponent.connection == null },
             ),
             phase = when (phase) {
                 Phase.WAITING -> Phases.INTRO
@@ -629,6 +721,7 @@ class DuelMatch(
             missedInARow = MissedCounts(seat.missedInARow, opponent.missedInARow),
             lastResult = round?.takeIf { it.phase == Phase.RESULT }?.results?.get(seat.side),
             rounds = summaries(seat.side),
+            opponentType = opponentType,
         )
     }
 
@@ -658,7 +751,14 @@ class DuelMatch(
 
     private fun Seat.bet3Left() = (config.maxBet3PerMatch - bet3Used).coerceAtLeast(0)
 
-    private fun Seat.card() = PlayerCard(profile.displayName, profile.avatarUrl, profile.rating)
+    private fun Seat.card(viewerLanguage: String) = PlayerCard(displayName(viewerLanguage), avatarUrl, rating)
+
+    /** The bot's name is backend i18n in the viewer's language (OQ-107). */
+    private fun Seat.displayName(viewerLanguage: String) = if (isBot) botIdentity.displayName(viewerLanguage) else profile.displayName
+
+    private val Seat.avatarUrl: String? get() = if (isBot) null else profile.avatarUrl
+
+    private val Seat.rating: Int? get() = if (isBot) null else profile.rating
 
     private fun optionDtos(question: DuelQuestion, language: String) =
         question.options.map { OptionDto(it.id.toString(), it.text.resolve(language)) }
@@ -674,7 +774,7 @@ class DuelMatch(
         )
     }
 
-    private class Seat(val side: Side, val profile: PlayerProfile, var connection: DuelConnection?) {
+    private class Seat(val side: Side, val profile: PlayerProfile, var connection: DuelConnection?, val isBot: Boolean) {
         var language: String = connection?.language ?: "az"
         var seq = 0L
         var score = 0

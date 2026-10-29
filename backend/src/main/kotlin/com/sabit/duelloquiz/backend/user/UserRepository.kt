@@ -47,6 +47,8 @@ data class MatchRecord(
     val ratingBefore: Int?,
     val ratingAfter: Int?,
     val finishedAt: Instant,
+    /** `human` | `bot` (V6). */
+    val opponentType: String = UserRepository.OPPONENT_HUMAN,
 )
 
 data class CalibrationRow(val bet: Int, val isCorrect: Boolean)
@@ -84,14 +86,19 @@ class UserRepository(private val db: Db) {
     }
 
     /**
-     * Deletes the profile. The schema cascades to quiz sessions, session questions,
-     * quiz answers, daily attempts/answers, XP and streak data, push tokens, notification
-     * settings and the send log (V5), and sets the player to NULL in matches and match
-     * answers (OQ-014).
+     * Deletes the profile. The user's bot matches are deleted first, with their rounds
+     * and answers (no other person is in them, OQ-106). The schema then cascades to quiz
+     * sessions, session questions, quiz answers, daily attempts/answers, XP and streak
+     * data, push tokens, notification settings and the send log (V5), and sets the
+     * player to NULL in real matches and their answers (OQ-014). One transaction.
      * @return true if a row was deleted.
      */
     suspend fun deleteByFirebaseUid(firebaseUid: String): Boolean = db.tx {
-        UsersTable.deleteWhere { UsersTable.firebaseUid eq firebaseUid } > 0
+        val userId = UsersTable.select(UsersTable.id).where { UsersTable.firebaseUid eq firebaseUid }
+            .singleOrNull()?.get(UsersTable.id) ?: return@tx false
+        // match_rounds and match_answers go with ON DELETE CASCADE.
+        MatchesTable.deleteWhere { (MatchesTable.playerA eq userId) and (MatchesTable.opponentType eq OPPONENT_BOT) }
+        UsersTable.deleteWhere { UsersTable.id eq userId } > 0
     }
 
     suspend fun findDisplayInfo(ids: Collection<UUID>): Map<UUID, Pair<String, String?>> {
@@ -160,6 +167,7 @@ class UserRepository(private val db: Db) {
             ratingBefore = if (isA) this[MatchesTable.ratingABefore] else this[MatchesTable.ratingBBefore],
             ratingAfter = if (isA) this[MatchesTable.ratingAAfter] else this[MatchesTable.ratingBAfter],
             finishedAt = this[MatchesTable.finishedAt]!!.toInstant(),
+            opponentType = this[MatchesTable.opponentType],
         )
     }
 
@@ -188,7 +196,8 @@ class UserRepository(private val db: Db) {
         fun count(sql: String): Long = exec(sql) { rs -> if (rs.next()) rs.getLong(1) else 0L } ?: 0L
         val id = "'$userId'::uuid"
         CASCADE_TABLES.associateWith { table -> count("SELECT count(*) FROM $table WHERE user_id = $id") } +
-            ("matches (anonymized)" to count("SELECT count(*) FROM matches WHERE player_a = $id OR player_b = $id"))
+            ("matches (anonymized)" to count("SELECT count(*) FROM matches WHERE (player_a = $id OR player_b = $id) AND opponent_type = 'human'")) +
+            ("matches vs bot (deleted)" to count("SELECT count(*) FROM matches WHERE player_a = $id AND opponent_type = 'bot'"))
     }
 
     companion object {
@@ -198,6 +207,8 @@ class UserRepository(private val db: Db) {
         const val MATCH_ACTIVE = "active"
         const val MATCH_FINISHED = "finished"
         const val MATCH_ABANDONED = "abandoned"
+        const val OPPONENT_HUMAN = "human"
+        const val OPPONENT_BOT = "bot"
 
         /** Tables with `user_id ... ON DELETE CASCADE` (V1, V5); children of these go with them. */
         val CASCADE_TABLES = listOf(

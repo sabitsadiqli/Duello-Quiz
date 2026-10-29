@@ -183,4 +183,52 @@ class MigrationTest : DbTest() {
         assertFailsWith<Exception> { log() }
         Unit
     }
+
+    @Test
+    fun `bot opponent constraints (V6)`() = runBlocking {
+        val u = "00000000-0000-0000-0000-0000000000a1"
+        val v = "00000000-0000-0000-0000-0000000000a2"
+        db.tx {
+            exec("INSERT INTO users (id, firebase_uid, display_name) VALUES ('$u', 'u', 'Test'), ('$v', 'v', 'Other')")
+        }
+        suspend fun match(type: String, playerB: String?, ratingB: Int? = null) = db.tx {
+            exec(
+                "INSERT INTO matches (player_a, player_b, rating_b_before, opponent_type) VALUES " +
+                    "('$u', ${playerB?.let { "'$it'" } ?: "NULL"}, ${ratingB ?: "NULL"}, '$type')",
+            )
+        }
+        match("bot", null)
+        match("human", v)
+        // Existing rows and plain inserts default to human.
+        db.tx { exec("INSERT INTO matches (player_a, player_b) VALUES ('$u', '$v')") }
+        assertEquals(2L, db.tx { exec("SELECT count(*) FROM matches WHERE opponent_type = 'human'") { rs -> rs.next(); rs.getLong(1) } })
+        assertFailsWith<Exception> { match("bot", v) }
+        assertFailsWith<Exception> { match("bot", null, ratingB = 1000) }
+        assertFailsWith<Exception> { match("ghost", null) }
+
+        suspend fun award(type: String, bot: Boolean, opponent: String?) = db.tx {
+            exec(
+                """
+                INSERT INTO progress_awards (user_id, source_type, source_id, day, eligible, capped, xp_gained, opponent_id, snapshot, is_bot)
+                VALUES ('$u', '$type', gen_random_uuid(), DATE '2026-10-30', true, false, 25, ${opponent?.let { "'$it'" } ?: "NULL"}, '{}'::jsonb, $bot)
+                """.trimIndent(),
+            )
+        }
+        award("duel", bot = true, opponent = null)
+        award("duel", bot = false, opponent = v)
+        assertFailsWith<Exception> { award("duel", bot = true, opponent = v) }
+        assertFailsWith<Exception> { award("quiz", bot = true, opponent = null) }
+
+        suspend fun xp(reason: String) = db.tx {
+            exec(
+                """
+                INSERT INTO xp_events (user_id, source_type, source_id, reason, amount, day, idempotency_key)
+                VALUES ('$u', 'duel', gen_random_uuid(), '$reason', 10, DATE '2026-10-30', gen_random_uuid()::text)
+                """.trimIndent(),
+            )
+        }
+        listOf("duel_played", "duel_bot_played", "duel_bot_win", "duel_bot_draw").forEach { xp(it) }
+        assertFailsWith<Exception> { xp("duel_bot_bonus") }
+        Unit
+    }
 }

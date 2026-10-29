@@ -24,6 +24,8 @@ data class DuelQuestion(
     val image: ImageRecord?,
     /** Stored order (the importer's shuffled position), same for both players. */
     val options: List<OptionRecord>,
+    /** 1 easy … 3 hard; only the bot reads it (OQ-108). */
+    val difficulty: Int = 2,
 ) {
     val correctOption: OptionRecord get() = options.first { it.isCorrect }
 }
@@ -96,6 +98,8 @@ data class StoredMatch(
     val forfeitCause: String? = null,
     /** Stored award snapshots per side (absent for matches before XP existed or deleted players). */
     val progress: Map<Side, ProgressDto> = emptyMap(),
+    /** [OpponentTypes.BOT]: the player is side A, side B is the bot (no user, no rating). */
+    val opponentType: String = OpponentTypes.HUMAN,
 )
 
 data class StoredRound(val roundNo: Int, val suddenDeath: Boolean, val answers: Map<Side, AnswerRow>)
@@ -116,11 +120,22 @@ interface DuelStore {
 
     suspend fun createMatch(matchId: UUID, playerA: UUID, playerB: UUID, startedAtMs: Long)
 
+    /** A match of [player] (side A) against the bot (side B, `opponent_type = bot`). */
+    suspend fun createBotMatch(matchId: UUID, player: UUID, startedAtMs: Long)
+
+    /**
+     * Results of the [limit] newest finished bot matches of [userId], newest first
+     * (`true` = the player won); input of the bot's form (OQ-108).
+     */
+    suspend fun recentBotResults(userId: UUID, limit: Int): List<Boolean>
+
     suspend fun saveRound(round: RoundRecord)
 
     /**
      * Ends an active match. For [MatchStatus.FINISHED] it updates both ratings (Elo)
-     * in the same transaction; abandoned and cancelled matches keep the ratings.
+     * in the same transaction; abandoned and cancelled matches keep the ratings. A bot
+     * match never writes a rating (side B ratings are 0 in the result and NULL stored)
+     * and awards the bot XP (OQ-109) to the player only.
      * In the same transaction each existing player of a finished or abandoned match gets
      * the duel XP/streak award (OQ-081, OQ-082, OQ-085).
      * Idempotent: a match that is no longer active is not changed again (returns the

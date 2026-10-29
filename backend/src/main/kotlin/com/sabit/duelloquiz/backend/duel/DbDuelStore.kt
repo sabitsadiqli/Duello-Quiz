@@ -48,17 +48,17 @@ class DbDuelStore(
 
     override suspend fun pickQuestions(count: Int): List<DuelQuestion> = db.tx {
         val picked = QuestionsTable.join(CategoriesTable, JoinType.INNER, QuestionsTable.categoryId, CategoriesTable.id)
-            .select(QuestionsTable.id, CategoriesTable.nameI18n)
+            .select(QuestionsTable.id, CategoriesTable.nameI18n, QuestionsTable.difficulty)
             .where { activeQuestion }
             .orderBy(Random())
             .limit(count)
-            .map { it[QuestionsTable.id] to it[CategoriesTable.nameI18n] }
+            .map { Triple(it[QuestionsTable.id], it[CategoriesTable.nameI18n], it[QuestionsTable.difficulty].toInt()) }
         val contents = with(quizRepository) { loadQuestions(picked.map { it.first }) }
-        picked.mapNotNull { (id, categoryName) ->
+        picked.mapNotNull { (id, categoryName, difficulty) ->
             val q = contents[id] ?: return@mapNotNull null
             // Defensive: the importer guarantees 4 options with exactly one correct.
             if (q.options.size != 4 || q.options.count { it.isCorrect } != 1) return@mapNotNull null
-            DuelQuestion(q.id, q.text, categoryName, q.image, q.options)
+            DuelQuestion(q.id, q.text, categoryName, q.image, q.options, difficulty)
         }
     }
 
@@ -81,8 +81,35 @@ class DbDuelStore(
                 it[ratingABefore] = ratings[playerA]
                 it[ratingBBefore] = ratings[playerB]
                 it[startedAt] = Instant.ofEpochMilli(startedAtMs).toDb()
+                it[opponentType] = OpponentTypes.HUMAN
             }
         }
+    }
+
+    override suspend fun createBotMatch(matchId: UUID, player: UUID, startedAtMs: Long) {
+        db.tx {
+            val rating = UsersTable.select(UsersTable.rating).where { UsersTable.id eq player }.single()[UsersTable.rating]
+            MatchesTable.insert {
+                it[id] = matchId
+                it[playerA] = player
+                it[playerB] = null
+                it[status] = MatchStatus.ACTIVE.db
+                it[ratingABefore] = rating
+                it[startedAt] = Instant.ofEpochMilli(startedAtMs).toDb()
+                it[opponentType] = OpponentTypes.BOT
+            }
+        }
+    }
+
+    override suspend fun recentBotResults(userId: UUID, limit: Int): List<Boolean> = db.tx {
+        MatchesTable.select(MatchesTable.winnerSide)
+            .where {
+                (MatchesTable.playerA eq userId) and (MatchesTable.opponentType eq OpponentTypes.BOT) and
+                    (MatchesTable.status eq MatchStatus.FINISHED.db)
+            }
+            .orderBy(MatchesTable.finishedAt to SortOrder.DESC, MatchesTable.id to SortOrder.ASC)
+            .limit(limit)
+            .map { it[MatchesTable.winnerSide] == Side.A.db }
     }
 
     override suspend fun saveRound(round: RoundRecord) {
@@ -133,6 +160,7 @@ class DbDuelStore(
         if (row[MatchesTable.status] != MatchStatus.ACTIVE.db) {
             return@tx MatchEndResult(stored, storedAwards(end.matchId, playersBySide))
         }
+        if (row[MatchesTable.opponentType] == OpponentTypes.BOT) return@tx endBotMatch(end, row[MatchesTable.playerA], stored.aBefore, row[MatchesTable.startedAt].toInstant())
 
         val playerA = row[MatchesTable.playerA]
         val playerB = row[MatchesTable.playerB]
@@ -215,6 +243,55 @@ class DbDuelStore(
         MatchEndResult(ratings, awards)
     }
 
+    /**
+     * A bot match never changes a rating (OQ-106): the player's rating is only read and
+     * stored as before = after; side B has no ratings. The player gets the bot XP
+     * (OQ-109) unless they forfeited; abandoned and cancelled give 0.
+     */
+    private fun JdbcTransaction.endBotMatch(end: MatchEnd, player: UUID?, ratingAtStart: Int, startedAt: Instant): MatchEndResult {
+        val rating = player?.let { id ->
+            UsersTable.select(UsersTable.rating).where { UsersTable.id eq id }.singleOrNull()?.get(UsersTable.rating)
+        }
+        val before = rating ?: ratingAtStart
+        val keepRatings = end.status != MatchStatus.CANCELLED
+        MatchesTable.update({ (MatchesTable.id eq end.matchId) and (MatchesTable.status eq MatchStatus.ACTIVE.db) }) {
+            it[status] = end.status.db
+            it[endReason] = end.endReason
+            it[winnerSide] = end.winnerSide?.db
+            it[forfeitedSide] = end.forfeitedSide?.db
+            it[forfeitCause] = end.forfeitCause
+            it[scoreA] = end.scoreA
+            it[scoreB] = end.scoreB
+            it[ratingABefore] = if (keepRatings) before else null
+            it[ratingAAfter] = if (keepRatings) before else null
+            it[finishedAt] = Instant.ofEpochMilli(end.finishedAtMs).toDb()
+        }
+        val ratings = RatingUpdate(before, before, 0, 0)
+        if (player == null || rating == null || (end.status != MatchStatus.FINISHED && end.status != MatchStatus.ABANDONED)) {
+            return MatchEndResult(ratings)
+        }
+        val outcome = when (end.winnerSide) {
+            null -> DuelOutcome.DRAW
+            Side.A -> DuelOutcome.WIN
+            Side.B -> DuelOutcome.LOSS
+        }
+        val award = with(progress) {
+            award(
+                AwardRequest(
+                    userId = player,
+                    sourceType = SourceType.DUEL,
+                    sourceId = end.matchId,
+                    startedAt = startedAt,
+                    eligible = end.status == MatchStatus.FINISHED && end.forfeitedSide != Side.A,
+                    items = rules.duelBot(outcome),
+                    opponentId = null,
+                    bot = true,
+                ),
+            )
+        }
+        return MatchEndResult(ratings, listOfNotNull(award?.let { Side.A to it }).toMap())
+    }
+
     private fun JdbcTransaction.storedAwards(matchId: UUID, players: Map<Side, UUID?>): Map<Side, ProgressDto> =
         players.mapNotNull { (side, userId) ->
             userId?.let { id -> with(progress) { storedAward(id, SourceType.DUEL, matchId) }?.let { side to it } }
@@ -256,7 +333,9 @@ class DbDuelStore(
         val bBefore = row[MatchesTable.ratingBBefore]
         val bAfter = row[MatchesTable.ratingBAfter]
         val awards = storedAwards(matchId, mapOf(Side.A to row[MatchesTable.playerA], Side.B to row[MatchesTable.playerB]))
+        val opponentType = row[MatchesTable.opponentType]
         StoredMatch(
+            opponentType = opponentType,
             id = matchId,
             playerA = row[MatchesTable.playerA],
             playerB = row[MatchesTable.playerB],
@@ -268,7 +347,10 @@ class DbDuelStore(
             progress = awards,
             scoreA = row[MatchesTable.scoreA],
             scoreB = row[MatchesTable.scoreB],
-            ratings = if (aBefore != null && aAfter != null && bBefore != null && bAfter != null) {
+            ratings = if (opponentType == OpponentTypes.BOT && aBefore != null && aAfter != null) {
+                // The bot has no rating (side B is unused).
+                RatingUpdate(aBefore, aAfter, 0, 0)
+            } else if (aBefore != null && aAfter != null && bBefore != null && bAfter != null) {
                 RatingUpdate(aBefore, aAfter, bBefore, bAfter)
             } else {
                 null

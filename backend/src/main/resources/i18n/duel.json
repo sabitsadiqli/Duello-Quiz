@@ -1,0 +1,4 @@
+{
+  "_comment": "Duel texts sent to clients (docs/api/duel-protocol.md §7a). Resolved by Accept-Language, fallback az. The bot name is fixed for every match (OQ-107). Copy owner: designer (design/copy/az.md).",
+  "bot_display_name": {"az": "Duello Bot"}
+}

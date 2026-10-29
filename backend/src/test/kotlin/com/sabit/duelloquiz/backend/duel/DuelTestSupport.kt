@@ -70,6 +70,10 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
     val rounds = mutableListOf<RoundRecord>()
     val ends = mutableListOf<MatchEnd>()
     var picks = 0
+    /** Set to make [createBotMatch] fail (bot pairing error → 30 s fallback). */
+    var failBotMatches = false
+    /** Finished bot match results per user, newest first (`true` = player won); seeds the bot form. */
+    val botHistory = HashMap<UUID, MutableList<Boolean>>()
     /** Returned as the award per side by [endMatch] (the real store computes it in the same transaction). */
     var progress: Map<Side, com.sabit.duelloquiz.backend.progress.ProgressDto> = emptyMap()
 
@@ -93,6 +97,16 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
         matches[matchId] = StoredMatch(matchId, playerA, playerB, MatchStatus.ACTIVE, null, null, null, 0, 0, null, emptyList())
     }
 
+    override suspend fun createBotMatch(matchId: UUID, player: UUID, startedAtMs: Long) {
+        if (failBotMatches) error("bot match creation failed (test)")
+        matches[matchId] = StoredMatch(
+            matchId, player, null, MatchStatus.ACTIVE, null, null, null, 0, 0, null, emptyList(),
+            opponentType = OpponentTypes.BOT,
+        )
+    }
+
+    override suspend fun recentBotResults(userId: UUID, limit: Int): List<Boolean> = botHistory[userId].orEmpty().take(limit)
+
     override suspend fun saveRound(round: RoundRecord) {
         assertTrue(rounds.none { it.matchId == round.matchId && it.roundNo == round.roundNo }, "round saved twice")
         assertTrue(rounds.none { it.matchId == round.matchId && it.questionId == round.questionId }, "question repeated in a match")
@@ -103,6 +117,18 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
         val m = matches.getValue(end.matchId)
         if (m.status != MatchStatus.ACTIVE) return MatchEndResult(m.ratings!!)
         ends += end
+        if (m.opponentType == OpponentTypes.BOT) {
+            // Never a rating change (OQ-106).
+            val r = users[m.playerA]?.rating ?: ratingAtStartA
+            val ratings = RatingUpdate(r, r, 0, 0)
+            matches[end.matchId] = m.copy(
+                status = end.status, endReason = end.endReason, winnerSide = end.winnerSide,
+                forfeitedSide = end.forfeitedSide, scoreA = end.scoreA, scoreB = end.scoreB, ratings = ratings,
+                forfeitCause = end.forfeitCause,
+            )
+            if (end.status == MatchStatus.FINISHED) m.playerA?.let { botHistory.getOrPut(it) { mutableListOf() }.add(0, end.winnerSide == Side.A) }
+            return MatchEndResult(ratings, progress.filterKeys { it == Side.A })
+        }
         val a = users[m.playerA]?.rating ?: ratingAtStartA
         val b = users[m.playerB]?.rating ?: ratingAtStartB
         val ratings = if (end.status == MatchStatus.FINISHED) {
@@ -148,11 +174,20 @@ class FakeDuelStore(questionCount: Int = 12) : DuelStore {
  * `BASE + currentTime`, so `deadlineEpochMs − BASE` is the virtual time of a deadline.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class DuelHarness(private val test: TestScope, val config: DuelConfig = DuelConfig(), questionCount: Int = 12) {
+class DuelHarness(
+    private val test: TestScope,
+    val config: DuelConfig = DuelConfig(),
+    questionCount: Int = 12,
+    /** Seed of the bot's generator (each match gets `Random(botSeed)`). */
+    botSeed: Int = 42,
+) {
     val store = FakeDuelStore(questionCount)
     val clock = DuelClock { BASE + test.testScheduler.currentTime }
     val queue = InMemoryMatchmakingQueue()
-    val service = DuelService(test.backgroundScope, config, clock, store, queue, MediaUrls("https://media.example.test/media"))
+    val service = DuelService(
+        test.backgroundScope, config, clock, store, queue, MediaUrls("https://media.example.test/media"),
+        botRandom = { kotlin.random.Random(botSeed) },
+    )
     val alice = store.addUser("Alice")
     val bob = store.addUser("Bob")
     val carol = store.addUser("Carol")
@@ -187,8 +222,8 @@ class DuelHarness(private val test: TestScope, val config: DuelConfig = DuelConf
     suspend fun startMatch(): Pair<FakeConnection, FakeConnection> {
         val a = connect(alice)
         val b = connect(bob)
-        send(alice, a, ClientMessage.QueueJoin)
-        send(bob, b, ClientMessage.QueueJoin)
+        send(alice, a, ClientMessage.QueueJoin())
+        send(bob, b, ClientMessage.QueueJoin())
         a.last<ServerMessage.MatchFound>()
         b.last<ServerMessage.MatchFound>()
         return a to b

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Duello Quiz API
-  version: 0.2.0
+  version: 0.3.0
   summary: REST API of the Duello Quiz backend (MVP).
   description: |
     Contract for the Android app and admin tooling. Owner: `backend-dev`.
@@ -40,6 +40,7 @@ info:
     | Version | Change |
     | --- | --- |
     | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
+    | 0.3.0 (2026-10-30) | Bot opponent (OQ-106 … OQ-110): `MatchSummary.opponentType`, `MatchSummary.ratingChange` is `null` for bot matches, `Stats.botRecord`; `Stats.record` counts only matches against real players; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`; `DELETE /v1/me` deletes the user's bot matches. Old clients only see bot matches if they announced the `"bot"` duel capability (`duel-protocol.md` §7a), so for them nothing changes. |
 
     ## Error codes
     | HTTP | code | When |
@@ -227,9 +228,11 @@ paths:
       description: |
         Computed on the server from matches with status `finished` (normal, sudden
         death, draw, forfeit); `abandoned` and `cancelled` matches are not counted
-        (OQ-026). Calibration counts rounds 1–7 with an actively locked Əminlik;
-        defaulted picks, missed rounds and sudden-death questions are excluded
-        (OQ-027). The client shows
+        (OQ-026). `record` counts only matches against real players; matches against
+        the bot are counted separately in `botRecord` ("Bota qarşı: …", hidden by the
+        app when `botRecord.total = 0`; OQ-110). Calibration counts rounds 1–7 with an
+        actively locked Əminlik of both kinds of matches; defaulted picks, missed
+        rounds and sudden-death questions are excluded (OQ-027). The client shows
         "Az məlumat" for a level with fewer than 5 picks.
       responses:
         "200":
@@ -248,8 +251,10 @@ paths:
       summary: Recent duels, newest first (PROF-04, OQ-031)
       description: |
         Matches with status `finished` or `abandoned`, newest first (by
-        `finishedAt`). `cancelled` matches are not listed. No pagination in the MVP.
+        `finishedAt`), against real players and the bot together (`opponentType`).
+        `cancelled` matches are not listed. No pagination in the MVP.
       parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
         - name: limit
           in: query
           required: false
@@ -990,16 +995,14 @@ components:
 
     Stats:
       type: object
-      required: [record, calibration]
+      required: [record, botRecord, calibration]
       properties:
         record:
-          type: object
-          required: [wins, losses, draws, total]
-          properties:
-            wins: { type: integer, minimum: 0 }
-            losses: { type: integer, minimum: 0 }
-            draws: { type: integer, minimum: 0 }
-            total: { type: integer, minimum: 0 }
+          description: Finished matches against real players only (OQ-110).
+          $ref: "#/components/schemas/Record"
+        botRecord:
+          description: Finished matches against the bot (v0.3.0, OQ-110); all zero when there are none.
+          $ref: "#/components/schemas/Record"
         calibration:
           type: array
           description: Always three entries, levels 1, 2, 3 in this order.
@@ -1013,6 +1016,15 @@ components:
               picks: { type: integer, minimum: 0, description: "Counted rounds with this level" }
               correct: { type: integer, minimum: 0, description: "Of those, answered correctly" }
 
+    Record:
+      type: object
+      required: [wins, losses, draws, total]
+      properties:
+        wins: { type: integer, minimum: 0 }
+        losses: { type: integer, minimum: 0 }
+        draws: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 0 }
+
     MatchHistory:
       type: object
       required: [items]
@@ -1025,18 +1037,24 @@ components:
 
     MatchSummary:
       type: object
-      required: [id, opponent, result, endReason, forfeitCause, scoreOwn, scoreOpponent, ratingChange, finishedAt]
+      required: [id, opponentType, opponent, result, endReason, forfeitCause, scoreOwn, scoreOpponent, ratingChange, finishedAt]
       properties:
         id:
           type: string
           format: uuid
+        opponentType:
+          type: string
+          enum: [human, bot]
+          description: v0.3.0. `bot` = match against the server bot (OQ-106); the app shows the bot avatar and the "Bot" badge.
         opponent:
           type: object
           required: [displayName, avatarUrl, deleted]
           description: |
             Current name of the opponent (names are not copied into matches). A
             deleted opponent has `deleted = true` and null name/avatar; the app
-            shows "Silinmiş oyunçu".
+            shows "Silinmiş oyunçu". The bot is `{"displayName": "Duello Bot",
+            "avatarUrl": null, "deleted": false}` (name from backend i18n by
+            `Accept-Language`).
           properties:
             displayName: { type: [string, "null"] }
             avatarUrl: { type: [string, "null"], format: uri }
@@ -1061,8 +1079,8 @@ components:
         scoreOwn: { type: integer }
         scoreOpponent: { type: integer }
         ratingChange:
-          type: integer
-          description: Own rating after − before; 0 for abandoned matches.
+          type: [integer, "null"]
+          description: Own rating after − before; 0 for abandoned matches; `null` for bot matches (no rating change, the app shows "—").
         finishedAt:
           type: string
           format: date-time
@@ -1355,7 +1373,10 @@ components:
             properties:
               reason:
                 type: string
-                enum: [correct_answers, daily_bonus, duel_played, duel_win, duel_draw]
+                enum: [correct_answers, daily_bonus, duel_played, duel_win, duel_draw, duel_bot_played, duel_bot_win, duel_bot_draw]
+                description: |
+                  `duel_bot_*` (v0.3.0): half duel XP for a finished match against the bot
+                  (10 played, +15 win, +8 draw; OQ-109).
               categoryId:
                 type: [integer, "null"]
                 description: Set when the amount also counts for that category (correct answers only, OQ-084).

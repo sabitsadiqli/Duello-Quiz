@@ -26,7 +26,13 @@ data class AwardRequest(
     /** XP if not capped; ignored when not [eligible]. */
     val items: List<XpItem>,
     val opponentId: UUID? = null,
-)
+    /** A bot match (OQ-109): stored as `is_bot`, never grouped by opponent for the caps. */
+    val bot: Boolean = false,
+) {
+    init {
+        require(!bot || (sourceType == SourceType.DUEL && opponentId == null)) { "a bot award is a duel without opponent" }
+    }
+}
 
 /** Inputs and result of one award; pure so the arithmetic is unit-tested without a database. */
 object AwardCalculator {
@@ -131,7 +137,8 @@ class ProgressService(
         val capped = wantsXp && rules.isCapped(
             request.sourceType,
             eligibleSameDay = countEligible(request.userId, request.sourceType, day),
-            eligibleSameOpponent = request.opponentId?.let { countEligible(request.userId, request.sourceType, day, it) } ?: 0,
+            eligibleSameOpponent = request.opponentId?.takeUnless { request.bot }
+                ?.let { countEligible(request.userId, request.sourceType, day, it) } ?: 0,
         )
         val newlyActive = request.eligible && markActiveDay(request.userId, day)
         val result = AwardCalculator.compute(
@@ -149,10 +156,13 @@ class ProgressService(
         result.items.forEach { insertXpEvent(request.userId, request.sourceType, request.sourceId, it, day, now) }
         result.categoryXpAfter.forEach { (categoryId, xp) -> setCategoryXp(request.userId, categoryId, xp) }
         saveProgress(request.userId, result.progress, now)
-        insertAward(request.userId, request.sourceType, request.sourceId, day, request.eligible, capped, request.opponentId, result.snapshot, now)
+        insertAward(
+            request.userId, request.sourceType, request.sourceId, day, request.eligible, capped, request.opponentId,
+            result.snapshot, now, bot = request.bot,
+        )
         log.info(
-            "xp_awarded userId={} source={} xp={} capped={} level={} streak={} newDay={} freezeUsed={}",
-            request.userId, request.sourceType.db, result.snapshot.xpGained, capped, result.snapshot.levelAfter,
+            "xp_awarded userId={} source={} bot={} xp={} capped={} level={} streak={} newDay={} freezeUsed={}",
+            request.userId, request.sourceType.db, request.bot, result.snapshot.xpGained, capped, result.snapshot.levelAfter,
             result.progress.streak.current, newlyActive,
             result.progress.streak.freezeUsedDay != stored.streak.freezeUsedDay,
         )

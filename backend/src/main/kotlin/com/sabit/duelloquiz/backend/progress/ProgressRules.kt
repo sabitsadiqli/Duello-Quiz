@@ -19,6 +19,10 @@ data class ProgressConfig(
     val duelPlayedXp: Int = 20,
     val duelWinXp: Int = 30,
     val duelDrawXp: Int = 15,
+    /** OQ-109: bot matches give half the duel XP (draw 7.5 rounded up). */
+    val duelBotPlayedXp: Int = 10,
+    val duelBotWinXp: Int = 15,
+    val duelBotDrawXp: Int = 8,
     /** OQ-082: quiz XP only for the first N sessions per Baku day. */
     val quizSessionsPerDay: Int = 20,
     /** OQ-082: duel XP only for the first N matches per Baku day … */
@@ -29,7 +33,12 @@ data class ProgressConfig(
     val freezeEveryDays: Int = 7,
 ) {
     init {
-        require(listOf(quizXpPerCorrect, dailyXpPerCorrect, dailyCompletionBonus, duelPlayedXp, duelWinXp, duelDrawXp).all { it >= 0 })
+        require(
+            listOf(
+                quizXpPerCorrect, dailyXpPerCorrect, dailyCompletionBonus, duelPlayedXp, duelWinXp, duelDrawXp,
+                duelBotPlayedXp, duelBotWinXp, duelBotDrawXp,
+            ).all { it >= 0 },
+        )
         require(quizSessionsPerDay >= 0 && duelMatchesPerDay >= 0 && duelSameOpponentPerDay >= 0)
         require(freezeEveryDays >= 1)
     }
@@ -42,6 +51,9 @@ enum class XpReason(val db: String) {
     DUEL_PLAYED("duel_played"),
     DUEL_WIN("duel_win"),
     DUEL_DRAW("duel_draw"),
+    DUEL_BOT_PLAYED("duel_bot_played"),
+    DUEL_BOT_WIN("duel_bot_win"),
+    DUEL_BOT_DRAW("duel_bot_draw"),
 }
 
 enum class SourceType(val db: String) {
@@ -82,10 +94,21 @@ class XpRules(private val config: ProgressConfig = ProgressConfig()) {
         },
     ).filter { it.amount > 0 }
 
+    /** Bot match (OQ-109): 10 for a finished match + 15 win / 8 draw; overall XP only. */
+    fun duelBot(outcome: DuelOutcome): List<XpItem> = listOfNotNull(
+        XpItem(XpReason.DUEL_BOT_PLAYED, null, config.duelBotPlayedXp),
+        when (outcome) {
+            DuelOutcome.WIN -> XpItem(XpReason.DUEL_BOT_WIN, null, config.duelBotWinXp)
+            DuelOutcome.DRAW -> XpItem(XpReason.DUEL_BOT_DRAW, null, config.duelBotDrawXp)
+            DuelOutcome.LOSS -> null
+        },
+    ).filter { it.amount > 0 }
+
     /**
      * OQ-082: whether a further eligible activity of [type] gets 0 XP, given how many
      * eligible activities of the same type (and against the same opponent) were already
-     * awarded on the same Baku day.
+     * awarded on the same Baku day. Bot matches count in [eligibleSameDay] (shared 20/day
+     * cap) and pass 0 for [eligibleSameOpponent] (exempt from the 3-per-opponent rule, OQ-109).
      */
     fun isCapped(type: SourceType, eligibleSameDay: Int, eligibleSameOpponent: Int = 0): Boolean = when (type) {
         SourceType.QUIZ -> eligibleSameDay >= config.quizSessionsPerDay

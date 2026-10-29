@@ -99,6 +99,7 @@ class ProgressRepository {
         opponentId: UUID?,
         snapshot: ProgressDto,
         now: Instant,
+        bot: Boolean = false,
     ) {
         ProgressAwardsTable.insert {
             it[ProgressAwardsTable.userId] = userId
@@ -109,6 +110,7 @@ class ProgressRepository {
             it[ProgressAwardsTable.capped] = capped
             it[xpGained] = snapshot.xpGained
             it[ProgressAwardsTable.opponentId] = opponentId
+            it[isBot] = bot
             it[ProgressAwardsTable.snapshot] = snapshot
             it[createdAt] = now.toDb()
         }

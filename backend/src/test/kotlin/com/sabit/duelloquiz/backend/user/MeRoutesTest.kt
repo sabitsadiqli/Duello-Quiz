@@ -169,6 +169,61 @@ class MeRoutesTest : DbTest() {
         }
     }
 
+    @Test
+    fun `bot matches are listed with the bot identity and counted apart from the record`() {
+        val env = TestEnv(db)
+        val aliceToken = env.verifier.tokenFor("alice", name = "Alice")
+        val bobToken = env.verifier.tokenFor("bob", name = "Bob")
+        withTestApp(env) { client ->
+            val alice = client.get("/v1/me") { auth(aliceToken) }.body<ProfileResponse>()
+            val bob = client.get("/v1/me") { auth(bobToken) }.body<ProfileResponse>()
+            seedMatches(alice.id, bob.id)
+            seedBotMatches(alice.id)
+
+            val stats = client.get("/v1/me/stats") { auth(aliceToken) }.body<StatsResponse>()
+            // OQ-110: the record counts real players only; bot matches go to botRecord.
+            assertEquals(Record(wins = 1, losses = 1, draws = 1, total = 3), stats.record)
+            assertEquals(Record(wins = 1, losses = 1, draws = 0, total = 2), stats.botRecord)
+            // Calibration includes the bot match round (Əminlik 2, correct).
+            assertEquals(CalibrationLevel(2, picks = 1, correct = 1), stats.calibration[1])
+
+            val history = client.get("/v1/me/matches") { auth(aliceToken) }.body<MatchHistoryResponse>()
+            val bots = history.items.filter { it.opponentType == "bot" }
+            assertEquals(listOf("win", "loss"), bots.map { it.result }, "newest first, cancelled not listed")
+            bots.forEach {
+                assertEquals(OpponentDto("Duello Bot", null, deleted = false), it.opponent)
+                assertNull(it.ratingChange)
+            }
+            assertTrue(history.items.filter { it.opponentType == "human" }.all { it.ratingChange != null })
+            assertEquals(Record(0, 0, 0, 0), client.get("/v1/me/stats") { auth(bobToken) }.body<StatsResponse>().botRecord)
+        }
+    }
+
+    /** Two finished bot matches of Alice (the newer one a win) and a cancelled one that is never listed. */
+    private fun seedBotMatches(alice: String) = runBlocking {
+        db.tx {
+            exec(
+                """
+                INSERT INTO matches (id, player_a, player_b, score_a, score_b, winner_side, status, end_reason, forfeited_side,
+                                     forfeit_cause, rating_a_before, rating_a_after, started_at, finished_at, opponent_type)
+                VALUES
+                ('00000000-0000-0000-0000-0000000000b1', '$alice', NULL, 200, 400, 'b', 'finished', 'normal', NULL, NULL,
+                 1000, 1000, '2026-10-06T10:00:00Z', '2026-10-06T10:05:00Z', 'bot'),
+                ('00000000-0000-0000-0000-0000000000b2', '$alice', NULL, 700, 100, 'a', 'finished', 'normal', NULL, NULL,
+                 1000, 1000, '2026-10-07T10:00:00Z', '2026-10-07T10:05:00Z', 'bot'),
+                ('00000000-0000-0000-0000-0000000000b3', '$alice', NULL, 0, 0, NULL, 'cancelled', 'cancelled', NULL, NULL,
+                 NULL, NULL, '2026-10-08T10:00:00Z', '2026-10-08T10:00:01Z', 'bot');
+                INSERT INTO match_rounds (id, match_id, round_no, question_id, sudden_death) OVERRIDING SYSTEM VALUE VALUES
+                (21, '00000000-0000-0000-0000-0000000000b2', 1, '00000000-0000-0000-0000-00000000000f', false);
+                INSERT INTO match_answers (round_id, user_id, side, bet, bet_defaulted, is_correct, missed) VALUES
+                (21, '$alice', 'a', 2, false, true, false),
+                (21, NULL, 'b', 3, false, false, false);
+                """.trimIndent(),
+                explicitStatementType = org.jetbrains.exposed.v1.core.statements.StatementType.MULTI,
+            )
+        }
+    }
+
     private fun seedMatches(alice: String, bob: String) = runBlocking {
         db.tx {
             exec(
