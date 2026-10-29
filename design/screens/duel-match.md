@@ -122,6 +122,26 @@ At ≥ 600dp: body centred with `space.layout.maxContentWidth`; panels keep 50/5
 - Opponent panel pill: `duel_status_answering` → `duel_status_answered_opponent`.
 - Own panel pill: `duel_status_answered_self` after the tap.
 
+## Bot opponent (DUEL-24, DUEL-25)
+
+The match screen has no separate bot layout: the rules, phases, timers and the
+four phase looks are identical (DUEL-25). Only the opponent panel changes:
+
+- Avatar: bot variant (`components.md` §13) with the opponent accent ring.
+- Name slot: the Bot badge (`components.md` §16, §32 panel placement) instead of
+  the name; the score line is unchanged.
+- Status pills: the same `duel_status_choosing` → `duel_status_locked_opponent`
+  and `duel_status_answering` → `duel_status_answered_opponent`, with no value
+  (DUEL-18 applies to the bot too). The bot locks 1–4 s into the Əminlik phase
+  and answers 3–9 s after the options, so the pills behave like a human's; the
+  client never fakes or delays them.
+- Never shown in a bot match: disconnect / returned pills and banners
+  (`duel-interruptions.md` H).
+- TalkBack: the opponent panel reads `duel_opponent_bot_cd` ("Rəqib: Duello Bot,
+  bot"), then the score and the status.
+- 360dp / 1.3: the badge (≈ 64dp) fits the 84dp name slot; panels keep their
+  height (badge min height 20dp ≤ the `type.labelLarge` line).
+
 ## Components
 
 Duel top bar + phase stepper, timer ring, player panels + status pills, question
@@ -222,6 +242,8 @@ arrives (DUEL-07: a tap that arrives late is shown as Əminlik 1 in the reveal).
 - Touch targets: chips ≥ 88dp, options ≥ 56dp, close icon 48dp.
 
 ## String keys
+
+Bot opponent: `duel_bot_badge`, `duel_opponent_bot_cd`.
 
 `duel_leave_cd`, `duel_round_label`, `duel_round_label_cd`, `duel_all_in_pill`,
 `duel_all_in_pill_cd`, `duel_phase_question`, `duel_phase_confidence`,

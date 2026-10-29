@@ -4,7 +4,9 @@ Stories: PROF-01 … PROF-11, HOME-04 (header now opens the profile), DUEL-21
 (same calibration rule). PROF-09 … PROF-11 (level, category levels, streak) added
 2026-10-22; their elements are specified in `progression.md` C. Decisions: OQ-011 / OQ-042 (display name rules), OQ-014
 (deleted players), OQ-020 (duel flag), OQ-026 (record and history), OQ-027
-(calibration counting), OQ-030 (blocked names), OQ-031 (last 20 matches).
+(calibration counting), OQ-030 (blocked names), OQ-031 (last 20 matches),
+OQ-110 (bot matches: in history with the Bot badge, outside the record, inside
+calibration; DUEL-28).
 Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, §21,
 §23. Copy: `copy/az.md`.
 
@@ -33,6 +35,13 @@ Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, 
 - Assumption: the profile is reached only from the home header (no bottom
   navigation in the MVP). The header gets a trailing chevron so it looks tappable
   (`home.md` updated).
+
+- **OQ-D33 — open (backend-dev): API fields for bot matches.** This spec assumes
+  `MatchSummary` gets an opponent type (e.g. `opponent.isBot` / `opponentType`) and
+  `ratingChange = null` for bot matches, and `GET /v1/me/stats` gets
+  `botRecord {wins, losses, draws}` next to `record` (OQ-110). The client picks the
+  bot avatar and badge from that flag only, never from the name. Names: whatever
+  `docs/api/openapi.yaml` settles on.
 
 ## Purpose
 
@@ -76,10 +85,15 @@ the only place to change my public name.
          `profile_record_title`, trailing `profile_record_total` ("22 oyun"); rows
          `profile_match_win`, `profile_match_loss`, `profile_match_draw` with
          counts. Forfeits are included; abandoned / cancelled are not (OQ-026).
+         Rows and total count **real-player matches only**; bot matches get the
+         separate bot line `profile_record_bot` ("Bota qarşı: 3 qələbə, 2
+         məğlubiyyət, 0 heç-heçə") at the bottom of the card, hidden when there
+         are none (`components.md` §23, OQ-110).
       2. `space.xl`, **Əminlik statistikası** card (`components.md` §20): title
          `profile_calibration_title`, subtitle `profile_calibration_subtitle`,
          rows for Əminlik 1–3 with `profile_calibration_value` ("18 dəfə · 72%
-         düzgün"), `profile_calibration_few` (< 5 rounds: "3 dəfə · Az məlumat",
+         düzgün"; bot matches **included**, OQ-110 — no extra label, the
+         subtitle already says "Bütün oyunlarda"), `profile_calibration_few` (< 5 rounds: "3 dəfə · Az məlumat",
          no bar) or `profile_calibration_never` ("Hələ seçilməyib"); hint by the
          rules in `duel-result.md` (profile thresholds); footnote
          `profile_calibration_footnote`.
@@ -110,11 +124,15 @@ At ≥ 600dp: content centred, max width `space.layout.maxContentWidth`.
 | Decided in sudden death | Opponent name | result · score | `profile_match_label_sudden_death` | delta, date |
 | Abandoned | Opponent name | `profile_match_abandoned` · score | — | "0" (`scheme.onSurfaceVariant`), date |
 | Opponent deleted | `common_deleted_player`, `person_off` avatar | as above | as above | as above |
+| Bot match (win / loss / draw / forfeit / sudden death) | Bot avatar (app mark, `components.md` §13), "Duello Bot" + Bot badge inline (§32) | result · score as above | labels as above (own forfeit labels only; the bot never forfeits) | `profile_match_rating_none` ("—", `scheme.onSurfaceVariant`), date |
+| Bot match, abandoned | Bot avatar, "Duello Bot" + badge | `profile_match_abandoned` · score | — | "—", date |
 
 Score: own score first (`duel_score_pair`), U+2212 for negatives. Date: today →
 `profile_match_today`, yesterday → `profile_match_yesterday`, this year →
 `profile_match_date` ("12 okt"), older → `profile_match_date_year`; device time
 zone. The opponent's **current** name is shown (names are not copied into matches).
+Bot rows: the name comes from the API (backend i18n "Duello Bot"), fallback
+`duel_bot_name`; a bot row is never shown as "Silinmiş oyunçu" (DUEL-28).
 
 ### Edit name dialog (PROF-06)
 
@@ -149,7 +167,8 @@ section has its own state; the screen is never blocked by one failing section
 | First load, no cache | Skeleton: avatar circle, two text bars (`scheme.surfaceContainerHighest`, shimmer as `components.md` §5) | Card skeletons with 3 bars each | 3 skeleton rows |
 | Cache exists | Cached data at once; replaced silently when fresh data arrives (no flicker). Data is always reloaded on open (PROF-01: a just-finished duel must appear). | Same | Same |
 | Success | As laid out | As laid out | Rows |
-| Empty (no counted match; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000"; level, streak and category cards still shown above the empty card | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, primary button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
+| Only bot matches (no counted real match, ≥ 1 counted bot match, DUEL-28) | Normal | Record card: `profile_record_empty_real` + bot line (`components.md` §23); Əminlik statistikası filled as usual | Rows (bot rows) |
+| Empty (no counted match, real or bot; also only abandoned / cancelled ones, PROF-07) | Normal, "Reytinq: 1000"; level, streak and category cards still shown above the empty card | Replaced by **one empty card**: `scheme.surfaceContainerLow`, `shape.large`, padding `space.xl`, centred: 48dp `bolt` icon in `scheme.primary`, `profile_empty_title` `type.titleMedium`, `profile_empty_body` `type.bodyMedium` `scheme.onSurfaceVariant`, primary button `profile_empty_cta` (→ `duel-search.md`) | Hidden (abandoned matches alone do not make a list) |
 | Duel flag off | Normal | Hidden (no empty card, no CTA) | Hidden |
 | Section failed (5xx / 15 s timeout), others ok | — | That card shows `profile_section_error` (`type.bodyMedium`) + text button `common_retry`, card height kept | Same inline error in place of the list |
 | Offline, cache | Cached + offline banner `common_offline_banner` | Cached | Cached |
@@ -192,12 +211,15 @@ sign-up).
   after it. The edit button is a separate element with `profile_edit_name_cd`.
 - Level card `profile_level_cd`, streak card `profile_streak_cd`, category rows
   `profile_category_level_cd` (`progression.md` Accessibility).
-- Record card: one element `profile_record_cd`.
+- Record card: one element `profile_record_cd`, followed by the bot line text when
+  shown ("… cəmi 22 oyun. Bota qarşı: 3 qələbə, 2 məğlubiyyət, 0 heç-heçə");
+  only-bot case: `profile_record_empty_real` then the bot line.
 - Calibration rows: one element each (`profile_calibration_row_cd` /
   `profile_calibration_row_few_cd`), e.g. "Əminlik 3: 18 dəfə seçilib, 72 faiz
   düzgün" (PROF-05).
-- History rows: one element each (`profile_match_cd`); the result word comes before
-  the score, colour is never the only signal.
+- History rows: one element each (`profile_match_cd`; bot rows `profile_match_bot_cd`,
+  e.g. "Duello Bot ilə oyun, bot, Qələbə, hesab 640 : 410, reytinq dəyişmədi, dünən");
+  the result word comes before the score, colour is never the only signal.
 - Dialog: the field has the label "Ad"; errors are announced (live region on the
   supporting text).
 
@@ -206,6 +228,9 @@ sign-up).
 `profile_title`, `common_back`, `common_offline_banner`, `profile_edit_name_cd`,
 `home_rating`, `profile_joined`, `profile_months`, `profile_months_short`,
 `profile_record_title`, `profile_record_total`, `profile_record_cd`,
+`profile_record_bot`, `profile_record_bot_wins`, `profile_record_bot_losses`,
+`profile_record_bot_draws`, `profile_record_empty_real`, `duel_bot_name`,
+`duel_bot_badge`, `profile_match_rating_none`, `profile_match_bot_cd`,
 `profile_match_win`, `profile_match_loss`, `profile_match_draw`,
 `profile_match_abandoned`, `profile_calibration_title`,
 `profile_calibration_subtitle`, `profile_calibration_value`,

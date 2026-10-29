@@ -4,7 +4,8 @@ Stories: DUEL-20 (incl. XP, added 2026-10-22), DUEL-21, DUEL-22, DUEL-14 (forfei
 abandoned texts), DUEL-11 (sudden death / draw), PROG-02 / PROG-06 (XP, level-up,
 streak). Decisions: OQ-025 (no rematch: "Yenidən oyna" re-queues),
 OQ-026 (forfeit and abandoned display), OQ-027 (calibration counting), OQ-038 /
-OQ-039 (Elo rounding, no floor).
+OQ-039 (Elo rounding, no floor), OQ-106 / OQ-107 / OQ-109 (bot match: no Elo, Bot
+badge, half XP; DUEL-26, DUEL-27).
 Tokens: `design/tokens.json`. Components: `components.md` §13, §20. Copy: `copy/az.md`.
 
 ## Questions and decisions
@@ -18,6 +19,13 @@ Tokens: `design/tokens.json`. Components: `components.md` §13, §20. Copy: `cop
   rounds does see it (DUEL-14).
 - Assumption: no per-round breakdown on this screen (out of scope, PROF-04 has no
   match detail either).
+
+- Decided by this spec (copy): the bot rating card reads "Reytinq dəyişmədi" with a
+  second line "Bot oyunu reytinqə təsir etmir." instead of DUEL-26's one-liner
+  "Reytinq dəyişmədi · Bot oyunu". Reason: at 360dp the one-liner (`type.titleMedium`
+  ≈ 291dp) does not fit the 268dp text column even at font scale 1.0 and would
+  break after the "·"; two lines say the reason in a full sentence and reuse the
+  intro note. Behaviour is unchanged (no number, no delta).
 
 ## Purpose
 
@@ -75,7 +83,12 @@ card) — then make the next match one tap away.
       deleted-player variant if the opponent deleted their account meanwhile),
       `space.sm`, name `type.titleSmall` (self: `duel_you`; opponent: display name,
       max 2 lines, then ellipsis), `space.xs`, final score `type.headlineMedium`
-      tabular (U+2212 for negatives). Winner column: a `duel_result_winner_badge`
+      tabular (U+2212 for negatives). **Bot column**: bot avatar (`components.md`
+      §13) with the opponent ring, name "Duello Bot" (`match.found` / fallback
+      `duel_bot_name`), Bot badge stacked `space.xxs` under the name (§32); the
+      self column reserves the same badge height so both scores stay on one
+      baseline (also on the Win gradient: the pill keeps its own colours).
+      Winner column: a `duel_result_winner_badge`
       pill above the avatar (`game.correctContainer` / `game.onCorrectContainer`,
       `type.labelMedium`), height reserved in both columns so they stay aligned.
       One TalkBack element: `duel_result_score_cd`.
@@ -86,13 +99,25 @@ card) — then make the next match one tap away.
       "0") `type.titleMedium` tabular in `game.correct` / `game.wrong` /
       `scheme.onSurfaceVariant`. Abandoned: only `duel_result_rating_unchanged`
       in `scheme.onSurfaceVariant`. TalkBack: `duel_result_rating_cd`.
+      **Bot match** (`opponentType = bot`, `ratingChange = 0`): icon
+      `trending_flat` `scheme.onSurfaceVariant`, column: `duel_result_rating_unchanged`
+      ("Reytinq dəyişmədi") `type.titleMedium` `scheme.onSurface`; `space.xxs`,
+      `duel_bot_no_rating_note` ("Bot oyunu reytinqə təsir etmir.")
+      `type.bodyMedium` `scheme.onSurfaceVariant`, wraps. No rating number and no
+      "0" delta (DUEL-26). TalkBack: `duel_result_rating_bot_cd`. Same for every
+      bot outcome (win, loss, draw, own forfeit by missed rounds); abandoned bot
+      match = abandoned layout.
    3a. `space.lg`, **progress card** (`components.md` §26, `progression.md` A):
       "+50 XP" win / "+35 XP" draw / "+20 XP" loss from `match.result.progress`
       (or, until the protocol carries it, from `GET /v1/me/progress` after the
       match: then only the level bar and streak row, no "+XP", because the gain is
       unknown). Own forfeit: XP row hidden. **Abandoned: no progress card.** Over
       a cap: cap note (OQ-D29). Never contains Elo — the rating card stays the
-      only place for the rating.
+      only place for the rating. **Bot match**: the server already sends half XP
+      ("+25 XP" win / "+18 XP" draw / "+10 XP" loss, OQ-109) and the card adds the
+      bot note `progress_xp_bot_note` under the XP row (`components.md` §26 5a); own
+      forfeit (left / missed rounds): 0 XP, XP row and note hidden, streak row as
+      the server says (no active day).
    4. `space.xl`, **Əminlik kartı** (`components.md` §20): title
       `duel_calibration_title`, subtitle `duel_calibration_subtitle`, rows for
       Əminlik 1, 2, 3 with `duel_calibration_value` ("2 / 3 düzgün") or
@@ -147,6 +172,9 @@ calibration card, filled and neutral buttons.
 | Calibration: a level unused | Row value "—", no bar. |
 | Calibration: no counted rounds at all (e.g. all defaulted) | All rows "—", hint `duel_calibration_hint_few_data`. |
 | Opponent deleted meanwhile | Deleted-player avatar + `common_deleted_player`. |
+| Bot match, any outcome | Hero, reason line and Əminlik card as for a real match (the calibration counts, DUEL-28); bot column with badge; bot rating card; progress card with the bot note. Bot-forfeit reason lines never occur (the bot never leaves or misses). |
+| Bot match, own forfeit by missed rounds | Loss hero + `duel_result_reason_self_forfeit`; bot rating card (no Elo loss); no XP row. |
+| Bot match, daily duel cap reached | Cap note instead of the XP row (bot and real matches share the 20/day cap, OQ-109); no bot note. |
 | "Yenidən oyna" tapped | Button loading, then the search screen (`duel-search.md`, Connecting). Offline → snackbar `home_duel_needs_internet`, stay. |
 | Loading | Not applicable: everything comes in `match.result`. |
 | Error | Not applicable (no request). |
@@ -170,7 +198,8 @@ calibration card, filled and neutral buttons.
 - Hero headline is the screen heading; reason line is read after it.
 - Score card, rating card and each calibration row are single elements
   (`duel_result_score_cd`, `duel_result_rating_cd`, `duel_calibration_row_cd` /
-  `duel_calibration_unused_cd`).
+  `duel_calibration_unused_cd`). Bot match: `duel_result_score_bot_cd` ("Hesab:
+  sən 640, Duello Bot (bot) 410") and `duel_result_rating_bot_cd`.
 - Win/loss is never colour-only: headline text and icon.
 
 ## String keys
@@ -192,4 +221,7 @@ calibration card, filled and neutral buttons.
 `duel_calibration_hint_overconfident`, `duel_calibration_hint_underconfident`,
 `duel_calibration_hint_few_data`, `duel_calibration_hint_neutral`,
 `duel_result_play_again`, `common_home`, `common_deleted_player`,
-`home_duel_needs_internet`; progress card keys in `progression.md`.
+`home_duel_needs_internet`; bot match: `duel_bot_name`, `duel_bot_badge`,
+`duel_bot_no_rating_note`, `duel_result_rating_bot_cd`,
+`duel_result_score_bot_cd`, `progress_xp_bot_note`; progress card keys in
+`progression.md`.

@@ -84,6 +84,10 @@ way back — or a deliberate way out.
 
 - Title `duel_leave_title`, body `duel_leave_body`, actions `common_continue`
   ("Davam et", left) and `duel_leave_confirm` ("Çıx", right, `scheme.error`).
+- Bot match (DUEL-26): body `duel_leave_body_bot` ("Bu, məğlubiyyət sayılacaq. Bot
+  oyunu reytinqə təsir etmir. Vaxt bu arada dayanmır.") — the leave is still a loss
+  (0 XP, no active day), only the rating sentence changes. Snackbar on home stays
+  `duel_left_snackbar`.
 - Timers keep running behind the scrim; a pick or answer not sent while the dialog
   is open follows the normal defaults (DUEL-15). Back / scrim tap = "Davam et".
 - If the phase changed while the dialog was open, the screen shows the current
@@ -104,6 +108,19 @@ way back — or a deliberate way out.
   ("Oyun texniki səbəbdən dayandırıldı. Reytinq dəyişmədi."), primary button
   `common_home`. `activeMatchId` is cleared.
 
+### H. Bot match (DUEL-26)
+
+- The bot never disconnects, leaves or misses: banner D, the opponent pills
+  "Bağlantı kəsildi" / "Qayıtdı", and the opponent-forfeit and "both gone" rows
+  below cannot occur. The client does not need a bot branch for them; it simply
+  never receives `opponent.connection` in a bot match.
+- Self reconnecting / offline (cards A, B, C), rejoin, process death, session
+  replaced: unchanged. The bot keeps playing on server time while the player is
+  away; card B's body `duel_offline_body` is true for the bot too. The opponent
+  panel behind the scrim keeps the Bot badge (`components.md` §16).
+- Server restart during a bot match: `match_not_found` / abandoned → G or
+  "Ləğv edildi" as for a real match (no XP).
+
 ## Components
 
 Overlay card, warning/info banner, status pills, alert dialog, full-screen state
@@ -119,6 +136,7 @@ views, snackbar (on home).
 | Reconnect succeeds, match already over | — | Result screen (`duel-result.md`) | — |
 | Reconnect: `match_not_found` | — | State view G | Home only |
 | Reconnect: 401 after one token refresh | — | AUTH-09 handling (sign-in, `error_sign_in_expired`) | — |
+| Bot match, any of the opponent rows below | Not applicable (section H) | | |
 | Opponent disconnected (≤ 10 s) | Opponent pill "Bağlantı kəsildi" | Banner D with countdown | Normal |
 | Opponent away (> 10 s) | Same | Banner `duel_opponent_still_away` | Normal |
 | Opponent returned | Pill "Qayıtdı" (2 s) | Info banner (2 s) | Normal |
@@ -157,7 +175,8 @@ views, snackbar (on home).
 `duel_offline_body`, `duel_reconnect_button`, `duel_leave_button`,
 `duel_rejoining`, `duel_status_disconnected`, `duel_status_returned`,
 `duel_opponent_disconnected`, `duel_opponent_still_away`, `duel_opponent_returned`,
-`duel_leave_title`, `duel_leave_body`, `duel_leave_confirm`, `common_continue`,
+`duel_leave_title`, `duel_leave_body`, `duel_leave_body_bot`, `duel_leave_confirm`,
+`common_continue`,
 `duel_left_snackbar`, `error_session_replaced`, `error_match_not_found`,
 `error_already_in_match`, `error_sign_in_expired`, `common_home`,
 `common_loading`, `duel_result_reason_opponent_missed_rounds`,
