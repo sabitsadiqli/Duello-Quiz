@@ -71,6 +71,18 @@ class XpRulesTest {
     }
 
     @Test
+    fun `bot match gives half the duel XP, draw rounded up (OQ-109)`() {
+        assertEquals(
+            listOf(XpItem(XpReason.DUEL_BOT_PLAYED, null, 10), XpItem(XpReason.DUEL_BOT_WIN, null, 15)),
+            rules.duelBot(DuelOutcome.WIN),
+        )
+        assertEquals(25, rules.duelBot(DuelOutcome.WIN).sumOf { it.amount })
+        assertEquals(18, rules.duelBot(DuelOutcome.DRAW).sumOf { it.amount })
+        assertEquals(listOf(XpItem(XpReason.DUEL_BOT_PLAYED, null, 10)), rules.duelBot(DuelOutcome.LOSS))
+        assertEquals(listOf("duel_bot_played", "duel_bot_win", "duel_bot_draw"), listOf(XpReason.DUEL_BOT_PLAYED, XpReason.DUEL_BOT_WIN, XpReason.DUEL_BOT_DRAW).map { it.db })
+    }
+
+    @Test
     fun `caps per OQ-082`() {
         assertFalse(rules.isCapped(SourceType.QUIZ, eligibleSameDay = 19))
         assertTrue(rules.isCapped(SourceType.QUIZ, eligibleSameDay = 20))

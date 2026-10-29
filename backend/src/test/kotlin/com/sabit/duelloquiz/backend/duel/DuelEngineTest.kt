@@ -381,7 +381,7 @@ class DuelEngineTest {
 
         // Carol joins and is paired with Bob (front of the queue); Alice's queue.join later waits.
         val c = h.connect(h.carol)
-        h.send(h.carol, c, ClientMessage.QueueJoin)
+        h.send(h.carol, c, ClientMessage.QueueJoin())
         assertEquals("Bob", c.last<ServerMessage.MatchFound>().opponent.displayName)
         assertEquals("Carol", b.all<ServerMessage.MatchFound>().last().opponent.displayName)
 
@@ -637,7 +637,7 @@ class DuelEngineTest {
         assertEquals(Triple("round.bet", "m-1", 3), Triple(bet.ref, bet.matchId, bet.roundNo))
         val answer = internalErrorFor(ClientMessage.RoundAnswer("m-1", 4, "o-1"))
         assertEquals(Triple("round.answer", "m-1", 4), Triple(answer.ref, answer.matchId, answer.roundNo))
-        val join = internalErrorFor(ClientMessage.QueueJoin)
+        val join = internalErrorFor(ClientMessage.QueueJoin())
         assertEquals(Triple("queue.join", null, null), Triple(join.ref, join.matchId, join.roundNo))
     }
 
@@ -645,29 +645,29 @@ class DuelEngineTest {
     fun `the newest connection wins and the old one is closed`() = runTest {
         val h = DuelHarness(this)
         val a1 = h.connect(h.alice)
-        h.send(h.alice, a1, ClientMessage.QueueJoin)
+        h.send(h.alice, a1, ClientMessage.QueueJoin())
         val a2 = h.connect(h.alice)
         assertEquals(DuelErrorCodes.SESSION_REPLACED, a1.lastError().code)
         assertEquals(DuelCloseCodes.SESSION_REPLACED, a1.closedWith)
         assertEquals(0, h.queue.size(), "the old queue entry is removed")
         // Messages from the old socket are ignored.
-        h.send(h.alice, a1, ClientMessage.QueueJoin)
+        h.send(h.alice, a1, ClientMessage.QueueJoin())
         assertEquals(0, h.queue.size())
-        h.send(h.alice, a2, ClientMessage.QueueJoin)
+        h.send(h.alice, a2, ClientMessage.QueueJoin())
         assertEquals(1, h.queue.size())
         // A late disconnect of the old socket does not drop the new one from the queue.
         h.service.disconnect(h.alice, a1)
         assertEquals(1, h.queue.size())
 
         val b = h.connect(h.bob)
-        h.send(h.bob, b, ClientMessage.QueueJoin)
+        h.send(h.bob, b, ClientMessage.QueueJoin())
         assertNotNull(a2.lastOrNull<ServerMessage.MatchFound>())
         // A third socket during the match takes over the seat with a snapshot.
         val a3 = h.connect(h.alice)
         assertEquals(DuelCloseCodes.SESSION_REPLACED, a2.closedWith)
         assertEquals(Phases.INTRO, a3.last<ServerMessage.MatchState>().phase)
         // queue.join while in a match → already_in_match + snapshot.
-        h.send(h.alice, a3, ClientMessage.QueueJoin)
+        h.send(h.alice, a3, ClientMessage.QueueJoin())
         assertEquals(DuelErrorCodes.ALREADY_IN_MATCH, a3.lastError().code)
         assertEquals(2, a3.all<ServerMessage.MatchState>().size)
     }
@@ -718,11 +718,11 @@ class DuelEngineTest {
         val a = h.connect(h.alice)
         h.send(h.alice, a, ClientMessage.Ping)
         assertEquals(ServerMessage.Pong, a.messages.last())
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         val joined = a.last<ServerMessage.QueueJoined>()
         assertEquals(h.now() + 30_000, joined.deadlineEpochMs)
         h.advanceBy(5_000)
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         assertEquals(joined, a.last<ServerMessage.QueueJoined>(), "same deadline")
         h.advanceTo(joined.deadlineEpochMs - 1)
         assertNull(a.lastOrNull<ServerMessage.QueueTimeout>())
@@ -731,7 +731,7 @@ class DuelEngineTest {
         assertEquals(0, h.queue.size())
 
         // Retry, then leave; leaving twice is harmless.
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         h.send(h.alice, a, ClientMessage.QueueLeave)
         assertEquals(ServerMessage.QueueLeft, a.messages.last())
         h.send(h.alice, a, ClientMessage.QueueLeave)
@@ -740,7 +740,7 @@ class DuelEngineTest {
         assertEquals(1, a.all<ServerMessage.QueueTimeout>().size, "the left entry does not time out")
 
         // A dropped socket leaves the queue.
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         h.service.disconnect(h.alice, a)
         assertEquals(0, h.queue.size())
     }
@@ -751,11 +751,11 @@ class DuelEngineTest {
         val c = h.connect(h.carol)
         val a = h.connect(h.alice)
         val b = h.connect(h.bob)
-        h.send(h.carol, c, ClientMessage.QueueJoin)
+        h.send(h.carol, c, ClientMessage.QueueJoin())
         h.advanceBy(1_000)
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         assertEquals("Alice", c.last<ServerMessage.MatchFound>().opponent.displayName)
-        h.send(h.bob, b, ClientMessage.QueueJoin)
+        h.send(h.bob, b, ClientMessage.QueueJoin())
         assertNull(b.lastOrNull<ServerMessage.MatchFound>())
         assertEquals(1, h.queue.size())
     }
@@ -765,7 +765,7 @@ class DuelEngineTest {
         val h = DuelHarness(this)
         h.store.activeQuestions = 9
         val a = h.connect(h.alice)
-        h.send(h.alice, a, ClientMessage.QueueJoin)
+        h.send(h.alice, a, ClientMessage.QueueJoin())
         assertEquals(DuelErrorCodes.DUEL_UNAVAILABLE, a.lastError().code)
         assertEquals(0, h.queue.size())
     }

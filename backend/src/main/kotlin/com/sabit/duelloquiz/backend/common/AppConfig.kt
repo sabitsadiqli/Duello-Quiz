@@ -1,6 +1,7 @@
 package com.sabit.duelloquiz.backend.common
 
 import com.sabit.duelloquiz.backend.daily.DailyConfig
+import com.sabit.duelloquiz.backend.duel.BotConfig
 import com.sabit.duelloquiz.backend.duel.DuelConfig
 import com.sabit.duelloquiz.backend.notification.NotificationConfig
 import com.sabit.duelloquiz.backend.progress.ProgressConfig
@@ -31,6 +32,8 @@ data class AppConfig(
             fun long(path: String) = str(path).toLong()
             fun bool(path: String) = str(path).toBooleanStrict()
             fun time(path: String) = LocalTime.parse(str(path))
+            fun double(path: String) = str(path).toDouble()
+            fun doubles(path: String) = config.property(path).getList().map { it.toDouble() }
             return AppConfig(
                 db = DbConfig(
                     url = str("duello.db.url"),
@@ -72,6 +75,27 @@ data class AppConfig(
                     eloK = int("duello.duel.eloK"),
                     heartbeatIntervalMs = long("duello.duel.heartbeatIntervalMs"),
                     heartbeatTimeoutMs = long("duello.duel.heartbeatTimeoutMs"),
+                    bot = BotConfig(
+                        enabled = bool("duello.duel.bot.enabled"),
+                        waitMs = long("duello.duel.bot.waitMs"),
+                        baseP = double("duello.duel.bot.baseP"),
+                        perRatingPoint = double("duello.duel.bot.perRatingPoint"),
+                        ratingPivot = int("duello.duel.bot.ratingPivot"),
+                        difficultyAdjust = doubles("duello.duel.bot.difficultyAdjust"),
+                        formAdjust = double("duello.duel.bot.formAdjust"),
+                        formWindow = int("duello.duel.bot.formWindow"),
+                        formHighWins = int("duello.duel.bot.formHighWins"),
+                        formLowWins = int("duello.duel.bot.formLowWins"),
+                        minP = double("duello.duel.bot.minP"),
+                        maxP = double("duello.duel.bot.maxP"),
+                        knowsBetWeights = doubles("duello.duel.bot.knowsBetWeights"),
+                        notKnowsBetWeights = doubles("duello.duel.bot.notKnowsBetWeights"),
+                        allInKnowsBet3 = double("duello.duel.bot.allInKnowsBet3"),
+                        pickMinMs = long("duello.duel.bot.pickMinMs"),
+                        pickMaxMs = long("duello.duel.bot.pickMaxMs"),
+                        answerMinMs = long("duello.duel.bot.answerMinMs"),
+                        answerMaxMs = long("duello.duel.bot.answerMaxMs"),
+                    ),
                 ),
                 images = ImageConfig(
                     maxUploadBytes = long("duello.images.maxUploadBytes"),
@@ -101,6 +125,9 @@ data class AppConfig(
                     duelPlayedXp = int("duello.progress.duelPlayedXp"),
                     duelWinXp = int("duello.progress.duelWinXp"),
                     duelDrawXp = int("duello.progress.duelDrawXp"),
+                    duelBotPlayedXp = int("duello.progress.duelBotPlayedXp"),
+                    duelBotWinXp = int("duello.progress.duelBotWinXp"),
+                    duelBotDrawXp = int("duello.progress.duelBotDrawXp"),
                     quizSessionsPerDay = int("duello.progress.quizSessionsPerDay"),
                     duelMatchesPerDay = int("duello.progress.duelMatchesPerDay"),
                     duelSameOpponentPerDay = int("duello.progress.duelSameOpponentPerDay"),
