@@ -72,15 +72,44 @@ Scoring:
   no rating floor (OQ-038, OQ-039).
 - Full rules and edge cases: `docs/requirements/duel.md`.
 
-Matchmaking (MVP): single global queue, first come first served; if no opponent in
-30 s, show "no opponent found" with retry. Rating is a simple Elo (K = 32, start
-1000), stored per user; a draw is scored 0.5 for both.
+Matchmaking (MVP): single global queue, first come first served; a real opponent is
+always preferred. If no real opponent is found within **15 s**, the player is matched
+with the server-side bot (below). Only if the bot is disabled or cannot be started,
+the player keeps waiting until **30 s** and sees "no opponent found" with retry.
+Rating is a simple Elo (K = 32, start 1000), stored per user; a draw is scored 0.5
+for both.
+
+### Bot opponent (decided by Sabit 2026-10-30, OQ-106; supersedes OQ-028 "no bots")
+
+- When: a player alone in the queue for 15 s (server clock, from `queue.joined`) gets
+  a bot match; never while another real player is waiting. Server config switch,
+  default on; off → the 30 s timeout above.
+- Transparency: fixed name "Duello Bot" (proposal, OQ-107), a "Bot" badge on every
+  screen, the app mark as avatar, no rating shown; never a fake human name or photo.
+- Rules: exactly the rules of this section (phases, timers, scoring, Əminlik 3 limit,
+  round 7, sudden death, missed rounds, leave = forfeit by the player). The bot never
+  misses, disconnects or forfeits.
+- Strength: per round the bot "knows" the answer with probability 45–80 %, adapted to
+  the player's Elo at match start and the question difficulty, targeting about 50 %
+  player wins (formula: OQ-108); answer time random 3–9 s after the options; Əminlik
+  consistent with its knowledge. Its decisions never depend on the player's hidden
+  pick, answer or timing.
+- Elo: bot matches never change any rating (no rating row update; result shows
+  "Reytinq dəyişmədi").
+- XP and streak: half the duel XP (§10); a finished bot match not forfeited by the
+  player makes the day active.
+- History and stats: listed with the "Bot" badge; record vs players and calibration
+  rules: OQ-110. Account deletion deletes the user's bot matches (§3a).
+- Stories: `docs/requirements/duel.md` DUEL-23 … DUEL-29.
+- Out of scope: ghost duels (replaying real players), a "play a bot" button, user-
+  chosen bot difficulty, friends/invites.
 
 Protocol (message names, fields, error and close codes, heartbeat, grace and phase
 closing): `docs/api/duel-protocol.md` — the only source for duel message names.
 User stories and acceptance criteria: `docs/requirements/duel.md` (DUEL-01 …) and
-`docs/requirements/profile.md` (PROF-01 …); decisions OQ-024 … OQ-040 and
-OQ-053 … OQ-072 in `docs/requirements/open-questions.md`.
+`docs/requirements/profile.md` (PROF-01 …); decisions OQ-024 … OQ-040,
+OQ-053 … OQ-072 and OQ-106 (bot; open details OQ-107 … OQ-111) in
+`docs/requirements/open-questions.md`.
 
 Deployment note (OQ-070): the duel runs on a **single backend replica**. The queue
 and running matches live in memory; on startup every match still `active` is marked
@@ -107,8 +136,10 @@ state).
   deletion; a public privacy policy URL. Both pages are static files on GitHub Pages
   from `docs/legal/` (zero cost, OQ-015).
 - `DELETE /v1/me` deletes immediately: user row, quiz sessions and answers, the
-  Firebase user. In past matches the player is anonymized (`player_* = NULL`, shown
-  as "Silinmiş oyunçu"). Backups roll off within 30 days (OQ-014).
+  Firebase user. In past matches against real players the player is anonymized
+  (`player_* = NULL`, shown as "Silinmiş oyunçu"); matches against the bot (§2, no
+  other person involved) are deleted with their rounds and answers (OQ-106). Backups
+  roll off within 30 days (OQ-014).
 - Also deleted in the same transaction (§9–§11): daily challenge attempts and answers,
   XP events, XP totals and category XP, active days, streak and freeze, notification
   preferences, the notification send log and every FCM push token of the user. The
@@ -312,6 +343,11 @@ below were decided by Sabit on 2026-10-22 (OQ-074 … OQ-096 in
   player, abandoned and cancelled matches 0; a quiz expired with no answer 0.
 - Caps (OQ-082): quiz XP only for the first 20 sessions per day; duel XP only
   for the first 20 matches per day and at most 3 per day against the same opponent.
+- Bot matches (§2, OQ-106): half the duel XP — 10 for a `finished` match, +15 win,
+  draw +8 (7.5 rounded up, proposal OQ-109); forfeit, abandoned, cancelled 0. Proposal
+  OQ-109: they count toward the 20-per-day duel cap and are exempt from the
+  3-per-opponent rule. A finished bot match not forfeited by the user is an active
+  day (OQ-085). Never any Elo change.
 - Level curve (OQ-083): level n → n+1 needs 100 × n XP (total for level n =
   50 × n × (n − 1)); level 1 at 0 XP; no maximum. Same curve for category levels.
 - Category XP (OQ-084): XP of correct answers goes to the question's
