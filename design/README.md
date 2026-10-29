@@ -25,7 +25,7 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/quiz-result.md` | Result + wrong-answer review, XP card, permission card (QUIZ-05, QUIZ-06) |
 | `screens/settings.md` | Settings, notifications, delete account (SET-01 … SET-05, SET-07, AUTH-07) |
 | `screens/licenses.md` | Open-source licences list and detail (SET-03) |
-| `screens/duel-search.md` | Duel search / queue, timeout, retry, leave (DUEL-02 … DUEL-04) |
+| `screens/duel-search.md` | Duel search / queue, bot countdown, timeout, retry, leave (DUEL-02 … DUEL-04, DUEL-23) |
 | `screens/duel-intro.md` | Match found + 3 s intro (DUEL-05) |
 | `screens/duel-match.md` | Match screen frame and the question, Əminlik and answer phases (DUEL-06 … DUEL-08, DUEL-12, DUEL-17) |
 | `screens/duel-reveal.md` | Result phase: simultaneous reveal (DUEL-09) |
@@ -47,6 +47,13 @@ flame), `gradient.dailyHero` (sky blue → teal daily card), XP and levels on
 `scheme.primary*`, streak freeze on `scheme.secondary*`; sizes `size.resultSquare*`,
 `size.levelBadge`, `size.streakBadgeMinWidth`, `size.xpBar*`; motion
 `motion.progression`. Components §24–§31 in `screens/components.md`.
+
+Bot opponent (tokens 2.2.0, 2026-10-30, OQ-106 … OQ-111): "Bot" badge
+(`components.md` §32) on `scheme.tertiaryContainer` / `onTertiaryContainer`, bot
+avatar = app mark (§13), no rating ("—"); search countdown to the bot moment over
+`motion.duel.phaseNominalMs.searchBot`. No new colour role. Bot variants live in
+`duel-search.md`, `duel-intro.md`, `duel-match.md`, `duel-reveal.md`,
+`duel-interruptions.md`, `duel-result.md` and `profile.md`.
 
 ## Design direction (v2, tokens 2.0.0)
 

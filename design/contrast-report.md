@@ -143,7 +143,7 @@ Pairs checked: 276, failures: 0.
 | primary | pendingContainer | #5334E6 | #E7E1FF | 5.53 | 3.0 | pass | selected option 2dp border vs its container |
 | onConfidence1Container | confidence1Container | #0B3566 | #E1F0FF | 10.56 | 3.0 | pass | Əminlik 1 signal bars |
 | onConfidence3Container | confidence3Container | #FFFFFF | #4B2BD9 | 7.93 | 3.0 | pass | Əminlik 3 signal bars |
-| onTertiaryContainer | tertiaryContainer | #3E0026 | #FFD9EC | 13.29 | 4.5 | pass | round-7 pill, opponent badge |
+| onTertiaryContainer | tertiaryContainer | #3E0026 | #FFD9EC | 13.29 | 4.5 | pass | round-7 pill, opponent badge, Bot badge text + icon (components.md §32) |
 | gradient.duelHero.on | gradient.duelHero.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | duel hero card text, gradient start |
 | gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
 | gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |
@@ -286,7 +286,7 @@ Pairs checked: 276, failures: 0.
 | primary | pendingContainer | #C0B3FF | #4A2FD6 | 4.17 | 3.0 | pass | selected option 2dp border vs its container |
 | onConfidence1Container | confidence1Container | #D6EBFF | #1F3A5C | 9.45 | 3.0 | pass | Əminlik 1 signal bars |
 | onConfidence3Container | confidence3Container | #1C0A63 | #C0B3FF | 8.75 | 3.0 | pass | Əminlik 3 signal bars |
-| onTertiaryContainer | tertiaryContainer | #FFD9EC | #8A1059 | 7.13 | 4.5 | pass | round-7 pill, opponent badge |
+| onTertiaryContainer | tertiaryContainer | #FFD9EC | #8A1059 | 7.13 | 4.5 | pass | round-7 pill, opponent badge, Bot badge text + icon (components.md §32) |
 | gradient.duelHero.on | gradient.duelHero.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | duel hero card text, gradient start |
 | gradient.duelHero.on | gradient.duelHero.end | #FFFFFF | #C2187A | 5.67 | 4.5 | pass | duel hero card text, gradient end |
 | gradient.resultWin.on | gradient.resultWin.start | #FFFFFF | #5334E6 | 7.00 | 4.5 | pass | win result hero text, gradient start |

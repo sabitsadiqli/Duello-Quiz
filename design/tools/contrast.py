@@ -114,7 +114,7 @@ GAME = [
     ("primary", "pendingContainer", UI, "selected option 2dp border vs its container"),
     ("onConfidence1Container", "confidence1Container", UI, "Əminlik 1 signal bars"),
     ("onConfidence3Container", "confidence3Container", UI, "Əminlik 3 signal bars"),
-    ("onTertiaryContainer", "tertiaryContainer", TEXT, "round-7 pill, opponent badge"),
+    ("onTertiaryContainer", "tertiaryContainer", TEXT, "round-7 pill, opponent badge, Bot badge text + icon (components.md §32)"),
     ("gradient.duelHero.on", "gradient.duelHero.start", TEXT, "duel hero card text, gradient start"),
     ("gradient.duelHero.on", "gradient.duelHero.end", TEXT, "duel hero card text, gradient end"),
     ("gradient.resultWin.on", "gradient.resultWin.start", TEXT, "win result hero text, gradient start"),
