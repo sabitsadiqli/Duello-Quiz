@@ -30,7 +30,7 @@ kotlinxCoroutines = "1.11.0"
 kotlinxSerializationJson = "1.11.0"
 
 # Firebase / Google identity
-firebaseBom = "35.0.2"
+firebaseBom = "35.1.0"
 googleId = "1.2.1"
 
 # Tests
