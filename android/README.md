@@ -84,7 +84,8 @@ release (Play App Signing) keys registered for Google sign-in.
 
 The base URL is `BuildConfig.API_BASE_URL` of `:core:network`: debug defaults to
 `http://10.0.2.2:8080` (the host machine from the emulator, `infra/docker-compose.yml`), release
-defaults to the production API `https://api.duelloquiz.app` (OQ-006, ADR 0001). Override for
+defaults to the dev server `https://api-dev.duelloquiz.app` while internal and closed tests run
+(Sabit, 2026-10-29); switch it to `https://api.duelloquiz.app` once the prod VM exists (ADR 0001). Override for
 every build type with `-PapiBaseUrl=https://...`; against the dev server (Hetzner, `infra/README.md`):
 
 ```

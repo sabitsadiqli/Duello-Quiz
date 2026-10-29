@@ -22,8 +22,7 @@
       android/app/build.gradle.kts and android/gradle/libs.versions.toml (Firebase SDKs).
       The Data safety summary in docs/legal/README.md must stay in sync with this page.
     - Contact e-mail decided (OQ-097): support@duelloquiz.app. Hosting: Hetzner Germany, backups Cloudflare R2 EU (ADR 0001).
-    - Crashlytics is NOT in the app yet, so it is not listed. When android-dev adds it, add the prepared
-      paragraphs marked "CRASHLYTICS" below (AZ and EN) and update docs/legal/README.md in the same PR (OQ-101).
+    - Crashlytics is in the release build (OQ-101); its paragraphs below are active.
     - The page says the app does not use the Advertising ID. This is only true once the AD_ID permission is
       removed and ad-ID collection is disabled in the Android build (OQ-D25, OQ-100). Do not publish before that.
   -->
@@ -115,12 +114,10 @@
           <li>Tətbiqdən istifadə haqqında hadisələr: tətbiqin açılması, açılan ekranlar, quizin və ya duelin başlaması və bitməsi kimi. Hadisələr daxili hesab nömrəsinə bağlana bilər, amma e-poçt ünvanına və ya ada heç vaxt bağlanmır.</li>
           <li>Cihaz və tətbiq haqqında texniki məlumat: cihazın modeli, Android versiyası, tətbiqin versiyası, dil, təxmini ölkə və şəhər (Google bunu IP ünvanından müəyyən edir) və Analytics-in tətbiq nüsxəsi identifikatoru (app instance ID).</li>
         </ul>
-        <!-- CRASHLYTICS (add only when Firebase Crashlytics is in the release build, OQ-101):
         <h3>Xəta hesabatları (Firebase Crashlytics)</h3>
         <ul>
           <li>Tətbiq çökəndə və ya ciddi xəta olanda: xətanın texniki təsviri, cihazın modeli, Android versiyası, tətbiqin versiyası, yaddaş vəziyyəti, Crashlytics quraşdırma identifikatoru və daxili hesab nömrəsi. Hesabatlarda e-poçt, ad və şifrə olmur.</li>
         </ul>
-        -->
 
         <h3>Server qeydləri</h3>
         <p>Xətaları tapmaq üçün serverimiz sorğuların texniki qeydini (log) aparır: vaxt, sorğunun növü, nəticə kodu və daxili hesab nömrəsi. Bu qeydlərə e-poçt ünvanı, ad və şifrə yazılmır. Adi sorğularda IP ünvanı da qeyd olunmur; yalnız server xətası baş verəndə veb serverin xəta qeydində sorğunun IP ünvanı ola bilər.</p>
@@ -160,7 +157,7 @@
         <h2 id="services">5. Üçüncü tərəf xidmətləri</h2>
         <p>Aşağıdakı xidmətlər məlumatları yalnız bizim tapşırığımızla, tətbiqin işləməsi üçün emal edir:</p>
         <ul>
-          <li><strong>Google Firebase</strong> (Google): Authentication (giriş, şifrələrin saxlanması, təsdiq və şifrə bərpası məktubları), Google ilə giriş, Analytics (istifadə statistikası) və Cloud Messaging (bildirişlərin çatdırılması). Ətraflı: <a href="https://firebase.google.com/support/privacy" lang="en">Privacy and Security in Firebase</a>, <a href="https://policies.google.com/privacy?hl=az">Google Məxfilik Siyasəti</a>.</li>
+          <li><strong>Google Firebase</strong> (Google): Authentication (giriş, şifrələrin saxlanması, təsdiq və şifrə bərpası məktubları), Google ilə giriş, Analytics (istifadə statistikası), Crashlytics (xəta hesabatları) və Cloud Messaging (bildirişlərin çatdırılması). Ətraflı: <a href="https://firebase.google.com/support/privacy" lang="en">Privacy and Security in Firebase</a>, <a href="https://policies.google.com/privacy?hl=az">Google Məxfilik Siyasəti</a>.</li>
           <li><strong>Hetzner Online GmbH</strong> (Almaniya): serverimiz Hetzner Cloud-da, Almaniyada (Falkenstein) icarəyə götürülmüş virtual serverdir. Hesab, oyun və bildiriş məlumatları və sual şəkilləri orada, yalnız bizim idarə etdiyimiz verilənlər bazasında və yaddaşda saxlanılır. Ətraflı: <a href="https://www.hetzner.com/legal/privacy-policy/" lang="en">Hetzner Privacy Policy</a>.</li>
           <li><strong>Cloudflare, Inc.</strong>: domen adımızın DNS-i, <code>support@duelloquiz.app</code> ünvanına gələn məktubların yönləndirilməsi və şifrələnmiş ehtiyat nüsxələrin Avropa İttifaqında saxlanması (Cloudflare R2). Ətraflı: <a href="https://www.cloudflare.com/privacypolicy/" lang="en">Cloudflare Privacy Policy</a>.</li>
         </ul>
@@ -250,11 +247,9 @@
           <li><strong>On your phone:</strong> theme choice, sign-in session, the last loaded data for offline display and the number of a running duel; removed when you sign out, delete your account or uninstall the app.</li>
           <li><strong>Not collected:</strong> location, contacts, messages, photos and files, camera and microphone, payment data and the advertising ID. The app has no ads, no in-app purchases and no chat between players.</li>
         </ul>
-        <!-- CRASHLYTICS (add only when Firebase Crashlytics is in the release build, OQ-101):
         <ul>
           <li><strong>Crash reports (Firebase Crashlytics):</strong> when the app crashes or hits a serious error: a technical description of the error, device model, Android version, app version, memory state, the Crashlytics installation ID and our internal account number. No email, name or password.</li>
         </ul>
-        -->
 
         <h3>3. How we use data</h3>
         <p>To create your account and sign you in, verify your email and reset your password; to run quizzes, the daily challenge and duels, find opponents and compute points and rating; to compute XP, levels and streaks and show your profile, statistics and history; to send reminders, only if you allowed notifications and the reminder is switched on; to keep the game fair (for example, an answer counts only once, daily XP limits, blocking offensive names); and to find errors and improve the app. We process account and game data to provide the service to you, security and improvement data on the basis of our legitimate interest, and notifications with your consent. We do not use your data for advertising, build no advertising profiles and never sell data.</p>
@@ -265,7 +260,7 @@
         <h3>5. Third-party services</h3>
         <p>These services process data only on our behalf, to make the app work:</p>
         <ul>
-          <li><strong>Google Firebase</strong> (Google): Authentication (sign-in, password storage, verification and password-reset emails), Google sign-in, Analytics and Cloud Messaging (notification delivery). See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a> and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</li>
+          <li><strong>Google Firebase</strong> (Google): Authentication (sign-in, password storage, verification and password-reset emails), Google sign-in, Analytics, Crashlytics (crash reports) and Cloud Messaging (notification delivery). See <a href="https://firebase.google.com/support/privacy">Privacy and Security in Firebase</a> and the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</li>
           <li><strong>Hetzner Online GmbH</strong> (Germany): our server is a virtual machine rented from Hetzner Cloud in Germany (Falkenstein). Account, game and notification data and question images are stored there, in a database and storage that only we control. See <a href="https://www.hetzner.com/legal/privacy-policy/">Hetzner Privacy Policy</a>.</li>
           <li><strong>Cloudflare, Inc.</strong>: DNS for our domain, forwarding of e-mail sent to <code>support@duelloquiz.app</code>, and storage of encrypted backups in the European Union (Cloudflare R2). See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare Privacy Policy</a>.</li>
         </ul>
