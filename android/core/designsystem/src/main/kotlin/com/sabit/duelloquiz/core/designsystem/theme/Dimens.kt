@@ -67,6 +67,11 @@ object Sizes {
     val pillProgress = 14.dp
     val statusPillMinHeight = 28.dp
 
+    /** tokens 2.2.0 / components.md §32, §13: Bot badge icon and min height; bot mark below this size uses the icon. */
+    val botBadgeIcon = 14.dp
+    val botBadgeMinHeight = 20.dp
+    val brandMarkMin = 24.dp
+
     /** components.md §7: chip 3 uses-left badge and the selection ring with its gap. */
     val usesLeftBadge = 24.dp
     val chipSelectedRing = 3.dp

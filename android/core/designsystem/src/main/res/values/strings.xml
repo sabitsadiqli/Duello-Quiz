@@ -344,6 +344,25 @@
     <string name="duel_result_score_cd">Hesab: sən %1$s, %2$s %3$s</string>
     <string name="duel_result_rating_unchanged">Reytinq dəyişmədi</string>
     <string name="duel_result_rating_cd">Reytinq %1$d, dəyişiklik %2$s</string>
+    <!-- Bot opponent (OQ-106 … OQ-111, DUEL-23 … DUEL-29). duel_bot_name is only a client fallback:
+         the real name comes from the server and must stay identical. -->
+    <string name="duel_bot_name">Duello Bot</string>
+    <string name="duel_bot_badge">Bot</string>
+    <string name="duel_opponent_bot_cd">Rəqib: %1$s, bot</string>
+    <string name="duel_bot_rating_none">Reytinq: —</string>
+    <string name="duel_bot_no_rating_note">Bot oyunu reytinqə təsir etmir.</string>
+    <string name="duel_intro_bot_cd">Rəqib tapıldı: %1$s, bot. Bot oyunu reytinqə təsir etmir. Oyun başlayır.</string>
+    <plurals name="duel_search_bot_hint">
+        <item quantity="one">%1$d saniyə ərzində oyunçu tapılmasa, %2$s ilə oynayacaqsan. İstəmirsənsə, ləğv et.</item>
+        <item quantity="other">%1$d saniyə ərzində oyunçu tapılmasa, %2$s ilə oynayacaqsan. İstəmirsənsə, ləğv et.</item>
+    </plurals>
+    <plurals name="duel_search_bot_countdown_cd">
+        <item quantity="one">Bot ilə oyuna %1$d saniyə qalıb</item>
+        <item quantity="other">Bot ilə oyuna %1$d saniyə qalıb</item>
+    </plurals>
+    <string name="duel_leave_body_bot">Bu, məğlubiyyət sayılacaq. Bot oyunu reytinqə təsir etmir. Vaxt bu arada dayanmır.</string>
+    <string name="duel_result_rating_bot_cd">Reytinq dəyişmədi. Bot oyunu reytinqə təsir etmir.</string>
+    <string name="duel_result_score_bot_cd">Hesab: sən %1$s, %2$s (bot) %3$s</string>
     <string name="duel_result_play_again">Yenidən oyna</string>
     <string name="duel_calibration_title">Əminlik kartı</string>
     <string name="duel_calibration_subtitle">Bu oyunda hər Əminlik səviyyəsində neçə düzgün cavab verdin</string>
@@ -404,6 +423,20 @@
         <item quantity="other">%1$d oyun</item>
     </plurals>
     <string name="profile_record_cd">%1$d qələbə, %2$d məğlubiyyət, %3$d heç-heçə, cəmi %4$d oyun</string>
+    <string name="profile_record_bot">Bota qarşı: %1$s, %2$s, %3$s</string>
+    <plurals name="profile_record_bot_wins">
+        <item quantity="one">%1$d qələbə</item>
+        <item quantity="other">%1$d qələbə</item>
+    </plurals>
+    <plurals name="profile_record_bot_losses">
+        <item quantity="one">%1$d məğlubiyyət</item>
+        <item quantity="other">%1$d məğlubiyyət</item>
+    </plurals>
+    <plurals name="profile_record_bot_draws">
+        <item quantity="one">%1$d heç-heçə</item>
+        <item quantity="other">%1$d heç-heçə</item>
+    </plurals>
+    <string name="profile_record_empty_real">Hələ oyunçulara qarşı oynamamısan.</string>
     <string name="profile_match_win">Qələbə</string>
     <string name="profile_match_loss">Məğlubiyyət</string>
     <string name="profile_match_draw">Heç-heçə</string>
@@ -418,6 +451,8 @@
     <string name="profile_match_date">%1$d %2$s</string>
     <string name="profile_match_date_year">%1$d %2$s %3$d</string>
     <string name="profile_match_cd">%1$s ilə oyun, %2$s, hesab %3$s, reytinq %4$s, %5$s</string>
+    <string name="profile_match_rating_none">—</string>
+    <string name="profile_match_bot_cd">%1$s ilə oyun, bot, %2$s, hesab %3$s, reytinq dəyişmədi, %4$s</string>
     <string name="profile_calibration_title">Əminlik statistikası</string>
     <string name="profile_calibration_subtitle">Bütün oyunlarda hər Əminlik səviyyəsində düzgün cavab payın</string>
     <string name="profile_calibration_value">%1$d dəfə · %2$d%% düzgün</string>
@@ -502,6 +537,7 @@
     <string name="progress_level_up">Yeni səviyyə: %1$d!</string>
     <string name="progress_level_up_cd">Yeni səviyyəyə çatdın: %1$d.</string>
     <string name="progress_category_level_up">%1$s: səviyyə %2$d</string>
+    <string name="progress_xp_bot_note">Bota qarşı oyunda yarım XP qazanırsan.</string>
     <string name="progress_xp_capped">Bu gün bu oyun növündən maksimum XP qazandın.</string>
     <plurals name="progress_streak_days">
         <item quantity="one">Seriya: %1$d gün</item>
