@@ -284,8 +284,16 @@ data class ProgressCardUi(
     /** The flame is filled: the day became or already was active. */
     val dayActive: Boolean,
     val animate: Boolean,
+    /**
+     * Bot match (components.md §26 5a, OQ-109): "Bota qarşı oyunda yarım XP qazanırsan." under the
+     * XP row. Only shown together with the XP row; the number stays the server's value.
+     */
+    val botNote: Boolean = false,
 ) {
     val leveledUp: Boolean get() = levelAfter > levelBefore
+
+    /** The XP row is shown (not capped, something gained). */
+    val showsXpRow: Boolean get() = !showCapNote && xpGained > 0
 }
 
 /**
@@ -372,6 +380,7 @@ fun ProgressCard(ui: ProgressCardUi, modifier: Modifier = Modifier) {
         if (ui.leveledUp) add(stringResource(R.string.progress_level_up_cd, ui.levelAfter))
         ui.categoryLevelUps.forEach { add(stringResource(R.string.progress_category_level_up, it.name, it.level)) }
         if (ui.showCapNote) add(stringResource(R.string.progress_xp_capped))
+        if (ui.botNote && ui.showsXpRow) add(stringResource(R.string.progress_xp_bot_note))
         val streak = ui.streakDays
         if (streak != null) {
             add(
@@ -417,6 +426,14 @@ fun ProgressCard(ui: ProgressCardUi, modifier: Modifier = Modifier) {
                         text = stringResource(R.string.progress_xp_gained, RetentionFormat.xp(ui.xpGained)),
                         style = MaterialTheme.typography.headlineSmall.tabularFigures(),
                         color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (ui.botNote) {
+                    Spacer(Modifier.height(Spacing.xs))
+                    Text(
+                        text = stringResource(R.string.progress_xp_bot_note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Spacer(Modifier.height(Spacing.md))
@@ -632,6 +649,7 @@ private fun ProgressCardPreview() {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.padding(Spacing.lg)) {
                 ProgressCard(previewProgress)
+                ProgressCard(previewProgress.copy(xpGained = 25, botNote = true, levelBefore = 5, categoryLevelUps = emptyList()))
                 ProgressCard(previewProgress.copy(xpGained = 0, showCapNote = true, levelBefore = 5, categoryLevelUps = emptyList(), streakExtended = false))
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
                     StreakBadge(days = 7, state = StreakBadgeState.ActiveToday, freezeAvailable = true)

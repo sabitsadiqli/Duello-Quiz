@@ -17,6 +17,7 @@ import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundPlayerResult
@@ -113,6 +114,7 @@ private fun WireServerMessage.MatchState.asSnapshot() = MatchSnapshot(
     missedInARowOpponent = missedInARow.opponent,
     lastResult = lastResult?.asExternalModel(),
     rounds = rounds.map { it.asExternalModel() },
+    opponentType = OpponentType.fromWire(opponentType),
 )
 
 private fun WireServerMessage.MatchResult.asResult() = MatchResult(
@@ -140,6 +142,7 @@ private fun WireServerMessage.MatchResult.asResult() = MatchResult(
     progress = progress?.asExternalModel(),
     you = you?.asExternalModel(),
     opponent = opponent?.asExternalModel(),
+    opponentType = OpponentType.fromWire(opponentType),
 )
 
 private fun WireResultPlayer.asExternalModel() = MatchResultPlayer(
@@ -164,12 +167,12 @@ internal fun WireServerMessage.asExternalModel(): DuelServerMessage = when (this
     is WireServerMessage.Hello ->
         DuelServerMessage.Hello(seq, serverNowEpochMs, protocolVersion, heartbeatIntervalMs, activeMatchId)
     is WireServerMessage.Pong -> DuelServerMessage.Pong(seq, serverNowEpochMs)
-    is WireServerMessage.QueueJoined -> DuelServerMessage.QueueJoined(seq, serverNowEpochMs, deadlineEpochMs)
+    is WireServerMessage.QueueJoined -> DuelServerMessage.QueueJoined(seq, serverNowEpochMs, deadlineEpochMs, botAtEpochMs)
     is WireServerMessage.QueueTimeout -> DuelServerMessage.QueueTimeout(seq, serverNowEpochMs)
     is WireServerMessage.QueueLeft -> DuelServerMessage.QueueLeft(seq, serverNowEpochMs)
     is WireServerMessage.MatchFound -> DuelServerMessage.MatchFound(
         seq, serverNowEpochMs, matchId, you.asExternalModel(), opponent.asExternalModel(), rounds, bet3Limit,
-        deadlineEpochMs,
+        deadlineEpochMs, OpponentType.fromWire(opponentType),
     )
     is WireServerMessage.MatchCancelled -> DuelServerMessage.MatchCancelled(seq, serverNowEpochMs, matchId, side(by))
     is WireServerMessage.RoundQuestion -> DuelServerMessage.RoundQuestion(
@@ -217,7 +220,7 @@ internal fun WireServerMessage.asExternalModel(): DuelServerMessage = when (this
 
 internal fun DuelClientMessage.asWire(): WireClientMessage = when (this) {
     DuelClientMessage.Ping -> WireClientMessage.Ping
-    DuelClientMessage.QueueJoin -> WireClientMessage.QueueJoin
+    DuelClientMessage.QueueJoin -> WireClientMessage.QueueJoin(DuelClientMessage.QueueJoin.capabilities)
     DuelClientMessage.QueueLeave -> WireClientMessage.QueueLeave
     is DuelClientMessage.MatchRejoin -> WireClientMessage.MatchRejoin(matchId)
     is DuelClientMessage.MatchLeave -> WireClientMessage.MatchLeave(matchId)

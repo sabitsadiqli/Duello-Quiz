@@ -2,6 +2,7 @@ package com.sabit.duelloquiz.core.duel
 
 import com.sabit.duelloquiz.core.datastore.DuelMatchDataSource
 import com.sabit.duelloquiz.core.model.duel.DuelPlayer
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -19,6 +20,8 @@ data class ActiveDuel(
     val matchId: String,
     val you: DuelPlayer?,
     val opponent: DuelPlayer?,
+    /** v1.2: from `match.found` / `match.state` (the only bot signal, never the name). */
+    val opponentType: OpponentType = OpponentType.HUMAN,
 )
 
 /** Persists [ActiveDuel] and the "left while offline" marker (OQ-058). */
@@ -36,10 +39,15 @@ interface ActiveDuelStore {
 }
 
 @Serializable
-private data class StoredPlayer(val displayName: String, val avatarUrl: String? = null, val rating: Int)
+private data class StoredPlayer(val displayName: String, val avatarUrl: String? = null, val rating: Int? = null)
 
 @Serializable
-private data class StoredDuel(val matchId: String, val you: StoredPlayer? = null, val opponent: StoredPlayer? = null)
+private data class StoredDuel(
+    val matchId: String,
+    val you: StoredPlayer? = null,
+    val opponent: StoredPlayer? = null,
+    val bot: Boolean = false,
+)
 
 @Singleton
 internal class DataStoreActiveDuelStore @Inject constructor(
@@ -57,7 +65,7 @@ internal class DataStoreActiveDuelStore @Inject constructor(
             duel?.let {
                 json.encodeToString(
                     StoredDuel.serializer(),
-                    StoredDuel(it.matchId, it.you?.stored(), it.opponent?.stored()),
+                    StoredDuel(it.matchId, it.you?.stored(), it.opponent?.stored(), it.opponentType == OpponentType.BOT),
                 )
             },
         )
@@ -70,7 +78,14 @@ internal class DataStoreActiveDuelStore @Inject constructor(
     /** An unreadable value reads as "no active duel" (never a crash). */
     private fun decode(value: String?): ActiveDuel? = value?.let {
         runCatching { json.decodeFromString(StoredDuel.serializer(), it) }.getOrNull()
-    }?.let { ActiveDuel(it.matchId, it.you?.player(), it.opponent?.player()) }
+    }?.let {
+        ActiveDuel(
+            it.matchId,
+            it.you?.player(),
+            it.opponent?.player(),
+            if (it.bot) OpponentType.BOT else OpponentType.HUMAN,
+        )
+    }
 
     private fun DuelPlayer.stored() = StoredPlayer(displayName, avatarUrl, rating)
 

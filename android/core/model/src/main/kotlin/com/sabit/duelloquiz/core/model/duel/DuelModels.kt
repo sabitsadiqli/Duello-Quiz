@@ -12,13 +12,36 @@ import com.sabit.duelloquiz.core.model.QuizOption
 /** Current duel protocol version sent as `protocolVersion` on the handshake (OQ-029, OQ-061). */
 const val DUEL_PROTOCOL_VERSION = 1
 
+/**
+ * Duel capabilities this app announces in `queue.join` (duel-protocol.md §4, v1.2). `"bot"`: the
+ * app understands `opponentType`, `botAtEpochMs` and `null` opponent ratings, so the server may
+ * pair it with the bot (§7a).
+ */
+val DUEL_CAPABILITIES: List<String> = listOf("bot")
+
 /** Player data the server sends (OQ-024): never ids or emails. */
 @Immutable
 data class DuelPlayer(
     val displayName: String,
     val avatarUrl: String?,
-    val rating: Int,
+    /** Null for the bot (v1.2, OQ-107): the app shows "—" and the Bot badge instead. */
+    val rating: Int?,
 )
+
+/**
+ * `opponentType` (v1.2): a real player or the server bot "Duello Bot" (OQ-106). The only way the
+ * app tells a bot apart — never by its display name (components.md §13). Missing or unknown on
+ * the wire = [HUMAN].
+ */
+enum class OpponentType {
+    HUMAN,
+    BOT,
+    ;
+
+    companion object {
+        fun fromWire(value: String?): OpponentType = if (value == "bot") BOT else HUMAN
+    }
+}
 
 /** `self` / `opponent` from the receiver's view. */
 enum class DuelSide { SELF, OPPONENT }
@@ -109,8 +132,9 @@ enum class ForfeitCause { MISSED_ROUNDS, LEFT }
 data class MatchResultPlayer(
     val displayName: String?,
     val avatarUrl: String?,
-    val ratingBefore: Int,
-    val ratingAfter: Int,
+    /** Null for the bot (v1.2). */
+    val ratingBefore: Int?,
+    val ratingAfter: Int?,
     val deleted: Boolean,
 )
 
@@ -124,8 +148,10 @@ data class MatchResult(
     val scores: DuelScores,
     val ratingBefore: Int,
     val ratingAfter: Int,
+    /** Bot match: 0 and [ratingBefore] = [ratingAfter] (no rating is written, OQ-106). */
     val ratingChange: Int,
-    val opponentRatingAfter: Int,
+    /** Null in a bot match. */
+    val opponentRatingAfter: Int?,
     val suddenDeathPlayed: Int,
     val calibration: List<CalibrationLevel>,
     val rounds: List<CompactRound>,
@@ -134,6 +160,8 @@ data class MatchResult(
     /** Null only from a server older than 2026-10-17. */
     val you: MatchResultPlayer? = null,
     val opponent: MatchResultPlayer? = null,
+    /** v1.2; [OpponentType.HUMAN] from older servers. */
+    val opponentType: OpponentType = OpponentType.HUMAN,
 )
 
 enum class DuelPhase { INTRO, QUESTION, CONFIDENCE, ANSWER, RESULT }
@@ -173,6 +201,8 @@ data class MatchSnapshot(
     val missedInARowOpponent: Int,
     val lastResult: RoundResult?,
     val rounds: List<CompactRound>,
+    /** v1.2: a bot opponent is always connected and has no rating. */
+    val opponentType: OpponentType = OpponentType.HUMAN,
 )
 
 /** Error codes of duel-protocol.md §6; unknown codes map to [UNKNOWN]. */

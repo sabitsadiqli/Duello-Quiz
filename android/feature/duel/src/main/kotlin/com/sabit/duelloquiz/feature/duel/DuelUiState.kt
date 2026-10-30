@@ -18,6 +18,8 @@ data class DuelUiState(
     val screen: DuelScreen = DuelScreen.Search(SearchUi()),
     /** DUEL-15 dialog over the intro or the match; timers keep running behind it. */
     val leaveDialogVisible: Boolean = false,
+    /** Bot match: the dialog body says the rating is not affected (DUEL-26). */
+    val leaveDialogBot: Boolean = false,
 )
 
 @Immutable
@@ -50,7 +52,10 @@ enum class SearchPhase {
     /** Handshake or `queue.join` in flight; after 1 s the title reads "Qoşulur…". */
     CONNECTING,
 
-    /** `queue.joined`: countdown to the server deadline. */
+    /**
+     * `queue.joined`: countdown to the bot moment (`botAtEpochMs`, while a bot follows) or to the
+     * queue deadline (bot disabled or bot fallback).
+     */
     SEARCHING,
 
     /** Local countdown at 0, no server answer yet (up to 5 s more, DUEL-03). */
@@ -66,16 +71,25 @@ data class SearchUi(
     /** "Qoşulur…" instead of "Rəqib axtarılır…" (join slower than 1 s). */
     val showConnecting: Boolean = false,
     val remainingSeconds: Int = 0,
-    /** Queue deadline on the monotonic clock, for the draining bar. */
+    /** Countdown target on the monotonic clock, for the draining bar. */
     val deadlineElapsedMs: Long = 0,
     val tipIndex: Int = 0,
     val cancelling: Boolean = false,
+    /**
+     * Seconds in `duel_search_bot_hint` (fixed when `queue.joined` arrived, normally 15); null hides
+     * the hint (bot disabled, Connecting, bot fallback). duel-search.md 5a.
+     */
+    val botHintSeconds: Int? = null,
+    /** The countdown and bar run to the bot moment (bar over `searchBot`, 15 s). */
+    val countdownToBot: Boolean = false,
 )
 
 @Immutable
 data class IntroUi(
     val you: DuelPlayer,
     val opponent: DuelPlayer,
+    /** Bot variant (DUEL-24): badge, app-mark avatar, "Reytinq: —", no-rating note. */
+    val opponentIsBot: Boolean = false,
     /** 3 → 2 → 1; stays 1 until round 1 arrives. */
     val countdown: Int,
     val overlay: SelfOverlay? = null,
@@ -164,6 +178,8 @@ data class PanelUi(
     val showLock: Boolean = false,
     val reveal: RevealFaceUi? = null,
     val winnerBadge: Boolean = false,
+    /** Bot opponent: badge in the name slot, app-mark avatar (components.md §16, §32). */
+    val isBot: Boolean = false,
 )
 
 enum class RoundBanner { ALL_IN, SUDDEN_DEATH }
@@ -247,6 +263,8 @@ data class MatchUi(
     val suddenDeathLine: SuddenDeathLine? = null,
     val reveal: RevealUi? = null,
     val overlay: SelfOverlay? = null,
+    /** Bot opponent: its picker marker is the 20dp bot marker (duel-reveal.md). */
+    val opponentIsBot: Boolean = false,
 )
 
 enum class ResultReason {
@@ -287,4 +305,6 @@ data class ResultUi(
     val playAgainLoading: Boolean = false,
     /** PROG-02 progress card; null = not rendered (abandoned, not yet received). */
     val progress: ProgressCardUi? = null,
+    /** Bot match (DUEL-26): bot column, two-line rating card without a number. */
+    val opponentIsBot: Boolean = false,
 )

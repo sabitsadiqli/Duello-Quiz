@@ -78,6 +78,8 @@ object Motion {
         const val NOMINAL_ANSWER_MS = 10000
         const val NOMINAL_RESULT_MS = 3000
         const val NOMINAL_SEARCH_QUEUE_MS = 30000
+        /** tokens 2.2.0: search bar while a bot follows (duel-search.md, OQ-111). */
+        const val NOMINAL_SEARCH_BOT_MS = 15000
         const val NOMINAL_RECONNECT_WINDOW_MS = 10000
 
         const val WARNING_CONFIDENCE_MS = 2000

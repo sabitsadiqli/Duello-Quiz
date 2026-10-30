@@ -58,6 +58,9 @@ object DuelloIcons {
 
     // v2 (components.md §6, quiz-result.md): duel hero card, review entry card.
     @DrawableRes val Swords = R.drawable.ic_swords
+
+    // Bot opponent (components.md §32, §13): badge icon and 20dp picker marker.
+    @DrawableRes val SmartToy = R.drawable.ic_smart_toy
     @DrawableRes val Rule = R.drawable.ic_rule
 
     // Retention (components.md §24–§31). "Filled" variants come from Material Icons Round.

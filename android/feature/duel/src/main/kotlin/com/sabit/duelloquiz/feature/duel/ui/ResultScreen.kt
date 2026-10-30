@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
+import com.sabit.duelloquiz.core.designsystem.component.BotBadge
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
@@ -229,9 +231,14 @@ private fun ResultReason.textRes(): Int = when (this) {
 /** Score row inside the hero (duel-result.md v2): two equal columns around ":"; one TalkBack element. */
 @Composable
 private fun ScoreRow(result: ResultUi, colors: HeroColors) {
-    val opponentName = result.opponent?.displayName ?: stringResource(R.string.common_deleted_player)
+    val bot = result.opponentIsBot
+    val opponentName = if (bot) {
+        opponentDisplayName(result.opponent?.displayName, bot = true)
+    } else {
+        result.opponent?.displayName ?: stringResource(R.string.common_deleted_player)
+    }
     val description = stringResource(
-        R.string.duel_result_score_cd,
+        if (bot) R.string.duel_result_score_bot_cd else R.string.duel_result_score_cd,
         scoreText(result.scores.you),
         opponentName,
         scoreText(result.scores.opponent),
@@ -250,6 +257,7 @@ private fun ScoreRow(result: ResultUi, colors: HeroColors) {
             winner = result.winner == DuelSide.SELF,
             colors = colors,
             modifier = Modifier.weight(1f),
+            reserveBadge = bot,
         )
         Text(
             text = ":",
@@ -264,6 +272,8 @@ private fun ScoreRow(result: ResultUi, colors: HeroColors) {
             winner = result.winner == DuelSide.OPPONENT,
             colors = colors,
             modifier = Modifier.weight(1f),
+            bot = bot,
+            reserveBadge = bot,
         )
     }
 }
@@ -277,6 +287,9 @@ private fun ScoreColumn(
     winner: Boolean,
     colors: HeroColors,
     modifier: Modifier = Modifier,
+    bot: Boolean = false,
+    /** Bot match: both columns reserve the stacked badge line so the scores share a baseline. */
+    reserveBadge: Boolean = false,
 ) {
     val reducedMotion = rememberReducedMotion()
     var shown by remember { mutableIntStateOf(if (reducedMotion) score else 0) }
@@ -309,7 +322,8 @@ private fun ScoreColumn(
             imageUrl = player?.avatarUrl,
             size = Sizes.avatarLarge,
             accent = if (self) AvatarAccent.Self else AvatarAccent.Opponent,
-            deleted = player == null && !self,
+            deleted = player == null && !self && !bot,
+            bot = bot,
         )
         Spacer(Modifier.height(Spacing.sm))
         Text(
@@ -320,6 +334,11 @@ private fun ScoreColumn(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
         )
+        if (reserveBadge) {
+            // components.md §32 stacked placement; the self column keeps the same height.
+            Spacer(Modifier.height(Spacing.xxs))
+            Box(modifier = Modifier.graphicsLayer { alpha = if (bot) 1f else 0f }) { BotBadge() }
+        }
         Spacer(Modifier.height(Spacing.xs))
         Text(
             text = scoreText(shown),
@@ -335,10 +354,10 @@ private fun RatingCard(result: ResultUi) {
     val scheme = MaterialTheme.colorScheme
     val abandoned = result.outcome == MatchOutcome.ABANDONED
     val delta = deltaText(result.ratingChange)
-    val description = if (abandoned) {
-        stringResource(R.string.duel_result_rating_unchanged)
-    } else {
-        stringResource(R.string.duel_result_rating_cd, result.ratingAfter, delta)
+    val description = when {
+        abandoned -> stringResource(R.string.duel_result_rating_unchanged)
+        result.opponentIsBot -> stringResource(R.string.duel_result_rating_bot_cd)
+        else -> stringResource(R.string.duel_result_rating_cd, result.ratingAfter, delta)
     }
     GameCard(
         contentPadding = PaddingValues(GameSizes.compactCardPadding),
@@ -353,6 +372,10 @@ private fun RatingCard(result: ResultUi) {
                     style = MaterialTheme.typography.titleMedium,
                     color = scheme.onSurfaceVariant,
                 )
+                return@Row
+            }
+            if (result.opponentIsBot) {
+                BotRatingLines()
                 return@Row
             }
             val color = when {
@@ -381,6 +404,35 @@ private fun RatingCard(result: ResultUi) {
             Spacer(Modifier.width(Spacing.sm))
             Text(text = delta, style = MaterialTheme.typography.titleMedium.tabularFigures(), color = color)
         }
+    }
+}
+
+/**
+ * DUEL-26 bot rating card: no number and no "0" delta — "Reytinq dəyişmədi" plus the reason on a
+ * second line (the one-liner does not fit 360dp, duel-result.md).
+ */
+@Composable
+private fun RowScope.BotRatingLines() {
+    val scheme = MaterialTheme.colorScheme
+    Icon(
+        painter = painterResource(DuelloIcons.TrendingFlat),
+        contentDescription = null,
+        tint = scheme.onSurfaceVariant,
+        modifier = Modifier.size(Sizes.inlineIcon),
+    )
+    Spacer(Modifier.width(Spacing.md))
+    Column(modifier = Modifier.weight(1f)) {
+        Text(
+            text = stringResource(R.string.duel_result_rating_unchanged),
+            style = MaterialTheme.typography.titleMedium,
+            color = scheme.onSurface,
+        )
+        Spacer(Modifier.height(Spacing.xxs))
+        Text(
+            text = stringResource(R.string.duel_bot_no_rating_note),
+            style = MaterialTheme.typography.bodyMedium,
+            color = scheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -424,6 +476,12 @@ internal fun CalibrationHint.textRes(): Int = when (this) {
     CalibrationHint.UNDERCONFIDENT -> R.string.duel_calibration_hint_underconfident
     CalibrationHint.GOOD -> R.string.duel_calibration_hint_good
     CalibrationHint.NEUTRAL -> R.string.duel_calibration_hint_neutral
+}
+
+@PreviewLightDark
+@Composable
+private fun ResultBotPreview() {
+    DuelloTheme { Surface { ResultScreen(result = PreviewData.botResult, onPlayAgain = {}, onHome = {}) } }
 }
 
 @PreviewLightDark

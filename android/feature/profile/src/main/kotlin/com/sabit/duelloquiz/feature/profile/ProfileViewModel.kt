@@ -111,7 +111,10 @@ data class ProfileUiState(
     val duelEnabled: Boolean = false,
     val stats: SectionUi<StatsUi> = SectionUi.Loading,
     val matches: SectionUi<List<MatchSummary>> = SectionUi.Loading,
-    /** PROF-07: no counted match yet (record.total = 0): one empty card instead of the sections. */
+    /**
+     * PROF-07: no counted match yet, neither against players nor the bot: one empty card instead of
+     * the sections.
+     */
     val empty: Boolean = false,
     val showOfflineBanner: Boolean = false,
     /** Offline without any cache: full-screen state. */
@@ -233,7 +236,8 @@ class ProfileViewModel @Inject constructor(
             duelEnabled = duel,
             stats = statsSection,
             matches = section(matches, state.matchesError),
-            empty = duel && stats != null && stats.record.total == 0,
+            // DUEL-28: bot matches alone are not "empty"; the record card shows the bot line.
+            empty = duel && stats != null && stats.record.total == 0 && stats.botRecord.total == 0,
             showOfflineBanner = anyOffline && profile != null,
             fullScreenOffline = noCache && anyOffline && state.headerError != null,
             isRefreshing = state.isRefreshing,

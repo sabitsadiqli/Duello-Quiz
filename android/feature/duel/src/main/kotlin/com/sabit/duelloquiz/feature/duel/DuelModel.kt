@@ -8,6 +8,7 @@ import com.sabit.duelloquiz.core.model.duel.DuelQuestion
 import com.sabit.duelloquiz.core.model.duel.DuelScores
 import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundResult
 
@@ -90,6 +91,12 @@ internal data class DuelModel(
     /** True once the user asked for a search in this flow (not a pure resume). */
     val searchRequested: Boolean = false,
     val queueDeadline: Long? = null,
+    /** `queue.joined.botAtEpochMs` (server clock); null = no bot for this entry (OQ-111). */
+    val botAt: Long? = null,
+    /** Seconds shown in the bot hint, fixed when `queue.joined` arrived. */
+    val botHintSeconds: Int? = null,
+    /** No `match.found` by bot moment + 3 s: back to the queue deadline (duel-search.md). */
+    val botFallback: Boolean = false,
     val overtimeSince: Long? = null,
     val cancelling: Boolean = false,
     val searchEnd: SearchEndReason? = null,
@@ -99,6 +106,8 @@ internal data class DuelModel(
     val matchId: String? = null,
     val you: DuelPlayer? = null,
     val opponent: DuelPlayer? = null,
+    /** v1.2 `opponentType` of the current match: the only bot signal (never the name). */
+    val opponentType: OpponentType = OpponentType.HUMAN,
     val introDeadline: Long = 0,
     val round: RoundModel? = null,
     val scores: DuelScores = DuelScores(0, 0),
@@ -111,4 +120,9 @@ internal data class DuelModel(
     /** XP, level and streak card of the shown result (PROG-02); null = not rendered. */
     val progressCard: ProgressCardUi? = null,
     val leaveDialog: Boolean = false,
-)
+) {
+    val opponentIsBot: Boolean get() = opponentType == OpponentType.BOT
+
+    /** Searching with a bot ahead: countdown, bar and hint run to [botAt]. */
+    val countdownToBot: Boolean get() = botAt != null && !botFallback
+}

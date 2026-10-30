@@ -30,6 +30,9 @@ import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import java.util.Locale
 
+/** components.md §13: the app mark fills 70 % of the bot avatar circle. */
+private const val BOT_MARK_FRACTION = 0.7f
+
 private val AzerbaijaniLocale: Locale = Locale.forLanguageTag("az")
 
 /**
@@ -52,7 +55,10 @@ enum class AvatarAccent { None, Self, Opponent }
  * Avatar (components.md §13): the image from [imageUrl] (Coil, centre crop) over a
  * tertiaryContainer circle with the placeholder letter, which stays visible while loading and when
  * there is no URL or the image fails (the duel never waits for an avatar). Without a letter the
- * `person` icon is shown; [deleted] shows the deleted-player variant. Decorative for TalkBack
+ * `person` icon is shown; [deleted] shows the deleted-player variant. [bot] shows the bot variant
+ * (OQ-107): the local app mark on `surface`, or below the 24dp brand minimum the `smart_toy`
+ * icon on `tertiaryContainer`; never a URL or a letter. Callers decide [bot] from the protocol
+ * `opponentType` / `MatchSummary.opponentType`, never from the name. Decorative for TalkBack
  * (the surrounding element carries the name).
  */
 @Composable
@@ -63,6 +69,7 @@ fun DuelloAvatar(
     size: Dp = Sizes.avatar,
     accent: AvatarAccent = AvatarAccent.None,
     deleted: Boolean = false,
+    bot: Boolean = false,
 ) {
     val letter = remember(name) { avatarLetter(name) }
     val large = size >= Sizes.avatarXLarge
@@ -79,10 +86,12 @@ fun DuelloAvatar(
             .border(ringWidth, ringColor, FullShape)
             .padding(ringWidth)
     }
-    val container = if (deleted) {
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    } else {
-        MaterialTheme.colorScheme.tertiaryContainer
+    val markSize = size * BOT_MARK_FRACTION
+    val botMark = bot && markSize >= Sizes.brandMarkMin
+    val container = when {
+        deleted -> MaterialTheme.colorScheme.surfaceContainerHighest
+        botMark -> MaterialTheme.colorScheme.surface
+        else -> MaterialTheme.colorScheme.tertiaryContainer
     }
     Box(
         contentAlignment = Alignment.Center,
@@ -94,6 +103,13 @@ fun DuelloAvatar(
             .clearAndSetSemantics {},
     ) {
         when {
+            bot && botMark -> DuelloLogoMark(Modifier.size(markSize))
+            bot -> Icon(
+                painter = painterResource(DuelloIcons.SmartToy),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(Sizes.botBadgeIcon),
+            )
             deleted -> Icon(
                 painter = painterResource(DuelloIcons.PersonOff),
                 contentDescription = null,
@@ -110,7 +126,7 @@ fun DuelloAvatar(
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
         }
-        if (!deleted && !imageUrl.isNullOrBlank()) {
+        if (!deleted && !bot && !imageUrl.isNullOrBlank()) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
@@ -133,6 +149,8 @@ private fun AvatarPreview() {
                 DuelloAvatar(name = "ışıq", accent = AvatarAccent.Opponent, modifier = Modifier.padding(start = Spacing.md))
                 DuelloAvatar(name = "..", modifier = Modifier.padding(start = Spacing.md))
                 DuelloAvatar(name = null, deleted = true, modifier = Modifier.padding(start = Spacing.md))
+                DuelloAvatar(name = "Duello Bot", bot = true, accent = AvatarAccent.Opponent, modifier = Modifier.padding(start = Spacing.md))
+                DuelloAvatar(name = null, bot = true, size = Sizes.pickerMarker, modifier = Modifier.padding(start = Spacing.md))
             }
             DuelloAvatar(
                 name = "Murad",

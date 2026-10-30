@@ -352,12 +352,14 @@ class DuelClient(
                 if (active?.matchId == matchId && lastSeq >= message.seq) return
                 lastSeq = message.seq
                 awaitingSnapshot = false
-                setActive(ActiveDuel(matchId, message.you, message.opponent))
+                setActive(ActiveDuel(matchId, message.you, message.opponent, message.opponentType))
             }
             is DuelServerMessage.MatchState -> {
                 lastSeq = message.seq
                 awaitingSnapshot = false
-                setActive(ActiveDuel(matchId, message.snapshot.you, message.snapshot.opponent))
+                setActive(
+                    ActiveDuel(matchId, message.snapshot.you, message.snapshot.opponent, message.snapshot.opponentType),
+                )
             }
             is DuelServerMessage.MatchResultMessage -> {
                 val current = active?.matchId

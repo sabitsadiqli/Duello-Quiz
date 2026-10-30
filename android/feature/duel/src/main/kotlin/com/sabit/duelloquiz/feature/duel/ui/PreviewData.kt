@@ -30,6 +30,7 @@ import com.sabit.duelloquiz.feature.duel.TimerUi
 internal object PreviewData {
     val you = DuelPlayer("Leyla", null, 1000)
     val opponent = DuelPlayer("Murad", null, 1016)
+    val bot = DuelPlayer("Duello Bot", null, null)
 
     private val question = QuestionUi("Azərbaycanın ərazisindən axan ən uzun çay hansıdır?", null, "Coğrafiya")
     private val label = RoundLabelUi(3, 7, allIn = false, suddenDeathNo = null, suddenDeathTotal = 3)
@@ -92,4 +93,11 @@ internal object PreviewData {
         hint = CalibrationHint.GOOD,
         winner = DuelSide.SELF,
     )
+
+    val botRevealMatch = revealMatch.copy(
+        opponent = revealMatch.opponent.copy(name = bot.displayName, isBot = true),
+        opponentIsBot = true,
+    )
+
+    val botResult = result.copy(opponent = bot, ratingAfter = 1000, ratingChange = 0, opponentIsBot = true)
 }
