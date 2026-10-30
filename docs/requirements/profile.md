@@ -85,6 +85,9 @@ məlumat" decision is made on the client (OQ-059).
   (the client never adds up cached matches), so it is correct across devices.
 - Given a win rate is tempting to show, When designing, Then the MVP shows only the
   counts (a rate from few games is misleading); the designer may add it later.
+- Given bot matches (OQ-106; counting blocked by OQ-110), When the record is computed,
+  Then per the recommendation the rows count only real matches and bot matches appear
+  in a separate line "Bota qarşı: …" (DUEL-28 in `duel.md`).
 
 ### PROF-04 Recent matches
 
@@ -106,6 +109,9 @@ məlumat" decision is made on the client (OQ-059).
   result.
 - Given `endReason = sudden_death`, When listed, Then the label "Əlavə sualda" is
   shown.
+- Given a bot match (OQ-106, OQ-107), When listed, Then it shows the bot avatar,
+  "Duello Bot" with the "Bot" badge and "—" instead of a rating change; it is never
+  shown as "Silinmiş oyunçu" (DUEL-28).
 - Given the user taps a match row, When tapped, Then nothing opens in the MVP (no
   per-match detail screen; out of scope).
 - Given the user has more than N matches, When the list ends, Then no "load more" is

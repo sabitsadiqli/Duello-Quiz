@@ -1,8 +1,8 @@
-# Duel WebSocket protocol (v1.1)
+# Duel WebSocket protocol (v1.2)
 
 Owner: `backend-dev`. Contract for the real-time confidence duel between the Android
 app and the backend. Rules: `docs/mvp-spec.md` §2; stories and acceptance criteria:
-`docs/requirements/duel.md` (DUEL-01 … DUEL-22); terms: `docs/requirements/glossary.md`.
+`docs/requirements/duel.md` (DUEL-01 … DUEL-29; bot opponent DUEL-23 … DUEL-29); terms: `docs/requirements/glossary.md`.
 REST endpoints (profile stats, match history) are in `openapi.yaml`.
 
 The server is authoritative for every timer, pick, answer, score and rating. The
@@ -26,6 +26,9 @@ Upgrade: websocket
   the HTTP level, then the server sends `error upgrade_required` (with
   `minProtocolVersion`) and closes the socket with close code `4000` (OQ-029). The
   app shows "Duel üçün tətbiqi yenilə.".
+- Optional features are negotiated per `queue.join` with `capabilities` (§4), not with
+  the protocol version (which stays 1). The only capability so far is `"bot"` (v1.2,
+  §7a).
 - Frames are UTF-8 JSON text frames, one message per frame, at most 4096 bytes.
   Binary frames are a `bad_message`.
 - Every message is an object with a `type` string. Unknown fields are ignored on both
@@ -46,6 +49,7 @@ parameter stays `protocolVersion=1` and a v1.0 client keeps working.
 | 2026-10-17 | `match.result.forfeitCause` is now stored, so a result rebuilt after a restart keeps it |
 | 2026-10-17 | `error internal_error` carries `ref`, `matchId`, `roundNo` of the failed message; nothing of it was stored (OQ-D17) |
 | 2026-10-22 (v1.1) | `match.result.progress`: XP, level and streak change of the receiver (`docs/mvp-spec.md` §10), same object as `progress` in the REST quiz/daily `finish` (`openapi.yaml` schema `Progress`). `null` if it could not be stored; a v1.0 client ignores it and reloads `GET /v1/me/progress` |
+| 2026-10-30 (v1.2) | Bot opponent (§7a, OQ-106 … OQ-111): `queue.join.capabilities` (the app announces `"bot"`); `queue.joined.botAtEpochMs`; `opponentType` (`human` \| `bot`) in `match.found`, `match.state` and `match.result`; in bot matches the opponent's `rating`, `opponentRatingAfter` and `opponent.ratingBefore/After` are `null`; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`. A client that does not send the `"bot"` capability is never paired with the bot and never sees a `null` rating, so v1.0/v1.1 clients are unaffected |
 
 ### 1.1 One connection per user (newest wins)
 
@@ -110,6 +114,7 @@ are the MVP values. Every timed server message carries `deadlineEpochMs`.
 | Step | Duration | Ends early |
 | --- | --- | --- |
 | Queue wait | 30 s | when paired |
+| Bot pairing (bot-capable entry, bot enabled, §7a) | 15 s after `queue.joined` | when paired with a real player |
 | Match intro (`match.found`) | 3 s | — |
 | Question phase | 3 s | — |
 | Confidence phase (regular rounds only) | 5 s | when both players locked (OQ-035) |
@@ -165,8 +170,16 @@ Join the global first-come-first-served queue. Idempotent: a second join on the 
 connection keeps the original entry and deadline and answers `queue.joined` again.
 Errors: `already_in_match` (followed by `match.state`), `duel_unavailable` (fewer
 than 10 active questions).
+
+`capabilities` (v1.2, optional array of strings, default `[]`): features this app
+version can display. Unknown values are ignored. `"bot"` = the app understands
+`opponentType`, `botAtEpochMs` and `null` opponent ratings (DUEL-23, DUEL-24, DUEL-29);
+only then can the entry be paired with the bot (§7a). The value of the first join is
+kept for the entry (an idempotent second join does not change it) and is reused when
+the user is put back at the front after a cancelled match. Not an array of strings →
+`bad_message`.
 ```json
-{"type": "queue.join"}
+{"type": "queue.join", "capabilities": ["bot"]}
 ```
 
 ### `queue.leave`
@@ -175,7 +188,8 @@ already paired the user and the match is still in its intro (the leave crossed t
 pairing, OQ-037), the match is **cancelled**: both get `match.cancelled`, nobody's
 rating changes, the leaver gets `queue.left` and the opponent is put back at the
 **front** of the queue with a new 30 s deadline (`queue.joined`). After the intro the
-answer is `error already_in_match` (use `match.leave`).
+answer is `error already_in_match` (use `match.leave`). In a bot match (§7a) the
+leaver gets `match.cancelled {by: "self"}` and `queue.left`; nobody is re-queued.
 ```json
 {"type": "queue.leave"}
 ```
@@ -232,7 +246,10 @@ counts as no answer), `stale_round`, `match_not_found`.
 
 Common fields on every server message: `type`, `seq`, `serverNowEpochMs`.
 Player data for the UI is always `{displayName, avatarUrl, rating}`; no user IDs,
-emails or Firebase UIDs are ever sent (OQ-024).
+emails or Firebase UIDs are ever sent (OQ-024). In a bot match (§7a) the opponent is
+`{"displayName": "Duello Bot", "avatarUrl": null, "rating": null}` (name from backend
+i18n by the connection's `Accept-Language`, fallback `az`); the app shows the bot
+avatar from its own resources and the "Bot" badge instead of a rating (OQ-107).
 
 ### `hello` (seq 0)
 First message after the upgrade. `activeMatchId` is set when the user has a running
@@ -249,8 +266,13 @@ saved `activeMatchId`, DUEL-16).
 ```
 
 ### `queue.joined` (seq 0)
+`deadlineEpochMs` = join + 30 s (`queue.timeout` if nobody is found). `botAtEpochMs`
+(v1.2) = join + 15 s: the moment the server pairs a still lone player with the bot
+(§7a). It is `null` when the bot is disabled on the server or the `queue.join` did not
+carry the `"bot"` capability; the app then shows only the 30 s countdown (OQ-111).
 ```json
-{"type": "queue.joined", "seq": 0, "serverNowEpochMs": 1792144800200, "deadlineEpochMs": 1792144830200}
+{"type": "queue.joined", "seq": 0, "serverNowEpochMs": 1792144800200, "deadlineEpochMs": 1792144830200,
+ "botAtEpochMs": 1792144815200}
 ```
 
 ### `queue.timeout` (seq 0)
@@ -266,13 +288,21 @@ No opponent by the queue deadline; the entry is removed (DUEL-03).
 
 ### `match.found` (seq 1)
 Start of the intro; round 1 starts at `deadlineEpochMs`. The app stores `matchId` as
-`activeMatchId`.
+`activeMatchId`. `opponentType` (v1.2): `human` | `bot`.
 ```json
 {"type": "match.found", "seq": 1, "serverNowEpochMs": 1792144801000,
  "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a",
  "you": {"displayName": "Leyla", "avatarUrl": null, "rating": 1000},
  "opponent": {"displayName": "Murad", "avatarUrl": "https://lh3.googleusercontent.com/a/x", "rating": 1016},
- "rounds": 7, "bet3Limit": 2, "deadlineEpochMs": 1792144804000}
+ "rounds": 7, "bet3Limit": 2, "deadlineEpochMs": 1792144804000, "opponentType": "human"}
+```
+Bot match:
+```json
+{"type": "match.found", "seq": 1, "serverNowEpochMs": 1792144815200,
+ "matchId": "0c8e7d2a-5b1f-4c6e-8a9d-3f2e1d0c9b8a",
+ "you": {"displayName": "Leyla", "avatarUrl": null, "rating": 1000},
+ "opponent": {"displayName": "Duello Bot", "avatarUrl": null, "rating": null},
+ "rounds": 7, "bet3Limit": 2, "deadlineEpochMs": 1792144818200, "opponentType": "bot"}
 ```
 
 ### `match.cancelled`
@@ -372,7 +402,8 @@ or a draw after the 3rd question; see `next`).
 ```
 
 ### `opponent.connection`
-Presence of the opponent (DUEL-13). On `disconnected`, `reconnectDeadlineEpochMs` =
+Presence of the opponent (DUEL-13). Never sent in a bot match (the bot never
+disconnects). On `disconnected`, `reconnectDeadlineEpochMs` =
 disconnect + 10 s (informational countdown; the seat is held until the match ends,
 OQ-032). On `connected` it is `null`. The same value is in
 `match.state.opponent.reconnectDeadlineEpochMs` for as long as the opponent stays
@@ -392,7 +423,8 @@ only (no replay). Fields:
 
 | Field | Meaning |
 | --- | --- |
-| `matchId`, `you`, `opponent` | As in `match.found`; `opponent` adds `connected` (bool) and `reconnectDeadlineEpochMs` (disconnect + 10 s while disconnected, else `null`; informational, OQ-032) |
+| `matchId`, `you`, `opponent` | As in `match.found`; `opponent` adds `connected` (bool) and `reconnectDeadlineEpochMs` (disconnect + 10 s while disconnected, else `null`; informational, OQ-032). The bot is always `connected = true`, `reconnectDeadlineEpochMs = null`, `rating = null` |
+| `opponentType` | v1.2: `human` \| `bot` |
 | `phase` | `intro` \| `question` \| `confidence` \| `answer` \| `result` |
 | `deadlineEpochMs` | End of the current phase (without grace) |
 | `roundNo`, `allIn`, `suddenDeath`, `suddenDeathNo` | Current round (`roundNo = 0` during the intro) |
@@ -448,16 +480,17 @@ for an unused level are chosen on the client.
 | --- | --- |
 | `outcome` | `win` \| `loss` \| `draw` \| `abandoned` (from the receiver's view) |
 | `endReason` | `normal` \| `sudden_death` \| `draw` \| `forfeit` \| `abandoned` |
+| `opponentType` | v1.2: `human` \| `bot` |
 | `forfeitedBy` | `self` \| `opponent` \| `null` |
 | `forfeitCause` | `missed_rounds` \| `left` \| `null` |
 | `scores` | `{you, opponent}`, final (also on forfeit: current scores) |
-| `ratingBefore`, `ratingAfter`, `ratingChange` | Own Elo; equal for `abandoned` |
-| `opponentRatingAfter` | Opponent's Elo after the match (same as `opponent.ratingAfter`) |
-| `you`, `opponent` | `{displayName, avatarUrl, ratingBefore, ratingAfter, deleted}`; ratings equal for `abandoned`; `displayName`/`avatarUrl` are `null` and `deleted = true` only for a deleted opponent in a rebuilt result |
+| `ratingBefore`, `ratingAfter`, `ratingChange` | Own Elo; equal for `abandoned`. Bot match: both = the player's rating at match start, `ratingChange = 0` (no rating is written; "Reytinq dəyişmədi · Bot oyunu") |
+| `opponentRatingAfter` | Opponent's Elo after the match (same as `opponent.ratingAfter`); `null` in a bot match |
+| `you`, `opponent` | `{displayName, avatarUrl, ratingBefore, ratingAfter, deleted}`; ratings equal for `abandoned`; `displayName`/`avatarUrl` are `null` and `deleted = true` only for a deleted opponent in a rebuilt result. The bot: `{"displayName": "Duello Bot", "avatarUrl": null, "ratingBefore": null, "ratingAfter": null, "deleted": false}` |
 | `suddenDeathPlayed` | Number of sudden-death questions (0–3) |
 | `calibration` | Always 3 entries `{level, picks, correct}` for levels 1, 2, 3 (OQ-027: rounds 1–7 with an actively locked Əminlik) |
 | `rounds` | Compact list of all played rounds |
-| `progress` | v1.1. XP/level/streak change of the receiver (schema `Progress` in `openapi.yaml`), written in the same transaction as the match end, so a resent or rebuilt `match.result` carries the identical object. Duel XP (OQ-081): 20 for a `finished` match + 30 win / + 15 draw, overall XP only; 0 for the player who forfeited and for `abandoned` (both still get the object, `xpGained = 0`). Caps (OQ-082): from the 21st eligible match of the Baku day, or the 4th against the same opponent, `xpGained = 0` and `xpCapped = true`; Elo is unaffected. A `finished` match the receiver did not forfeit makes the day the match started in active. `null` only if storing failed or for matches ended before 2026-10-22. Opponents never see each other's level or streak (OQ-095) |
+| `progress` | v1.1. XP/level/streak change of the receiver (schema `Progress` in `openapi.yaml`), written in the same transaction as the match end, so a resent or rebuilt `match.result` carries the identical object. Duel XP (OQ-081): 20 for a `finished` match + 30 win / + 15 draw, overall XP only; 0 for the player who forfeited and for `abandoned` (both still get the object, `xpGained = 0`). Caps (OQ-082): from the 21st eligible match of the Baku day, or the 4th against the same opponent, `xpGained = 0` and `xpCapped = true`; Elo is unaffected. A `finished` match the receiver did not forfeit makes the day the match started in active. `null` only if storing failed or for matches ended before 2026-10-22. Opponents never see each other's level or streak (OQ-095). Bot match (OQ-109): half duel XP with the reasons `duel_bot_played` 10, `duel_bot_win` +15, `duel_bot_draw` +8; it counts towards the 20-per-day cap together with real matches and never towards the 3-per-opponent cap; forfeit and abandoned 0 |
 
 ```json
 {"type": "match.result", "seq": 43, "serverNowEpochMs": 1792144950000,
@@ -465,7 +498,7 @@ for an unused level are chosen on the client.
  "outcome": "win", "endReason": "normal", "forfeitedBy": null, "forfeitCause": null,
  "scores": {"you": 640, "opponent": 410},
  "ratingBefore": 1000, "ratingAfter": 1017, "ratingChange": 17, "opponentRatingAfter": 999,
- "suddenDeathPlayed": 0,
+ "opponentType": "human", "suddenDeathPlayed": 0,
  "calibration": [{"level": 1, "picks": 2, "correct": 1}, {"level": 2, "picks": 3, "correct": 2},
                  {"level": 3, "picks": 2, "correct": 2}],
  "rounds": [{"roundNo": 1, "suddenDeath": false,
@@ -556,16 +589,56 @@ shown to users; the app maps `code` to text.
   memory; no question repeats inside a match. With fewer than 10 active questions
   `queue.join` answers `duel_unavailable`.
 - **Matchmaking:** one global FIFO queue (oldest waiting user first), no rating-based
-  pairing; a user is never paired with themselves.
+  pairing; a user is never paired with themselves. A real opponent always wins over
+  the bot (§7a).
+
+## 7a. Bot opponent (v1.2, OQ-106 … OQ-111)
+
+- **Who gets it:** a queue entry whose `queue.join` carried the `"bot"` capability,
+  while the bot is enabled (`duello.duel.bot.enabled`, default on). Everybody else
+  keeps the 30 s queue (`botAtEpochMs = null`).
+- **When:** at `botAtEpochMs` (= `queue.joined` + 15 s, server clock). Queue events
+  are handled one at a time in arrival order; right before pairing the server
+  re-checks that the same entry is still queued and that no other real player waits.
+  If one waits, the two real players are paired instead. A `queue.leave` before that
+  moment removes the entry and no bot match is created. A user put back at the front
+  after a cancelled real match gets a new `botAtEpochMs`.
+- **Failure:** if the bot match cannot be created (internal error), the entry stays
+  queued and the 30 s `queue.timeout` applies; nothing is sent at 15 s.
+- **Messages:** the same flow as a real match (`match.found` … `match.result`, same
+  `seq` rules, timers, grace, early phase end). `opponentType = "bot"`, opponent
+  `rating = null`; `round.betLocked` / `round.answerLocked` with `who = "opponent"`
+  arrive when the bot acts. Nothing about the bot's strength or planned moves is sent.
+- **Bot play:** never misses, never disconnects (no `opponent.connection`), never
+  forfeits. It locks its Əminlik 1–4 s after `round.confidence` and answers 3–9 s
+  after `round.options` (its `answeredMs` = that delay); it respects the Əminlik 3
+  limit and the All-in round; in sudden death its Əminlik is 1 like everybody's. Its
+  decisions are drawn at the start of each round from its own random source and never
+  depend on the player's pick, answer or timing.
+- **Ending:** `match.leave`, 2 missed rounds in a row and account deletion are a
+  forfeit by the player as usual. `queue.leave` during the intro cancels the match
+  (`match.cancelled {by: "self"}`, nobody is re-queued). A server restart abandons it.
+- **Rating:** never changes for anyone (no rating write). **XP:** half duel XP (see
+  `match.result.progress`). The day counts as active like a finished real match the
+  player did not forfeit.
+- **Old clients:** a client without the `"bot"` capability is never paired with the
+  bot. If a user in a bot match opens the duel on an old app version on another device
+  (DUEL-04 take-over), that app receives `match.state` with `rating = null`; this
+  mixed-version case is accepted.
 
 ## 8. Persistence
 
 `matches` (status `active` → `finished` | `abandoned` | `cancelled`, `end_reason`,
-`winner_side`, `forfeited_side`, ratings before/after), `match_rounds` (one row per
+`winner_side`, `forfeited_side`, ratings before/after, `opponent_type` `human` |
+`bot`: a bot match has the player on side `a`, `player_b = NULL` and no side-b
+ratings; in a human match `player_b = NULL` still means "deleted user"), `match_rounds` (one row per
 played round incl. sudden death, `options_sent_at`, `answer_deadline_at`) and
 `match_answers` (one row per player and round: `bet`, `bet_defaulted`, `option_id`,
 `is_correct`, `answered_ms`, `speed_bonus`, `points`, `missed`). Rounds are written
 when they resolve; the match row and ratings when it ends. `GET /v1/me/stats` and
 `GET /v1/me/matches` read these tables (`openapi.yaml`). The duel XP award per player
 (`progress_awards`, `xp_events`, streak in `user_progress`) is written in the
-transaction that ends the match; a second end returns the stored awards.
+transaction that ends the match; a second end returns the stored awards. Bot awards
+are marked `is_bot` and have no `opponent_id`. Deleting an account deletes its bot
+matches with their rounds and answers; real matches are anonymized (`docs/mvp-spec.md`
+§3a).

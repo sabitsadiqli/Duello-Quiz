@@ -8,6 +8,82 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
 
+## Details (OQ-107 … OQ-111) — bot opponent (all decided by Sabit 2026-10-30, recommendation accepted)
+
+Added by `business-analyst` on 2026-10-30 after Sabit's bot decision (OQ-106). The
+stories DUEL-23 … DUEL-29 in `duel.md` are written with the recommendations; each
+item lists what is blocked.
+
+### OQ-107 Bot identity
+- A. One fixed name "Duello Bot", "Bot" badge, the app mark (local resource) as
+  avatar, no rating (badge in its place, `rating = null`). Honest and clear; "duello"
+  is already a reserved display-name word (OQ-051), so no human can copy it; the
+  intro has one empty spot where the rating was.
+- B. Same, but show a "rating" equal to the player's own. Looks complete; it is a
+  fake number (the bot has no Elo) and invites "why did my rating not change?".
+- C. Several bot names ("Bot Ağıllı", "Bot Sürətli") by strength. More flavour; looks
+  like personas, more copy, and the strength becomes visible and gameable.
+- Old apps: an app that does not know `opponentType` would show the bot as a human
+  ("Duello Bot" with a missing rating). Recommendation: the server offers the bot only
+  to bot-capable protocol versions (others keep the 30 s queue), or backend-dev
+  raises the minimum version.
+- Recommendation: A. Blocks DUEL-24 (and the bot parts of DUEL-28).
+
+### OQ-108 Bot strength model
+Sabit fixed the ranges (45–80 % correct, 3–9 s answer time, target ≈ 50 % player
+wins). Proposed details, all server config values in `duello.duel.bot`:
+- Knowledge per round: `p = clamp(0.62 + 0.0005 × (R − 1000) + d + f, 0.45, 0.80)`,
+  `R` = player's Elo at match start, `d` = +0.10 / 0 / −0.10 for difficulty 1 / 2 / 3,
+  `f` = form: +0.05 if the player won ≥ 7 of their last 10 bot matches, −0.05 if ≤ 3,
+  else 0. Form is needed because bot matches never change Elo: a player who only plays
+  the bot stays at 1000 forever, so Elo alone cannot adapt.
+  - Alternative A2: Elo + difficulty only (no form). Simpler; no adaptation for
+    bot-only players (most players at launch).
+  - Alternative A3: fixed `p = 0.6`. Simplest; ignores Sabit's "adaptive".
+- Əminlik: if the bot knows — 3 (only while uses are left) 45 %, 2 40 %, 1 15 %; if
+  not — 1 65 %, 2 30 %, 3 5 %. Round 7 with a use of 3 left and "knows": 3 at 70 %.
+  Pick time uniform 1.0–4.0 s inside the 5 s phase.
+- Answer: uniform 3.0–9.0 s after `round.options`; correct option if it knows, else a
+  uniformly random wrong option. Never a timeout.
+- Measurement: after 100 bot matches in the closed test, if the player win rate is
+  outside 40–60 %, the base 0.62 is tuned by config (no app release).
+- Recommendation: the formula above with form. Blocks DUEL-25 (backend builds with
+  these values as config defaults).
+
+### OQ-109 Bot XP rounding and caps
+- Rounding of the draw (15 / 2 = 7.5): A. 8 (round half up; draw = 18). B. 7 (floor;
+  draw = 17). Difference is 1 XP; A keeps "a draw is worth more than half of a win".
+- Daily cap: A. Bot matches count toward the shared 20-per-day duel XP cap and are
+  exempt from the 3-per-opponent rule (the bot is not a person; with the rule only
+  3 bot matches per day would give XP). Max 20 × 25 = 500 XP/day, half the real-duel
+  maximum. B. Separate bot cap (e.g. 10 per day) on top of the 20. More protection
+  against farming; one more number and rule. C. Bot matches also obey 3-per-opponent.
+  Kills XP for bot-only players after 3 matches.
+- Recommendation: rounding A, caps A. Blocks DUEL-27.
+
+### OQ-110 Bot matches in history and stats
+- A. History: listed with the Bot badge and "—" for rating. Record ("Duel
+  nəticələri"): only real-player matches; a separate line "Bota qarşı: 3 qələbə,
+  2 məğlubiyyət, 0 heç-heçə". Calibration: includes bot matches (it measures the
+  player's own Əminlik). Honest record; one extra line and a `botRecord` in
+  `GET /v1/me/stats`.
+- B. Count bot matches everywhere like real ones. No extra API; the record mixes
+  "against people" with "against the server".
+- C. Hide bot matches from history and stats entirely. Cleanest stats; the player
+  cannot see a match that just gave XP and calibration data.
+- Recommendation: A. Blocks DUEL-28, PROF-03, PROF-04, PROF-05 (bot parts).
+
+### OQ-111 Search screen and opting out
+- A. Tell the player before: countdown to the bot moment (`botAtEpochMs`) and
+  "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan."; no setting to refuse
+  bots — cancelling the search before 15 s is the opt-out. Transparent, no new
+  settings UI.
+- B. No hint; the bot just appears at 15 s with its badge. Less text on 360 dp;
+  surprises the player.
+- C. A setting "Botla oynama". More control; settings UI, scope creep for the MVP.
+- Recommendation: A. Blocks DUEL-23 (client copy only) and the designer's search
+  screen.
+
 ## Details (OQ-097 … OQ-105) — legal pages (OQ-097, OQ-099, OQ-103 decided above)
 
 Added by `business-analyst` on 2026-10-25 while writing `docs/legal/privacy-policy.html`
@@ -77,6 +153,17 @@ exists yet (only `DELETE /v1/me` with the user's own token).
 - B. Include under-13. Families policy, stricter SDK rules (Analytics settings),
   parental consent; out of scope.
 - Recommendation: A.
+
+## Decided by Sabit (2026-10-30) — bot opponent
+
+| ID | Question | Decision | Decided |
+| --- | --- | --- | --- |
+| OQ-106 | Bot opponent for empty queues (supersedes the "no bots" part of OQ-028) | Server-side bot when no real opponent is found within **15 s**; a real player is always preferred and the bot is never matched while another real player waits; the 30 s "Rəqib tapılmadı" stays only as fallback when the bot is unavailable. Always transparent: "Bot" badge and a fixed bot name, no fake human names or avatars. **No Elo change** for anyone. XP = **half** of OQ-081 duel XP (play 10, win +15, draw ≈ half of 15, OQ-109), inside the OQ-082 caps (details OQ-109); a finished bot match not forfeited by the user is an active day (OQ-085). Strength adaptive to the player's Elo and question difficulty: 45–80 % correct, answer time 3–9 s, Əminlik consistent with its knowledge, same rules incl. max two 3s and round 7 (formula OQ-108); target ≈ 50 % player wins; server-authoritative, no advantage beyond its probability model. Bot matches are deleted with the user. Ghost duels and friends/invites stay out of scope. Stories DUEL-23 … DUEL-29; `docs/mvp-spec.md` §2 "Bot opponent", §3a, §10 | Sabit 2026-10-30 |
+| OQ-107 | Bot identity: name, avatar, rating shown? | Name "Duello Bot" for every match, "Bot" badge, app mark as avatar, **no rating** (badge instead); bot not offered to apps that do not know `opponentType` | Sabit 2026-10-30 |
+| OQ-108 | Bot strength model (exact formula) | `p` = clamp(0.62 + 0.0005 × (rating − 1000) + {+0.10, 0, −0.10} by difficulty 1/2/3 + form ±0.05, 0.45, 0.80); Əminlik and pick/answer times as in the details; all config values | Sabit 2026-10-30 |
+| OQ-109 | Bot XP rounding and caps | Play 10, win +15, draw **+8** (round half up); counts toward the 20/day duel cap; exempt from 3-per-opponent | Sabit 2026-10-30 |
+| OQ-110 | Bot matches in history and profile stats | In "Son oyunlar" with the Bot badge; **excluded** from the record vs players, shown as a separate "Bota qarşı" line; **included** in calibration | Sabit 2026-10-30 |
+| OQ-111 | Search screen: announce the bot? Opt-out? | Announce: countdown to the bot + "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan."; no opt-out setting (cancel before 15 s is the opt-out) | Sabit 2026-10-30 |
 
 ## Decided by Sabit (2026-10-25) — hosting and domain
 
@@ -331,7 +418,7 @@ All accepted as recommended, except OQ-036 (Sabit chose a 250 ms grace instead o
 | OQ-025 | Rematch with the same opponent after a match? | Out of scope for the MVP; "Yenidən oyna" re-joins the global queue |
 | OQ-026 | Do forfeited matches keep their points, and how do forfeits and abandoned matches appear in history and stats? | Forfeit: stored with current scores, counted as win/loss with a label; abandoned: shown as "Ləğv edildi", not counted |
 | OQ-027 | Which rounds count for the calibration card and profile stats? | Rounds 1–7 with an actively locked Əminlik; exclude defaulted picks, missed rounds and sudden death |
-| OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers |
+| OQ-028 | What happens when the queue is mostly empty (one player waiting, few testers)? | Keep 30 s + retry; no bots; measure timeout rate; agree "duel hours" with closed-test testers. **Superseded 2026-10-30 by OQ-106** (bot after 15 s; 30 s only as fallback) |
 | OQ-029 | Minimum app version for the duel protocol | Client sends a protocol version in the handshake; server rejects older ones with `upgrade_required` → "Duel üçün tətbiqi yenilə" |
 | OQ-030 | Offensive or impersonating display names | Small server-side blocklist (az/tr/ru/en, normalized) on sign-up, Google name and edit; no reporting in the MVP |
 | OQ-031 | How many recent matches does the profile show? | Last 20, newest first, no pagination |
@@ -448,6 +535,7 @@ always waits.
 - D. Show "N players searching". Small extra endpoint; with tiny numbers it shows "0"
   and discourages.
 - Recommendation: A; revisit after the closed test. Decides: Sabit.
+- Update 2026-10-30: option B (bots only, not ghosts) was chosen by Sabit — see OQ-106.
 
 ### OQ-029 Minimum app version for the duel protocol
 An old app talking to a changed protocol can break a match for both players.

@@ -5,6 +5,7 @@ import com.sabit.duelloquiz.backend.auth.AuthProviderException
 import com.sabit.duelloquiz.backend.auth.AuthUser
 import com.sabit.duelloquiz.backend.common.ApiException
 import com.sabit.duelloquiz.backend.common.ErrorCodes
+import com.sabit.duelloquiz.backend.duel.BotIdentity
 import io.ktor.http.HttpStatusCode
 import org.slf4j.LoggerFactory
 import java.time.Clock
@@ -21,6 +22,7 @@ class UserService(
     private val accountDeleter: AuthAccountDeleter,
     private val clock: Clock,
     private val deletionListeners: List<AccountDeletionListener> = emptyList(),
+    private val botIdentity: BotIdentity = BotIdentity.DEFAULT,
 ) {
     private val log = LoggerFactory.getLogger(UserService::class.java)
 
@@ -87,6 +89,17 @@ class UserService(
     suspend fun stats(auth: AuthUser): StatsResponse {
         val user = getOrCreate(auth)
         val matches = repository.matchesOf(user.id, listOf(UserRepository.MATCH_FINISHED), limit = null)
+        val (botMatches, humanMatches) = matches.partition { it.opponentType == UserRepository.OPPONENT_BOT }
+        // Calibration counts both kinds: it measures the player's own Əminlik (OQ-110).
+        val rows = repository.calibrationRows(user.id)
+        val calibration = (1..3).map { level ->
+            val atLevel = rows.filter { it.bet == level }
+            CalibrationLevel(level = level, picks = atLevel.size, correct = atLevel.count { it.isCorrect })
+        }
+        return StatsResponse(record(humanMatches), record(botMatches), calibration)
+    }
+
+    private fun record(matches: List<MatchRecord>): Record {
         var wins = 0
         var losses = 0
         var draws = 0
@@ -97,15 +110,10 @@ class UserService(
                 else -> losses++
             }
         }
-        val rows = repository.calibrationRows(user.id)
-        val calibration = (1..3).map { level ->
-            val atLevel = rows.filter { it.bet == level }
-            CalibrationLevel(level = level, picks = atLevel.size, correct = atLevel.count { it.isCorrect })
-        }
-        return StatsResponse(Record(wins, losses, draws, wins + losses + draws), calibration)
+        return Record(wins, losses, draws, wins + losses + draws)
     }
 
-    suspend fun recentMatches(auth: AuthUser, limit: Int): MatchHistoryResponse {
+    suspend fun recentMatches(auth: AuthUser, limit: Int, language: String = "az"): MatchHistoryResponse {
         val user = getOrCreate(auth)
         val matches = repository.matchesOf(
             user.id,
@@ -115,14 +123,20 @@ class UserService(
         val opponents = repository.findDisplayInfo(matches.mapNotNull { it.opponentId }.toSet())
         return MatchHistoryResponse(
             matches.map { m ->
+                val isBot = m.opponentType == UserRepository.OPPONENT_BOT
                 val opponent = m.opponentId?.let { opponents[it] }
                 MatchSummary(
                     id = m.id.toString(),
-                    opponent = OpponentDto(
-                        displayName = opponent?.first,
-                        avatarUrl = opponent?.second,
-                        deleted = opponent == null,
-                    ),
+                    opponentType = m.opponentType,
+                    opponent = if (isBot) {
+                        OpponentDto(displayName = botIdentity.displayName(language), avatarUrl = null, deleted = false)
+                    } else {
+                        OpponentDto(
+                            displayName = opponent?.first,
+                            avatarUrl = opponent?.second,
+                            deleted = opponent == null,
+                        )
+                    },
                     result = when {
                         m.status == UserRepository.MATCH_ABANDONED -> "abandoned"
                         m.winnerSide == null -> "draw"
@@ -133,7 +147,11 @@ class UserService(
                     forfeitCause = m.forfeitCause,
                     scoreOwn = m.scoreOwn,
                     scoreOpponent = m.scoreOpponent,
-                    ratingChange = if (m.ratingBefore != null && m.ratingAfter != null) m.ratingAfter - m.ratingBefore else 0,
+                    ratingChange = when {
+                        isBot -> null
+                        m.ratingBefore != null && m.ratingAfter != null -> m.ratingAfter - m.ratingBefore
+                        else -> 0
+                    },
                     finishedAt = m.finishedAt.toString(),
                 )
             },

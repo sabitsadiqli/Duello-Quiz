@@ -1,7 +1,8 @@
 # Duel — match found and intro (3 s)
 
-Stories: DUEL-05. Decisions: OQ-024 (opponent: name, avatar, rating), OQ-037
-(3 s intro, no "ready" tap; a crossing `queue.leave` cancels the match).
+Stories: DUEL-05, DUEL-24 (bot identity). Decisions: OQ-024 (opponent: name,
+avatar, rating), OQ-037 (3 s intro, no "ready" tap; a crossing `queue.leave` cancels
+the match), OQ-107 (bot: "Duello Bot", Bot badge, app mark, no rating).
 Tokens: `design/tokens.json`. Components: `components.md`. Copy: `copy/az.md`.
 
 ## Questions and decisions
@@ -50,6 +51,22 @@ No top app bar (no actions). Edge-to-edge, `scheme.surface`, gutters
 7. `space.lg`, `duel_intro_rules` `type.bodyMedium` `scheme.onSurfaceVariant`,
    centred, wraps.
 
+**Bot variant** (`match.found.opponentType = bot`, DUEL-24) — same layout, only the
+opponent row and one line change:
+- Avatar: bot variant (`components.md` §13, app mark on `scheme.surface`) with the
+  normal opponent accent ring `scheme.tertiary`.
+- Name line: `match.found` display name (backend i18n, "Duello Bot"; fallback
+  `duel_bot_name`), `space.sm`, Bot badge (`components.md` §32, inline). The
+  column is end-aligned, so the line reads "Duello Bot [Bot]" with the badge next
+  to the avatar side; the name ellipsizes first if it ever gets longer.
+- Rating line: `duel_bot_rating_none` ("Reytinq: —") in `scheme.onSurfaceVariant`,
+  so both rows keep the same height and nothing looks missing; no number.
+- Under `duel_intro_rules`, `space.sm`: `duel_bot_no_rating_note` ("Bot oyunu
+  reytinqə təsir etmir.") `type.bodyMedium` `scheme.onSurfaceVariant`, centred,
+  wraps, with a leading 18dp `info` icon.
+- Title stays `duel_intro_title` ("Rəqib tapıldı!") — the bot is a real opponent
+  in the rules; the badge says what kind.
+
 Width: each name has ~240dp (avatar 80 + gap 16 out of 328dp): 20-character names
 fit at 1.0; very wide names truncate at 1.3 with an ellipsis (accepted, DUEL-05).
 
@@ -64,6 +81,9 @@ here — a deleted account cannot be matched), bolt divider mark, countdown digi
 | --- | --- |
 | Default | Both rows, countdown 3 → 1. The avatar images load in parallel; the intro never waits for them (letter fallback first, image cross-fades in when loaded). |
 | Opponent avatar fails | Letter fallback stays (DUEL-05). |
+| Bot opponent | Bot variant above. Never a letter fallback or photo for the bot; the mark is local, so there is no loading. |
+| Bot opponent, `displayName` missing | `duel_bot_name` (the client never shows an empty name or "Oyunçu NNNN" for the bot). |
+| `queue.leave` crossed the bot pairing (user cancelled during the intro) | `match.cancelled {by: self}` → home (`duel-search.md`); no snackbar. The bot itself never cancels. |
 | Opponent name long / unusual | 1 line, ellipsis at the end. Never reflows the layout. |
 | Match cancelled (`match.cancelled`: the opponent's leave crossed the pairing, OQ-037) | Back to the search screen in Searching state with the new deadline + snackbar `duel_search_opponent_left` (`duel-search.md`). |
 | Own socket drops during the intro | The self-reconnecting overlay (`duel-interruptions.md`) appears over the intro; on rejoin the snapshot decides which screen shows (usually round 1). |
@@ -82,10 +102,16 @@ here — a deleted account cannot be matched), bolt divider mark, countdown digi
 ## Accessibility
 
 - On entry, `duel_intro_cd` is announced once (assertive): opponent name and
-  rating. Rows are merged elements ("Sən, Aysel, reytinq 1016").
+  rating. Rows are merged elements ("Sən, Aysel, reytinq 1016"). Bot: the
+  announcement is `duel_intro_bot_cd` ("Rəqib tapıldı: Duello Bot, bot. Bot oyunu
+  reytinqə təsir etmir. Oyun başlayır."); the opponent row reads
+  `duel_opponent_bot_cd` ("Rəqib: Duello Bot, bot"), the badge and the "—" are not
+  separate stops.
 - The countdown digit is not announced per second.
 
 ## String keys
 
 `duel_intro_title`, `duel_you`, `home_rating`, `duel_intro_starting`,
-`duel_intro_rules`, `duel_intro_cd`, `duel_search_opponent_left`.
+`duel_intro_rules`, `duel_intro_cd`, `duel_search_opponent_left`; bot variant:
+`duel_bot_name`, `duel_bot_badge`, `duel_bot_rating_none`,
+`duel_bot_no_rating_note`, `duel_intro_bot_cd`, `duel_opponent_bot_cd`.

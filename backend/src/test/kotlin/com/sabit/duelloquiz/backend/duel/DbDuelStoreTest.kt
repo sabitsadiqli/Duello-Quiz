@@ -10,6 +10,7 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -104,5 +105,88 @@ class DbDuelStoreTest : DbTest() {
         assertEquals(RatingUpdate(1000, 1000, 1000, 1000), abandoned.ratings)
         assertEquals(MatchStatus.CANCELLED, store.findMatch(cancelled)!!.status)
         assertEquals(1000, store.profiles(listOf(a)).getValue(a).rating)
+    }
+
+    private fun countWhere(sql: String): Long = runBlocking { db.tx { exec(sql) { rs -> rs.next(); rs.getLong(1) }!! } }
+
+    @Test
+    fun `a bot match never changes a rating and gives half XP marked as a bot award`() = runBlocking {
+        val (store, a, _) = seed()
+        val t0 = 1_800_000_000_000L
+        val matchId = UUID.randomUUID()
+        store.createBotMatch(matchId, a, t0)
+        val q = store.pickQuestions(1).single()
+        val wrong = q.options.first { !it.isCorrect }.id
+        store.saveRound(
+            RoundRecord(
+                matchId, 1, q.id, allIn = false, suddenDeath = false, optionsSentAtMs = t0 + 11_000, answerDeadlineMs = t0 + 21_000,
+                answers = listOf(
+                    AnswerRow(a, Side.A, 2, false, q.correctOption.id, true, 2_000, 40, 240, false),
+                    // The bot's internal id is never a user: stored as NULL.
+                    AnswerRow(UUID.randomUUID(), Side.B, 1, false, wrong, false, 5_000, 0, 0, false),
+                ),
+            ),
+        )
+        val end = MatchEnd(matchId, MatchStatus.FINISHED, EndReasons.NORMAL, Side.A, null, 240, 0, t0 + 60_000)
+        val result = store.endMatch(end, 1000, 0)
+        assertEquals(RatingUpdate(1000, 1000, 0, 0), result.ratings)
+        val award = result.progress.getValue(Side.A)
+        assertEquals(25, award.xpGained)
+        assertEquals(listOf("duel_bot_played", "duel_bot_win"), award.xpBreakdown.map { it.reason })
+        assertEquals(1, award.streakCurrent, "a finished bot match is an active day")
+        assertEquals(setOf(Side.A), result.progress.keys)
+        assertEquals(result, store.endMatch(end, 1000, 0), "idempotent")
+        assertEquals(1000, store.profiles(listOf(a)).getValue(a).rating)
+
+        val stored = assertNotNull(store.findMatch(matchId))
+        assertEquals(OpponentTypes.BOT, stored.opponentType)
+        assertNull(stored.playerB)
+        assertEquals(RatingUpdate(1000, 1000, 0, 0), stored.ratings)
+        assertEquals(award, stored.progress[Side.A])
+        assertEquals(UUID(0, 0), stored.rounds.single().answers.getValue(Side.B).userId)
+        assertEquals(1L, countWhere("SELECT count(*) FROM matches WHERE id = '$matchId' AND rating_b_before IS NULL AND rating_b_after IS NULL AND rating_a_after = 1000"))
+        assertEquals(1L, countWhere("SELECT count(*) FROM progress_awards WHERE source_id = '$matchId' AND is_bot AND opponent_id IS NULL"))
+        assertEquals(listOf(true), store.recentBotResults(a, 10))
+    }
+
+    @Test
+    fun `bot draws give 18 XP, forfeits and abandoned bot matches give 0`() = runBlocking {
+        val (store, a, _) = seed()
+        val t0 = 1_800_000_000_000L
+        fun id() = UUID.randomUUID()
+        val draw = id().also { store.createBotMatch(it, a, t0) }
+        assertEquals(18, store.endMatch(MatchEnd(draw, MatchStatus.FINISHED, EndReasons.DRAW, null, null, 300, 300, t0 + 1), 1000, 0).progress.getValue(Side.A).xpGained)
+        val forfeit = id().also { store.createBotMatch(it, a, t0) }
+        val f = store.endMatch(MatchEnd(forfeit, MatchStatus.FINISHED, EndReasons.FORFEIT, Side.B, Side.A, 0, 100, t0 + 2, DuelMatch.FORFEIT_LEFT), 1000, 0)
+        assertEquals(0, f.progress.getValue(Side.A).xpGained)
+        val abandoned = id().also { store.createBotMatch(it, a, t0) }
+        assertEquals(0, store.endMatch(MatchEnd(abandoned, MatchStatus.ABANDONED, EndReasons.ABANDONED, null, null, 0, 0, t0 + 3), 1000, 0).progress.getValue(Side.A).xpGained)
+        val cancelled = id().also { store.createBotMatch(it, a, t0) }
+        assertTrue(store.endMatch(MatchEnd(cancelled, MatchStatus.CANCELLED, EndReasons.CANCELLED, null, null, 0, 0, t0 + 4), 1000, 0).progress.isEmpty())
+        // Finished ones only, newest first: the forfeit (loss), then the draw.
+        assertEquals(listOf(false, false), store.recentBotResults(a, 10))
+        assertEquals(1000, store.profiles(listOf(a)).getValue(a).rating)
+    }
+
+    @Test
+    fun `bot matches share the 20 per day duel cap and are exempt from the per-opponent cap`() = runBlocking {
+        val (store, a, b) = seed()
+        val t0 = 1_800_000_000_000L
+        // One real match against Bob first.
+        val real = UUID.randomUUID().also { store.createMatch(it, a, b, t0) }
+        assertEquals(50, store.endMatch(MatchEnd(real, MatchStatus.FINISHED, EndReasons.NORMAL, Side.A, null, 1, 0, t0 + 1), 1000, 1000).progress.getValue(Side.A).xpGained)
+        // 19 bot matches on the same Baku day: all give XP (no 3-per-opponent cap for the bot).
+        repeat(19) { i ->
+            val m = UUID.randomUUID().also { store.createBotMatch(it, a, t0 + i) }
+            val p = store.endMatch(MatchEnd(m, MatchStatus.FINISHED, EndReasons.NORMAL, Side.B, null, 0, 1, t0 + 100 + i), 1016, 0).progress.getValue(Side.A)
+            assertEquals(10, p.xpGained, "bot match ${i + 1}")
+            assertFalse(p.xpCapped)
+        }
+        // The 21st duel of the day (real + bot together) is capped.
+        val capped = UUID.randomUUID().also { store.createBotMatch(it, a, t0 + 50) }
+        val p = store.endMatch(MatchEnd(capped, MatchStatus.FINISHED, EndReasons.NORMAL, Side.A, null, 1, 0, t0 + 200), 1016, 0).progress.getValue(Side.A)
+        assertEquals(0, p.xpGained)
+        assertTrue(p.xpCapped)
+        assertEquals(1016, store.profiles(listOf(a)).getValue(a).rating, "only the real match moved the rating")
     }
 }

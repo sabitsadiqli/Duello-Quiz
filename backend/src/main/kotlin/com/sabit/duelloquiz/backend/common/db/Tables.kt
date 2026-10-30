@@ -138,6 +138,8 @@ object MatchesTable : Table("matches") {
     val ratingBAfter = integer("rating_b_after").nullable()
     val startedAt = timestampWithTimeZone("started_at")
     val finishedAt = timestampWithTimeZone("finished_at").nullable()
+    /** `human` | `bot` (V6); a bot match has the player on side A and `player_b = NULL`. */
+    val opponentType = varchar("opponent_type", 8)
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -249,6 +251,7 @@ object ProgressAwardsTable : Table("progress_awards") {
     val capped = bool("capped")
     val xpGained = integer("xp_gained")
     val opponentId = javaUUID("opponent_id").nullable()
+    val isBot = bool("is_bot")
     val snapshot = jsonb<ProgressDto>("snapshot", jsonbFormat)
     val createdAt = timestampWithTimeZone("created_at")
     override val primaryKey = PrimaryKey(userId, sourceType, sourceId)

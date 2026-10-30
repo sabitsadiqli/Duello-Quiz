@@ -507,6 +507,25 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `duel_connect_failed_title` | Duelə qoşulmaq alınmadı | State title (handshake 5xx/timeout). |
 | `duel_connect_failed_body` | Bağlantını yoxla və yenidən cəhd et. | |
 
+#### Bot opponent (OQ-106 … OQ-111, `duel-search.md`, `duel-intro.md`, `duel-match.md`, `duel-result.md`, `components.md` §32)
+
+Added 2026-10-30 (DUEL-23 … DUEL-29). The bot is always called a bot: never a human
+name, never "AI", never "kompüter rəqib". Rating texts say it plainly: no Elo change.
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `duel_bot_name` | Duello Bot | **Client fallback only.** The name shown in the intro, result and history comes from the server (`displayName`, backend i18n, same text, see "Backend i18n — bot"); this key is used when that is missing and inside `duel_search_bot_hint` (no server name exists yet while searching). Keep both texts identical. |
+| `duel_bot_badge` | Bot | Bot badge text (`components.md` §32), labelMedium + 14dp icon. ≈ 57 / 64dp. |
+| `duel_opponent_bot_cd` | Rəqib: %1$s, bot | TalkBack label of the opponent panel / intro row: "Rəqib: Duello Bot, bot" (DUEL-24). `%1$s` = bot name. |
+| `duel_bot_rating_none` | Reytinq: — | Intro opponent row, in place of the rating (U+2014). Not read by TalkBack (the row reads `duel_opponent_bot_cd`). |
+| `duel_bot_no_rating_note` | Bot oyunu reytinqə təsir etmir. | Intro note under the rules and second line of the result rating card. `wrap`. |
+| `duel_intro_bot_cd` | Rəqib tapıldı: %1$s, bot. Bot oyunu reytinqə təsir etmir. Oyun başlayır. | Announced once on the bot intro (assertive). |
+| `duel_search_bot_hint` | %1$d saniyə ərzində oyunçu tapılmasa, %2$s ilə oynayacaqsan. İstəmirsənsə, ləğv et. | `plurals` (one/other same text). `%1$d` = seconds to `botAtEpochMs` when `queue.joined` arrived (normally 15), `%2$s` = `duel_bot_name`. Search screen, bodyMedium, `wrap` (3 lines at 1.0, 3–4 at 1.3). Polished from OQ-111 ("15 saniyəyə …"): "ərzində" is unambiguous, and the second sentence states the opt-out. |
+| `duel_search_bot_countdown_cd` | Bot ilə oyuna %1$d saniyə qalıb | `plurals`. Announced at 10 s and 5 s remaining (not per second). |
+| `duel_leave_body_bot` | Bu, məğlubiyyət sayılacaq. Bot oyunu reytinqə təsir etmir. Vaxt bu arada dayanmır. | Leave dialog body in a bot match (DUEL-26). Title and buttons unchanged. |
+| `duel_result_rating_bot_cd` | Reytinq dəyişmədi. Bot oyunu reytinqə təsir etmir. | Result rating card in a bot match (one element). |
+| `duel_result_score_bot_cd` | Hesab: sən %1$s, %2$s (bot) %3$s | "Hesab: sən 640, Duello Bot (bot) 410". |
+
 ### profile_
 
 | Key | Azerbaijani | Notes |
@@ -520,6 +539,11 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `profile_record_title` | Duel nəticələri | Record card title. |
 | `profile_record_total` | %1$d oyun | `plurals`. Trailing in the record card header. |
 | `profile_record_cd` | %1$d qələbə, %2$d məğlubiyyət, %3$d heç-heçə, cəmi %4$d oyun | Merged card. |
+| `profile_record_bot` | Bota qarşı: %1$s, %2$s, %3$s | Bot line under the record rows (OQ-110), bodyMedium, `wrap` (2 lines at 1.3). `%1$s`–`%3$s` = the three plurals below, always all three, also with 0 ("0 heç-heçə"). Hidden when the bot total is 0. Appended to `profile_record_cd` for TalkBack. |
+| `profile_record_bot_wins` | %1$d qələbə | `plurals` (one/other same text). |
+| `profile_record_bot_losses` | %1$d məğlubiyyət | `plurals`. |
+| `profile_record_bot_draws` | %1$d heç-heçə | `plurals`. |
+| `profile_record_empty_real` | Hələ oyunçulara qarşı oynamamısan. | Record card body when only bot matches were played (DUEL-28). |
 | `profile_match_win` | Qələbə | Record row label and history result word. |
 | `profile_match_loss` | Məğlubiyyət | |
 | `profile_match_draw` | Heç-heçə | |
@@ -538,6 +562,8 @@ never "-" (format helper in code; the strings below take the absolute value).
 | `profile_match_date` | %1$d %2$s | "12 okt" (`profile_months_short`). |
 | `profile_match_date_year` | %1$d %2$s %3$d | "12 okt 2025" (other year). |
 | `profile_match_cd` | %1$s ilə oyun, %2$s, hesab %3$s, reytinq %4$s, %5$s | "Aysel ilə oyun, Qələbə, hesab 640 : 410, reytinq +16, dünən". |
+| `profile_match_rating_none` | — | Trailing rating column of a bot match (U+2014), never "0" (DUEL-28). |
+| `profile_match_bot_cd` | %1$s ilə oyun, bot, %2$s, hesab %3$s, reytinq dəyişmədi, %4$s | "Duello Bot ilə oyun, bot, Qələbə, hesab 640 : 410, reytinq dəyişmədi, dünən". |
 | `profile_calibration_title` | Əminlik statistikası | Card title. |
 | `profile_calibration_subtitle` | Bütün oyunlarda hər Əminlik səviyyəsində düzgün cavab payın | `wrap`. |
 | `profile_calibration_value` | %1$d dəfə · %2$d%% düzgün | "18 dəfə · 72% düzgün". In `strings.xml` the percent sign is `%%`. Decision (PROF-05): "72%" — number then sign, no space, as usual in Azerbaijani UI text. |
@@ -628,6 +654,7 @@ such numbers are `%s` (pre-formatted).
 | `progress_level_up` | Yeni səviyyə: %1$d! | Level-up strip, titleMedium, wraps. |
 | `progress_level_up_cd` | Yeni səviyyəyə çatdın: %1$d. | |
 | `progress_category_level_up` | %1$s: səviyyə %2$d | "Coğrafiya: səviyyə 3". `%1$s` = category name from the server. |
+| `progress_xp_bot_note` | Bota qarşı oyunda yarım XP qazanırsan. | Duel result progress card of a bot match, under the XP row (`components.md` §26 5a), bodyMedium, `wrap`. The number itself comes from the server (OQ-109). |
 | `progress_xp_capped` | Bu gün bu oyun növündən maksimum XP qazandın. | Cap note (PROG-09, needs OQ-D29). |
 | `progress_streak_days` | Seriya: %1$d gün | `plurals`. Streak row of the progress card. |
 | `progress_streak_extended` | +1 gün | Chip when `streakExtendedToday`. |
@@ -699,6 +726,17 @@ body ≤ 90 characters (counted with the largest realistic values).
 | `push_streak_reminder_title` | {streak} günlük seriyanı qoru | 25 (at 1000) | `streak_reminder`, 20:00 Baku, streak ≥ 2, today not active |
 | `push_streak_reminder_body` | Bu gün bir oyun oyna ki, seriyan davam etsin. | 45 | same |
 
+### Backend i18n — bot (not in `strings.xml`)
+
+**Backend i18n, not Android.** The server sends the bot's `displayName` in
+`match.found`, `match.result` / `match.state` and `GET /v1/me/matches`, resolved by
+`Accept-Language` with fallback `az` (DUEL-24). backend-dev picks the key name in its
+i18n JSON; the text must equal `duel_bot_name`.
+
+| Text | Azerbaijani | Used in |
+| --- | --- | --- |
+| Bot display name | Duello Bot | Intro, player panel TalkBack, result score column, history rows. "duello" is a reserved display-name word (OQ-051), so no human can be called this. |
+
 ## Truncation risks
 
 Estimated with the method above. "Used" = which form the specs use.
@@ -739,6 +777,13 @@ Estimated with the method above. "Used" = which form the specs use.
 | `notif_prompt_allow` "İcazə ver" + `notif_prompt_later` "Sonra" | two buttons in one row of the card | ~140 / ~185dp together | ~296dp | Fit side by side; stack at font scale ≥ 2.0. |
 | `home_daily_start` / `home_daily_resume` / `daily_share` | `btn` | ≤ ~70 / ~90dp | 280dp | Fit. |
 | `progress_xp_gained` "+1 250 XP" | headlineSmall + 24dp icon | ~110 / ~145dp | 296dp | Fits. |
+| Bot opponent in the duel player panel: "Duello Bot" + Bot badge | name slot ~84dp, labelLarge | ~94 / ~123dp + badge 57 / 64dp | 84dp | **Would truncate** both. The panel shows the badge alone in the name slot (`components.md` §16, like "Sən" on the own panel); the full name is on the intro and result. |
+| "Duello Bot" + badge, intro opponent row | titleMedium + badge | ~108 + 65 / ~130 + 72dp | 240dp | Fits on one line. |
+| "Duello Bot" + badge, history headline | bodyLarge + badge | ~95 + 65 / ~124 + 72dp | 264dp (minus trailing ~80dp ≈ 184dp) | Fits at 1.0; at 1.3 ≈ 196dp vs 184dp: the name ellipsizes by ~1 character before the badge ever does. Accepted; TalkBack reads the full name. |
+| Result score column "Duello Bot" + badge | titleSmall, ~130dp column | ~83 + 65 / ~107 + 72dp | 130dp | **Would truncate** side by side; badge is stacked under the name (`duel-result.md`). |
+| DUEL-26 "Reytinq dəyişmədi · Bot oyunu" | rating card, titleMedium next to a 20dp icon | ~291 / ~378dp | 268dp | **Does not fit** even at 1.0; replaced by two lines `duel_result_rating_unchanged` + `duel_bot_no_rating_note` (see changes below). |
+| `duel_search_bot_hint` | bodyMedium + 20dp icon, full width | ~680 / ~880dp total | 300dp per line | Wraps: 3 lines at 1.0, 3–4 at 1.3 (≤ 96dp); allowed (`wrap`), the search column absorbs it with its flexible spaces. |
+| `profile_record_bot` "Bota qarşı: 12 qələbə, 9 məğlubiyyət, 1 heç-heçə" | bodyMedium + 20dp icon in the record card | ~360 / ~470dp | ~264dp | Wraps to 2 lines at 1.0 and 1.3 (allowed). |
 | `profile_category_level_cd` row: "Kinematoqrafiya" + "Səviyyə 12" | category row (name column + trailing level) | name ~140 / ~180dp, level ~85 / ~110dp | ~232dp | At 1.3 the level label moves under the bar when the name needs its full column (`progression.md` C). |
 
 ## Changes against the requirement proposals
@@ -786,6 +831,9 @@ requirement files when convenient. Examples:
 | Gündəlik çağırış #12 hazırdır / 5 sual səni gözləyir. | Title unchanged; body "5 sual səni gözləyir. Bu gün neçəsini tapacaqsan?" |
 | Bildirişlər telefonda söndürülüb (+ Ayarları aç) | Same, as a banner with a full stop; action "Ayarları aç" |
 | Seriya qoruyucusu: 7 günlük seriyada qazanılır | "Seriya qoruyucusu 7 günlük seriyada qazanılır" (no colon: it is a sentence, not a value) |
+| 15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan. (OQ-111) | "15 saniyə ərzində oyunçu tapılmasa, Duello Bot ilə oynayacaqsan. İstəmirsənsə, ləğv et." — "ərzində" reads unambiguously as "within"; the second sentence names the opt-out OQ-111 decided (cancel before 0). The seconds are a placeholder from the server. |
+| Reytinq dəyişmədi · Bot oyunu (DUEL-26 result line) | Two lines: "Reytinq dəyişmədi" + "Bot oyunu reytinqə təsir etmir." (the one-liner does not fit 360dp, see risks) |
+| Bu, məğlubiyyət sayılacaq. Bot oyunu reytinqə təsir etmir. (DUEL-26 leave dialog) | Same + "Vaxt bu arada dayanmır." (as in the real-match dialog) |
 
 ### Tone audit (2026-10-17)
 

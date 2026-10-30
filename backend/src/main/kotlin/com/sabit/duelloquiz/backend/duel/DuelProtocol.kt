@@ -59,8 +59,9 @@ sealed interface ClientMessage {
     @Serializable @SerialName("ping")
     data object Ping : ClientMessage
 
+    /** [capabilities] (v1.2): e.g. [BOT_CAPABILITY]; unknown values are ignored. */
     @Serializable @SerialName("queue.join")
-    data object QueueJoin : ClientMessage
+    data class QueueJoin(val capabilities: List<String> = emptyList()) : ClientMessage
 
     @Serializable @SerialName("queue.leave")
     data object QueueLeave : ClientMessage
@@ -115,14 +116,15 @@ fun parseClientMessage(text: String): ParsedClientMessage {
 // Server → client
 // ---------------------------------------------------------------------------
 
+/** [rating] is null only for the bot (v1.2, OQ-107). */
 @Serializable
-data class PlayerCard(val displayName: String, val avatarUrl: String?, val rating: Int)
+data class PlayerCard(val displayName: String, val avatarUrl: String?, val rating: Int?)
 
 @Serializable
 data class OpponentCard(
     val displayName: String,
     val avatarUrl: String?,
-    val rating: Int,
+    val rating: Int?,
     val connected: Boolean,
     /** While disconnected: end of the informational 10 s reconnect window (OQ-032), else null. */
     val reconnectDeadlineEpochMs: Long?,
@@ -137,8 +139,9 @@ data class OpponentCard(
 data class ResultPlayer(
     val displayName: String?,
     val avatarUrl: String?,
-    val ratingBefore: Int,
-    val ratingAfter: Int,
+    /** Null only for the bot (v1.2). */
+    val ratingBefore: Int?,
+    val ratingAfter: Int?,
     val deleted: Boolean,
 )
 
@@ -185,8 +188,9 @@ sealed interface ServerMessage {
     @Serializable @SerialName("pong")
     data object Pong : ServerMessage
 
+    /** [botAtEpochMs] (v1.2): join + bot wait for a bot-capable entry with the bot enabled, else null. */
     @Serializable @SerialName("queue.joined")
-    data class QueueJoined(val deadlineEpochMs: Long) : ServerMessage
+    data class QueueJoined(val deadlineEpochMs: Long, val botAtEpochMs: Long? = null) : ServerMessage
 
     @Serializable @SerialName("queue.timeout")
     data object QueueTimeout : ServerMessage
@@ -202,6 +206,8 @@ sealed interface ServerMessage {
         val rounds: Int,
         val bet3Limit: Int,
         val deadlineEpochMs: Long,
+        /** v1.2: [OpponentTypes.HUMAN] | [OpponentTypes.BOT]. */
+        val opponentType: String = OpponentTypes.HUMAN,
     ) : ServerMessage
 
     @Serializable @SerialName("match.cancelled")
@@ -288,6 +294,7 @@ sealed interface ServerMessage {
         val missedInARow: MissedCounts,
         val lastResult: RoundResult?,
         val rounds: List<RoundSummary>,
+        val opponentType: String = OpponentTypes.HUMAN,
     ) : ServerMessage
 
     @Serializable @SerialName("match.result")
@@ -301,7 +308,8 @@ sealed interface ServerMessage {
         val ratingBefore: Int,
         val ratingAfter: Int,
         val ratingChange: Int,
-        val opponentRatingAfter: Int,
+        /** Null in a bot match. */
+        val opponentRatingAfter: Int?,
         val suddenDeathPlayed: Int,
         val calibration: List<CalibrationLevel>,
         val rounds: List<RoundSummary>,
@@ -309,6 +317,7 @@ sealed interface ServerMessage {
         val opponent: ResultPlayer,
         /** XP/level/streak change of the receiver (protocol v1.1); null if it could not be stored. */
         val progress: ProgressDto? = null,
+        val opponentType: String = OpponentTypes.HUMAN,
     ) : ServerMessage
 
     @Serializable @SerialName("error")
@@ -345,7 +354,7 @@ data class Outgoing(val seq: Long, val serverNowEpochMs: Long, val message: Serv
 fun internalErrorFor(message: ClientMessage): ServerMessage.Error {
     val (ref, matchId, roundNo) = when (message) {
         ClientMessage.Ping -> Triple("ping", null, null)
-        ClientMessage.QueueJoin -> Triple("queue.join", null, null)
+        is ClientMessage.QueueJoin -> Triple("queue.join", null, null)
         ClientMessage.QueueLeave -> Triple("queue.leave", null, null)
         is ClientMessage.MatchRejoin -> Triple("match.rejoin", message.matchId, null)
         is ClientMessage.MatchLeave -> Triple("match.leave", message.matchId, null)

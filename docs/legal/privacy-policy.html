@@ -172,7 +172,7 @@
              infra/README.md (backups 14 days, max 30; Docker log rotation 5 × 20 MB). Analytics 2 months = GA4 default, OQ-100. -->
         <ul>
           <li><strong>Hesab, profil, oyun və irəliləyiş məlumatları</strong> — hesabın mövcud olduğu müddətdə. Hesabı silərkən dərhal silinir.</li>
-          <li><strong>Keçmiş duellər</strong> — hesab silinəndə anonimləşdirilir: rəqiblərin tarixçəsi üçün qalır, amma sənə bağlı olmur (8-ci bölmə).</li>
+          <li><strong>Keçmiş duellər</strong> — hesab silinəndə real oyunçularla duellər anonimləşdirilir: rəqiblərin tarixçəsi üçün qalır, amma sənə bağlı olmur (8-ci bölmə). Duello Bot ilə oyunlar isə tamamilə silinir.</li>
           <li><strong>Bildiriş tokeni</strong> — hesabdan çıxanda, token etibarsız olanda, 60 gün istifadə olunmayanda və hesab silinəndə silinir.</li>
           <li><strong>Bildirişlərin göndərmə qeydi</strong> — 90 gün, sonra avtomatik silinir.</li>
           <li><strong>Ehtiyat nüsxələr</strong> — verilənlər bazasının gündəlik nüsxəsi 14 gün saxlanılır. Silinmiş məlumatlar ən gec 30 gün ərzində ehtiyat nüsxələrdən də yox olur.</li>
@@ -269,7 +269,7 @@
         <h3>6. Retention</h3>
         <ul>
           <li>Account, profile, game and progress data: as long as your account exists; deleted immediately when you delete the account.</li>
-          <li>Past duels: anonymized on account deletion; they stay in your opponents' history but are no longer linked to you.</li>
+          <li>Past duels: duels against real players are anonymized on account deletion; they stay in your opponents' history but are no longer linked to you. Matches against Duello Bot are deleted completely.</li>
           <li>Notification token: deleted on sign-out, when it becomes invalid, after 60 days without use and on account deletion.</li>
           <li>Notification send log: 90 days, then deleted automatically.</li>
           <li>Backups: a daily database backup is kept for 14 days; deleted data is gone from backups within 30 days at the latest.</li>

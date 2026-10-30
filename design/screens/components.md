@@ -397,6 +397,16 @@ TalkBack (the surrounding element carries the name).
 
 - **Deleted player**: `scheme.surfaceContainerHighest` circle with the `person_off`
   icon in `scheme.onSurfaceVariant`; name `common_deleted_player`.
+- **Bot** (OQ-107): circle in `scheme.surface` with the app mark centred
+  (`brand/logo-mark-light.svg` / `logo-mark-dark.svg` as vector drawables by theme,
+  the same `DuelloLogoMark` as on welcome), mark size = 70 % of the circle
+  (`size.avatar` 40dp → 28dp, above the 24dp brand minimum; 20dp picker markers
+  (`duel-reveal.md`) → the circle alone in `scheme.tertiaryContainer` with a 14dp
+  `smart_toy` icon in `scheme.onTertiaryContainer`, because the mark is not legible
+  below 24dp). Always a local resource: never loaded from a URL, never a photo,
+  never the letter fallback. Chosen by `opponentType = bot` (protocol) / the bot
+  flag in `MatchSummary`, never by comparing the display name. Decorative like the
+  other variants; it still gets the opponent accent ring in the duel.
 - **Accent ring (duel only)**: 2dp ring outside the avatar (avatarXLarge: 3dp) —
   self `scheme.primary`, opponent `scheme.tertiary`. The same two accents mark self
   and opponent everywhere in the duel, so "who is who" never depends on position
@@ -466,7 +476,13 @@ Content, top to bottom:
 1. Row: avatar `size.avatar` with accent ring, `space.sm`, column:
    - name `type.labelLarge` `scheme.onSurface`, 1 line, ellipsis. Self shows
      `duel_you` ("Sən"); the opponent shows the display name (truncation accepted,
-     DUEL-05; the full name is on the intro and the result screen);
+     DUEL-05; the full name is on the intro and the result screen). **Bot
+     opponent**: the name slot shows the Bot badge (§32, panel placement) instead
+     of the text "Duello Bot" — the 84dp name slot cannot hold "Duello Bot" plus a
+     badge at font scale 1.3 (≈ 123dp + 64dp), and a truncated "Duello B…" next to
+     "Bot" reads worse than "Bot" alone, mirroring "Sən" on the own panel. The full
+     name is on the intro and the result screen. The panel is one TalkBack element
+     starting with `duel_opponent_bot_cd` ("Rəqib: Duello Bot, bot");
    - score `type.titleLarge` `scheme.onSurface`, tabular figures, U+2212 for
      negatives. Content description `duel_player_score_cd`.
 2. `space.sm`, **status slot** (min 28dp): a status pill (§17) or, in the result
@@ -587,8 +603,10 @@ one of `duel_calibration_hint_*` chosen by the rule in `duel-result.md`. Footnot
 ## 21. Match history row (profile)
 
 Material 3 `ListItem` (§14), three-line, not clickable (PROF-04):
-- Leading: avatar `size.avatar` (deleted-player variant, §13).
-- Headline: opponent name `type.bodyLarge`, 1 line, ellipsis.
+- Leading: avatar `size.avatar` (deleted-player and bot variants, §13).
+- Headline: opponent name `type.bodyLarge`, 1 line, ellipsis. Bot match: the name
+  from the API (fallback `duel_bot_name`), `space.sm`, Bot badge (§32, inline);
+  the name gives way (ellipsis), the badge never does.
 - Supporting line 1: `profile_match_supporting` = result word · score
   ("Qələbə · 640 : 410"), `type.bodyMedium`; the result word is coloured
   `game.correct` (win), `game.wrong` (loss), `scheme.onSurfaceVariant` (draw,
@@ -600,8 +618,9 @@ Material 3 `ListItem` (§14), three-line, not clickable (PROF-04):
   `profile_match_label_self_forfeit`), `profile_match_label_sudden_death`.
 - Trailing column, end-aligned: rating change `type.titleSmall` tabular
   (`game.correct` +, `game.wrong` −, `scheme.onSurfaceVariant` 0), date
-  `type.labelSmall` `scheme.onSurfaceVariant`.
-- Merged for TalkBack: `profile_match_cd`.
+  `type.labelSmall` `scheme.onSurfaceVariant`. Bot match: `profile_match_rating_none`
+  ("—") in `scheme.onSurfaceVariant`, never "0" or "+0" (DUEL-28).
+- Merged for TalkBack: `profile_match_cd` (bot match: `profile_match_bot_cd`).
 
 ## 22. Duel overlay card (self reconnecting)
 
@@ -624,6 +643,20 @@ title `type.titleMedium` + trailing total `type.labelLarge`
 `scheme.onSurfaceVariant`), `space.md`, label `type.bodyLarge` `scheme.onSurface`
 (full width, never truncated), trailing count `type.titleMedium` tabular. The card
 is one TalkBack element (`profile_record_cd`). No win rate in the MVP (PROF-03).
+Rows and total count **real-player matches only** (OQ-110).
+
+**Bot line** (only when the player has at least one counted bot match): `space.md`,
+1dp divider `scheme.outlineVariant`, `space.md`, row: 20dp `smart_toy` icon
+`scheme.onSurfaceVariant`, `space.md`, `profile_record_bot` ("Bota qarşı: 3 qələbə,
+2 məğlubiyyət, 0 heç-heçə", built from the plurals `profile_record_bot_wins` /
+`_losses` / `_draws`) `type.bodyMedium` `scheme.onSurfaceVariant`, wraps (2 lines at
+1.3 are expected). Not a fourth stat row on purpose: it must not read as part of the
+record. Its text is appended to the card's TalkBack label.
+
+**Real record empty, bot line present** (played only against the bot, DUEL-28): the
+three rows and the total are replaced by `profile_record_empty_real` ("Hələ
+oyunçulara qarşı oynamamısan.") `type.bodyMedium` `scheme.onSurfaceVariant`; the bot
+line follows without the divider. TalkBack: the two texts in order.
 
 ---
 
@@ -707,6 +740,11 @@ White game card (§0 without press): `scheme.surfaceContainerLowest`, 2dp
    16dp category icon in `category.<slot>.onContainer`, `space.sm`,
    `progress_category_level_up` ("Coğrafiya: səviyyə 3") `type.bodyMedium`
    `scheme.onSurface`, wraps.
+5a. **Bot note** (duel result of a bot match, only when the XP row is shown),
+   `space.xs` under the XP row: `progress_xp_bot_note` ("Bota qarşı oyunda yarım XP
+   qazanırsan.") `type.bodyMedium` `scheme.onSurfaceVariant`, wraps. The number in
+   the XP row is the server's value ("+25 XP"); the client never halves anything
+   (DUEL-27). Appended to `progress_card_cd`.
 6. **Cap note** (only when the server says XP was capped for this game type today,
    PROG-09), replaces the XP row: 20dp `info` icon + `progress_xp_capped`
    `type.bodyMedium` `scheme.onSurfaceVariant`, wraps. Shown once per Baku day per
@@ -867,3 +905,41 @@ vertically centred on the headline block and never pushed out by long text.
 | Save failed / offline | Switch animates back; snackbar with the reason |
 | Disabled (blocked by the phone, channel off, loading) | M3 disabled colours; supporting text explains why (`settings_notif_channel_off`) — the reason is always written, never only greyed out |
 | Loading (first load, no cache) | Switch replaced by a 20dp progress indicator, row not toggleable |
+
+---
+
+Component 32 was added with the bot opponent (2026-10-30, OQ-106 … OQ-111,
+DUEL-23 … DUEL-29). It reuses existing roles; no new colour token.
+
+## 32. Bot badge — `BotBadge`
+
+Marks the bot opponent wherever its name or panel appears, so a bot is never taken
+for a person (DUEL-24). Not interactive, not focusable on its own (the surrounding
+element reads `duel_opponent_bot_cd` / `profile_match_bot_cd`).
+
+**Visual**: pill, `shape.full`, min height 20dp (grows with font scale), padding
+`space.sm` horizontal × `space.xxs` vertical, content centred: 14dp `smart_toy`
+icon (Material Symbols Rounded, filled), `space.xs`, `duel_bot_badge` ("Bot")
+`type.labelMedium`. Container `scheme.tertiaryContainer`, icon and text
+`scheme.onTertiaryContainer` (the pair is in `tools/contrast.py`, both themes pass
+4.5:1). Tertiary because it belongs to the opponent side (opponent accent =
+`scheme.tertiary`, §13); it is a type label, so it has no depth edge and no press
+state. Never truncated, never shrunk by a `weight`: neighbouring text ellipsizes
+first. Width ≈ 57dp at font scale 1.0, ≈ 64dp at 1.3 (the icon does not scale).
+
+Rules: plain robot-head symbol and the word "Bot" only — no chips, coins, dice,
+cards, crowns, stars or "AI" sparkle; no animation (it appears with its parent).
+The badge keeps its colours on every background it sits on (white game card, reveal
+face `game.correctContainer` / `game.wrongContainer`, `gradient.resultWin`): the
+pill is opaque and its text is checked against its own container only.
+
+| Placement | Where | Layout |
+| --- | --- | --- |
+| Inline | Intro opponent row (`duel-intro.md`), history row headline (§21) | Same line as the name, `space.sm` after it, vertically centred on the first text line; the name ellipsizes, the badge stays. |
+| Stacked | Result score column (`duel-result.md`) | Own line `space.xxs` under the name, centred (the ~130dp column cannot hold both at 1.3). |
+| Panel | Opponent player panel in every phase (§16, `duel-match.md`, `duel-reveal.md`) | Replaces the name text in the name slot, start-aligned. |
+
+Width check (360dp, font scale 1.3): intro name column 240dp — "Duello Bot"
+`type.titleMedium` ≈ 130dp + 8 + 64 = 202dp, one line. History headline 264dp —
+≈ 124dp + 8 + 64 = 196dp, one line. Panel name slot 84dp — badge 64dp, fits.
+Result column — stacked, fits.

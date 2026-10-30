@@ -118,6 +118,7 @@ markers), timer ring (neutral), status line.
 | Sudden death | Score unchanged; faces show Əminlik 1 and correct/wrong; status line tells the outcome (`duel-special-rounds.md`) | | |
 | Last round | After the deadline → match result (`duel-result.md`). If `match.result` arrives during the hold, wait for the hold to end (max 3 s), then navigate. |
 | Forfeit after this round | `round.result` reveal plays normally; then `match.result` → result screen with the forfeit reason. |
+| Bot opponent | Identical reveal: both panels flip in the same frame, the bot's Əminlik, answer and points are shown like a human's. The opponent panel keeps the Bot badge in its name slot on the reveal face (opaque pill, colours unchanged on `game.correctContainer` / `game.wrongContainer`). The bot's picker marker on the option cards is the 20dp bot marker (`components.md` §13). |
 | Loading / empty / error | Not applicable: everything comes in `round.result`. |
 
 ## Accessibility
@@ -126,7 +127,9 @@ markers), timer ring (neutral), status line.
   +237, rəqib −100. Hesab 537 : 300." — outcome word, own points, opponent points,
   scores (DUEL-09).
 - Panels are single elements: "Sən: Əminlik 2, B variantı, düzgün, +237" (built
-  from the reveal-face strings).
+  from the reveal-face strings). Bot: the opponent panel starts with
+  `duel_opponent_bot_cd` ("Rəqib: Duello Bot, bot: Əminlik 3, A variantı, səhv,
+  −200"); `duel_reveal_summary_cd` keeps "rəqib" (the bot is the opponent).
 - Options add state descriptions: `quiz_option_state_correct_cd`,
   `quiz_option_state_wrong_cd`, `duel_option_picked_by_you_cd`,
   `duel_option_picked_by_opponent_cd`.
@@ -140,4 +143,5 @@ markers), timer ring (neutral), status line.
 `duel_delta_zero`, `duel_score_pair`, `duel_player_score_cd`,
 `duel_option_picked_by_you_cd`, `duel_option_picked_by_opponent_cd`,
 `quiz_option_state_correct_cd`, `quiz_option_state_wrong_cd`,
-`quiz_option_1_cd` … `quiz_option_4_cd`.
+`quiz_option_1_cd` … `quiz_option_4_cd`; bot: `duel_bot_badge`,
+`duel_opponent_bot_cd`.

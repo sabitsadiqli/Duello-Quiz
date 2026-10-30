@@ -30,7 +30,7 @@ or a phone call must never decide a match silently or unpredictably.
 | --- | --- | --- |
 | DUEL-01 | As a player, I want a duel entry on home that only appears when the duel is released and tells me when I cannot play, so that I never hit a dead end. | OQ-020, OQ-029, OQ-061 |
 | DUEL-02 | As a player, I want to join a matchmaking queue and see that the app is searching, so that I know an opponent is being found. | OQ-053 |
-| DUEL-03 | As a player, I want the search to stop after 30 s with a retry option, and to cancel it myself, so that I am never stuck searching. | OQ-028, OQ-037, OQ-065, OQ-066, OQ-073 |
+| DUEL-03 | As a player, I want the search to stop after 30 s with a retry option when no bot can be offered, and to cancel it myself, so that I am never stuck searching. | OQ-106 (supersedes OQ-028), OQ-037, OQ-065, OQ-066, OQ-073 |
 | DUEL-04 | As the product owner, I want one queue entry and one match per user at a time, also across two devices, so that nobody plays against themselves or in two matches. | OQ-040, OQ-062 |
 | DUEL-05 | As a player, I want to see who my opponent is when a match is found, so that the duel feels personal. | OQ-024, OQ-037, OQ-065 |
 | DUEL-06 | As a player, I want to see the question alone for 3 s, so that I can judge how sure I am before seeing options. | — |
@@ -50,6 +50,13 @@ or a phone call must never decide a match silently or unpredictably.
 | DUEL-20 | As a player, I want a result screen with winner, scores and rating change, so that I know how the match ended. | OQ-026, OQ-068 |
 | DUEL-21 | As a player, I want a calibration card showing my accuracy per Əminlik level, so that I learn how well I judge my own knowledge. | OQ-027, OQ-059 |
 | DUEL-22 | As a player, I want my Elo rating updated after every finished match, so that my rating reflects my results. | OQ-038, OQ-039 |
+| DUEL-23 | As a player, I want a bot opponent when no real player is found within 15 s, so that I can always play even when few people are online. | OQ-106; blocked by OQ-111 (search-screen hint) |
+| DUEL-24 | As a player, I want to always know when my opponent is a bot, so that I am never misled into thinking it is a person. | OQ-106; blocked by OQ-107 |
+| DUEL-25 | As a player, I want the bot to play by the same rules and at a strength close to mine, so that a bot match is fair and winnable about half the time. | OQ-106; blocked by OQ-108 |
+| DUEL-26 | As a player, I want bot matches to end, forfeit and leave exactly like real matches but never change my Elo, so that the rules stay simple and my rating means "against people". | OQ-106 |
+| DUEL-27 | As a player, I want half XP and streak credit for a finished bot match, so that playing alone still counts without making bots a farm. | OQ-106; blocked by OQ-109 |
+| DUEL-28 | As a player, I want bot matches marked in my history and kept apart from my record against players, so that my stats stay honest. | OQ-106; blocked by OQ-110 |
+| DUEL-29 | As the product owner, I want the bot's edge cases (timing races, midnight, deletion, restart, two devices) defined, so that the bot never breaks a rule that holds for real matches. | OQ-106, OQ-087, OQ-069 |
 
 ### DUEL-01 Duel entry and availability
 
@@ -90,7 +97,11 @@ API: `queue.join` → `queue.joined {deadlineEpochMs}` (seq 0).
   is not shown (OQ-028).
 - Given another user is already waiting, When this user joins, Then the two are
   matched at once in join order (oldest waiting user first); rating, category and
-  region are not used for pairing in the MVP.
+  region are not used for pairing in the MVP. A real opponent is always preferred
+  over the bot (DUEL-23).
+- Given the bot is enabled (OQ-106), When the search screen is shown, Then it also
+  tells the user that a bot follows after 15 s (copy and countdown: DUEL-23,
+  OQ-111).
 - Given the queue join takes longer than 1 s (slow network), When the user waits,
   Then the search screen is shown at once with "Qoşulur…" instead of the countdown;
   the countdown starts when `queue.joined` arrives, never from the tap.
@@ -103,6 +114,10 @@ API: `queue.join` → `queue.joined {deadlineEpochMs}` (seq 0).
 ### DUEL-03 Queue timeout, retry and leaving the queue
 
 API: `queue.timeout`, `queue.leave` → `queue.left`, `match.cancelled {by}`.
+
+Since OQ-106 (2026-10-30) the queue timeout is only a fallback: with the bot enabled
+a lone player gets a bot match at join + 15 s (DUEL-23) and never reaches the 30 s
+deadline. The criteria below apply when the bot is disabled or could not be started.
 
 - Given no opponent was found by the queue deadline, When the server sends
   `queue.timeout` and removes the entry, Then "Rəqib tapılmadı" with "Hazırda başqa
@@ -695,6 +710,220 @@ calibration, rounds}` (`duel-protocol.md` §5).
 - Given a rating would fall very low, When computed, Then there is no floor in the MVP
   (OQ-039); ratings may go below 1000 freely.
 - Given a quiz session, When it ends, Then Elo never changes (`docs/mvp-spec.md` §1).
+- Given a bot match (DUEL-26), When it ends, Then Elo never changes.
+
+### Bot opponent (DUEL-23 … DUEL-29)
+
+Decided by Sabit on 2026-10-30 (OQ-106, supersedes OQ-028 "no bots"). Numbers:
+`docs/mvp-spec.md` §2 "Bot opponent" and §10. The bot is a server-side player; it has
+no account, no Firebase user and no Elo rating. Ghost duels (replaying real players),
+friends and invites stay out of scope. Field names below (`opponentType`,
+`botAtEpochMs`) are proposals for `backend-dev`, who owns `docs/api/duel-protocol.md`;
+the protocol wins on names once written.
+
+### DUEL-23 Bot fallback in matchmaking
+
+Decided: OQ-111 (Sabit 2026-10-30) for the search-screen copy and countdown; the server
+behaviour is decided (OQ-106).
+
+- Given the bot is enabled (server config, default on) and a user is alone in the
+  queue, When 15 s (server clock) have passed since their `queue.joined` and no other
+  real player is waiting, Then the server pairs them with the bot and sends
+  `match.found` (DUEL-05 intro, 3 s) with `opponentType = bot`; no `queue.timeout` is
+  sent.
+- Given a second real player joins before the 15 s, When the matcher runs, Then the
+  two real players are paired at once (DUEL-02); the bot is never used while another
+  real player is waiting.
+- Given the bot pairing and a real join are due at the same server moment (e.g. B's
+  `queue.join` arrives at A's 15.000 s), When the server handles them, Then queue
+  events are processed one at a time in arrival order and the bot pairing re-checks
+  the queue right before pairing: if B is already queued, A and B are paired and no
+  bot match is created; if the bot pairing was made first, B starts their own 15 s
+  wait. A user is never in a bot match and a real match at the same time.
+- Given two real players are both waiting (only possible for one matcher step), When
+  either reaches 15 s, Then they are paired with each other, never each with a bot.
+- Given the user sends `queue.leave` at 14.9 s, When the server receives it before
+  the bot pairing, Then the entry is removed, `queue.left` is sent and no bot match is
+  created.
+- Given `queue.leave` crosses the bot pairing (received during the 3 s bot intro),
+  When the server handles it, Then the bot match is cancelled exactly like OQ-037
+  (`match.cancelled {by: self}`, not in history, no XP); nobody is re-queued (the bot
+  has no queue entry).
+- Given the app goes to the background while searching, When it sends `queue.leave`
+  (DUEL-03), Then no bot match is created; on return the user sees "Axtarış
+  dayandırıldı" as today.
+- Given the bot is disabled or the server cannot start a bot match (internal error),
+  When the 15 s pass, Then the user keeps waiting for a real player until the 30 s
+  queue deadline and the DUEL-03 timeout applies ("Rəqib tapılmadı").
+- Given `duel_unavailable` (fewer than 10 active questions, DUEL-19), When the user
+  sends `queue.join`, Then nothing changes: no queue entry, no bot match.
+- Given a player re-queued at the front after a cancelled real match (DUEL-03), When
+  they get the new `queue.joined`, Then their bot wait restarts at that join + 15 s.
+- Given "Yenidən oyna" or "Yenidən axtar", When the user joins again, Then the normal
+  queue starts; the next opponent may be a real player or the bot again (no limit).
+- Given the search screen (OQ-111), When `queue.joined` carries
+  `botAtEpochMs`, Then the screen shows "Rəqib axtarılır…", the countdown to
+  `botAtEpochMs` and the line "15 saniyəyə oyunçu tapılmasa, Duello Bot ilə
+  oynayacaqsan."; with `botAtEpochMs = null` (bot disabled) it shows the 30 s
+  countdown as before.
+
+### DUEL-24 Bot identity and transparency
+
+Decided: OQ-107 (Sabit 2026-10-30).
+
+- Given a bot match, When `match.found` arrives, Then the intro shows "Rəqib
+  tapıldı!" with the bot's fixed name "Duello Bot", the bot avatar (the app mark from
+  local resources, never a photo) and a "Bot" badge next to the name instead of a
+  rating; the own panel is unchanged. The line "Bot oyunu reytinqə təsir etmir."
+  is shown under the players.
+- Given any duel screen during a bot match (question, Əminlik, answer, result,
+  reconnect overlay, leave dialog), When the opponent panel is shown, Then it always
+  shows the "Bot" badge; the bot never has a human name, a human photo or a rating.
+- Given the bot name, When it is chosen, Then it is the same for every bot match and
+  every user; "duello" is a reserved display-name word (OQ-051), so no human can be
+  called "Duello Bot".
+- Given the bot's name and badge text, When rendered, Then they come from string
+  resources (Android `strings.xml`, backend i18n for `displayName`), never hard-coded.
+- Given TalkBack, When the opponent panel is focused, Then it reads "Rəqib: Duello
+  Bot, bot".
+- Given 360 dp at font scale 1.3, When the panel shows "Duello Bot" with the badge,
+  Then both fit on one line without truncating the badge.
+- Given the bot's internals (strength, planned answers), When any message is sent to
+  the client, Then nothing about them is included (DUEL-18 applies to the bot's
+  values like to a human opponent's).
+
+### DUEL-25 Bot play behaviour
+
+Decided: OQ-108 (Sabit 2026-10-30).
+
+- Given a bot match, When it is created, Then it uses the same 10 questions, phases,
+  timers, scoring, Əminlik 3 limit, All-in round, sudden death, grace and phase
+  closing as a real match (DUEL-06 … DUEL-11, DUEL-19); only the opponent's decisions
+  come from the server's bot instead of a socket.
+- Given a round starts, When the bot decides whether it "knows" the answer, Then it
+  draws once with probability `p` in 45–80 %, from the player's Elo rating at match
+  start and the question's `difficulty` (formula: OQ-108); the draw never depends on
+  the player's Əminlik, answer or timing in that round.
+- Given the confidence phase, When the bot picks, Then its Əminlik is consistent with
+  its draw (mostly 2–3 when it knows, mostly 1 when it does not; OQ-108), respects the
+  Əminlik 3 limit (never a 3rd use, never `bet_limit_reached`) and is locked at a
+  random time inside the 5 s phase; the player sees "Seçdi" without a value, as for a
+  human.
+- Given the answer phase, When the bot answers, Then it answers at a random time of
+  3–9 s after `round.options` (server scheduler); if it "knows", it chooses the
+  correct option, otherwise one of the 3 wrong options at random; the player sees
+  "Cavabladı" at that moment. The bot never times out and never misses a round.
+- Given the bot's answer, When it is scored, Then `answered_ms` = the bot's planned
+  delay and the speed bonus uses the same formula (OQ-038); round 7 doubles its
+  Əminlik points like any player's.
+- Given sudden death, When the bot answers, Then the same `p` and 3–9 s timing apply;
+  ties on identical `answeredMs` follow OQ-040.
+- Given both the player and the bot acted, When the confidence or answer phase is
+  checked, Then it ends early as in OQ-035.
+- Given the target, When strength is tuned, Then a player wins about half of their bot
+  matches; the backend logs `p`, outcome and the player's rating per bot match so the
+  config can be tuned without an app update.
+- Given a modified client, When it plays against the bot, Then it learns nothing
+  earlier than against a human (DUEL-18); the bot has no access to the player's
+  hidden values beyond what the server already holds, and does not react to them.
+
+### DUEL-26 Result, Elo, forfeit and disconnect in bot matches
+
+- Given a bot match ends normally, by sudden death or as a draw, When `match.result`
+  is sent, Then `outcome`, `endReason`, scores and calibration are computed as for a
+  real match; `ratingBefore = ratingAfter` = the player's current rating,
+  `ratingChange = 0`, the opponent's ratings are `null`, and no rating row changes
+  (no Elo transaction at all).
+- Given the result screen of a bot match, When shown, Then the rating line reads
+  "Reytinq dəyişmədi · Bot oyunu" instead of "1016 (+16)"; XP and streak follow
+  DUEL-27.
+- Given the player sends `match.leave` (confirmed through the DUEL-15 dialog, text
+  for a bot match: "Bu, məğlubiyyət sayılacaq. Bot oyunu reytinqə təsir etmir."),
+  When the server receives it, Then the match ends as a forfeit by the player
+  (`forfeitCause = left`), no Elo change, 0 XP and no active day; the user goes home
+  with "Oyundan çıxdın. Məğlubiyyət sayıldı.".
+- Given the player misses 2 rounds in a row, When the second resolves, Then the match
+  ends as a forfeit by the player (`forfeitCause = missed_rounds`), as in DUEL-14.
+- Given the bot, When rounds resolve, Then it never misses, never disconnects and
+  never forfeits; the player never sees "Rəqib oyunu tərk etdi" or
+  `opponent.connection` in a bot match, and the "both gone → abandoned" case cannot
+  happen.
+- Given the player disconnects, When the socket drops, Then the bot keeps playing on
+  server time (the match does not pause or wait for the player); DUEL-13 rejoin,
+  backgrounding (DUEL-16) and process death apply unchanged.
+- Given a backend restart during a bot match, When the player reconnects, Then the
+  match is `abandoned` (OQ-067), no XP, shown as "Ləğv edildi" (DUEL-13).
+- Given the bot match intro, When the player sends `match.leave`, Then it is a forfeit
+  like any leave (OQ-065); only a crossing `queue.leave` cancels (DUEL-23).
+
+### DUEL-27 XP and streak for bot matches
+
+Decided: OQ-109 (Sabit 2026-10-30).
+
+- Given a bot match ends `finished`, When the server finalizes it, Then the player
+  gets half of the duel XP of OQ-081: 10 for playing, +15 for a win, +8 for a draw
+  (OQ-109: 7.5 rounded up); a win gives 25, a loss 10, a draw 18. All
+  of it is overall XP only (OQ-084).
+- Given the player forfeited (left or missed rounds), or the match was abandoned or
+  cancelled, When finalized, Then 0 XP (same as OQ-081).
+- Given caps (OQ-109), When the bot match is the 21st or later duel
+  with XP on that Baku day (real and bot matches together), Then it gives 0 XP with
+  `xpCapped = true`; the 3-per-opponent cap of OQ-082 does not apply to the bot.
+- Given a finished bot match the player did not forfeit, When finalized, Then the Baku
+  day in which it started becomes active for the streak (OQ-085, OQ-087).
+- Given the result screen, When `match.result.progress` arrives, Then XP, level-up and
+  streak are shown as in PROG-02 / PROG-06 ("+25 XP"); the client never halves or
+  computes XP itself.
+- Given the same bot match is finalized twice, When the second award is attempted,
+  Then nothing is added (idempotent per user and match, PROG-01).
+- Given a bot match, When XP is awarded, Then the `progress_awards` row has no
+  opponent (`opponent_id NULL`) and is marked as a bot source, so the per-opponent
+  cap never groups bot matches with deleted opponents.
+
+### DUEL-28 Bot matches in history, record and calibration
+
+Decided: OQ-110 (Sabit 2026-10-30).
+
+- Given "Son oyunlar" (PROF-04), When a bot match is listed, Then it appears among the
+  last 20 like other matches, with the bot avatar, "Duello Bot", the "Bot" badge, the
+  result label and the scores; the rating column shows "—" instead of "+0".
+- Given the duel record (PROF-03), When computed (OQ-110), Then
+  "Qələbə / Məğlubiyyət / Heç-heçə" and the total count only matches against real
+  players; bot matches are shown in a separate line "Bota qarşı: 3 qələbə, 2
+  məğlubiyyət, 0 heç-heçə" (hidden when there are none).
+- Given calibration stats (PROF-05) and the calibration card (DUEL-21), When computed,
+  Then bot matches count with the same round rules (OQ-027), because they measure the
+  player's own Əminlik, not the opponent.
+- Given a user who played only bot matches, When the profile is shown, Then the
+  record shows the empty-state text for real players and the "Bota qarşı" line;
+  calibration is filled.
+- Given an abandoned or cancelled bot match, When the profile is built, Then the same
+  rules as for real matches apply (abandoned listed as "Ləğv edildi", cancelled not
+  listed, neither counted).
+
+### DUEL-29 Bot edge cases
+
+- Given a bot match starts at 23:59 Baku and ends at 00:02, When it is finalized, Then
+  XP, the XP cap count and the active day belong to the day it started (OQ-087).
+- Given the user deletes the account (SET-05) during a bot match, When `DELETE /v1/me`
+  runs, Then the match ends as a forfeit by the user first (OQ-069), and then the bot
+  match with its rounds and answers is deleted together with the user (no other
+  person is in it, so nothing is anonymized); real matches are still anonymized as
+  before (`docs/mvp-spec.md` §3a).
+- Given finished bot matches in the history, When the account is deleted, Then all of
+  them (matches, rounds, answers, XP rows) are deleted in the same transaction.
+- Given device B connects while the user plays a bot match on device A, When it
+  connects, Then B takes over the seat exactly as in DUEL-04; the bot keeps playing.
+- Given a user in a bot match sends `queue.join` (second tab or bug), When received,
+  Then `error already_in_match` with `matchId` and `match.state` follow (DUEL-04).
+- Given many users get bot matches at the same time, When they run, Then each bot
+  match is independent (one bot instance per match, no shared state between bot
+  matches), runs in the single backend replica (OQ-070) and costs no external service.
+- Given an app whose `protocolVersion` is below the first bot-capable version (an app
+  that does not know `opponentType`), When it would get a bot match, Then the server
+  does not offer the bot to it (it falls back to the 30 s queue), unless
+  `backend-dev` raises the minimum version so old apps get `upgrade_required`; an old
+  app must never show the bot as a human with a fake rating (OQ-107).
 
 ## 3. Business rules
 
@@ -720,6 +949,10 @@ calibration, rounds}` (`duel-protocol.md` §5).
   `forfeitCause = missed_rounds`); `match.leave` → forfeit (`forfeitCause = left`).
 - Minimum pool: at least 10 active questions in total (7 rounds + 3 sudden death).
 - One queue entry or running match per user; the newest connection wins (DUEL-04).
+- Bot opponent (OQ-106): offered to a lone player at join + 15 s, never while another
+  real player waits; 30 s timeout only when the bot is disabled; no Elo; half duel XP;
+  active day like a real match; deleted with the user. Numbers: `docs/mvp-spec.md` §2
+  "Bot opponent" and §10.
 - Match statuses: `active` → `finished` | `abandoned` | `cancelled`; end reasons
   `normal`, `sudden_death`, `draw`, `forfeit`, `abandoned` (`duel-protocol.md` §8).
 - Deployment: the duel runs on a single backend replica; the queue and running
@@ -729,8 +962,10 @@ calibration, rounds}` (`duel-protocol.md` §5).
 
 ## 4. Out of scope
 
-Rematch and challenges (OQ-025), friends and invites, ghost/bot opponents, rating-
-based matchmaking, category choice for duels, chat or emojis between players,
+Rematch and challenges (OQ-025), friends and invites, ghost duels (replaying recorded
+real players), choosing to play a bot on purpose (a "Botla oyna" button) or a setting
+to refuse bots (OQ-111), bot difficulty levels chosen by the user, several bot
+personalities or names, rating-based matchmaking, category choice for duels, chat or emojis between players,
 spectating, tournaments, leaderboards, push notifications ("someone is searching"),
 sound effects (OQ-054), cheat detection beyond server rule enforcement, more than one
 backend replica or region (OQ-070).
@@ -743,23 +978,31 @@ Firebase Analytics naming; no question or option text, no opponent identifiers.
 | --- | --- | --- |
 | `duel_queue_join` | `retry` (bool) | `queue.joined` received |
 | `duel_queue_leave` | `reason`: `user_cancel` \| `background` \| `disconnect`, `waited_ms` | Left queue before a match |
-| `duel_queue_timeout` | — | "Rəqib tapılmadı" shown |
-| `duel_match_found` | `waited_ms`, `rating_diff` (opponent − own, bucketed by 50) | `match.found` received |
-| `duel_match_cancelled` | `by`: `self` \| `opponent` | `match.cancelled` received |
-| `duel_confidence` | `round_no`, `level` (1–3), `defaulted` (bool), `all_in` (bool) | Result phase of a regular round |
-| `duel_answer` | `round_no`, `correct` (bool), `timed_out` (bool), `answered_ms`, `sudden_death` (bool) | Result phase |
-| `duel_disconnect` | `phase`, `round_no`, `close_code` | Socket lost during a match |
-| `duel_reconnect` | `success` (bool), `gap_ms` | Rejoin finished or given up |
-| `duel_match_end` | `result`: `win` \| `loss` \| `draw` \| `abandoned`, `end_reason`, `forfeit_cause`, `score_own`, `score_opponent`, `rating_delta`, `sudden_death_count` | `match.result` shown (once) |
-| `duel_leave_confirmed` | `round_no`, `offline` (bool) | DUEL-15 "Çıx" confirmed |
-| `duel_play_again` | — | "Yenidən oyna" tapped |
+| `duel_queue_timeout` | `bot_enabled` (bool, from `botAtEpochMs != null`) | "Rəqib tapılmadı" shown |
+| `duel_match_found` | `opponent_type`: `human` \| `bot`, `waited_ms`, `rating_diff` (opponent − own, bucketed by 50; omitted for `bot`) | `match.found` received |
+| `duel_match_cancelled` | `by`: `self` \| `opponent`, `opponent_type` | `match.cancelled` received |
+| `duel_confidence` | `round_no`, `level` (1–3), `defaulted` (bool), `all_in` (bool), `opponent_type` | Result phase of a regular round |
+| `duel_answer` | `round_no`, `correct` (bool), `timed_out` (bool), `answered_ms`, `sudden_death` (bool), `opponent_type` | Result phase |
+| `duel_disconnect` | `phase`, `round_no`, `close_code`, `opponent_type` | Socket lost during a match |
+| `duel_reconnect` | `success` (bool), `gap_ms`, `opponent_type` | Rejoin finished or given up |
+| `duel_match_end` | `opponent_type`, `result`: `win` \| `loss` \| `draw` \| `abandoned`, `end_reason`, `forfeit_cause`, `score_own`, `score_opponent`, `rating_delta` (0 for `bot`), `sudden_death_count` | `match.result` shown (once) |
+| `duel_leave_confirmed` | `round_no`, `offline` (bool), `opponent_type` | DUEL-15 "Çıx" confirmed |
+| `duel_play_again` | `opponent_type` (of the match just ended) | "Yenidən oyna" tapped |
 | `duel_upgrade_required` | `client_protocol` | Upgrade screen shown |
 | `duel_unavailable` | — | `duel_unavailable` received |
 | `duel_session_replaced` | — | Close code `4001` received |
 
+`opponent_type` is a string parameter (`human` | `bot`) so every duel funnel can be
+split; the key questions for the closed test are the share of bot matches, the bot
+win rate (target about 50 %, DUEL-25) and whether "Yenidən oyna" after a bot match is
+as frequent as after a real one.
+
 Backend logs (structured JSON, user IDs only): match created/ended with end reason
 and forfeit cause, rejected messages by error code, dropped messages over the rate
-limit, clock offset outliers (> 2 s), reconnects, matches abandoned at startup.
+limit, clock offset outliers (> 2 s), reconnects, matches abandoned at startup; for
+bot matches also `opponent_type = bot`, the bot's `p` per round, the player's rating
+at start and the outcome (tuning, DUEL-25), and bot pairings that failed (fallback to
+the 30 s queue).
 
 ## 6. Hand-off notes
 
@@ -767,6 +1010,13 @@ limit, clock offset outliers (> 2 s), reconnects, matches abandoned at startup.
   the "left while offline" marker of DUEL-15), `hello`/`match.state` resync and the
   close-code handling (`4000`/`4001` never auto-reconnect) are the critical paths;
   test with a fake server against `duel-protocol.md`.
+- Bot (DUEL-23 … DUEL-29): designer adds the bot states (search hint, intro with the
+  "Bot" badge, opponent panel, result line, history row, "Bota qarşı" line, leave
+  dialog text) to `design/screens/duel-*.md`, `profile.md` and `design/copy/az.md`;
+  backend-dev adds `opponentType` / `botAtEpochMs` / nullable opponent rating to
+  `duel-protocol.md` and `openapi.yaml` (`MatchSummary`, stats) before android-dev
+  builds; the bot engine is server-only and must be testable with a seeded random
+  source (deterministic tests of the 15 s race, Əminlik 3 limit and timings).
 
 ## 7. Decisions
 
@@ -782,6 +1032,11 @@ Decided by Sabit on 2026-10-16 (duel engine and design): OQ-053 (search tips),
 OQ-054 (haptic, no sound), OQ-056 (`round.confidence`), OQ-057
 (`suddenDeathOutcome`), OQ-058 (leaving while offline / `already_in_match`), OQ-059
 (calibration hint on the client), OQ-061 … OQ-072 (engine decisions).
+
+Decided by Sabit on 2026-10-30: OQ-106 (bot opponent; supersedes the "no bots" part
+of OQ-028). Decided by Sabit 2026-10-30 (recommendations accepted): OQ-107 (bot identity), OQ-108 (bot strength
+model), OQ-109 (bot XP rounding and caps), OQ-110 (bot matches in history and stats),
+OQ-111 (search-screen hint, no opt-out).
 
 Decided earlier and used here: OQ-001, OQ-002, OQ-003, OQ-020, OQ-021.
 Also decided: OQ-073 (rejoin after a late `queue.leave`). Open: OQ-007 (questions per

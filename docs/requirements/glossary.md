@@ -49,9 +49,16 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 | Calibration | — | How well a player's Əminlik matches their real accuracy: ideally higher Əminlik → higher share of correct answers. Counted rounds: OQ-027. |
 | Calibration card | Əminlik kartı | Post-match card with the player's accuracy per Əminlik level (DUEL-21). The server sends counts `{level, picks, correct}`; the client chooses the hint (OQ-059). |
 | Calibration stats | Əminlik statistikası | Calibration over all counted matches, shown on the profile (PROF-05, `GET /v1/me/stats`). Same counting rule as the card. |
-| Matchmaking queue | Rəqib axtarılır… | Single global first-come-first-served queue; 30 s without opponent → "Rəqib tapılmadı" with "Yenidən axtar". |
+| Matchmaking queue | Rəqib axtarılır… | Single global first-come-first-served queue; a real opponent is always preferred; 15 s without a real opponent → bot match (OQ-106); 30 s without any opponent (bot disabled) → "Rəqib tapılmadı" with "Yenidən axtar". |
 | Queue entry | — | One user's place in the matchmaking queue. At most one per user; a newer connection of the same user replaces the older one (DUEL-04). |
-| Queue timeout | Rəqib tapılmadı | The queue deadline (join + 30 s, server clock) passed without a match; the server removes the entry. |
+| Queue timeout | Rəqib tapılmadı | The queue deadline (join + 30 s, server clock) passed without a match; the server removes the entry. Since OQ-106 only reached when the bot is disabled or cannot be started. |
+| Bot opponent | Bot rəqib | Server-side player that fills an empty queue after 15 s (OQ-106, DUEL-23 … DUEL-29). No account, no Elo rating, never disconnects or forfeits; plays by the same rules with a probability model (OQ-108). Always shown as "Duello Bot" with the "Bot" badge. Never call it "AI", "kompüter" or a person's name in the UI. Not a ghost duel. |
+| Duello Bot | Duello Bot | The single fixed display name of the bot opponent (OQ-107); "duello" is a reserved word for human names (OQ-051). |
+| Bot badge | Bot | Small label shown next to the bot's name on every duel screen and in history, in place of the rating (OQ-107). |
+| Bot match | Bot oyunu | A match against the bot opponent (`opponentType = bot`). Never changes Elo; half duel XP (`docs/mvp-spec.md` §10); counts as an active day if finished and not forfeited by the user; deleted with the user's account. Counting in profile stats: OQ-110. |
+| Real match | — | A match between two human players (`opponentType = human`). Used where a rule differs from a bot match. |
+| Bot time (`botAtEpochMs`) | — | Server time at which a lone queued player gets a bot match: `queue.joined` + 15 s (proposed field name; `null` when the bot is disabled). |
+| Ghost duel | — | Playing against a recording of a real player's past match. Out of scope; not the same as the bot opponent. |
 | Match intro | Rəqib tapıldı! | 3 s screen after `match.found` showing both players before round 1 (OQ-037). A `match.leave` during the intro is a forfeit; only a `queue.leave` that crossed the pairing cancels the match (OQ-065). |
 | Server deadline (`deadlineEpochMs`) | — | Server-clock time at which a phase, queue wait or reconnect window ends. Carried by every timed server message; the only deadline that counts. |
 | Clock offset | — | Difference between server clock and device clock, estimated by the client from `serverNowEpochMs`; countdown = `deadlineEpochMs` − (device now + offset) on a monotonic clock (DUEL-12). |
@@ -74,11 +81,11 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 
 | Term | UI (az) | Meaning |
 | --- | --- | --- |
-| Elo rating | Reytinq | Per-user number, start 1000, K = 32. Changed only by finished duels (win, loss, draw, forfeit). Never by the category quiz. |
+| Elo rating | Reytinq | Per-user number, start 1000, K = 32. Changed only by finished duels against real players (win, loss, draw, forfeit). Never by the category quiz, the daily challenge or a bot match. |
 | Rating change | — | Elo difference caused by one match, e.g. "+16"; stored per match (before/after ratings) and shown on the result screen and in history. Rounding: OQ-038; floor: OQ-039. |
 | Profile | Profil | The user's backend row (`users`): display name, avatar URL, rating. Created on the first authenticated API call. |
 | Profile screen | Profil | Screen opened from the home header: name, avatar, rating, duel record, recent matches, calibration stats, name editing (`profile.md`). |
-| Duel record | — | Counts of wins, losses and draws over counted matches (finished, including forfeits; OQ-026). |
+| Duel record | — | Counts of wins, losses and draws over counted matches (finished, including forfeits; OQ-026). Proposal OQ-110: real matches only; bot matches in a separate "Bota qarşı" line. |
 | Recent matches | Son oyunlar | The last N finished matches on the profile, newest first (OQ-031). |
 | Deleted player | Silinmiş oyunçu | How an opponent whose account was deleted is shown in matches and history (`docs/mvp-spec.md` §3a). |
 | Avatar | — | Profile picture: the Google photo URL, or a placeholder circle with the first letter of the display name. No upload in the MVP. |

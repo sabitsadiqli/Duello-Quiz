@@ -24,6 +24,8 @@ import com.sabit.duelloquiz.backend.content.adminContentRoutes
 import com.sabit.duelloquiz.backend.daily.DailyRepository
 import com.sabit.duelloquiz.backend.daily.DailyService
 import com.sabit.duelloquiz.backend.daily.dailyRoutes
+import com.sabit.duelloquiz.backend.duel.BotIdentity
+import com.sabit.duelloquiz.backend.duel.BotRandomSource
 import com.sabit.duelloquiz.backend.duel.DbDuelStore
 import com.sabit.duelloquiz.backend.duel.DuelClock
 import com.sabit.duelloquiz.backend.duel.DuelService
@@ -130,7 +132,8 @@ fun featureModule(config: AppConfig) = module {
     single<RateLimiter> { InMemorySlidingWindowRateLimiter(config.quiz.sessionsPerHour, Duration.ofHours(1)) }
     single { config.duel }
     single { UserRepository(get()) }
-    single { UserService(get(), get(), get(), get(), listOf(get<DuelService>())) }
+    single { BotIdentity.load() }
+    single { UserService(get(), get(), get(), get(), listOf(get<DuelService>()), get()) }
     single { CategoryRepository(get()) }
     single { CategoryService(get(), get()) }
     single { QuizRepository() }
@@ -150,7 +153,8 @@ fun featureModule(config: AppConfig) = module {
     single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK, get()) }
     single<MatchmakingQueue> { InMemoryMatchmakingQueue() }
     single { DuelScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) } withOptions { onClose { it?.scope?.cancel() } }
-    single { DuelService(get<DuelScope>().scope, config.duel, get(), get(), get(), get()) }
+    single<BotRandomSource> { BotRandomSource.Secure }
+    single { DuelService(get<DuelScope>().scope, config.duel, get(), get(), get(), get(), get(), get()) }
 }
 
 /** Scope of duel matches and queue timers; cancelled when the application stops. */
