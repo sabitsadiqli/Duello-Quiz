@@ -29,7 +29,13 @@ sealed interface DuelServerMessage {
     data class QueueJoined(
         override val seq: Long,
         override val serverNowEpochMs: Long,
+        /** Queue end (join + 30 s): `queue.timeout` if nobody was found. */
         val deadlineEpochMs: Long,
+        /**
+         * v1.2: when the server pairs a still lone player with the bot (join + 15 s); null when
+         * the bot is disabled or the join carried no `"bot"` capability (OQ-111).
+         */
+        val botAtEpochMs: Long? = null,
     ) : DuelServerMessage
 
     data class QueueTimeout(override val seq: Long, override val serverNowEpochMs: Long) : DuelServerMessage
@@ -46,6 +52,8 @@ sealed interface DuelServerMessage {
         val bet3Limit: Int,
         /** Round 1 starts here (end of the 3 s intro). */
         val deadlineEpochMs: Long,
+        /** v1.2 (DUEL-24). */
+        val opponentType: OpponentType = OpponentType.HUMAN,
     ) : Stream {
         override val streamMatchId: String get() = matchId
     }
@@ -190,8 +198,10 @@ sealed interface DuelClientMessage {
         override val type = "ping"
     }
 
+    /** Always carries [DUEL_CAPABILITIES] on the wire (v1.2: without `"bot"` no bot pairing). */
     data object QueueJoin : DuelClientMessage {
         override val type = "queue.join"
+        val capabilities: List<String> get() = DUEL_CAPABILITIES
     }
 
     data object QueueLeave : DuelClientMessage {

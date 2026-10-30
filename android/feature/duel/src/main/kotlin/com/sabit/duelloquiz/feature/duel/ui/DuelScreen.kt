@@ -178,7 +178,7 @@ internal fun DuelScreen(
     if (uiState.leaveDialogVisible) {
         DuelloConfirmDialog(
             title = stringResource(R.string.duel_leave_title),
-            body = stringResource(R.string.duel_leave_body),
+            body = stringResource(if (uiState.leaveDialogBot) R.string.duel_leave_body_bot else R.string.duel_leave_body),
             confirmText = stringResource(R.string.duel_leave_confirm),
             dismissText = stringResource(R.string.common_continue),
             onConfirm = { onAction(DuelAction.LeaveConfirmed) },

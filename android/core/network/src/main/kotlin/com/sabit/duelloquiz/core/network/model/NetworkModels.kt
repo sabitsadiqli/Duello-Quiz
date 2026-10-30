@@ -123,6 +123,8 @@ internal data class NetworkReviewItem(
 internal data class NetworkStats(
     val record: NetworkRecord,
     val calibration: List<NetworkCalibration>,
+    /** v0.3.0 (OQ-110); missing from older servers. */
+    val botRecord: NetworkRecord? = null,
 )
 
 @Serializable
@@ -149,6 +151,9 @@ internal data class NetworkMatchSummary(
     val endReason: String,
     val scoreOwn: Int,
     val scoreOpponent: Int,
-    val ratingChange: Int,
+    /** v0.3.0: null for a bot match. */
+    val ratingChange: Int? = null,
     val finishedAt: String,
+    /** v0.3.0: `human` | `bot`; missing from older servers. */
+    val opponentType: String? = null,
 )

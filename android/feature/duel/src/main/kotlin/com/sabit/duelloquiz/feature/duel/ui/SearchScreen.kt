@@ -1,7 +1,12 @@
 package com.sabit.duelloquiz.feature.duel.ui
 
 import android.os.SystemClock
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
@@ -11,6 +16,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +49,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -73,6 +80,7 @@ import com.sabit.duelloquiz.feature.duel.SearchPhase
 import com.sabit.duelloquiz.feature.duel.SearchUi
 
 private const val ANNOUNCE_EVERY_SECONDS = 10
+private val BOT_ANNOUNCE_AT = setOf(10, 5)
 private const val PULSE_RINGS = 2
 
 /** Matchmaking (duel-search.md): pulse around the own avatar, server-timed countdown, rotating tips. */
@@ -123,6 +131,7 @@ internal fun SearchScreen(search: SearchUi, onCancel: () -> Unit) {
             )
             Spacer(Modifier.height(Spacing.sm))
             SearchCountdown(search)
+            BotHint(search.botHintSeconds)
             Spacer(Modifier.height(Spacing.xl))
             TipCard(search.tipIndex)
             Spacer(Modifier.height(Spacing.xl))
@@ -207,8 +216,17 @@ private fun SearchPulse(name: String?, avatarUrl: String?) {
 @Composable
 private fun SearchCountdown(search: SearchUi) {
     val visible = search.phase == SearchPhase.SEARCHING && search.remainingSeconds > 0
-    val announce = search.remainingSeconds % ANNOUNCE_EVERY_SECONDS == 0
-    val countdownCd = stringResource(R.string.duel_search_countdown_cd, search.remainingSeconds)
+    // DUEL-02: at most every 10 s (30/20/10); to the bot moment at 10 s and 5 s (duel-search.md).
+    val announce = if (search.countdownToBot) {
+        search.remainingSeconds in BOT_ANNOUNCE_AT
+    } else {
+        search.remainingSeconds % ANNOUNCE_EVERY_SECONDS == 0
+    }
+    val countdownCd = if (search.countdownToBot) {
+        pluralStringResource(R.plurals.duel_search_bot_countdown_cd, search.remainingSeconds, search.remainingSeconds)
+    } else {
+        stringResource(R.string.duel_search_countdown_cd, search.remainingSeconds)
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.graphicsLayer { alpha = if (visible) 1f else 0f }) {
         Text(
             text = stringResource(R.string.duel_search_countdown, search.remainingSeconds),
@@ -221,16 +239,70 @@ private fun SearchCountdown(search: SearchUi) {
             },
         )
         Spacer(Modifier.height(Spacing.sm))
-        QueueBar(deadlineElapsedMs = search.deadlineElapsedMs, remainingSeconds = search.remainingSeconds, visible = visible)
+        QueueBar(
+            deadlineElapsedMs = search.deadlineElapsedMs,
+            remainingSeconds = search.remainingSeconds,
+            visible = visible,
+            nominalMs = if (search.countdownToBot) Motion.Duel.NOMINAL_SEARCH_BOT_MS else Motion.Duel.NOMINAL_SEARCH_QUEUE_MS,
+        )
+    }
+}
+
+/**
+ * duel-search.md 5a: what happens at 0 while a bot follows, and that "Ləğv et" is the opt-out
+ * (OQ-111). Read once after the title; fades with the countdown, released on fallback.
+ */
+@Composable
+private fun BotHint(seconds: Int?) {
+    val reducedMotion = rememberReducedMotion()
+    // Keeps the last value for the fade-out (the hint text never changes while shown).
+    val last = remember { LastValue(seconds ?: 0) }
+    if (seconds != null) last.value = seconds
+    val shownSeconds = last.value
+    val duration = if (reducedMotion) 0 else Motion.MEDIUM_2
+    AnimatedVisibility(
+        visible = seconds != null,
+        enter = fadeIn(tween(duration)) + expandVertically(tween(duration)),
+        exit = fadeOut(tween(duration)) + shrinkVertically(tween(duration)),
+    ) {
+        val text = pluralStringResource(
+            R.plurals.duel_search_bot_hint,
+            shownSeconds,
+            shownSeconds,
+            stringResource(R.string.duel_bot_name),
+        )
+        Row(
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.md)
+                .clearAndSetSemantics {
+                    contentDescription = text
+                    liveRegion = LiveRegionMode.Polite
+                },
+        ) {
+            Icon(
+                painter = painterResource(DuelloIcons.SmartToy),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(Sizes.inlineIcon),
+            )
+            Spacer(Modifier.width(Spacing.sm))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
-private fun QueueBar(deadlineElapsedMs: Long, remainingSeconds: Int, visible: Boolean) {
+private fun QueueBar(deadlineElapsedMs: Long, remainingSeconds: Int, visible: Boolean, nominalMs: Int) {
     val inspection = LocalInspectionMode.current
-    val nominal = Motion.Duel.NOMINAL_SEARCH_QUEUE_MS.toFloat()
-    var fraction by remember { mutableFloatStateOf(remainingSeconds * MS_PER_SECOND / nominal) }
-    LaunchedEffect(deadlineElapsedMs, visible) {
+    val nominal = nominalMs.toFloat()
+    var fraction by remember(nominalMs) { mutableFloatStateOf(remainingSeconds * MS_PER_SECOND / nominal) }
+    LaunchedEffect(deadlineElapsedMs, visible, nominalMs) {
         if (!visible || inspection) return@LaunchedEffect
         while (true) {
             withFrameMillis {
@@ -251,6 +323,9 @@ private fun QueueBar(deadlineElapsedMs: Long, remainingSeconds: Int, visible: Bo
 }
 
 private const val MS_PER_SECOND = 1000f
+
+/** Plain holder (not snapshot state): written during composition without causing recomposition. */
+private class LastValue(var value: Int)
 
 @Composable
 private fun TipCard(index: Int) {
@@ -330,6 +405,24 @@ private fun SearchPreview() {
     DuelloTheme {
         SearchScreen(
             search = SearchUi(selfName = "Leyla", selfRating = 1000, phase = SearchPhase.SEARCHING, remainingSeconds = 24),
+            onCancel = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SearchBotPreview() {
+    DuelloTheme {
+        SearchScreen(
+            search = SearchUi(
+                selfName = "Leyla",
+                selfRating = 1000,
+                phase = SearchPhase.SEARCHING,
+                remainingSeconds = 12,
+                botHintSeconds = 15,
+                countdownToBot = true,
+            ),
             onCancel = {},
         )
     }

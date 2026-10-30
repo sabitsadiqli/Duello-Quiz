@@ -15,6 +15,7 @@ import com.sabit.duelloquiz.core.model.duel.DuelRecord
 import com.sabit.duelloquiz.core.model.duel.DuelStats
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.network.duel.endReason
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -34,6 +35,7 @@ internal fun NetworkStats.asExternalModel() = DuelStats(
             ?.let { CalibrationLevel(level, it.picks, it.correct) }
             ?: CalibrationLevel(level, 0, 0)
     },
+    botRecord = botRecord?.let { DuelRecord(it.wins, it.losses, it.draws, it.total) } ?: DuelRecord(0, 0, 0, 0),
 )
 
 /** Null for a row the client cannot read (unknown result value): it is skipped, not fatal. */
@@ -46,17 +48,21 @@ internal fun NetworkMatchSummary.asExternalModelOrNull(): MatchSummary? {
         else -> return null
     }
     val reason = runCatching { endReason(endReason) }.getOrNull() ?: return null
+    val type = OpponentType.fromWire(opponentType)
     return MatchSummary(
         id = id,
         opponentName = opponent.displayName.takeUnless { opponent.deleted },
-        opponentAvatarUrl = opponent.avatarUrl.takeUnless { opponent.deleted },
-        opponentDeleted = opponent.deleted,
+        // The bot avatar is always local (OQ-107); a bot row is never "Silinmiş oyunçu" (DUEL-28).
+        opponentAvatarUrl = opponent.avatarUrl.takeUnless { opponent.deleted || type == OpponentType.BOT },
+        opponentDeleted = opponent.deleted && type != OpponentType.BOT,
         outcome = outcome,
         endReason = reason,
         scoreOwn = scoreOwn,
         scoreOpponent = scoreOpponent,
-        ratingChange = ratingChange,
+        // A human match always has a number (0 when an old server omitted it); a bot match never.
+        ratingChange = if (type == OpponentType.BOT) null else ratingChange ?: 0,
         finishedAtEpochMs = parseIsoInstantOrNull(finishedAt) ?: return null,
+        opponentType = type,
     )
 }
 

@@ -27,6 +27,7 @@ import com.sabit.duelloquiz.core.model.duel.ForfeitCause
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundResult
@@ -166,11 +167,7 @@ class DuelViewModel @Inject constructor(
     private fun onMessage(message: DuelServerMessage) {
         when (message) {
             is DuelServerMessage.Hello -> onHello()
-            is DuelServerMessage.QueueJoined -> if (model.mode == Mode.SEARCH && !model.cancelling) {
-                update {
-                    it.copy(searchPhase = SearchPhase.SEARCHING, queueDeadline = message.deadlineEpochMs, overtimeSince = null)
-                }
-            }
+            is DuelServerMessage.QueueJoined -> if (model.mode == Mode.SEARCH && !model.cancelling) onQueueJoined(message)
             is DuelServerMessage.QueueTimeout -> if (model.mode == Mode.SEARCH && !model.cancelling) endSearch(SearchEndReason.TIMEOUT)
             is DuelServerMessage.QueueLeft -> queueLeft?.complete(Unit)
             is DuelServerMessage.MatchFound -> onMatchFound(message)
@@ -228,6 +225,28 @@ class DuelViewModel @Inject constructor(
         }
     }
 
+    /**
+     * DUEL-02 / DUEL-23: the countdown starts here, never from the tap. With `botAtEpochMs` it runs
+     * to the bot moment and the hint names the seconds the server gave (normally 15); the client
+     * never starts a bot match itself.
+     */
+    private fun onQueueJoined(joined: DuelServerMessage.QueueJoined) {
+        val botAt = joined.botAtEpochMs
+        val hintSeconds = botAt?.let {
+            ((it - joined.serverNowEpochMs + MS_PER_SECOND - 1) / MS_PER_SECOND).toInt().coerceAtLeast(1)
+        }
+        update {
+            it.copy(
+                searchPhase = SearchPhase.SEARCHING,
+                queueDeadline = joined.deadlineEpochMs,
+                botAt = botAt,
+                botHintSeconds = hintSeconds,
+                botFallback = false,
+                overtimeSince = null,
+            )
+        }
+    }
+
     private fun onMatchFound(found: DuelServerMessage.MatchFound) {
         if (model.cancelling || leftMatch) return
         emit(DuelEvent.Haptic(DuelHaptic.LIGHT))
@@ -237,6 +256,7 @@ class DuelViewModel @Inject constructor(
                 matchId = found.matchId,
                 you = found.you,
                 opponent = found.opponent,
+                opponentType = found.opponentType,
                 introDeadline = found.deadlineEpochMs,
                 round = null,
                 scores = DuelScores(0, 0),
@@ -258,8 +278,12 @@ class DuelViewModel @Inject constructor(
                 searchPhase = SearchPhase.CONNECTING,
                 searchStartedElapsed = clock.elapsedMs(),
                 queueDeadline = null,
+                botAt = null,
+                botHintSeconds = null,
+                botFallback = false,
                 overtimeSince = null,
                 matchId = null,
+                opponentType = OpponentType.HUMAN,
                 leaveDialog = false,
             )
         }
@@ -333,6 +357,7 @@ class DuelViewModel @Inject constructor(
                     matchId = snapshot.matchId,
                     you = snapshot.you,
                     opponent = snapshot.opponent,
+                    opponentType = snapshot.opponentType,
                     introDeadline = snapshot.deadlineEpochMs,
                     overlay = null,
                     presence = snapshot.presence(it.presence),
@@ -367,6 +392,7 @@ class DuelViewModel @Inject constructor(
                 matchId = snapshot.matchId,
                 you = snapshot.you,
                 opponent = snapshot.opponent,
+                opponentType = snapshot.opponentType,
                 round = round,
                 scores = snapshot.scores,
                 overlay = null,
@@ -408,6 +434,10 @@ class DuelViewModel @Inject constructor(
                 } else {
                     result.opponent?.toDuelPlayer() ?: it.opponent ?: players?.opponent
                 },
+                opponentType = when {
+                    result.opponentType == OpponentType.BOT || players?.opponentType == OpponentType.BOT -> OpponentType.BOT
+                    else -> it.opponentType
+                },
                 leaveDialog = false,
                 overlay = null,
                 playAgainLoading = false,
@@ -431,7 +461,9 @@ class DuelViewModel @Inject constructor(
             val card = if (gain != null) {
                 val categories = categoryRepository.categories.first().orEmpty()
                 val capNote = gain.xpCapped && progressRepository.consumeCapNote(CAP_SOURCE, gain.dayKey)
+                // OQ-109: the server already halved the XP; the card only adds the note.
                 gain.toCardUi(categories, showCapNote = capNote, dayActive = dayActive, animate = true)
+                    .copy(botNote = model.opponentIsBot)
             } else {
                 (progressRepository.refresh() as? DataResult.Success)?.value?.let { summary ->
                     val fraction = RetentionFormat.fraction(summary.xpIntoLevel, summary.xpForNextLevel)
@@ -664,6 +696,14 @@ class DuelViewModel @Inject constructor(
         val elapsed = clock.elapsedMs()
         when (model.mode) {
             Mode.SEARCH -> {
+                val botAt = model.botAt
+                if (model.searchPhase == SearchPhase.SEARCHING && model.countdownToBot && botAt != null &&
+                    serverNow >= botAt + BOT_GRACE_MS
+                ) {
+                    // DUEL-23: no bot match 3 s after the bot moment (disabled on the fly or failed
+                    // to start): just a longer search to the queue deadline, no error.
+                    update { it.copy(botFallback = true) }
+                }
                 val deadline = model.queueDeadline
                 if (model.searchPhase == SearchPhase.SEARCHING && deadline != null && serverNow >= deadline) {
                     update { it.copy(searchPhase = SearchPhase.OVERTIME, overtimeSince = elapsed) }
@@ -744,6 +784,10 @@ class DuelViewModel @Inject constructor(
         const val RECONNECT_WINDOW_MS = 10_000L
         const val OPPONENT_RETURNED_HOLD_MS = 2_000L
         const val REVEAL_MIN_REMAINING_MS = 1_500L
+
+        /** duel-search.md: wait this long after `botAtEpochMs` for `match.found`, then fall back. */
+        const val BOT_GRACE_MS = 3_000L
+        private const val MS_PER_SECOND = 1_000L
         const val BET3_LIMIT = 2
         const val MAX_LEVEL = 3
         private val IN_MATCH_MODES = setOf(Mode.INTRO, Mode.MATCH, Mode.LOADING)

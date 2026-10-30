@@ -53,6 +53,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
+import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.OptionCard
 import com.sabit.duelloquiz.core.designsystem.component.ConfidenceTile
@@ -328,7 +330,13 @@ private fun OptionsBlock(match: MatchUi, onOption: (String) -> Unit) {
     Column(modifier = Modifier.padding(top = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         match.options.forEachIndexed { index, option ->
             StaggeredIn(index = index, enabled = !reducedMotion && match.phase == DuelPhase.ANSWER) {
-                DuelOptionCard(option = option, index = index, revealed = match.phase == DuelPhase.RESULT, onOption = onOption)
+                DuelOptionCard(
+                    option = option,
+                    index = index,
+                    revealed = match.phase == DuelPhase.RESULT,
+                    onOption = onOption,
+                    opponentIsBot = match.opponentIsBot,
+                )
             }
         }
         Spacer(Modifier.height(Spacing.sm))
@@ -348,7 +356,13 @@ private fun StaggeredIn(index: Int, enabled: Boolean, content: @Composable () ->
 private const val OPTION_STAGGER_MS = 30
 
 @Composable
-private fun DuelOptionCard(option: DuelOptionUi, index: Int, revealed: Boolean, onOption: (String) -> Unit) {
+private fun DuelOptionCard(
+    option: DuelOptionUi,
+    index: Int,
+    revealed: Boolean,
+    onOption: (String) -> Unit,
+    opponentIsBot: Boolean = false,
+) {
     val cd = stringResource(optionCd(index), option.text)
     val states = buildList {
         when (option.state) {
@@ -372,7 +386,7 @@ private fun DuelOptionCard(option: DuelOptionUi, index: Int, revealed: Boolean, 
         markers = if (showMarkers) {
             {
                 if (option.pickedBySelf) PickerMarker(self = true)
-                if (option.pickedByOpponent) PickerMarker(self = false)
+                if (option.pickedByOpponent) PickerMarker(self = false, bot = opponentIsBot)
             }
         } else {
             null
@@ -381,8 +395,13 @@ private fun DuelOptionCard(option: DuelOptionUi, index: Int, revealed: Boolean, 
 }
 
 @Composable
-private fun PickerMarker(self: Boolean) {
+private fun PickerMarker(self: Boolean, bot: Boolean = false) {
     val ring = if (self) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
+    if (bot) {
+        // components.md §13: the 20dp bot marker (smart_toy on tertiaryContainer) with the opponent ring.
+        DuelloAvatar(name = null, size = Sizes.pickerMarker, accent = AvatarAccent.Opponent, bot = true)
+        return
+    }
     Box(
         modifier = Modifier
             .size(Sizes.pickerMarker)
@@ -679,6 +698,21 @@ private fun MatchRevealPreview() {
     DuelloTheme {
         MatchScreen(
             match = PreviewData.revealMatch,
+            onLeave = {},
+            onConfidence = {},
+            onOption = {},
+            onReconnect = {},
+            onLeaveFromOverlay = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun BotMatchRevealPreview() {
+    DuelloTheme {
+        MatchScreen(
+            match = PreviewData.botRevealMatch,
             onLeave = {},
             onConfidence = {},
             onOption = {},

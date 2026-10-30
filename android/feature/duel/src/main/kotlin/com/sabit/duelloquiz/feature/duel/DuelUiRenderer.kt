@@ -38,6 +38,7 @@ internal class DuelUiRenderer(
             Mode.BLOCKED -> DuelScreen.Blocked(model.blocked ?: BlockedReason.CONNECT_FAILED, model.retrying)
         },
         leaveDialogVisible = model.leaveDialog && model.mode in setOf(Mode.INTRO, Mode.MATCH, Mode.LOADING),
+        leaveDialogBot = model.opponentIsBot,
     )
 
     private fun remainingMs(deadline: Long): Long = (deadline - serverNow).coerceAtLeast(0)
@@ -45,7 +46,10 @@ internal class DuelUiRenderer(
     private fun seconds(ms: Long): Int = ((ms + MS_PER_SECOND - 1) / MS_PER_SECOND).toInt()
 
     private fun search(): SearchUi {
-        val deadline = model.queueDeadline
+        val toBot = model.countdownToBot && model.queueDeadline != null
+        // duel-search.md: to the bot moment while a bot follows, else (or after the 3 s grace) to
+        // the queue deadline. At the bot moment the countdown reads 0 and is hidden.
+        val deadline = if (toBot) model.botAt else model.queueDeadline
         val remaining = deadline?.let(::remainingMs) ?: 0
         val searching = model.searchPhase == SearchPhase.SEARCHING && deadline != null
         return SearchUi(
@@ -59,6 +63,8 @@ internal class DuelUiRenderer(
             deadlineElapsedMs = deadline?.let(toElapsed) ?: 0,
             tipIndex = (((elapsed - model.searchStartedElapsed) / TIP_ROTATION_MS) % TIP_COUNT).toInt(),
             cancelling = model.cancelling,
+            botHintSeconds = model.botHintSeconds.takeIf { toBot && model.searchPhase == SearchPhase.SEARCHING },
+            countdownToBot = toBot,
         )
     }
 
@@ -68,6 +74,7 @@ internal class DuelUiRenderer(
         return IntroUi(
             you = you,
             opponent = opponent,
+            opponentIsBot = model.opponentIsBot,
             countdown = seconds(remainingMs(model.introDeadline)).coerceIn(1, INTRO_SECONDS),
             overlay = model.overlay,
         )
@@ -91,7 +98,7 @@ internal class DuelUiRenderer(
                 round.allIn -> RoundBanner.ALL_IN
                 else -> null
             },
-            opponentBanner = when (val presence = model.presence) {
+            opponentBanner = when (val presence = if (model.opponentIsBot) Presence.Connected else model.presence) {
                 is Presence.Disconnected -> OpponentBannerUi.Disconnected(seconds(remainingMs(presence.deadline)))
                 Presence.Away -> OpponentBannerUi.StillAway
                 is Presence.Returned -> OpponentBannerUi.Returned
@@ -104,6 +111,7 @@ internal class DuelUiRenderer(
             suddenDeathLine = result?.let(::suddenDeathLine),
             reveal = result?.let { RevealUi(it.roundNo, round.revealAnimate, it.you.correct) },
             overlay = model.overlay,
+            opponentIsBot = model.opponentIsBot,
         )
     }
 
@@ -182,7 +190,8 @@ internal class DuelUiRenderer(
 
     private fun opponentPanel(round: RoundModel): PanelUi {
         val result = round.result
-        val presence = model.presence
+        // A bot never disconnects (duel-interruptions.md H): no presence pills even if a stale state says so.
+        val presence = if (model.opponentIsBot) Presence.Connected else model.presence
         val status = when {
             result != null -> null
             presence is Presence.Disconnected || presence == Presence.Away -> PanelStatus.DISCONNECTED
@@ -205,6 +214,7 @@ internal class DuelUiRenderer(
                     (round.phase == DuelPhase.ANSWER && round.opponentAnswered)),
             reveal = result?.let { face(it.opponent, it, round) },
             winnerBadge = result?.suddenDeathOutcome == SuddenDeathOutcome.OPPONENT,
+            isBot = model.opponentIsBot,
         )
     }
 
@@ -332,6 +342,7 @@ internal class DuelUiRenderer(
             },
             playAgainLoading = model.playAgainLoading,
             progress = model.progressCard.takeUnless { abandoned },
+            opponentIsBot = model.opponentIsBot,
         )
     }
 

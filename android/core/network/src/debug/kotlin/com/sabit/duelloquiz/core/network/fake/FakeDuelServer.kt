@@ -23,6 +23,7 @@ import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundPlayerResult
@@ -49,12 +50,26 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 /**
- * DEBUG ONLY: a duel server in the app process with a scripted bot opponent, so the whole duel
- * (search, intro, 7 rounds, round 7 All-in, sudden death, reveal, result, leave, rejoin) can be
- * played without a backend. It follows docs/api/duel-protocol.md for timing, seq, scoring and Elo;
- * the bot picks Əminlik and answers at random times and is right about 70 % of the time. Every
- * fake question names its right answer so testers can win or lose on purpose. Texts are fake
- * server content, not UI copy. Never part of a release build.
+ * DEBUG ONLY: tuning of the fake duel server. [botAfterMs] is the server's bot moment after
+ * `queue.joined` (protocol §7a: 15 s); [forceOpponent] pins the next pairings (tests). Without it
+ * searches alternate: the first one gets the bot at the bot moment, the next one a scripted "real
+ * player" after a few seconds, and so on, so both UIs can be tried in fake mode.
+ */
+internal object FakeDuelTiming {
+    @Volatile var botAfterMs: Long = 15_000L
+
+    @Volatile var forceOpponent: OpponentType? = null
+}
+
+/**
+ * DEBUG ONLY: a duel server in the app process with scripted opponents, so the whole duel
+ * (search, bot countdown, intro, 7 rounds, round 7 All-in, sudden death, reveal, result, leave,
+ * rejoin) can be played without a backend. It follows docs/api/duel-protocol.md v1.2 for timing,
+ * seq, scoring and Elo. A bot-capable `queue.join` gets `botAtEpochMs` and, when no scripted
+ * "real player" comes first, the Duello Bot (§7a: `opponentType = bot`, null ratings, no Elo,
+ * half XP, never misses). Both opponents pick Əminlik and answer at random times and are right
+ * about 70 % of the time. Every fake question names its right answer so testers can win or lose on
+ * purpose. Texts are fake server content, not UI copy. Never part of a release build.
  */
 internal class FakeDuelSocketFactory(
     private val authRepository: AuthRepository,
@@ -111,6 +126,7 @@ private object FakeBotServer {
     private var queueJob: Job? = null
     private var match: FakeMatch? = null
     private var playerName: String = DEFAULT_NAME
+    private var searches = 0
 
     private fun now() = clock.nowMs()
 
@@ -171,11 +187,15 @@ private object FakeBotServer {
             return
         }
         if (queueJob?.isActive == true) return
-        val deadline = now() + QUEUE_MS
-        socket.deliver(DuelServerMessage.QueueJoined(0, now(), deadline))
+        val joinedAt = now()
+        val deadline = joinedAt + QUEUE_MS
+        // The app always announces the "bot" capability (DUEL_CAPABILITIES); the fake bot is always on.
+        val botAt = joinedAt + FakeDuelTiming.botAfterMs
+        socket.deliver(DuelServerMessage.QueueJoined(0, joinedAt, deadline, botAt))
+        val opponent = FakeDuelTiming.forceOpponent ?: if (searches++ % 2 == 0) OpponentType.BOT else OpponentType.HUMAN
         queueJob = scope.launch {
-            delay(Random.nextLong(PAIR_MIN_MS, PAIR_MAX_MS))
-            val created = FakeMatch(socket.uid, playerName)
+            if (opponent == OpponentType.BOT) delay(botAt - now()) else delay(Random.nextLong(PAIR_MIN_MS, PAIR_MAX_MS))
+            val created = FakeMatch(socket.uid, playerName, opponent)
             match = created
             created.start()
         }
@@ -197,11 +217,19 @@ private object FakeBotServer {
     private fun error(code: DuelErrorCode, matchId: String? = null, roundNo: Int? = null, ref: String? = null) =
         DuelServerMessage.Error(0, now(), code, matchId, roundNo, ref, null)
 
-    /** One match against the bot; every stream message is numbered even when not delivered. */
-    private class FakeMatch(val uid: String, playerName: String) {
+    /** One match against a scripted opponent; every stream message is numbered even when not delivered. */
+    private class FakeMatch(val uid: String, playerName: String, val opponentType: OpponentType) {
         val id: String = UUID.randomUUID().toString()
-        private val you = DuelPlayer(playerName, null, FakeDuelLedger.rating(uid))
-        private val bot = DuelPlayer(BOT_NAMES.random(), null, FakeDuelLedger.rating(uid) + Random.nextInt(-BOT_SPREAD, BOT_SPREAD))
+        private val isBot = opponentType == OpponentType.BOT
+        private val youRating = FakeDuelLedger.rating(uid)
+        private val you = DuelPlayer(playerName, null, youRating)
+
+        /** §7a: the bot is "Duello Bot" (backend i18n) with no rating and no avatar. */
+        private val bot = if (isBot) {
+            DuelPlayer(BOT_DISPLAY_NAME, null, null)
+        } else {
+            DuelPlayer(HUMAN_NAMES.random(), null, youRating + Random.nextInt(-BOT_SPREAD, BOT_SPREAD))
+        }
         private var seq = 0L
         private var job: Job? = null
         var running = false
@@ -260,7 +288,7 @@ private object FakeBotServer {
         private suspend fun play() {
             phase = DuelPhase.INTRO
             deadline = now() + INTRO_MS
-            stream { DuelServerMessage.MatchFound(it, now(), id, you, bot, REGULAR_ROUNDS, BET3_LIMIT, deadline) }
+            stream { DuelServerMessage.MatchFound(it, now(), id, you, bot, REGULAR_ROUNDS, BET3_LIMIT, deadline, opponentType) }
             delay(INTRO_MS)
             inIntro = false
             for (n in 1..REGULAR_ROUNDS) {
@@ -317,7 +345,12 @@ private object FakeBotServer {
             deadline = optionsSentAt + ANSWER_MS
             val bet = ownBet ?: 1
             stream { DuelServerMessage.RoundOptions(it, now(), id, n, options, bet, ownDefaulted, deadline) }
-            val botAnswerAt = now() + Random.nextLong(BOT_ANSWER_MIN_MS, BOT_ANSWER_MAX_MS)
+            // §7a: the bot answers 3–9 s after the options and never misses.
+            val botAnswerAt = now() + if (isBot) {
+                Random.nextLong(SERVER_BOT_ANSWER_MIN_MS, SERVER_BOT_ANSWER_MAX_MS)
+            } else {
+                Random.nextLong(BOT_ANSWER_MIN_MS, BOT_ANSWER_MAX_MS)
+            }
             waitUntil(deadline + GRACE_MS + 1) {
                 if (botAnswer == null && now() >= botAnswerAt) {
                     botAnswer = if (Random.nextInt(BOT_ACCURACY_OUT_OF) < BOT_ACCURACY) correctId else options.filter { it.id != correctId }.random().id
@@ -480,6 +513,7 @@ private object FakeBotServer {
                 missedInARowOpponent = missedBot,
                 lastResult = lastResult.takeIf { phase == DuelPhase.RESULT },
                 rounds = rounds.toList(),
+                opponentType = opponentType,
             ),
         )
 
@@ -490,17 +524,30 @@ private object FakeBotServer {
                 MatchOutcome.DRAW -> HALF
                 else -> 0.0
             }
-            val expected = 1 / (1 + TEN.pow((bot.rating - you.rating) / ELO_SCALE))
-            // OQ-038: rounded half away from zero.
-            val raw = ELO_K * (score - expected)
-            val change = if (outcome == MatchOutcome.ABANDONED) 0 else (abs(raw) + HALF).toInt() * if (raw < 0) -1 else 1
+            val botRating = bot.rating
+            val change = if (outcome == MatchOutcome.ABANDONED || botRating == null) {
+                // §7a: a bot match never changes a rating.
+                0
+            } else {
+                val expected = 1 / (1 + TEN.pow((botRating - youRating) / ELO_SCALE))
+                // OQ-038: rounded half away from zero.
+                val raw = ELO_K * (score - expected)
+                (abs(raw) + HALF).toInt() * if (raw < 0) -1 else 1
+            }
             val calibration = (1..LEVELS).map { CalibrationLevel(it, picks[it - 1], correctPicks[it - 1]) }
             // OQ-081: 20 for a finished match + 30 win / 15 draw; 0 for own forfeit and abandoned.
             val earns = outcome != MatchOutcome.ABANDONED && forfeitedBy != DuelSide.SELF
+            // OQ-109: half duel XP against the bot (10 + 15 win / + 8 draw).
             val bonus = buildList {
-                if (earns) add(XpBreakdownItem("duel_played", null, DUEL_PLAYED_XP))
-                if (earns && outcome == MatchOutcome.WIN) add(XpBreakdownItem("duel_win", null, DUEL_WIN_XP))
-                if (earns && outcome == MatchOutcome.DRAW) add(XpBreakdownItem("duel_draw", null, DUEL_DRAW_XP))
+                if (isBot) {
+                    if (earns) add(XpBreakdownItem("duel_bot_played", null, DUEL_BOT_PLAYED_XP))
+                    if (earns && outcome == MatchOutcome.WIN) add(XpBreakdownItem("duel_bot_win", null, DUEL_BOT_WIN_XP))
+                    if (earns && outcome == MatchOutcome.DRAW) add(XpBreakdownItem("duel_bot_draw", null, DUEL_BOT_DRAW_XP))
+                } else {
+                    if (earns) add(XpBreakdownItem("duel_played", null, DUEL_PLAYED_XP))
+                    if (earns && outcome == MatchOutcome.WIN) add(XpBreakdownItem("duel_win", null, DUEL_WIN_XP))
+                    if (earns && outcome == MatchOutcome.DRAW) add(XpBreakdownItem("duel_draw", null, DUEL_DRAW_XP))
+                }
             }
             val progress = FakeProgressLedger.award(uid, "duel:$id", now(), emptyMap(), bonus, activates = earns)
             val message = DuelServerMessage.MatchResultMessage(
@@ -513,16 +560,17 @@ private object FakeBotServer {
                     forfeitedBy = forfeitedBy,
                     forfeitCause = cause,
                     scores = scores,
-                    ratingBefore = you.rating,
-                    ratingAfter = you.rating + change,
+                    ratingBefore = youRating,
+                    ratingAfter = youRating + change,
                     ratingChange = change,
-                    opponentRatingAfter = bot.rating - change,
+                    opponentRatingAfter = botRating?.minus(change),
                     suddenDeathPlayed = (roundNo - REGULAR_ROUNDS).coerceAtLeast(0),
                     calibration = calibration,
                     rounds = rounds.toList(),
                     progress = progress,
-                    you = MatchResultPlayer(you.displayName, you.avatarUrl, you.rating, you.rating + change, deleted = false),
-                    opponent = MatchResultPlayer(bot.displayName, bot.avatarUrl, bot.rating, bot.rating - change, deleted = false),
+                    you = MatchResultPlayer(you.displayName, you.avatarUrl, youRating, youRating + change, deleted = false),
+                    opponent = MatchResultPlayer(bot.displayName, bot.avatarUrl, botRating, botRating?.minus(change), deleted = false),
+                    opponentType = opponentType,
                 ),
             )
             finalResult = message
@@ -530,10 +578,12 @@ private object FakeBotServer {
             FakeDuelLedger.record(
                 uid,
                 MatchSummary(
-                    id, bot.displayName, null, false, outcome, reason, scores.you, scores.opponent, change,
-                    now(),
+                    id, bot.displayName, null, false, outcome, reason, scores.you, scores.opponent,
+                    ratingChange = if (isBot) null else change,
+                    finishedAtEpochMs = now(),
+                    opponentType = opponentType,
                 ),
-                you.rating + change,
+                youRating + change,
                 calibration,
             )
         }
@@ -544,7 +594,9 @@ private object FakeBotServer {
     }
 
     private const val DEFAULT_NAME = "Oyunçu"
-    private val BOT_NAMES = listOf("Bot Aysel", "Bot Murad", "Bot Leyla", "Bot Tural")
+    /** Scripted "real players" (human matches) and the server bot name (backend i18n, az). */
+    private val HUMAN_NAMES = listOf("Aysel", "Murad", "Leyla", "Tural")
+    private const val BOT_DISPLAY_NAME = "Duello Bot"
     private val CATEGORIES = listOf("Coğrafiya", "Tarix", "Biologiya", "Fizika", "İdman")
     private const val HEARTBEAT_MS = 5_000L
     private const val QUEUE_MS = 30_000L
@@ -565,6 +617,11 @@ private object FakeBotServer {
     private const val DUEL_PLAYED_XP = 20
     private const val DUEL_WIN_XP = 30
     private const val DUEL_DRAW_XP = 15
+    private const val DUEL_BOT_PLAYED_XP = 10
+    private const val DUEL_BOT_WIN_XP = 15
+    private const val DUEL_BOT_DRAW_XP = 8
+    private const val SERVER_BOT_ANSWER_MIN_MS = 3_000L
+    private const val SERVER_BOT_ANSWER_MAX_MS = 9_000L
     private const val MISSED_FORFEIT = 2
     private const val SPEED_BONUS_MAX = 50L
     private val GAIN = intArrayOf(100, 200, 300)

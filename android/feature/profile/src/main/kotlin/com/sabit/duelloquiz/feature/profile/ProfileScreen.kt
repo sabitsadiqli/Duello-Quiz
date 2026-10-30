@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sabit.duelloquiz.core.auth.AuthRules
 import com.sabit.duelloquiz.core.designsystem.R
+import com.sabit.duelloquiz.core.designsystem.component.BotBadge
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
@@ -82,6 +84,7 @@ import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
 import com.sabit.duelloquiz.core.model.duel.CalibrationRules
@@ -267,7 +270,7 @@ private fun LazyListScope.duelSections(uiState: ProfileUiState, onAction: (Profi
             when (val stats = uiState.stats) {
                 SectionUi.Loading -> CardSkeleton()
                 SectionUi.Error -> SectionError(onRetry = { onAction(ProfileAction.RetryStats) })
-                is SectionUi.Content -> RecordCard(stats.value.stats.record)
+                is SectionUi.Content -> RecordCard(stats.value.stats.record, stats.value.stats.botRecord)
             }
         }
     }
@@ -353,10 +356,29 @@ private fun EmptyCard(onStart: () -> Unit) {
     }
 }
 
-/** components.md §23. */
+/**
+ * components.md §23. Rows and total count real players only; bot matches get the separate bot line
+ * (OQ-110), and a player with only bot matches sees `profile_record_empty_real` instead of the rows.
+ */
 @Composable
-private fun RecordCard(record: DuelRecord) {
-    val description = stringResource(R.string.profile_record_cd, record.wins, record.losses, record.draws, record.total)
+private fun RecordCard(record: DuelRecord, botRecord: DuelRecord) {
+    val botLine = if (botRecord.total > 0) {
+        stringResource(
+            R.string.profile_record_bot,
+            pluralStringResource(R.plurals.profile_record_bot_wins, botRecord.wins, botRecord.wins),
+            pluralStringResource(R.plurals.profile_record_bot_losses, botRecord.losses, botRecord.losses),
+            pluralStringResource(R.plurals.profile_record_bot_draws, botRecord.draws, botRecord.draws),
+        )
+    } else {
+        null
+    }
+    val onlyBot = record.total == 0 && botLine != null
+    val main = if (onlyBot) {
+        stringResource(R.string.profile_record_empty_real)
+    } else {
+        stringResource(R.string.profile_record_cd, record.wins, record.losses, record.draws, record.total)
+    }
+    val description = listOfNotNull(main, botLine).joinToString(". ")
     val game = MaterialTheme.gameColors
     GameCard(
         modifier = Modifier
@@ -372,9 +394,39 @@ private fun RecordCard(record: DuelRecord) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            RecordRow(DuelloIcons.EmojiEvents, game.correct, R.string.profile_match_win, record.wins)
-            RecordRow(DuelloIcons.Close, game.wrong, R.string.profile_match_loss, record.losses)
-            RecordRow(DuelloIcons.DragHandle, MaterialTheme.colorScheme.onSurfaceVariant, R.string.profile_match_draw, record.draws)
+            if (onlyBot) {
+                Spacer(Modifier.height(Spacing.md))
+                Text(
+                    text = stringResource(R.string.profile_record_empty_real),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                RecordRow(DuelloIcons.EmojiEvents, game.correct, R.string.profile_match_win, record.wins)
+                RecordRow(DuelloIcons.Close, game.wrong, R.string.profile_match_loss, record.losses)
+                RecordRow(DuelloIcons.DragHandle, MaterialTheme.colorScheme.onSurfaceVariant, R.string.profile_match_draw, record.draws)
+            }
+            if (botLine != null) {
+                Spacer(Modifier.height(Spacing.md))
+                if (!onlyBot) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(Modifier.height(Spacing.md))
+                }
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        painterResource(DuelloIcons.SmartToy),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Sizes.inlineIcon),
+                    )
+                    Spacer(Modifier.width(Spacing.md))
+                    Text(
+                        text = botLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
@@ -448,7 +500,12 @@ private fun score(value: Int): String = if (value < 0) stringResource(R.string.d
 private fun MatchRow(match: MatchSummary, modifier: Modifier = Modifier) {
     val game = MaterialTheme.gameColors
     val scheme = MaterialTheme.colorScheme
-    val name = match.opponentName?.takeUnless { match.opponentDeleted } ?: stringResource(R.string.common_deleted_player)
+    val bot = match.isBot
+    // A bot row is never "Silinmiş oyunçu" (DUEL-28); its name comes from the API, fallback duel_bot_name.
+    val name = when {
+        bot -> match.opponentName?.takeUnless { it.isBlank() } ?: stringResource(R.string.duel_bot_name)
+        else -> match.opponentName?.takeUnless { match.opponentDeleted } ?: stringResource(R.string.common_deleted_player)
+    }
     val resultWord = stringResource(
         when (match.outcome) {
             MatchOutcome.WIN -> R.string.profile_match_win
@@ -469,9 +526,15 @@ private fun MatchRow(match: MatchSummary, modifier: Modifier = Modifier) {
         match.endReason == MatchEndReason.SUDDEN_DEATH || match.endReason == MatchEndReason.DRAW -> R.string.profile_match_label_sudden_death
         else -> null
     }
-    val delta = signed(match.ratingChange)
+    val ratingChange = match.ratingChange?.takeUnless { bot }
+    // DUEL-28: a bot match shows "—", never "0" or "+0".
+    val delta = ratingChange?.let { signed(it) } ?: stringResource(R.string.profile_match_rating_none)
     val date = historyDateText(match.finishedAtEpochMs)
-    val description = stringResource(R.string.profile_match_cd, name, resultWord, scorePair, delta, date)
+    val description = if (ratingChange == null) {
+        stringResource(R.string.profile_match_bot_cd, name, resultWord, scorePair, date)
+    } else {
+        stringResource(R.string.profile_match_cd, name, resultWord, scorePair, delta, date)
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -479,10 +542,28 @@ private fun MatchRow(match: MatchSummary, modifier: Modifier = Modifier) {
             .heightIn(min = Sizes.buttonHeightLarge)
             .clearAndSetSemantics { contentDescription = description },
     ) {
-        DuelloAvatar(name = match.opponentName, imageUrl = match.opponentAvatarUrl, deleted = match.opponentDeleted)
+        DuelloAvatar(
+            name = match.opponentName,
+            imageUrl = match.opponentAvatarUrl,
+            deleted = match.opponentDeleted && !bot,
+            bot = bot,
+        )
         Spacer(Modifier.width(Spacing.lg))
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (bot) {
+                    // components.md §32 inline: the name ellipsizes, the badge never does.
+                    Spacer(Modifier.width(Spacing.sm))
+                    BotBadge()
+                }
+            }
             val supporting = stringResource(R.string.profile_match_supporting, resultWord, scorePair)
             val start = supporting.indexOf(resultWord)
             Text(
@@ -503,8 +584,9 @@ private fun MatchRow(match: MatchSummary, modifier: Modifier = Modifier) {
                 text = delta,
                 style = MaterialTheme.typography.titleSmall.tabularFigures(),
                 color = when {
-                    match.ratingChange > 0 -> game.correct
-                    match.ratingChange < 0 -> game.wrong
+                    ratingChange == null -> scheme.onSurfaceVariant
+                    ratingChange > 0 -> game.correct
+                    ratingChange < 0 -> game.wrong
                     else -> scheme.onSurfaceVariant
                 },
             )
@@ -572,6 +654,7 @@ private fun EditNameDialog(edit: EditNameUi, onAction: (ProfileAction) -> Unit) 
 private val previewStats = DuelStats(
     DuelRecord(12, 9, 1, 22),
     listOf(CalibrationLevel(1, 8, 7), CalibrationLevel(2, 6, 4), CalibrationLevel(3, 3, 1)),
+    botRecord = DuelRecord(3, 2, 0, 5),
 )
 
 @PreviewLightDark
@@ -587,6 +670,10 @@ private fun ProfilePreview() {
                     listOf(
                         MatchSummary("1", "Murad", null, false, MatchOutcome.WIN, MatchEndReason.NORMAL, 640, 410, 16, 0),
                         MatchSummary("2", null, null, true, MatchOutcome.LOSS, MatchEndReason.FORFEIT, 120, 300, -14, 0),
+                        MatchSummary(
+                            "3", "Duello Bot", null, false, MatchOutcome.WIN, MatchEndReason.NORMAL, 520, 300, null, 0,
+                            OpponentType.BOT,
+                        ),
                     ),
                 ),
             ),

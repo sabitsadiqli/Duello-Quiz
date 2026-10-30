@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
+import com.sabit.duelloquiz.core.designsystem.component.BotBadge
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -68,7 +69,13 @@ internal fun IntroScreen(intro: IntroUi, onReconnect: () -> Unit, onLeaveFromOve
             tween(if (reducedMotion) Motion.Duel.REDUCED_MOTION_FADE_MS else Motion.Duel.INTRO_ENTER_MS, easing = Motion.EmphasizedDecelerate),
         )
     }
-    val announcement = stringResource(R.string.duel_intro_cd, intro.opponent.displayName, intro.opponent.rating)
+    val opponentName = opponentDisplayName(intro.opponent.displayName, intro.opponentIsBot)
+    val opponentRating = intro.opponent.rating
+    val announcement = when {
+        intro.opponentIsBot -> stringResource(R.string.duel_intro_bot_cd, opponentName)
+        opponentRating != null -> stringResource(R.string.duel_intro_cd, opponentName, opponentRating)
+        else -> null
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -92,7 +99,7 @@ internal fun IntroScreen(intro: IntroUi, onReconnect: () -> Unit, onLeaveFromOve
                     modifier = Modifier.semantics {
                         heading()
                         liveRegion = LiveRegionMode.Assertive
-                        contentDescription = announcement
+                        if (announcement != null) contentDescription = announcement
                     },
                 )
                 Spacer(Modifier.height(Spacing.xxl))
@@ -110,6 +117,7 @@ internal fun IntroScreen(intro: IntroUi, onReconnect: () -> Unit, onLeaveFromOve
                 PlayerRow(
                     player = intro.opponent,
                     self = false,
+                    bot = intro.opponentIsBot,
                     modifier = Modifier.graphicsLayer {
                         alpha = enter.value
                         if (!reducedMotion) translationX = (1f - enter.value) * size.width / SLIDE_FRACTION
@@ -141,6 +149,10 @@ internal fun IntroScreen(intro: IntroUi, onReconnect: () -> Unit, onLeaveFromOve
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+                if (intro.opponentIsBot) {
+                    Spacer(Modifier.height(Spacing.sm))
+                    BotNoRatingNote()
+                }
             }
         }
         intro.overlay?.let { SelfOverlayCard(it, onReconnect = onReconnect, onLeave = onLeaveFromOverlay) }
@@ -149,16 +161,46 @@ internal fun IntroScreen(intro: IntroUi, onReconnect: () -> Unit, onLeaveFromOve
 
 private const val SLIDE_FRACTION = 4
 
+/** duel-intro.md bot variant: "Bot oyunu reytinqə təsir etmir." with an 18dp info icon, centred. */
 @Composable
-private fun PlayerRow(player: DuelPlayer, self: Boolean, modifier: Modifier = Modifier) {
-    val name = if (self) stringResource(R.string.duel_you) + ", " + player.displayName else player.displayName
-    val rating = stringResource(R.string.home_rating, player.rating)
+private fun BotNoRatingNote() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Icon(
+            painter = painterResource(DuelloIcons.Info),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(Sizes.iconSmall),
+        )
+        Spacer(Modifier.width(Spacing.xs))
+        Text(
+            text = stringResource(R.string.duel_bot_no_rating_note),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+    }
+}
+
+/** The server's name; for the bot the client fallback `duel_bot_name` when it is missing. */
+@Composable
+internal fun opponentDisplayName(name: String?, bot: Boolean): String =
+    if (bot && name.isNullOrBlank()) stringResource(R.string.duel_bot_name) else name.orEmpty()
+
+@Composable
+private fun PlayerRow(player: DuelPlayer, self: Boolean, modifier: Modifier = Modifier, bot: Boolean = false) {
+    val displayName = opponentDisplayName(player.displayName, bot)
+    val name = if (self) stringResource(R.string.duel_you) + ", " + displayName else displayName
+    // The bot has no rating (OQ-107): "Reytinq: —" keeps both rows the same height.
+    val rating = player.rating?.takeUnless { bot }?.let { stringResource(R.string.home_rating, it) }
+        ?: stringResource(R.string.duel_bot_rating_none)
+    val rowDescription = if (bot) stringResource(R.string.duel_opponent_bot_cd, displayName) else "$name, $rating"
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (self) Arrangement.Start else Arrangement.End,
         modifier = modifier
             .fillMaxWidth()
-            .clearAndSetSemantics { contentDescription = "$name, $rating" },
+            .clearAndSetSemantics { contentDescription = rowDescription },
     ) {
         if (self) {
             DuelloAvatar(name = player.displayName, imageUrl = player.avatarUrl, size = Sizes.avatarXLarge, accent = AvatarAccent.Self)
@@ -172,13 +214,20 @@ private fun PlayerRow(player: DuelPlayer, self: Boolean, modifier: Modifier = Mo
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            Text(
-                text = player.displayName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (bot) {
+                    Spacer(Modifier.width(Spacing.sm))
+                    BotBadge()
+                }
+            }
             Text(
                 text = rating,
                 style = MaterialTheme.typography.labelLarge.tabularFigures(),
@@ -187,7 +236,13 @@ private fun PlayerRow(player: DuelPlayer, self: Boolean, modifier: Modifier = Mo
         }
         if (!self) {
             Spacer(Modifier.width(Spacing.lg))
-            DuelloAvatar(name = player.displayName, imageUrl = player.avatarUrl, size = Sizes.avatarXLarge, accent = AvatarAccent.Opponent)
+            DuelloAvatar(
+                name = player.displayName,
+                imageUrl = player.avatarUrl,
+                size = Sizes.avatarXLarge,
+                accent = AvatarAccent.Opponent,
+                bot = bot,
+            )
         }
     }
 }
@@ -215,6 +270,18 @@ private fun DividerMark(scale: () -> Float) {
             )
         }
         HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun IntroBotPreview() {
+    DuelloTheme {
+        IntroScreen(
+            intro = IntroUi(PreviewData.you, PreviewData.bot, opponentIsBot = true, countdown = 2),
+            onReconnect = {},
+            onLeaveFromOverlay = {},
+        )
     }
 }
 

@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
+import com.sabit.duelloquiz.core.designsystem.component.BotBadge
 import com.sabit.duelloquiz.core.designsystem.component.ConfidenceBadge
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
@@ -406,8 +407,9 @@ private fun PlayerPanel(panel: PanelUi, flip: () -> Float, animate: Boolean, mod
         else -> PanelLook(scheme.surfaceContainerHighest, scheme.onSurface, scheme.outline, Depth.borderThick, game.cardDepth)
     }
     val density = LocalDensity.current
-    val name = panel.name ?: stringResource(R.string.duel_you)
+    val name = if (panel.isSelf) stringResource(R.string.duel_you) else opponentDisplayName(panel.name, panel.isBot)
     val scoreDescription = stringResource(R.string.duel_player_score_cd, name, panel.score.toString())
+    val botDescription = if (panel.isBot) stringResource(R.string.duel_opponent_bot_cd, name) else null
     PressableSurface(
         onClick = null,
         faceColor = look.container,
@@ -434,15 +436,22 @@ private fun PlayerPanel(panel: PanelUi, flip: () -> Float, animate: Boolean, mod
                     name = panel.name ?: "",
                     imageUrl = panel.avatarUrl,
                     accent = if (panel.isSelf) AvatarAccent.Self else AvatarAccent.Opponent,
+                    bot = panel.isBot,
                 )
                 Spacer(Modifier.width(Spacing.sm))
                 Column(modifier = Modifier.semantics(mergeDescendants = true) {}) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.labelLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (botDescription != null) {
+                        // components.md §16: the badge replaces the name ("Duello B…" + badge would
+                        // not fit the 84dp slot at 1.3); TalkBack still reads the full name.
+                        Box(modifier = Modifier.semantics { contentDescription = botDescription }) { BotBadge() }
+                    } else {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     AnimatedScore(
                         target = panel.score,
                         from = panel.previousScore,

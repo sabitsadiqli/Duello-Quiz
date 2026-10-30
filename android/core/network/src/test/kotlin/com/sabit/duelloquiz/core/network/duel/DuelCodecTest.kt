@@ -395,7 +395,8 @@ class DuelCodecTest {
     @Test
     fun clientMessagesMatchTheContract() {
         assertJson("""{"type": "ping"}""", DuelCodec.encode(DuelClientMessage.Ping))
-        assertJson("""{"type": "queue.join"}""", DuelCodec.encode(DuelClientMessage.QueueJoin))
+        // v1.2: the app always announces the "bot" capability (§4).
+        assertJson("""{"type": "queue.join", "capabilities": ["bot"]}""", DuelCodec.encode(DuelClientMessage.QueueJoin))
         assertJson("""{"type": "queue.leave"}""", DuelCodec.encode(DuelClientMessage.QueueLeave))
         assertJson(
             """{"type": "match.rejoin", "matchId": "6f1c2b9e-1a7d-4a3e-9a51-0d7f6c1e2b3a"}""",

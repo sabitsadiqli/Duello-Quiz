@@ -6,7 +6,7 @@ import com.sabit.duelloquiz.core.network.model.NetworkProgress
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// Wire types of docs/api/duel-protocol.md v1 (§4, §5). Internal to :core:network; mapped to
+// Wire types of docs/api/duel-protocol.md v1.2 (§4, §5). Internal to :core:network; mapped to
 // :core:model duel types in DuelWireMappers.kt. Unknown fields are ignored; unknown `type`s are
 // detected before decoding (DuelCodec) and never reach these classes.
 
@@ -14,7 +14,8 @@ import kotlinx.serialization.Serializable
 internal data class WirePlayer(
     val displayName: String,
     val avatarUrl: String? = null,
-    val rating: Int,
+    /** v1.2: null for the bot. */
+    val rating: Int? = null,
     /** Only in `match.state.opponent`. */
     val connected: Boolean? = null,
     /** Only in `match.state.opponent`, while it is disconnected. */
@@ -26,8 +27,9 @@ internal data class WirePlayer(
 internal data class WireResultPlayer(
     val displayName: String? = null,
     val avatarUrl: String? = null,
-    val ratingBefore: Int,
-    val ratingAfter: Int,
+    /** v1.2: null for the bot. */
+    val ratingBefore: Int? = null,
+    val ratingAfter: Int? = null,
     val deleted: Boolean = false,
 )
 
@@ -124,6 +126,8 @@ internal sealed interface WireServerMessage {
         override val seq: Long,
         override val serverNowEpochMs: Long,
         val deadlineEpochMs: Long,
+        /** v1.2: null = no bot for this entry (OQ-111). */
+        val botAtEpochMs: Long? = null,
     ) : WireServerMessage
 
     @Serializable
@@ -145,6 +149,8 @@ internal sealed interface WireServerMessage {
         val rounds: Int,
         val bet3Limit: Int,
         val deadlineEpochMs: Long,
+        /** v1.2: `human` | `bot`; missing from older servers. */
+        val opponentType: String? = null,
     ) : WireServerMessage
 
     @Serializable
@@ -274,6 +280,7 @@ internal sealed interface WireServerMessage {
         val missedInARow: WireMissed,
         val lastResult: WireRoundResultBody? = null,
         val rounds: List<WireCompactRound> = emptyList(),
+        val opponentType: String? = null,
     ) : WireServerMessage
 
     @Serializable
@@ -290,7 +297,8 @@ internal sealed interface WireServerMessage {
         val ratingBefore: Int,
         val ratingAfter: Int,
         val ratingChange: Int,
-        val opponentRatingAfter: Int,
+        /** v1.2: null in a bot match. */
+        val opponentRatingAfter: Int? = null,
         val suddenDeathPlayed: Int,
         val calibration: List<WireCalibration>,
         val rounds: List<WireCompactRound> = emptyList(),
@@ -298,6 +306,7 @@ internal sealed interface WireServerMessage {
         val progress: NetworkProgress? = null,
         val you: WireResultPlayer? = null,
         val opponent: WireResultPlayer? = null,
+        val opponentType: String? = null,
     ) : WireServerMessage
 
     @Serializable
@@ -322,9 +331,10 @@ internal sealed interface WireClientMessage {
     @SerialName("ping")
     data object Ping : WireClientMessage
 
+    /** v1.2: `capabilities` (e.g. `["bot"]`); always written, also when empty. */
     @Serializable
     @SerialName("queue.join")
-    data object QueueJoin : WireClientMessage
+    data class QueueJoin(val capabilities: List<String>) : WireClientMessage
 
     @Serializable
     @SerialName("queue.leave")

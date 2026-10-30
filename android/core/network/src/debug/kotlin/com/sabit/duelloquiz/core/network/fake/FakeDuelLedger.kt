@@ -22,6 +22,9 @@ internal object FakeDuelLedger {
         var wins: Int = 0,
         var losses: Int = 0,
         var draws: Int = 0,
+        var botWins: Int = 0,
+        var botLosses: Int = 0,
+        var botDraws: Int = 0,
     )
 
     private val players = mutableMapOf<String, Player>()
@@ -35,6 +38,12 @@ internal object FakeDuelLedger {
         return DuelStats(
             record = DuelRecord(player.wins, player.losses, player.draws, player.wins + player.losses + player.draws),
             calibration = (1..LEVELS).map { CalibrationLevel(it, player.picks[it - 1], player.correct[it - 1]) },
+            botRecord = DuelRecord(
+                player.botWins,
+                player.botLosses,
+                player.botDraws,
+                player.botWins + player.botLosses + player.botDraws,
+            ),
         )
     }
 
@@ -49,10 +58,11 @@ internal object FakeDuelLedger {
         player.history.addFirst(summary)
         while (player.history.size > MAX_HISTORY) player.history.removeLast()
         if (summary.endReason == MatchEndReason.ABANDONED) return
+        // OQ-110: the record counts real players only; bot matches go to the bot record.
         when (summary.outcome) {
-            MatchOutcome.WIN -> player.wins++
-            MatchOutcome.LOSS -> player.losses++
-            MatchOutcome.DRAW -> player.draws++
+            MatchOutcome.WIN -> if (summary.isBot) player.botWins++ else player.wins++
+            MatchOutcome.LOSS -> if (summary.isBot) player.botLosses++ else player.losses++
+            MatchOutcome.DRAW -> if (summary.isBot) player.botDraws++ else player.draws++
             MatchOutcome.ABANDONED -> Unit
         }
         calibration.forEach {

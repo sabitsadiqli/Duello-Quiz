@@ -16,6 +16,7 @@ import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchResult
 import com.sabit.duelloquiz.core.model.duel.MatchResultPlayer
 import com.sabit.duelloquiz.core.model.duel.MatchSnapshot
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.OwnBet
 import com.sabit.duelloquiz.core.model.duel.RoundNext
 import com.sabit.duelloquiz.core.model.duel.RoundPlayerResult
@@ -31,6 +32,9 @@ object DuelTestMessages {
     val YOU = DuelPlayer("Leyla", null, 1000)
     val OPPONENT = DuelPlayer("Murad", "https://example.com/m.png", 1016)
 
+    /** duel-protocol.md §5: the bot card (v1.2). */
+    val BOT = DuelPlayer("Duello Bot", null, null)
+
     fun options(roundNo: Int) = listOf("a", "b", "c", "d").map { QuizOption("r$roundNo-$it", "Variant $it") }
 
     fun hello(now: Long, activeMatchId: String? = null, heartbeatMs: Long = 5_000) =
@@ -38,14 +42,18 @@ object DuelTestMessages {
 
     fun pong(now: Long) = DuelServerMessage.Pong(0, now)
 
-    fun queueJoined(now: Long, deadline: Long = now + 30_000) = DuelServerMessage.QueueJoined(0, now, deadline)
+    fun queueJoined(now: Long, deadline: Long = now + 30_000, botAt: Long? = null) =
+        DuelServerMessage.QueueJoined(0, now, deadline, botAt)
 
     fun queueTimeout(now: Long) = DuelServerMessage.QueueTimeout(0, now)
 
     fun queueLeft(now: Long) = DuelServerMessage.QueueLeft(0, now)
 
-    fun matchFound(now: Long, matchId: String = MATCH_ID, deadline: Long = now + 3_000) =
-        DuelServerMessage.MatchFound(1, now, matchId, YOU, OPPONENT, 7, 2, deadline)
+    fun matchFound(now: Long, matchId: String = MATCH_ID, deadline: Long = now + 3_000, bot: Boolean = false) =
+        DuelServerMessage.MatchFound(
+            1, now, matchId, YOU, if (bot) BOT else OPPONENT, 7, 2, deadline,
+            if (bot) OpponentType.BOT else OpponentType.HUMAN,
+        )
 
     fun matchCancelled(seq: Long, now: Long, by: DuelSide, matchId: String = MATCH_ID) =
         DuelServerMessage.MatchCancelled(seq, now, matchId, by)
@@ -153,13 +161,14 @@ object DuelTestMessages {
         bet3Left: Int = 2,
         suddenDeathNo: Int? = null,
         matchId: String = MATCH_ID,
+        bot: Boolean = false,
     ) = DuelServerMessage.MatchState(
         seq,
         now,
         MatchSnapshot(
             matchId = matchId,
             you = YOU,
-            opponent = OPPONENT,
+            opponent = if (bot) BOT else OPPONENT,
             opponentConnected = opponentConnected,
             opponentReconnectDeadlineEpochMs = opponentReconnectDeadline,
             phase = phase,
@@ -180,6 +189,7 @@ object DuelTestMessages {
             missedInARowOpponent = 0,
             lastResult = lastResult,
             rounds = emptyList(),
+            opponentType = if (bot) OpponentType.BOT else OpponentType.HUMAN,
         ),
     )
 
@@ -197,6 +207,7 @@ object DuelTestMessages {
         progress: ProgressGain? = null,
         you: MatchResultPlayer? = null,
         opponent: MatchResultPlayer? = null,
+        bot: Boolean = false,
     ) = DuelServerMessage.MatchResultMessage(
         seq,
         now,
@@ -208,15 +219,16 @@ object DuelTestMessages {
             forfeitCause = forfeitCause,
             scores = scores,
             ratingBefore = 1000,
-            ratingAfter = 1000 + ratingChange,
-            ratingChange = ratingChange,
-            opponentRatingAfter = 1016 - ratingChange,
+            ratingAfter = if (bot) 1000 else 1000 + ratingChange,
+            ratingChange = if (bot) 0 else ratingChange,
+            opponentRatingAfter = if (bot) null else 1016 - ratingChange,
             suddenDeathPlayed = 0,
             calibration = listOf(CalibrationLevel(1, 2, 1), CalibrationLevel(2, 3, 2), CalibrationLevel(3, 2, 2)),
             rounds = emptyList(),
             progress = progress,
             you = you,
             opponent = opponent,
+            opponentType = if (bot) OpponentType.BOT else OpponentType.HUMAN,
         ),
     )
 

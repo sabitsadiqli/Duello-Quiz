@@ -10,6 +10,7 @@ import com.sabit.duelloquiz.core.model.duel.DuelStats
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
+import com.sabit.duelloquiz.core.model.duel.OpponentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.KSerializer
@@ -38,6 +39,8 @@ internal data class CachedStats(
     /** picks and correct per level 1, 2, 3. */
     val picks: List<Int>,
     val correct: List<Int>,
+    /** Bot record (wins, losses, draws, total; OQ-110); empty in caches written before 0.3.0. */
+    val bot: List<Int> = emptyList(),
 )
 
 @Serializable
@@ -50,8 +53,9 @@ internal data class CachedMatch(
     val endReason: String,
     val scoreOwn: Int,
     val scoreOpponent: Int,
-    val ratingChange: Int,
+    val ratingChange: Int? = null,
     val finishedAtEpochMs: Long,
+    val bot: Boolean = false,
 )
 
 @Serializable
@@ -73,16 +77,18 @@ internal fun DuelStats.toCached() = CachedStats(
     total = record.total,
     picks = calibration.map { it.picks },
     correct = calibration.map { it.correct },
+    bot = listOf(botRecord.wins, botRecord.losses, botRecord.draws, botRecord.total),
 )
 
 internal fun CachedStats.toModel() = DuelStats(
     record = DuelRecord(wins, losses, draws, total),
     calibration = picks.indices.map { CalibrationLevel(it + 1, picks[it], correct.getOrElse(it) { 0 }) },
+    botRecord = DuelRecord(bot.getOrElse(0) { 0 }, bot.getOrElse(1) { 0 }, bot.getOrElse(2) { 0 }, bot.getOrElse(3) { 0 }),
 )
 
 internal fun MatchSummary.toCached() = CachedMatch(
     id, opponentName, opponentAvatarUrl, opponentDeleted, outcome.name, endReason.name, scoreOwn, scoreOpponent,
-    ratingChange, finishedAtEpochMs,
+    ratingChange, finishedAtEpochMs, isBot,
 )
 
 /** Null for an entry written by another app version with unknown values. */
@@ -90,8 +96,10 @@ internal fun CachedMatch.toModelOrNull(): MatchSummary? {
     val outcome = MatchOutcome.entries.firstOrNull { it.name == outcome } ?: return null
     val reason = MatchEndReason.entries.firstOrNull { it.name == endReason } ?: return null
     return MatchSummary(
-        id, opponentName, opponentAvatarUrl, opponentDeleted, outcome, reason, scoreOwn, scoreOpponent, ratingChange,
-        finishedAtEpochMs,
+        id, opponentName, opponentAvatarUrl, opponentDeleted, outcome, reason, scoreOwn, scoreOpponent,
+        ratingChange = if (bot) null else ratingChange ?: 0,
+        finishedAtEpochMs = finishedAtEpochMs,
+        opponentType = if (bot) OpponentType.BOT else OpponentType.HUMAN,
     )
 }
 

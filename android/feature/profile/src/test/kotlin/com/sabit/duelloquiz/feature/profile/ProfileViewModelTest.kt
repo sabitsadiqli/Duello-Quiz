@@ -138,6 +138,27 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun onlyBotMatchesAreNotEmptyAndKeepTheBotRecordApart() = runTest {
+        // DUEL-28 / OQ-110: record = real players only; the bot record makes the card, not the empty state.
+        history.nextStats = DataResult.Success(
+            DuelStats(DuelRecord(0, 0, 0, 0), stats().calibration, botRecord = DuelRecord(3, 2, 0, 5)),
+        )
+        val state = viewModel().uiState.value
+        assertFalse(state.empty)
+        val content = (state.stats as SectionUi.Content).value.stats
+        assertEquals(0, content.record.total)
+        assertEquals(DuelRecord(3, 2, 0, 5), content.botRecord)
+    }
+
+    @Test
+    fun noRealAndNoBotMatchIsEmpty() = runTest {
+        history.nextStats = DataResult.Success(
+            DuelStats(DuelRecord(0, 0, 0, 0), stats().calibration, botRecord = DuelRecord(0, 0, 0, 0)),
+        )
+        assertTrue(viewModel().uiState.value.empty)
+    }
+
+    @Test
     fun withTheDuelFlagOffOnlyTheHeaderIsLoaded() = runTest {
         val vm = viewModel(duelEnabled = false)
         assertFalse(vm.uiState.value.duelEnabled)
