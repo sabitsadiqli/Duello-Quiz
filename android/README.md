@@ -125,9 +125,21 @@ screen takes names and avatars from `match.result.you/opponent` (a deleted oppon
 "Silinmiş oyunçu") and names the forfeit cause (`forfeitCause`); a rejoin snapshot keeps the
 opponent's reconnect countdown from `match.state.opponent.reconnectDeadlineEpochMs`.
 
+Bot opponent (protocol v1.2, OQ-106 … OQ-111): `queue.join` always carries
+`capabilities: ["bot"]`. With `queue.joined.botAtEpochMs` the search counts down to the bot moment
+(15 s) with the bot hint; if no `match.found` arrives 3 s after it, the countdown falls back to the
+queue deadline. The app never starts a bot match itself and recognises the bot only by
+`opponentType` (protocol) / `MatchSummary.opponentType` (REST), never by its name: Bot badge, app
+mark avatar, "—" instead of a rating, the two-line rating card and the half-XP note (the XP number is
+the server's). The profile record counts real players only; `Stats.botRecord` is the "Bota qarşı"
+line.
+
 Without Firebase a debug build plays against `FakeDuelSocketFactory` (`core/network/src/debug`): an
-in-process server with a bot that picks Əminlik and answers at random times (about 70 % right); every
-fake question names its right answer. Finished bot matches feed the fake profile stats and history.
+in-process server with scripted opponents that pick Əminlik and answer at random times (about 70 %
+right); every fake question names its right answer. Searches alternate: the first gets the Duello
+Bot at `botAtEpochMs` (15 s, `opponentType = bot`, null ratings, no Elo, half XP), the next a
+scripted "real player" after a few seconds. Finished matches feed the fake profile stats (real and
+bot record), history and XP.
 
 ## Retention (daily challenge, XP, streak, reminders)
 
