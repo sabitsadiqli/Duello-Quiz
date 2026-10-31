@@ -42,6 +42,9 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
 
     testImplementation(libs.ktor.client.mock)
+    // A real WebSocket server for the OkHttp duel transport test (KtorDuelSocketFactoryTest).
+    testImplementation(libs.ktor.server.netty)
+    testImplementation(libs.ktor.server.websockets)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
 }
