@@ -194,6 +194,7 @@ class DuelClient(
             when (val result = socketFactory.open()) {
                 is DuelOpenResult.Failed -> {
                     if (active == null || result.error == DuelConnectError.UNAUTHORIZED) {
+                        Log.i(TAG, "Duel connection failed: ${result.error}")
                         _connection.value = DuelConnectionState.Failed(result.error)
                         return
                     }
@@ -212,6 +213,7 @@ class DuelClient(
                         return
                     }
                     if (active == null) {
+                        Log.i(TAG, "Duel connection lost outside a match: code=$closeCode")
                         _connection.value = DuelConnectionState.Lost(closeCode)
                         return
                     }
