@@ -52,6 +52,15 @@ object DuelCodec {
         null
     }
 
+    /** The `type` of a frame for diagnostics ("?" when there is none); never the content. */
+    fun typeOf(text: String): String = try {
+        (json.parseToJsonElement(text).jsonObject[TYPE] as? JsonPrimitive)?.contentOrNull ?: "?"
+    } catch (_: SerializationException) {
+        "?"
+    } catch (_: IllegalArgumentException) {
+        "?"
+    }
+
     fun encode(message: DuelClientMessage): String =
         json.encodeToString(WireClientMessage.serializer(), message.asWire())
 

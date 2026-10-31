@@ -4,6 +4,7 @@ import android.util.Log
 import com.sabit.duelloquiz.core.auth.AuthBackend
 import com.sabit.duelloquiz.core.auth.AuthRepository
 import com.sabit.duelloquiz.core.common.DeviceConnectivity
+import com.sabit.duelloquiz.core.common.Telemetry
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.network.AcceptLanguageProvider
 import com.sabit.duelloquiz.core.network.AppLocaleAcceptLanguageProvider
@@ -95,6 +96,7 @@ internal object NetworkModule {
         clock: WallClock,
         tokenProvider: IdTokenProvider,
         languageProvider: AcceptLanguageProvider,
+        telemetry: Telemetry,
     ): DuelSocketFactory {
         if (authBackend == AuthBackend.InMemoryFake) {
             val fake = DebugNetworkFakes.createDuel(authRepository, clock)
@@ -108,6 +110,7 @@ internal object NetworkModule {
             baseUrl = BuildConfig.API_BASE_URL,
             tokenProvider = tokenProvider,
             languageProvider = languageProvider,
+            telemetry = telemetry,
         )
     }
 }
