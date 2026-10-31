@@ -29,8 +29,8 @@ val privacyPolicyUrl: String = providers.gradleProperty("privacyPolicyUrl")
     .orElse("https://duelloquiz.app/legal/privacy-policy.html")
     .get()
 
-// Duel build flag (OQ-020): on in debug, off in release until the duel ships. Override for every
-// build type with -PduelEnabled=true|false.
+// Duel build flag (OQ-020): the duel shipped (bot opponent included), so it is on in every build
+// type. Kept as a kill switch: override with -PduelEnabled=false.
 val duelEnabledOverride: String? = providers.gradleProperty("duelEnabled").orNull
 fun duelEnabled(default: Boolean): String = (duelEnabledOverride?.toBooleanStrict() ?: default).toString()
 
@@ -64,7 +64,7 @@ android {
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "false"
         }
         release {
-            buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = false))
+            buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = true))
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "true"
             if (releaseStoreFile != null) {
                 signingConfig = signingConfigs.getByName("release")
