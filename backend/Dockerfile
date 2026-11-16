@@ -12,7 +12,7 @@
 # Base images are pinned literally (not via ARG) so Dependabot can update them.
 
 # ---- build: Gradle installDist ----------------------------------------------------
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21.0.12.1_1-jdk-noble AS build
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21.0.13_9-jdk-noble AS build
 WORKDIR /src
 ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.welcome=never"
 
@@ -28,7 +28,7 @@ COPY src/ src/
 RUN ./gradlew --no-daemon installDist
 
 # ---- runtime: glibc JRE (NOT Alpine: the bundled libwebp needs glibc >= 2.27) ------
-FROM eclipse-temurin:21.0.12.1_1-jre-noble
+FROM eclipse-temurin:21.0.13_9-jre-noble
 
 LABEL org.opencontainers.image.title="duello-quiz-backend" \
       org.opencontainers.image.source="https://github.com/sabitsadiqli/Duello-Quiz" \
