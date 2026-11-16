@@ -5,7 +5,7 @@ caption for each. Text: `listing-az.md`. Screens: `design/screens/*.md`.
 
 ## Open questions
 
-- **OQ-D26 — captioned composites or raw screenshots?** Proposal: captioned
+- **OQ-D26 — decided by Sabit (2026-10-17): captioned composites.** Proposal: captioned
   composites (layout below): they explain the Əminlik idea, which a raw duel
   screenshot does not. Raw screenshots are faster to make and are allowed too.
   Decides: Sabit.

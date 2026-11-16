@@ -1039,5 +1039,5 @@ model), OQ-109 (bot XP rounding and caps), OQ-110 (bot matches in history and st
 OQ-111 (search-screen hint, no opt-out).
 
 Decided earlier and used here: OQ-001, OQ-002, OQ-003, OQ-020, OQ-021.
-Also decided: OQ-073 (rejoin after a late `queue.leave`). Open: OQ-007 (questions per
-category before the closed test; the duel draws from all categories).
+Also decided: OQ-073 (rejoin after a late `queue.leave`), OQ-007 (60 reviewed questions
+per category before the closed test; the duel draws from all categories).

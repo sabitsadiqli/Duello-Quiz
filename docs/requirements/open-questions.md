@@ -6,7 +6,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match) | Sabit |
+| — | No open questions. | | |
 
 ## Details (OQ-107 … OQ-111) — bot opponent (all decided by Sabit 2026-10-30, recommendation accepted)
 
@@ -136,6 +136,7 @@ exists yet (only `DELETE /v1/me` with the user's own token).
 - Recommendation: A. Blocks SET-06 operationally (the page itself is ready).
 
 ### OQ-103 Off-VM backup location
+Superseded background (Oracle era). Decided 2026-11-16: Cloudflare R2, see the table above.
 - A. Oracle Object Storage (Always Free, private bucket). Same processor as the server.
 - B. Google Drive behind `rclone crypt`. Survives losing the Oracle account; Google
   becomes a storage provider to name in the policy.
@@ -153,6 +154,13 @@ exists yet (only `DELETE /v1/me` with the user's own token).
 - B. Include under-13. Families policy, stricter SDK rules (Analytics settings),
   parental consent; out of scope.
 - Recommendation: A.
+
+## Decided by Sabit (2026-11-16) — content and backups
+
+| ID | Question | Decision | Decided |
+| --- | --- | --- | --- |
+| OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match). Met: the private bank holds 60 reviewed questions in each of the 5 categories (300 in total) | Sabit 2026-11-16 |
+| OQ-103 | Off-VM backup location | Cloudflare R2 free tier (details in the 2026-10-25 table below) | Sabit 2026-11-16 |
 
 ## Decided by Sabit (2026-10-30) — bot opponent
 
@@ -182,7 +190,7 @@ runbook: `infra/README.md`.
 | OQ-102 | Email deletion request (SET-06) | Backend admin CLI task (`delete-user --email`) doing the same as `DELETE /v1/me` plus the Firebase account | Sabit 2026-10-25 |
 | OQ-104 | Analytics data after account deletion | Expires with the 2-month retention; no deletion API call in the MVP | Sabit 2026-10-25 |
 | OQ-105 | Target audience | 13+ in Play Console | Sabit 2026-10-25 |
-| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size (bills above 10 GB). Confirmed by Sabit 2026-10-25. The privacy policy then names Cloudflare (EU) for backups instead of Oracle | devops recommendation, pending Sabit |
+| OQ-103 | Off-VM backup location | **Cloudflare R2** free tier, private bucket in the EU jurisdiction, bucket-scoped token, 30-day lifecycle rule; 0 € at MVP size (bills above 10 GB). The privacy policy names Cloudflare (EU) for backups | Sabit 2026-11-16 |
 
 The privacy policy names Hetzner (Germany) for hosting and Cloudflare (EU) for DNS,
 e-mail forwarding and backups. The "Details" items for OQ-097, OQ-099 and OQ-103
