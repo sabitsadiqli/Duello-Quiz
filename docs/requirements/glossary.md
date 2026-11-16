@@ -149,6 +149,46 @@ the designer adds them to `design/copy/az.md`.
 | Question bank | — | The real questions in the private content repo cloned to `content/bank/`. |
 | Difficulty | — | 1 easy, 2 medium, 3 hard. Not shown in the MVP UI. |
 
+## Mock exams (post-MVP, draft)
+
+Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP; UI
+(az) values are proposals. DİM facts: `mock-exams.md` §2.
+
+| Term | UI (az) | Meaning |
+| --- | --- | --- |
+| Mock exam (sınaq) | Sınaq / Sınaqlar | Full-length practice exam written by our team in the structure, task types, time and scoring of a DİM exam. Never a real or official DİM exam; never named with a year or "rəsmi" (OQ-130). Not a "quiz". |
+| DİM | DİM | Dövlət İmtahan Mərkəzi, the State Examination Center. Used only in "DİM formatında" and the DİM disclaimer; we have no relationship with DİM. |
+| DİM disclaimer | — | Fixed text stating that sınaqlar are our own, not affiliated with or approved by DİM, and that the score is an estimate (EXAM-25, OQ-130). |
+| Exam type (exam template) | — | The DİM structure a sınaq follows: stage 1 (buraxılış), stage 2 group I–IV, later others. Defines sections, task counts and types, duration and scoring formula. |
+| Stage 1 (graduation exam) | Buraxılış | 11th-grade graduation exam = first stage of admission: native language, mathematics, foreign language; 85 tasks, 3 h, max 300 (Source A). |
+| Stage 2 (admission exam) | Qəbul (II mərhələ) | Specialty-group exam: 3 subjects × 30 tasks, 3 h, max 400; wrong closed answers cost 1/4 (Source B, verify, OQ-129). |
+| Specialty group | İxtisas qrupu | DİM admission group I, II, III (DT/TC), IV, V; decides the stage 2 subjects and weights. |
+| Group weight | — | DİM multiplier of a stage 2 subject score in a group (1.5 or 1). |
+| Sınaq variant | Sınaq №3 | One published, versioned set of tasks of an exam type. Published or unpublished as a whole. |
+| Subject block (section) | Fənn | All tasks of one subject inside a variant, e.g. "İngilis dili". A section may contain task groups. |
+| Subject sınaq | Fənn sınağı | Attempt with one subject block only, own duration (OQ-117); its estimate is never shown as a full-exam total. |
+| Exam attempt | — | One user's play-through of a variant (full or subject), from start to submit or server finalization. Resumable (OQ-118). Not a "session". |
+| Exam deadline | — | Server time after which an attempt accepts no live answers: start + duration + grace (OQ-117); only the late-upload window extends it. |
+| Late-upload window | — | Proposed 24 h after the exam deadline in which answers stored on the device before the deadline may still be uploaded (OQ-118). |
+| Exam package | — | Everything an attempt needs on the device, downloaded before start: tasks without keys, images, audio, manifest with sizes/hashes. |
+| Task | Tapşırıq | One exam item of a given task type. Not a "question" (a question always has exactly 4 options); exam UI says "tapşırıq". |
+| Closed task | Qapalı tapşırıq | Single-choice task with 2–5 options (OQ-113); 1 point if correct. |
+| Coded task | Kodlaşdırılan tapşırıq | Open task with a machine-checkable answer: calculation (number), selection or matching (OQ-114, OQ-115). 1 point if correct. |
+| Written task | Yazılı tapşırıq | Open task with a free answer or full solution, marked 0, ⅓, ½, ⅔ or 1 against criteria; counts double in most DİM formulas. Self-assessed in our app (OQ-112). |
+| Task group | — | Several tasks sharing one reading text or one listening audio. |
+| Reading text (passage) | Mətn | Long text of a reading task group; licence recorded (OQ-123). |
+| Listening text | Dinləmə mətni | Audio of a listening task group with its transcript; play rules OQ-119. |
+| Transcript | Mətnin yazılı forması | Text of a listening audio; shown only after submit. |
+| Answer revision | — | Each change of an answer on a task; the server keeps the highest revision before the deadline. |
+| Flag | İşarələ | User mark on a task to come back to; no effect on the score. |
+| Submit | Sınağı bitir | Ending an attempt by the user or automatically at the deadline; the attempt becomes read-only and is scored. |
+| Model answer | Nümunəvi cavab | Correct written answer or solution prepared by the content team, shown after submit. |
+| Marking criteria | Qiymətləndirmə meyarları | Rules mapping a written answer to 0, ⅓, ½, ⅔ or 1. |
+| Self-assessment | Özünü qiymətləndirmə | The user's own mark for a written task, chosen after submit against the model answer and criteria; always shown separately from auto-graded points. |
+| Estimated score | Təxmini bal | Score computed with DİM's public formula from our tasks and the user's self-assessment. Never "DİM balı". |
+| Relative score (NB) | — | DİM stage 2 subject score before weighting: NBq (closed, −1/4 per wrong answer, floor 0) + NBa (coded + 2 × written), each × 100/33. |
+| Retake | Təkrar cəhd | Attempt of a variant the user has already submitted (answers known), labelled in results (OQ-124). |
+
 ## App
 
 | Term | UI (az) | Meaning |
