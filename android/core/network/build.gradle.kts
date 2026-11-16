@@ -6,8 +6,9 @@ plugins {
 
 // Backend base URL. Debug defaults to the host machine as seen from the Android emulator; release
 // defaults to the dev server until a separate prod VM exists (Sabit, 2026-10-29: internal and
-// closed tests run against api-dev; switch to https://api.duelloquiz.app before production,
-// ADR 0001). Override for any build type with
+// closed tests run against api-dev, ADR 0001). The release workflow overrides it with the
+// repository variable ANDROID_API_BASE_URL (https://api.duelloquiz.app once prod exists,
+// infra/README.md "Production environment"). Override for any build type with
 // -PapiBaseUrl=https://..., e.g. https://api-dev.duelloquiz.app for the dev server (cleartext
 // http is allowed only for 10.0.2.2/localhost in debug).
 val apiBaseUrl = providers.gradleProperty("apiBaseUrl")

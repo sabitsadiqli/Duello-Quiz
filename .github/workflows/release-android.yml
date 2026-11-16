@@ -123,7 +123,27 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           VERSION_NAME: ${{ steps.version.outputs.name }}
           VERSION_CODE: ${{ steps.version.outputs.code }}
-        run: ./gradlew bundleRelease -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
+          # Repository variable: which backend the AAB talks to. Unset = the default in
+          # android/core/network/build.gradle.kts (api-dev). Set it to
+          # https://api.duelloquiz.app once prod exists: the closed-test AAB is the one
+          # Sabit promotes to production, so it must already point at prod
+          # (infra/README.md, "Production environment").
+          API_BASE_URL: ${{ vars.ANDROID_API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          args=(-PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE")
+          if [ -n "$API_BASE_URL" ]; then
+            if ! [[ "$API_BASE_URL" =~ ^https://[A-Za-z0-9.-]+/?$ ]]; then
+              echo "::error::ANDROID_API_BASE_URL must be https://<host>, got '$API_BASE_URL'."
+              exit 1
+            fi
+            args+=(-PapiBaseUrl="$API_BASE_URL")
+            echo "API base URL: $API_BASE_URL (repository variable ANDROID_API_BASE_URL)"
+          else
+            echo "API base URL: build default (api-dev); set ANDROID_API_BASE_URL for prod"
+          fi
+          echo "### API base URL: ${API_BASE_URL:-build default (https://api-dev.duelloquiz.app)}" >> "$GITHUB_STEP_SUMMARY"
+          ./gradlew bundleRelease "${args[@]}"
 
       - name: Collect outputs
         id: outputs
