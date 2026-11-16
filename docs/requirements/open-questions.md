@@ -6,7 +6,230 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| — | No open questions. | | |
+| OQ-112 | Mock exams: how are written open tasks scored without paid grading? | B: self-assessment against model answer and the official 0/⅓/½/⅔/1 marks, shown separately from the auto-graded part | Sabit |
+| OQ-113 | Mock exams: do DİM closed tasks have 5 options (A–E)? | Verify from a current DİM sample; model supports 2–5 options per exam template | Sabit (verify) |
+| OQ-114 | Mock exams: coded answer input format and normalisation | Digits, decimal comma (dot accepted), leading minus, fraction only if the task allows; exact rational comparison; max length per template | Sabit |
+| OQ-115 | Mock exams: scoring of selection and matching tasks | Verify; until then all-or-nothing, 1 point | Sabit (verify) |
+| OQ-116 | Mock exams: formulas and rich text rendering | LaTeX in the bank, rendered at import into tintable images with spoken text; restricted markup for passages; ADR | Sabit |
+| OQ-117 | Mock exams: durations, grace and pause | Full 180 min, subject block 60 min, 2 min grace, wall-clock, no pause | Sabit |
+| OQ-118 | Mock exams: offline, resume, late upload | Package downloaded before start; online start; offline answering; resume after app kill; 24 h late-upload window | Sabit |
+| OQ-119 | Mock exams: listening play rules | Verify DİM; proposal 2 plays, no seek or speed change, pause allowed; transcript after submit | Sabit (verify) |
+| OQ-120 | Mock exams: how is listening audio produced? | Human recordings by teachers/volunteers with a consent and licence form; Piper TTS only for prototypes; no paid TTS | Sabit |
+| OQ-121 | Mock exams: audio format and Android player | AAC-LC mono 64 kbps `.m4a`; Media3 ExoPlayer via ADR | Sabit |
+| OQ-122 | Mock exams: who may mark exam tasks `reviewed`? | Named subject reviewers (author ≠ reviewer); Sabit approves each variant for publishing | Sabit |
+| OQ-123 | Mock exams: copyright of reading passages | Own texts, or public-domain / CC BY texts with the licence recorded; no copyrighted excerpts | Sabit |
+| OQ-124 | Mock exams: retakes, running attempts, start limit | Unlimited retakes labelled "Təkrar cəhd"; 1 running attempt per user; 10 starts per day | Sabit |
+| OQ-125 | Mock exams: XP, streak and active day | Finished attempt = active day; no XP in Phase 1 | Sabit |
+| OQ-126 | Mock exams: free or paid? | Free until a separate monetisation decision (IAP is out of MVP scope) | Sabit |
+| OQ-127 | Mock exams: separate data model; reuse in category quizzes? | Separate tables and bank folder; no reuse in Phase 1 | Sabit |
+| OQ-128 | Mock exams: Phase 1 slice | "Buraxılış — İngilis dili" subject sınaq, 3 variants, with self-assessed written tasks | Sabit |
+| OQ-129 | Mock exams: re-verify stage 2 (2022 source), rounding, 9th grade | Re-verify with the current DİM document before Phase 3; half-up rounding; 9th grade later | Sabit (verify) |
+| OQ-130 | Mock exams: naming, disclaimer and Play listing wording | "… sınağı (DİM formatında)", no year/"rəsmi"/logo; disclaimer text in `mock-exams.md` EXAM-25 | Sabit |
+| OQ-131 | Mock exams: reuse stage 2 subject blocks across groups | Yes: 8 subject blocks (240 tasks) serve groups I–IV per round instead of 450 tasks | Sabit |
+
+## Details (OQ-112 … OQ-131) — mock exams "Sınaqlar" (post-MVP, open)
+
+Added by `business-analyst` on 2026-11-16 with `docs/requirements/mock-exams.md`
+(EXAM-01 … EXAM-25). The feature is outside the MVP scope of `CLAUDE.md`; none of
+these questions blocks the MVP. DİM facts: Source A (stage 1, 2024) and Source B
+(stage 2, 2022) as cited in `mock-exams.md` §2.
+
+### OQ-112 Written open tasks
+Written tasks are 38–50 % of the raw points in stage 1 subjects and 18 % in stage 2.
+Human markers and paid AI grading are excluded (cost rule).
+- A. Skip written tasks and scale the auto-graded score up to 100. Simple; the
+  estimate is an extrapolation that rewards test skills and hides weak writing.
+- A2. Skip written tasks and show the exact auto-graded points out of their share
+  (e.g. "46,9 / 62,2"). Honest, but no estimate out of 100.
+- B. Self-assessment: after submit the user compares their answer (typed, or on
+  paper) with the model answer and the official criteria and picks 0, ⅓, ½, ⅔ or 1;
+  the estimate shows "Avtomatik yoxlanılıb" and "Özün qiymətləndirdin" separately.
+  Full exam practice, teaches the criteria; marks can be inflated (no ranking, so low
+  harm); every written task needs a model answer and criteria (content effort).
+- C. Leave written tasks out of the product until a free grading option exists.
+- Recommendation: B, with the A2 split always visible. Blocks EXAM-11, EXAM-16,
+  EXAM-17.
+
+### OQ-113 Number of options in closed tasks
+Assumed 5 (A–E), not verified. Recommendation: the content-writer confirms the
+option count per exam type from DİM's public sample materials (structure only, no
+task copied); the data model allows 2–5 options per template. Blocks EXAM-06 and the
+exam template.
+
+### OQ-114 Coded answer format
+- A. Digits, one decimal separator ("," shown, "." accepted), leading minus, optional
+  "a/b" if the task allows; exact rational comparison against one or more accepted
+  values; max length per template (proposal 7 chars until DİM's answer-sheet rules are
+  verified). Forgiving, needs a small parser with tests.
+- B. Exact string match against the accepted text. Simple; "0,50" vs "0,5" fails
+  unfairly.
+- Recommendation: A, and verify DİM's coding rules (sign, fractions, length) before
+  Phase 2. Blocks EXAM-07.
+
+### OQ-115 Selection and matching scoring
+Source B lists selection and matching among coded tasks but not whether partial
+answers score. Options: A. all-or-nothing, 1 point; B. partial credit. Recommendation:
+verify; build A unless DİM states otherwise. Blocks EXAM-08 (Phase 3).
+
+### OQ-116 Formulas and rich text
+- A. KaTeX in a WebView, assets bundled offline. Best typography, CSS dark mode and
+  font scaling; a WebView per task is heavy on 2 GB devices and awkward inside Compose
+  scrolling.
+- B. LaTeX source in the bank, rendered at import (e.g. JLaTeXMath on the JVM, free)
+  to alpha-only WebP at 3× density; the app tints it with the text colour and scales
+  it with the font scale; each formula carries a spoken text for TalkBack. Light on
+  the device, works offline, same pipeline as images; formulas are images (no text
+  selection), more import work.
+- C. Unicode only (x², √, ≤, H₂O). Zero cost; not enough for fractions, integrals,
+  systems.
+- Plus for all: a restricted markup for passages and tasks (paragraphs, bold,
+  italic, underline, sub/superscript, simple tables), no full Markdown/HTML.
+- Recommendation: B + restricted markup; an ADR (new rendering approach, Android and
+  backend). Blocks EXAM-09, EXAM-22 and Phase 2.
+
+### OQ-117 Durations, grace and pause
+Only DİM's 3 hours per stage are official. Proposed (game numbers, Sabit decides):
+- Full attempt 180 min; subject block 60 min (180 / 3); grace for late requests 2 min.
+- Pause: A. none, wall-clock like the real exam (realistic, simple, fair to the
+  estimate); B. pausable "Məşq" mode (flexible, estimate less realistic, more states).
+- Recommendation: 180 / 60 / 2 min, no pause; an untimed practice mode only later.
+  Blocks EXAM-02, EXAM-04, EXAM-13, EXAM-19.
+
+### OQ-118 Offline, resume and late upload
+- Download: the whole package (tasks without keys + all media) before start, so the
+  timer never runs while buffering. Accepted risk: a modified client can read tasks
+  before starting (no answers; practice only).
+- Start: one online request (server creates the attempt and the deadline).
+  Alternative: offline start with a client clock — not server-authoritative,
+  rejected.
+- Answering: fully offline; answers stored in Room with a per-task revision and
+  synced in order.
+- Resume: after backgrounding, app kill and on another device (latest revision
+  wins). This differs from the quiz (OQ-017) because an attempt is 3 hours long.
+- Late upload: answers stored before the local deadline may be uploaded up to 24 h
+  after the server deadline, only from the device that held the attempt; then the
+  server finalizes. Without it, a network drop at minute 179 loses the attempt.
+- Recommendation: all of the above. Blocks EXAM-03, EXAM-04, EXAM-13, EXAM-14,
+  EXAM-21.
+
+### OQ-119 Listening play rules
+Unknown: how many times DİM plays the text, pauses between plays, whether tasks may
+be read before. Proposal: 2 plays, no seeking or speed change, pause allowed (phone
+interruptions), a play counts as used after 10 s; transcript only after submit; a
+free practice player outside attempts (Phase 2). Accessibility: deaf or
+hard-of-hearing users cannot do listening; proposal: a "skip listening" choice that
+removes the listening tasks from the estimate with a note. Recommendation: verify,
+then build the proposal. Blocks EXAM-10.
+
+### OQ-120 Audio production
+- A. Human recordings by English teachers or fluent volunteers: best quality and
+  natural accent; needs speakers, a quiet room, a consent and licence form (stored
+  outside the public repo) and editing time.
+- B. Open-source offline TTS (e.g. Piper, free, runs locally): fast, zero cost;
+  robotic prosody, accent and dialogue voices weaker; voice-model licences must be
+  checked per voice.
+- C. Paid cloud TTS: good quality; needs Sabit's approval and usually a payment card
+  (cost rule) — not proposed.
+- Recommendation: A for published variants; B only for prototypes and internal
+  testing. Blocks EXAM-10 content and Phase 1 content.
+- Piper test (tech lead, 2026-11-16, piper-tts 1.8.0, GPL-3.0 tool; generated audio
+  is not covered by the tool's licence). Voice licences are those of the training
+  datasets in each voice's MODEL_CARD (huggingface.co/rhasspy/piper-voices):
+  usable: `en_GB-alba-medium` (CC BY 4.0, attribution), `en_GB-cori-high` (public
+  domain), `en_US-libritts_r-medium` (CC BY 4.0, 904 speakers),
+  `en_GB-northern_english_male-medium` (CC BY-SA 4.0 — share-alike, avoid unless
+  checked); excluded: `en_US-hfc_female`, `en_US-hfc_male`, `en_US-ryan` (CC BY-NC-SA,
+  non-commercial), `en_US-lessac`, `en_US-amy`, `en_GB-jenny_dioco` (custom or unclear
+  licences). Generation is fast on a laptop CPU (~35 s of audio in a few seconds per
+  clip); AAC-LC mono 64 kbps gives ~8 KB/s (~0.5 MB per minute). Quality verdict:
+  pending Sabit's listening test.
+
+### OQ-121 Audio format and player
+- Format: A. AAC-LC mono 64 kbps `.m4a` (~0.48 MB/min; decodes on every device from
+  minSdk 24). B. Opus mono 32–48 kbps (~0.25–0.36 MB/min; smaller; container support
+  varies by Android version, needs Media3 extractors).
+- Backend: re-encode uploads to the chosen format, strip metadata, store with the
+  existing storage interface under `audio/{uuid}.m4a`, Caddy immutable cache, include
+  in backups (`docs/mvp-spec.md` §5 pattern).
+- Android: Media3 ExoPlayer (new library → ADR, tech stack rule).
+- Recommendation: A + Media3 via ADR. Blocks EXAM-10.
+
+### OQ-122 Reviewers
+`CLAUDE.md` says only Sabit marks a question `reviewed`. At ~85 tasks per variant in
+up to 8 subjects that is not feasible and Sabit is not a subject expert for all.
+- A. Sabit reviews everything. Slow; quality risk in sciences.
+- B. Sabit names subject reviewers (teachers) recorded in `reviewedBy`; author ≠
+  reviewer; Sabit approves publishing of a whole variant. Faster, expert quality;
+  changes a rule in `CLAUDE.md` for exam content only.
+- Recommendation: B; the `CLAUDE.md` rule is changed only by Sabit. Blocks EXAM-24.
+
+### OQ-123 Reading passages and copyright
+DİM uses literary and publicistic texts. Excerpts of living or recently deceased
+authors are protected (term to verify under Azerbaijani copyright law). Options:
+A. our own texts; B. public-domain or CC BY texts with the licence recorded; C.
+copyrighted excerpts with permission (slow). Recommendation: A + B; the importer
+rejects a passage without a licence. Blocks EXAM-09 content.
+
+### OQ-124 Retakes and attempts
+Proposal: unlimited retakes, later attempts labelled "Təkrar cəhd"; at most 1
+running attempt per user; at most 10 attempt starts per user per Baku day (429).
+Alternative: one attempt per variant (realistic, but punishing with few variants).
+Recommendation: the proposal. Blocks EXAM-20, EXAM-21.
+
+### OQ-125 XP, streak and active day
+- A. No progression effects. Simplest.
+- B. A submitted attempt is an active day (streak), no XP. Rewards the habit; no
+  farming via self-assessment.
+- C. XP per auto-graded correct task. Motivating; a 30–90 task attempt dwarfs quiz
+  XP and the caps of `docs/mvp-spec.md` §10 would need new numbers.
+- Recommendation: B for Phase 1; revisit XP with numbers later. Blocks EXAM-17.
+
+### OQ-126 Free or paid
+IAP is out of the MVP scope. Recommendation: sınaqlar are free until Sabit makes a
+separate monetisation decision; nothing is built for paywalls. Blocks nothing now.
+
+### OQ-127 Data model and reuse
+- A. Separate exam tables and bank folder; category quiz, daily and duel unchanged.
+- B. Extend `questions`/`options`. Fewer tables; breaks the "exactly 4 options"
+  invariant used by quiz, daily and duel.
+- Reuse of closed exam tasks in category quizzes: later and only by explicit export
+  (they are long and use 5 options). Recommendation: A, no reuse in Phase 1. Blocks
+  EXAM-24.
+
+### OQ-128 Phase 1 slice
+- A. English subject sınaq in the buraxılış format (30 tasks, listening + reading +
+  written self-assessment). Covers audio, groups, long passages, exam engine; no
+  formulas; small content.
+- B. Mathematics closed + coded only. Needs formula rendering first; no audio.
+- C. Full buraxılış without written tasks. Triple content, formulas, estimate misses
+  38–50 % of raw points.
+- Recommendation: A, 3 variants. Blocks the whole feature start.
+
+### OQ-129 Verification of the sources
+- Stage 2 rules come from a 2022 document; re-verify on dim.gov.az for the current
+  year before Phase 3.
+- Rounding: Source A/B say "rounded to 0.1"; half-up assumed; whether the weighted
+  stage 2 value is rounded again is unknown.
+- How "Azərbaycan dili (dövlət dili kimi)" relates to the 300 total; the 9th-grade
+  exam structure; V group aptitude exams — not analysed.
+- Recommendation: re-verify each item before the phase that needs it; 9th grade and
+  state-language exam later. Blocks EXAM-15 (rounding) and Phase 3.
+
+### OQ-130 Naming, disclaimer and store wording
+Proposal: titles "Buraxılış sınağı №3 (DİM formatında)", "I qrup qəbul sınağı (DİM
+formatında)"; never a year, "rəsmi", "real", "DİM imtahanı" or the DİM logo; the
+disclaimer text of EXAM-25 on catalogue, info, result and "Haqqında"; the Play
+listing says "DİM formatında orijinal sınaqlar" and contains the "not affiliated"
+sentence. Option: omit "DİM" entirely ("buraxılış formatında") — safest legally,
+less clear to students. Recommendation: the proposal; Sabit may ask for legal advice.
+Blocks EXAM-25, EXAM-01, EXAM-17.
+
+### OQ-131 Reuse of stage 2 subject blocks
+Mathematics appears in groups I and II, chemistry in I and IV, etc. A. One block per
+subject per round, shared by all groups (8 blocks, 240 tasks). B. Separate blocks per
+group (450 tasks). Whether DİM uses the same subject test across groups is not
+verified; for practice it does not matter. Recommendation: A. Blocks Phase 3 content
+planning.
 
 ## Details (OQ-107 … OQ-111) — bot opponent (all decided by Sabit 2026-10-30, recommendation accepted)
 
