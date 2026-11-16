@@ -14,7 +14,6 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-117 | Mock exams: durations, grace and pause | Full 180 min, subject block 60 min, 2 min grace, wall-clock, no pause | Sabit |
 | OQ-118 | Mock exams: offline, resume, late upload | Package downloaded before start; online start; offline answering; resume after app kill; 24 h late-upload window | Sabit |
 | OQ-119 | Mock exams: listening play rules | Verify DİM; proposal 2 plays, no seek or speed change, pause allowed; transcript after submit | Sabit (verify) |
-| OQ-120 | Mock exams: how is listening audio produced? | Human recordings by teachers/volunteers with a consent and licence form; Piper TTS only for prototypes; no paid TTS | Sabit |
 | OQ-121 | Mock exams: audio format and Android player | AAC-LC mono 64 kbps `.m4a`; Media3 ExoPlayer via ADR | Sabit |
 | OQ-122 | Mock exams: who may mark exam tasks `reviewed`? | Named subject reviewers (author ≠ reviewer); Sabit approves each variant for publishing | Sabit |
 | OQ-123 | Mock exams: copyright of reading passages | Own texts, or public-domain / CC BY texts with the licence recorded; no copyrighted excerpts | Sabit |
@@ -130,8 +129,8 @@ then build the proposal. Blocks EXAM-10.
   checked per voice.
 - C. Paid cloud TTS: good quality; needs Sabit's approval and usually a payment card
   (cost rule) — not proposed.
-- Recommendation: A for published variants; B only for prototypes and internal
-  testing. Blocks EXAM-10 content and Phase 1 content.
+- Recommendation was A for published variants, B for prototypes. **Decided 2026-11-16:
+  B (Piper) for published variants**, see the decided table.
 - Piper test (tech lead, 2026-11-16, piper-tts 1.8.0, GPL-3.0 tool; generated audio
   is not covered by the tool's licence). Voice licences are those of the training
   datasets in each voice's MODEL_CARD (huggingface.co/rhasspy/piper-voices):
@@ -142,7 +141,7 @@ then build the proposal. Blocks EXAM-10.
   non-commercial), `en_US-lessac`, `en_US-amy`, `en_GB-jenny_dioco` (custom or unclear
   licences). Generation is fast on a laptop CPU (~35 s of audio in a few seconds per
   clip); AAC-LC mono 64 kbps gives ~8 KB/s (~0.5 MB per minute). Quality verdict:
-  pending Sabit's listening test.
+  sufficient (Sabit, 2026-11-16).
 
 ### OQ-121 Audio format and player
 - Format: A. AAC-LC mono 64 kbps `.m4a` (~0.48 MB/min; decodes on every device from
@@ -384,6 +383,7 @@ Superseded background (Oracle era). Decided 2026-11-16: Cloudflare R2, see the t
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match). Met: the private bank holds 60 reviewed questions in each of the 5 categories (300 in total) | Sabit 2026-11-16 |
 | OQ-103 | Off-VM backup location | Cloudflare R2 free tier (details in the 2026-10-25 table below) | Sabit 2026-11-16 |
+| OQ-120 | Mock exams: how is listening audio produced? | **Piper TTS** (open-source, offline, free) for published variants too: Sabit found the quality sufficient after listening to samples. Only voices whose licence allows commercial use without share-alike: `en_GB-alba-medium` (CC BY 4.0), `en_GB-cori-high` (public domain), `en_US-libritts_r-medium` (CC BY 4.0, pick fixed speaker IDs per role). CC BY voices are credited on the licences screen. No CC BY-SA or NC voices, no paid TTS. Human recordings stay possible later per variant | Sabit 2026-11-16 |
 
 ## Decided by Sabit (2026-10-30) — bot opponent
 
