@@ -1,7 +1,7 @@
 [versions]
 # Build tooling. AGP 9 uses built-in Kotlin; the Kotlin Gradle plugin version below is the one
 # put on the build classpath (root build.gradle.kts), so AGP compiles with this Kotlin.
-agp = "9.4.1"
+agp = "9.5.1"
 kotlin = "2.4.21"
 # KSP 2.3.x is decoupled from the Kotlin version (KSP2); 2.3.10+ supports Kotlin 2.4 and AGP 9 built-in Kotlin.
 ksp = "2.3.12"
