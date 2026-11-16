@@ -18,7 +18,7 @@ Open (need Sabit):
   GitHub serves the files as they are (no Jekyll build over the Markdown in
   `docs/`). Side effect: every file under `docs/` becomes reachable on the Pages
   site (the repo is public anyway; no secrets live there).
-- **OQ-D20 — deferred by Sabit (2026-10-17): contact email and developer name are added when the app is ready; keep the placeholders until then.** Contact email and developer name shown on the pages (and in Play
+- **OQ-D20 — decided: `support@duelloquiz.app` (OQ-097, Sabit 2026-10-25; deferred on 2026-10-17).** Contact email and developer name shown on the pages (and in Play
   Console). Which address is public? A dedicated address (e.g. a new Gmail) keeps
   the personal one private.
 - **OQ-D21 — decided by Sabit (2026-10-17): yes, English sections on the privacy policy and the deletion page, below the Azerbaijani text.** SET-06 asks for Azerbaijani **and English** on the
