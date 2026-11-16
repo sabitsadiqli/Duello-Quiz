@@ -49,8 +49,8 @@ Sabit decided on 2026-10-25 to pay for a small VM and a real domain.
    `support@duelloquiz.app` → a dedicated inbox of Sabit (OQ-097). Receive-only.
 5. **Off-VM backups: Cloudflare R2** (free tier, 10 GB-month), private bucket,
    bucket-scoped API token, 30-day lifecycle rule; uploaded by `rclone` from the
-   existing `backup.sh` (OQ-103, pending Sabit's confirmation because R2 needs a
-   payment method on the Cloudflare account and is billed above the free tier).
+   existing `backup.sh` (OQ-103, confirmed by Sabit 2026-11-16; R2 needs a payment method on the
+   Cloudflare account and is billed above the free tier).
 6. Firebase (Auth, FCM, Analytics, Crashlytics) and GitHub (CI/CD, ghcr.io, Pages)
    are unchanged.
 

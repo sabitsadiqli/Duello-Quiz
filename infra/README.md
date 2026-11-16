@@ -166,7 +166,7 @@ Decision: [ADR 0001](../docs/adr/0001-hosting-hetzner-duelloquiz-app.md) (Sabit,
 | Images | `/media/*` served by Caddy from the `media` volume (read-only), `Cache-Control: public, max-age=31536000, immutable` on existing files |
 | Image registry | `ghcr.io/sabitsadiqli/duello-quiz-backend`, tags `<commit sha>`, `main`, `<version>`; built for `linux/arm64` and `linux/amd64` |
 | Logs | Backend: JSON on stdout (`docker compose logs backend`); Docker rotates at 5 × 20 MB per container |
-| Backups | Daily `pg_dump` + media tar, 14 days, off-VM copy in **Cloudflare R2** (OQ-103, pending Sabit's confirmation) |
+| Backups | Daily `pg_dump` + media tar, 14 days, off-VM copy in **Cloudflare R2** (OQ-103, confirmed 2026-11-16) |
 | Contact e-mail | Cloudflare Email Routing, e.g. `support@duelloquiz.app` → a dedicated inbox (OQ-097) |
 
 **Single replica, deploy in quiet hours.** The duel queue and running matches live in
@@ -400,7 +400,7 @@ systemctl list-timers duello-backup.timer
 ```
 
 **Off-VM copy: Cloudflare R2 (required — a backup on the same VM is not a backup).**
-Choice (OQ-103, pending Sabit's confirmation): R2's free tier (10 GB-month storage,
+Choice (OQ-103, confirmed by Sabit 2026-11-16): R2's free tier (10 GB-month storage,
 free egress) holds 14 days of dumps + media many times over at MVP size (tens of MB
 per day), costs 0, and is a **different provider** than the VM, so losing or locking
 the Hetzner account does not lose the backups. R2 needs a payment method on the
@@ -532,7 +532,7 @@ Approximate, excl. VAT; check prices at purchase. Paid items approved by Sabit o
 | Backend VM `prod` (second CAX11, before the public release) | Hetzner Cloud | approx. €4–5/month more, once created |
 | Domain `duelloquiz.app` | Cloudflare Registrar | **approx. $14–16/year** (at-cost, renews at the same price) |
 | DNS, Email Routing | Cloudflare (free plan) | 0 |
-| Off-VM backup copy (≤ 10 GB) | Cloudflare R2 free tier | 0 (payment method on file; billed only above the free tier) — pending Sabit's confirmation |
+| Off-VM backup copy (≤ 10 GB) | Cloudflare R2 free tier | 0 (payment method on file; billed only above the free tier) — approved by Sabit 2026-11-16 |
 | Source, CI/CD, container registry, legal pages | GitHub (public repo, public package, Pages) | 0 |
 | TLS certificates | Let's Encrypt via Caddy / GitHub Pages | 0 |
 | Image storage and delivery | VM disk + Caddy | 0 |
