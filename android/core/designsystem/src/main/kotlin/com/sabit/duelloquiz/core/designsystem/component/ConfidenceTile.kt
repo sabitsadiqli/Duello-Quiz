@@ -39,7 +39,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameColors
@@ -71,24 +71,22 @@ enum class ConfidenceTileState {
 
 /** Face, content and edge of Əminlik level 1–3. */
 @Immutable
-data class ConfidenceTileColors(val container: Color, val content: Color, val depth: Color)
+data class ConfidenceTileColors(val container: Color, val content: Color)
 
 /** game.confidenceN* roles of [level] (1, 2, otherwise 3). */
 fun confidenceTileColors(level: Int, game: GameColors): ConfidenceTileColors = when (level) {
-    1 -> ConfidenceTileColors(game.confidence1Container, game.onConfidence1Container, game.confidence1Depth)
-    2 -> ConfidenceTileColors(game.confidence2Container, game.onConfidence2Container, game.confidence2Depth)
-    else -> ConfidenceTileColors(game.confidence3Container, game.onConfidence3Container, game.confidence3Depth)
+    1 -> ConfidenceTileColors(game.confidence1Container, game.onConfidence1Container)
+    2 -> ConfidenceTileColors(game.confidence2Container, game.onConfidence2Container)
+    else -> ConfidenceTileColors(game.confidence3Container, game.onConfidence3Container)
 }
 
 /** Signal bars alpha for bars above the level. */
 private const val InactiveBarAlpha = 0.3f
 
-/** Tile 1 border: onConfidence1Container at 30 % (it is pale in the light theme). */
-private const val TileOneBorderAlpha = 0.3f
-
 /**
  * Əminlik tile (components.md §7): a rounded rectangle (never a circle, so it cannot read as a
- * chip or coin) on a 5dp depth edge. Numeral + signal bars (a non-colour cue for the level), the
+ * chip or coin), flat, in ink density (paper / sand / ink), press = ripple + scale + tick. Tile 1
+ * keeps a 1dp outline. Numeral + signal bars (a non-colour cue for the level), the
  * stake on correct and on wrong. [usesLeft] shows the inverse badge on tile 3. The pick is sent
  * by [onClick] on the tap itself; the press animation never delays it.
  */
@@ -135,17 +133,16 @@ fun ConfidenceTile(
         PressableSurface(
             onClick = onClick,
             faceColor = face,
-            depthColor = if (disabled) null else colors.depth,
             border = when {
                 selected -> BorderStroke(Sizes.chipSelectedRing, ring)
-                level == 1 && !disabled -> BorderStroke(Depth.border, colors.content.copy(alpha = TileOneBorderAlpha))
+                level == 1 && !disabled -> BorderStroke(Borders.hairline, MaterialTheme.colorScheme.outline)
                 else -> null
             },
             contentColor = content,
             interactive = enabled,
             haptic = true,
+            scaleOnPress = true,
             shape = MaterialTheme.shapes.large,
-            depth = Depth.confidenceChip,
             faceMinHeight = Sizes.confidenceChip,
             contentAlignment = Alignment.Center,
             contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = Spacing.md),

@@ -26,16 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
@@ -95,24 +93,12 @@ fun QuizTimerBar(
                 }
                 val width = size.width * (left / total).coerceIn(0f, 1f)
                 drawRoundRect(color, size = Size(width, size.height), cornerRadius = CornerRadius(size.height / 2))
-                // Decorative glossy stripe on the indicator (components.md §4).
-                val inset = GameSizes.timerHighlightInset.toPx()
-                val stripeHeight = GameSizes.timerHighlightHeight.toPx()
-                val stripeWidth = width - inset * 2
-                if (stripeWidth > 0f) {
-                    drawRoundRect(
-                        color = TimerHighlight,
-                        topLeft = Offset(inset, Spacing.xxs.toPx()),
-                        size = Size(stripeWidth, stripeHeight),
-                        cornerRadius = CornerRadius(stripeHeight / 2),
-                    )
-                }
             },
     )
 }
 
 /**
- * Timer pill (components.md §4): white pill with a 2dp border, 20dp timer icon and the seconds in
+ * Timer pill (components.md §4 v3): paper pill with a 1dp border, timer icon and the seconds in
  * titleMedium tabular figures. Warning colour (border, icon, digits) and a pulse per second in the
  * last 5 s (no pulse with reduced motion), frozen colour after a tap.
  */
@@ -142,7 +128,7 @@ fun QuizTimerPill(
             },
         )
     }
-    val borderColor = if (warning) game.timerWarning else game.cardBorder
+    val borderColor = if (warning) game.timerWarning else MaterialTheme.colorScheme.outline
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -151,8 +137,8 @@ fun QuizTimerPill(
                 scaleX = scale.value
                 scaleY = scale.value
             }
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest, FullShape)
-            .border(Depth.border, borderColor, FullShape)
+            .background(MaterialTheme.colorScheme.surface, FullShape)
+            .border(Borders.hairline, borderColor, FullShape)
             .padding(
                 horizontal = Spacing.sm + Spacing.xxs,
                 vertical = GameSizes.timerPillPaddingVertical,
@@ -175,7 +161,6 @@ fun QuizTimerPill(
 private const val MS_PER_SECOND = 1000
 
 /** components.md §4: highlight stripe, white at 30 %. */
-private val TimerHighlight = Color.White.copy(alpha = 0.3f)
 
 @PreviewLightDark
 @Composable

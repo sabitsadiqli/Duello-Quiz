@@ -1,7 +1,6 @@
 package com.sabit.duelloquiz.core.designsystem.component
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,12 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -46,7 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
@@ -83,15 +77,15 @@ fun DuelloTextField(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val focusTracker = remember { FocusTracker() }
     val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
     val isError = errorText != null
     val scheme = MaterialTheme.colorScheme
-    val shape = MaterialTheme.shapes.medium
+    // v3 (components.md restyle §2): 8dp, 1dp outline, focused 2dp ink, no glow ring.
+    val shape = MaterialTheme.shapes.small
     val colors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor = scheme.surfaceContainerLowest,
         unfocusedContainerColor = scheme.surfaceContainerLowest,
         errorContainerColor = scheme.surfaceContainerLowest,
-        focusedBorderColor = scheme.primary,
+        focusedBorderColor = scheme.onSurface,
         unfocusedBorderColor = scheme.outline,
         focusedTextColor = scheme.onSurface,
         unfocusedTextColor = scheme.onSurface,
@@ -106,7 +100,6 @@ fun DuelloTextField(
     val textStyle = MaterialTheme.typography.bodyLarge.copy(
         color = if (enabled) scheme.onSurface else scheme.onSurface.copy(alpha = DisabledContentAlpha),
     )
-    val ringColor = scheme.primary.copy(alpha = FocusRingAlpha)
     Column(modifier = modifier) {
         Text(
             text = label,
@@ -126,16 +119,6 @@ fun DuelloTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = Sizes.textFieldHeight)
-                .drawBehind {
-                    if (!focused) return@drawBehind
-                    val ring = TextFieldFocusRing.toPx()
-                    val outline = shape.createOutline(
-                        Size(size.width + ring * 2, size.height + ring * 2),
-                        layoutDirection,
-                        this,
-                    )
-                    translate(left = -ring, top = -ring) { drawOutline(outline, ringColor, style = Stroke(ring)) }
-                }
                 .onFocusChanged { state ->
                     if (focusTracker.hadFocus && !state.isFocused) onFocusLost()
                     focusTracker.hadFocus = state.isFocused
@@ -171,8 +154,8 @@ fun DuelloTextField(
                             interactionSource = interactionSource,
                             colors = colors,
                             shape = shape,
-                            focusedBorderThickness = Depth.border,
-                            unfocusedBorderThickness = Depth.border,
+                            focusedBorderThickness = Borders.emphasis,
+                            unfocusedBorderThickness = Borders.hairline,
                         )
                     },
                 )
@@ -231,9 +214,6 @@ private fun supportingRow(
     }
 }
 
-/** components.md §2: focus ring 3dp primary at 20 % outside the field. */
-private val TextFieldFocusRing = Depth.borderThick
-private const val FocusRingAlpha = 0.2f
 
 /** Plain holder; changing it must not recompose. */
 private class FocusTracker {

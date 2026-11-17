@@ -41,7 +41,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
-import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
@@ -49,8 +48,9 @@ import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import kotlinx.coroutines.delay
 
 /**
- * Full-screen state view (components.md §11): icon on a circle, title, optional body, a neutral
- * (or [primaryActionVariant]) primary action and an optional text action under it.
+ * State view (components.md §11 v3): line icon without a circle, serif title, optional body, a
+ * secondary (or [primaryActionVariant]) pill and an optional text action under it. [compact] is
+ * the variant inside a tab root list (home category area): 32dp icon, sans title, less padding.
  */
 @Composable
 fun DuelloStateView(
@@ -60,34 +60,28 @@ fun DuelloStateView(
     body: String? = null,
     primaryActionText: String? = null,
     onPrimaryAction: () -> Unit = {},
-    primaryActionVariant: ButtonVariant = ButtonVariant.Neutral,
+    primaryActionVariant: ButtonVariant = ButtonVariant.Secondary,
     secondaryActionText: String? = null,
     onSecondaryAction: () -> Unit = {},
+    compact: Boolean = false,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .widthIn(max = Spacing.maxContentWidth)
             .fillMaxWidth()
-            .padding(Spacing.xl),
+            .padding(if (compact) Spacing.lg else Spacing.xl),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(Sizes.stateIllustrationContainer)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh, FullShape),
-        ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(Sizes.stateIllustration),
-            )
-        }
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(if (compact) Sizes.iconLarge else Sizes.stateIllustration),
+        )
         Spacer(Modifier.height(Spacing.lg))
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },
@@ -102,7 +96,7 @@ fun DuelloStateView(
             )
         }
         if (primaryActionText != null) {
-            Spacer(Modifier.height(Spacing.xl))
+            Spacer(Modifier.height(if (compact) Spacing.md else Spacing.xl))
             DuelloButton(text = primaryActionText, onClick = onPrimaryAction, variant = primaryActionVariant)
         }
         if (secondaryActionText != null) {
