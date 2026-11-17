@@ -16,7 +16,7 @@ job: pick what to play.
 
 ## Questions and decisions
 
-- **OQ-D34 — open (Sabit): UI sans font.** The approved mockup used Manrope, but
+- **OQ-D34 — decided by Sabit (2026-11-17): Plus Jakarta Sans.** The approved mockup used Manrope, but
   Manrope has no capital **Ə** (U+018F) — verified in its font file and by the
   Google Fonts subset response (`tokens.json` typography). This spec is built
   with **Plus Jakarta Sans** (verified full Azerbaijani coverage, similar

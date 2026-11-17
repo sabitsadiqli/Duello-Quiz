@@ -24,7 +24,7 @@ and the reminder row.
   the last `streakCurrent` days up to yesterday (today too if `todayActive`) as
   active, all other past days as "none", never show a freeze dot (it cannot be
   inferred), and say nothing in text that the fallback cannot know.
-- **OQ-D36 — open (Sabit): "time" on the reminder row.** The brief asks for the
+- **OQ-D36 — decided by Sabit (2026-11-17): "Səhər" without a clock time, no picker.** The brief asks for the
   switch "with time", but the reminder is sent by the server at a fixed 10:00
   Baku (OQ-088) and `notifications.md` decided never to print clock times
   (travellers outside Baku). Proposal: keep the word "Səhər" in the supporting

@@ -25,8 +25,8 @@ against the requirement proposals" at the end).
 - **OQ-D31 — placeholder syntax of the backend i18n push texts** (`push_` keys):
   backend-dev decides; names `dailyNumber`, `streak` stay.
 
-- **OQ-D36 — reminder "time" on the Gündəlik tab** (`daily-tab.md`): proposal keeps
-  "Səhər" without a clock time (as decided for settings). Decides: Sabit.
+- **OQ-D36 — reminder "time" on the Gündəlik tab** (`daily-tab.md`): "Səhər" without a
+  clock time (as decided for settings). Decided by Sabit 2026-11-17.
 
 ## Tone: "sən"
 
