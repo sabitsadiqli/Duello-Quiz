@@ -74,11 +74,14 @@ internal data class QuizResultArgs(
  * Quiz, result and review, and the daily challenge (play, result, review). The result replaces
  * the quiz in the back stack, so back from the result goes home (QUIZ-05); "Yenidən oyna"
  * replaces the result with a new quiz.
- * [onNavigateHome] pops back to home and hands [HomeNotice] to it (done by :app).
+ * [onNavigateHome] pops back to the Oyna tab and hands [HomeNotice] to it; the daily screens
+ * use [onNavigateDaily] to return to the Gündəlik tab instead (HOME-09, DAILY-03 / DAILY-04);
+ * both are done by :app.
  */
 fun NavGraphBuilder.quizScreens(
     navController: NavController,
     onNavigateHome: (HomeNotice?) -> Unit,
+    onNavigateDaily: (HomeNotice?) -> Unit,
 ) {
     composable<QuizDestination> { entry ->
         QuizRoute(
@@ -109,7 +112,7 @@ fun NavGraphBuilder.quizScreens(
     }
     composable<DailyDestination> {
         DailyPlayRoute(
-            onNavigateHome = onNavigateHome,
+            onNavigateHome = onNavigateDaily,
             onOpenResult = { attemptId, fromStored ->
                 navController.navigate(DailyResultDestination(attemptId, fromStored)) {
                     popUpTo<DailyDestination> { inclusive = true }
@@ -119,7 +122,7 @@ fun NavGraphBuilder.quizScreens(
     }
     composable<DailyResultDestination> {
         DailyResultRoute(
-            onNavigateHome = { onNavigateHome(null) },
+            onNavigateHome = { onNavigateDaily(null) },
             onOpenReview = { attemptId -> navController.navigate(QuizReviewDestination(attemptId, daily = true)) },
         )
     }

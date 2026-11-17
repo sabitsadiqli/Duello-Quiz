@@ -52,24 +52,21 @@ import com.sabit.duelloquiz.core.designsystem.component.BotBadge
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
-import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloSecondaryButton
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.component.ProgressCard
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.DuelCardShape
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
-import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
-import com.sabit.duelloquiz.core.designsystem.theme.gradients
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
-import com.sabit.duelloquiz.core.designsystem.theme.toBrush
 import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
 import com.sabit.duelloquiz.core.model.duel.CalibrationLevel
@@ -118,14 +115,14 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
                     MatchCalibrationCard(levels, result.hint)
                 }
                 Spacer(Modifier.height(Spacing.xl))
-                DuelloDuelButton(
+                DuelloPrimaryButton(
                     text = stringResource(R.string.duel_result_play_again),
                     onClick = onPlayAgain,
                     loading = result.playAgainLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(Spacing.md))
-                DuelloNeutralButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
+                DuelloSecondaryButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Spacing.xl))
                 Spacer(Modifier.navigationBarsPadding())
             }
@@ -135,7 +132,7 @@ internal fun ResultScreen(result: ResultUi, onPlayAgain: () -> Unit, onHome: () 
 
 /**
  * Outcome hero (duel-result.md v2): a game card with the outcome icon, headline and the score row.
- * Win: `gradient.resultWin` face with white content; loss, draw and abandoned: a white game card.
+ * Win: solid ink block (`scheme.inverseSurface`) with paper content; loss, draw and abandoned: a flat card.
  * Pops once (spring bouncy); reduced motion: static.
  */
 @Composable
@@ -143,21 +140,22 @@ private fun OutcomeHero(result: ResultUi) {
     val game = MaterialTheme.gameColors
     val scheme = MaterialTheme.colorScheme
     val win = result.outcome == MatchOutcome.WIN
-    val gradient = MaterialTheme.gradients.resultWin
+    // v3: the win hero is a solid ink block (gradient.resultWin -> scheme.inverseSurface).
+    val inkOn = scheme.inverseOnSurface
     val (icon, iconColor, headline) = when (result.outcome) {
-        MatchOutcome.WIN -> Triple(DuelloIcons.EmojiEvents, gradient.on, R.string.duel_result_win)
+        MatchOutcome.WIN -> Triple(DuelloIcons.EmojiEvents, inkOn, R.string.duel_result_win)
         MatchOutcome.LOSS -> Triple(DuelloIcons.Flag, scheme.onSurfaceVariant, R.string.duel_result_loss)
         MatchOutcome.DRAW -> Triple(DuelloIcons.Handshake, scheme.primary, R.string.duel_result_draw)
         MatchOutcome.ABANDONED -> Triple(DuelloIcons.Block, scheme.onSurfaceVariant, R.string.duel_result_abandoned)
     }
     val headlineColor = when (result.outcome) {
-        MatchOutcome.WIN -> gradient.on
+        MatchOutcome.WIN -> inkOn
         MatchOutcome.DRAW -> scheme.primary
         else -> scheme.onSurface
     }
     val heroColors = if (win) {
-        // White content; the winner pill is white with the brand violet (= gradient start) text.
-        HeroColors(gradient.on, gradient.on, gradient.on, gradient.on, gradient.start)
+        // Paper-on-ink content; the winner pill is paper with ink text.
+        HeroColors(inkOn, inkOn, inkOn, inkOn, scheme.inverseSurface)
     } else {
         HeroColors(scheme.onSurface, scheme.onSurface, scheme.onSurfaceVariant, game.correctContainer, game.onCorrectContainer)
     }
@@ -190,21 +188,18 @@ private fun OutcomeHero(result: ResultUi) {
     if (win) {
         PressableSurface(
             onClick = null,
-            faceColor = gradient.start,
-            faceBrush = gradient.toBrush(),
-            depthColor = game.pressablePrimaryDepth,
-            contentColor = gradient.on,
-            shape = HeroShape,
-            depth = Depth.card,
+            faceColor = scheme.inverseSurface,
+            contentColor = inkOn,
+            shape = DuelCardShape,
             contentPadding = PaddingValues(Spacing.xl),
             modifier = popModifier,
         ) { heroContent() }
     } else {
-        GameCard(shape = HeroShape, contentPadding = PaddingValues(Spacing.xl), modifier = popModifier) { heroContent() }
+        GameCard(shape = DuelCardShape, contentPadding = PaddingValues(Spacing.xl), modifier = popModifier) { heroContent() }
     }
 }
 
-/** Text colours inside the outcome hero (white on the win gradient). */
+/** Text colours inside the outcome hero (paper on the ink win block). */
 private data class HeroColors(
     val name: Color,
     val score: Color,

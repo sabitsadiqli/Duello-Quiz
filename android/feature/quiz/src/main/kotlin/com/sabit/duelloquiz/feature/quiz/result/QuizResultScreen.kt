@@ -9,6 +9,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,7 +61,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.BannerVariant
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
-import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloSecondaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
@@ -68,15 +69,14 @@ import com.sabit.duelloquiz.core.designsystem.component.NotificationPermissionCa
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.component.ProgressCard
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
+import com.sabit.duelloquiz.core.designsystem.theme.DuelCardShape
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
-import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
-import com.sabit.duelloquiz.core.designsystem.theme.categoryColors
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
@@ -219,7 +219,7 @@ internal fun QuizResultScreen(
                         loading = uiState.isPlayAgainLoading,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    DuelloNeutralButton(
+                    DuelloSecondaryButton(
                         text = stringResource(R.string.quiz_result_home),
                         onClick = { onAction(QuizResultAction.HomeClicked) },
                         modifier = Modifier.fillMaxWidth(),
@@ -232,13 +232,13 @@ internal fun QuizResultScreen(
 }
 
 /**
- * Score hero (quiz-result.md v2): a game card in the played category's accent colour with the
+ * Score hero (v3 token-only, v3-migration.md: hero rewrite later): a flat paper card with the
  * category pill, the big score (count-up) and the correct count; one TalkBack element. 10 / 10
  * adds a celebration icon and pops the hero once (spring bouncy). Reduced motion: final values.
  */
 @Composable
 private fun ScoreHero(uiState: QuizResultUiState) {
-    val colors = categoryColors(uiState.categoryAccent)
+    val onFace = MaterialTheme.colorScheme.onSurface
     val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
     val shown = remember { Animatable(if (reducedMotion) uiState.correctCount.toFloat() else 0f) }
     val pop = remember { Animatable(if (uiState.isPerfect && !reducedMotion) Motion.PERFECT_HERO_POP_FROM else 1f) }
@@ -258,11 +258,10 @@ private fun ScoreHero(uiState: QuizResultUiState) {
     val description = stringResource(R.string.quiz_result_score_cd, uiState.correctCount, uiState.total)
     PressableSurface(
         onClick = null,
-        faceColor = colors.face,
-        depthColor = colors.depth,
-        contentColor = colors.onFace,
-        shape = HeroShape,
-        depth = Depth.categoryTile,
+        faceColor = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(Borders.hairline, MaterialTheme.gameColors.cardBorder),
+        contentColor = onFace,
+        shape = DuelCardShape,
         contentAlignment = Alignment.Center,
         contentPadding = PaddingValues(Spacing.xl),
         modifier = Modifier
@@ -278,28 +277,28 @@ private fun ScoreHero(uiState: QuizResultUiState) {
                 Icon(
                     painter = painterResource(DuelloIcons.Celebration),
                     contentDescription = null,
-                    tint = colors.onFace,
+                    tint = onFace,
                     modifier = Modifier.size(Sizes.iconLarge),
                 )
             }
-            CategoryPill(name = uiState.categoryName, iconKey = uiState.categoryIconKey, color = colors.onFace)
+            CategoryPill(name = uiState.categoryName, iconKey = uiState.categoryIconKey, color = onFace)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = shown.value.toInt().toString(),
                     style = MaterialTheme.typography.displayLarge.tabularFigures(),
-                    color = colors.onFace,
+                    color = onFace,
                 )
                 Text(
                     text = stringResource(R.string.quiz_result_score_suffix, uiState.total),
                     style = MaterialTheme.typography.headlineMedium.tabularFigures(),
-                    color = colors.onFace,
+                    color = onFace,
                     modifier = Modifier.padding(bottom = Spacing.sm),
                 )
             }
             Text(
                 text = stringResource(R.string.quiz_result_correct_count, uiState.correctCount, uiState.total),
                 style = MaterialTheme.typography.titleMedium,
-                color = colors.onFace,
+                color = onFace,
                 textAlign = TextAlign.Center,
             )
         }
@@ -397,7 +396,6 @@ private fun QuizResultPreview() {
             uiState = QuizResultUiState(
                 categoryName = "Coğrafiya",
                 categoryIconKey = "geography",
-                categoryAccent = "ocean",
                 correctCount = 7,
                 total = 10,
                 reviewCount = 3,
@@ -411,7 +409,7 @@ private fun QuizResultPreview() {
 @Composable
 private fun QuizResultPerfectPreview() {
     DuelloTheme {
-        QuizResultScreen(uiState = QuizResultUiState(categoryName = "Tarix", categoryIconKey = "history", categoryAccent = "orange", correctCount = 10, total = 10), onAction = {})
+        QuizResultScreen(uiState = QuizResultUiState(categoryName = "Tarix", categoryIconKey = "history", correctCount = 10, total = 10), onAction = {})
     }
 }
 
