@@ -1,5 +1,16 @@
 # Daily challenge ("Gündəlik çağırış")
 
+> **v3 (tokens 3.0.0, 2026-11-17):** section **A (home card) is superseded** by
+> the challenge card on the Gündəlik tab (`daily-tab.md` A, `components.md` §37,
+> §38) — same states, flat card, no gradient. Everything that said "home" for the
+> daily now means "the Gündəlik tab": reminder taps open the tab, "Çıx" in the
+> leave dialog and "Əsas səhifə" on the result return to the tab
+> (`common_home` is replaced there by `daily_result_back_to_tab`). B (loading),
+> C (play) and D (result) keep their behaviour; their look changes through tokens:
+> the D score hero is a flat card with a serif `typography.custom.numeralLarge`
+> score in `scheme.onSurface` instead of the `gradient.dailyHero` block, and the
+> C stepper uses ink (`scheme.onSurface`) for the current segment.
+
 Stories: DAILY-01 … DAILY-10, HOME-07, PROG-02 / PROG-06 (result), NOTIF-01 (first
 result may show the permission card), NOTIF-05 (opening from a reminder).
 Decisions: OQ-074 (Baku day), OQ-075 (5 × 20 s, 1.5 s reveal, 137.5 s deadline),
@@ -46,7 +57,7 @@ share text.
 - Process death / second device → home "Davam et" resumes at the first unanswered
   question with the remaining time (DAILY-08).
 
-## A. Home card
+## A. Home card (superseded in v3 — see `daily-tab.md` A)
 
 Layout, faces and component states: `components.md` §28. Placement: `home.md`
 (directly under the header and its message banner, above the duel card).

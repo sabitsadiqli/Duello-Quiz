@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 10" width="120" height="10">
+  <!-- Duello Quiz v3: hand-drawn squiggle underline (components.md §36).
+       Single open path, stroke only. Colour = scheme.primary (#A82D25 light / #EC7B6F dark);
+       Android imports it as a vector drawable and tints it with the token. Reference
+       shape only: in the app the path is generated to the word width
+       (wavelength size.squiggleWavelength 11dp, amplitude 2.5dp, stroke 2.5dp). -->
+  <path d="M2 6.2 C5 2.8 8.5 2.6 11.5 5.6 S17.5 8.9 21 5.4 S27.8 2.2 31.2 5.8 S37.6 8.6 41 5.2 S47.9 2.5 51.4 6 S57.8 8.8 61.2 5.3 S68 2.4 71.5 5.9 S77.7 8.5 81.3 5.1 S88.2 2.7 91.6 6.1 S97.9 8.7 101.4 5.4 S108 2.9 111.6 5.9 S116.4 7.6 118 6.6"
+        fill="none" stroke="#A82D25" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -25,6 +25,9 @@ against the requirement proposals" at the end).
 - **OQ-D31 — placeholder syntax of the backend i18n push texts** (`push_` keys):
   backend-dev decides; names `dailyNumber`, `streak` stay.
 
+- **OQ-D36 — reminder "time" on the Gündəlik tab** (`daily-tab.md`): "Səhər" without a
+  clock time (as decided for settings). Decided by Sabit 2026-11-17.
+
 ## Tone: "sən"
 
 The app addresses the player with **sən** (informal "you") everywhere, including
@@ -54,6 +57,9 @@ Rules:
 - Placeholders use Android positional syntax: `%1$s` (text), `%1$d` (integer).
 
 ## Width check (360dp)
+
+> v3 (2026-11-17): new strings are measured from the font files, see "v3 minimal"
+> under Strings. The estimate below is the v2 method, kept for older strings.
 
 Estimate method (Nunito since tokens 2.0.0 — re-checked: average glyph advance
 ≈ 0.55 em lowercase at 600, ≈ 0.59 em at 800, 0.68 em uppercase; button labels are
@@ -207,13 +213,13 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 
 | Key | Azerbaijani | Notes |
 | --- | --- | --- |
-| `home_rating` | Reytinq: %1$d | Header, labelLarge, 1 line. |
-| `home_profile_cd` | %1$s, reytinq %2$d | Content description of the whole header (merged). |
-| `home_settings_cd` | Parametrlər | Content description of the settings icon. |
+| `home_rating` | Reytinq: %1$d | v3: profile header only (home shows `home_duel_sticker_rating`). |
+| `home_profile_cd` | %1$s, reytinq %2$d | **v3 removed** (no home header). |
+| `home_settings_cd` | Parametrlər | **v3 removed** from home; the settings icon moved to Profil (`profile_settings_cd`). Keep the key until `docs/legal/account-deletion.html` is updated. |
 | `home_duel_title` | Duel | Duel card title. Hidden until the duel ships (OQ-020). |
-| `home_duel_hint` | Əminliyini sına, reytinq qazan | Duel card supporting text, `wrap` 2 lines. |
-| `home_duel_cta` | Duelə başla | `btn` inside the duel hero card (v2, `components.md` §6). 11 chars, ~104 / ~135dp at 1.0 / 1.3 — fits. Same text as `profile_empty_cta`, kept separate. |
-| `home_categories_title` | Kateqoriyalar | Section header, titleMedium. |
+| `home_duel_hint` | %1$d sual · nə qədər əminsən? | **v3 changed** (was "Əminliyini sına, reytinq qazan"). `plurals`; value 7. Duel card hint, bodyMedium, `wrap`. U+00B7 middle dot. 172 / 224dp (264). |
+| `home_duel_cta` | Rəqib tap | **v3 changed** (was "Duelə başla"). CTA pill on the duel card with a trailing `arrow_forward` icon (the arrow is an icon, not text). 71 / 92dp at 1.0 / 1.3. `profile_empty_cta` keeps "Duelə başla". |
+| `home_categories_title` | Kateqoriyalar | **v3 removed** (replaced by `home_categories_overline`). |
 | `home_category_question_count` | %1$d sual | `plurals`. Category card supporting text; value 10. |
 | `home_category_loading_cd` | %1$s quizi açılır | Content description while the start request runs. |
 | `home_categories_empty` | Hələ ki kateqoriya yoxdur. Bir az sonra yenidən yoxla. | Empty state body, `wrap`. Action: `common_refresh`. |
@@ -281,21 +287,21 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | Key | Azerbaijani | Notes |
 | --- | --- | --- |
 | `settings_title` | Parametrlər | `bar`. |
-| `settings_section_theme` | Tema | Section header. |
+| `settings_section_theme` | TEMA | **v3**: overline, authored in capitals (was "Tema"). |
 | `settings_theme_system` | Sistem | `row` radio. |
 | `settings_theme_system_supporting` | Telefonun ayarına uyğun | Supporting text under "Sistem". |
 | `settings_theme_light` | İşıqlı | `row` radio. |
 | `settings_theme_dark` | Qaranlıq | `row` radio. |
-| `settings_section_language` | Dil | Section header. |
+| `settings_section_language` | DİL | **v3**: overline, authored in capitals (was "Dil"). |
 | `settings_language_value` | Azərbaycan dili | `row`, not interactive in MVP. |
-| `settings_section_account` | Hesab | Section header. |
+| `settings_section_account` | HESAB | **v3**: overline, authored in capitals (was "Hesab"). |
 | `settings_signed_in_as` | %1$s | Supporting line with the account email (or Google name). 1 line, ellipsis at the end. |
 | `settings_sign_out` | Hesabdan çıx | `row`. |
 | `settings_sign_out_title` | Hesabdan çıxmaq istəyirsən? | Dialog title. |
 | `settings_sign_out_body` | Nəticələrin və reytinqin hesabında qalır. İstədiyin vaxt yenidən daxil ola bilərsən. | Dialog body. |
 | `settings_sign_out_confirm` | Çıx | `dbtn`. |
 | `settings_delete_account` | Hesabı sil | `row`, error colour. |
-| `settings_section_about` | Haqqında | Section header. |
+| `settings_section_about` | HAQQINDA | **v3**: overline, authored in capitals (was "Haqqında"). |
 | `settings_version` | Versiya %1$s (%2$d) | `row`, e.g. "Versiya 1.0.0 (12)". |
 | `settings_privacy_policy` | Məxfilik siyasəti | `row`, opens Custom Tab. |
 | `settings_licenses` | Açıq mənbə lisenziyaları | `row` (fits at 1.3, 24 chars). |
@@ -531,7 +537,7 @@ name, never "AI", never "kompüter rəqib". Rating texts say it plainly: no Elo 
 | Key | Azerbaijani | Notes |
 | --- | --- | --- |
 | `profile_title` | Profil | `bar`. |
-| `profile_open_cd` | Profili aç | Click label (`onClickLabel`) of the home header. |
+| `profile_open_cd` | Profili aç | **v3 removed** (use `nav_profile_open_cd`). |
 | `profile_edit_name_cd` | Adı dəyiş | Edit icon next to the name. |
 | `profile_joined` | Qoşulub: %1$s %2$d | "Qoşulub: oktyabr 2026". `%1$s` from `profile_months` (lowercase, as in Azerbaijani running text). |
 | `profile_months` | yanvar, fevral, mart, aprel, may, iyun, iyul, avqust, sentyabr, oktyabr, noyabr, dekabr | `string-array` (12 items, nominative). Do not use the system date formatter (not every device has full az data). |
@@ -548,7 +554,7 @@ name, never "AI", never "kompüter rəqib". Rating texts say it plainly: no Elo 
 | `profile_match_loss` | Məğlubiyyət | |
 | `profile_match_draw` | Heç-heçə | |
 | `profile_match_abandoned` | Ləğv edildi | History only (not in the record, OQ-026). |
-| `profile_matches_title` | Son oyunlar | Section header. |
+| `profile_matches_title` | SON OYUNLAR | **v3**: overline, capitals (was "Son oyunlar"). |
 | `profile_match_supporting` | %1$s · %2$s | "Qələbə · 640 : 410" (`%2$s` = `duel_score_pair`). |
 | `profile_match_label_opponent_forfeit` | Rəqib tərk etdi | History label (forfeit win) when the cause is unknown (no `forfeitCause`, OQ-D16). |
 | `profile_match_label_self_forfeit` | Texniki məğlubiyyət | History label (forfeit loss) when the cause is unknown. |
@@ -679,7 +685,7 @@ such numbers are `%s` (pre-formatted).
 | `profile_streak_freeze_earn` | Seriya qoruyucusu %1$d günlük seriyada qazanılır | Value 7 (OQ-086). `wrap`. |
 | `profile_streak_empty` | Hələ seriyan yoxdur. Bu gün bir oyun oyna və başla. | Streak 0 and best 0. |
 | `profile_streak_cd` | Seriya %1$d gün, ən uzun seriya %2$d gün | Streak card, one element; today and freeze lines are read after it. |
-| `profile_categories_title` | Kateqoriyalar | Section header (PROF-10). |
+| `profile_categories_title` | KATEQORİYALAR | **v3**: overline, capitals (was "Kateqoriyalar"). PROF-10. |
 | `profile_category_level_cd` | %1$s: səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb | Category row (PROF-10). |
 
 ### notif_ / settings_notif_ (notifications, `notifications.md`)
@@ -695,7 +701,7 @@ urgency, no emoji.
 | `notif_prompt_later` | Sonra | Text button. |
 | `notif_open_settings` | Ayarları aç | Primary button when the permission is permanently denied. |
 | `notif_enabled_snackbar` | Bildirişlər açıldı. Parametrlərdən istədiyin vaxt dəyişə bilərsən. | Snackbar after "granted". |
-| `settings_section_notifications` | Bildirişlər | Section header (SET-07). |
+| `settings_section_notifications` | BİLDİRİŞLƏR | **v3**: overline, capitals (was "Bildirişlər"). SET-07. |
 | `settings_notif_daily` | Gündəlik çağırış xatırlatması | Switch row, `row` (2 lines at 1.3). |
 | `settings_notif_daily_supporting` | Səhər, bugünkü çağırışı hələ oynamamısansa | Supporting text, `wrap`. |
 | `settings_notif_streak` | Seriya xatırlatması | Switch row. |
@@ -737,6 +743,85 @@ i18n JSON; the text must equal `duel_bot_name`.
 | --- | --- | --- |
 | Bot display name | Duello Bot | Intro, player panel TalkBack, result score column, history rows. "duello" is a reserved display-name word (OQ-051), so no human can be called this. |
 
+### v3 minimal (tokens 3.0.0, 2026-11-17) — new keys
+
+Bottom navigation, home "Oyna", Gündəlik tab, Profil tab. Widths below were
+**measured from the font files** (hmtx advance widths of static instances made
+with fonttools: Plus Jakarta Sans 500/700/800, Fraunces SemiBold opsz 72 /
+Regular opsz 48; kerning ignored, so slightly conservative). Format:
+"width at font scale 1.0 / 1.3 (budget)". Older budgets in this file stay valid
+as upper bounds.
+
+Overline strings are **authored in capitals** (never uppercased at runtime: the
+"i → İ" rule depends on the locale). Each greeting line carries one squiggle word
+as an Android string annotation `<annotation squiggle="1">…</annotation>` (read
+with `getText()`, `components.md` §36); shown below as [word].
+
+| Key | Azerbaijani | Notes / width |
+| --- | --- | --- |
+| `nav_play` | Oyna | Bottom bar label. 34 / 45dp (104). |
+| `nav_daily` | Gündəlik | Bottom bar label. 57 / 74dp (104). |
+| `nav_profile` | Profil | Bottom bar label. 34 / 44dp (104). |
+| `nav_daily_badge_cd` | bugünkü çağırış hələ oynanmayıb | Appended to the Gündəlik item label while the badge dot shows. |
+| `nav_daily_open_cd` | Gündəlik bölməsini aç | Click label of the home streak chip. |
+| `nav_profile_open_cd` | Profil | Content description of the home avatar (role Button). |
+| `common_weekdays` | Bazar ertəsi, Çərşənbə axşamı, Çərşənbə, Cümə axşamı, Cümə, Şənbə, Bazar | `string-array`, Monday first (ISO). |
+| `common_weekdays_short` | B.e, Ç.a, Ç, C.a, C, Ş, B | `string-array`, Monday first. Week row labels (labelSmall). ≤ 19 / 25dp (40dp cell). |
+| `home_date_line` | %1$s, %2$d %3$s | "Bazar ertəsi, 16 noyabr"; `%1$s` from `common_weekdays`, `%3$s` from `profile_months`. Asia/Baku date. Longest "Çərşənbə axşamı, 30 sentyabr" 202 / 263dp (212): **wraps to 2 lines at 1.3** (allowed). |
+| `home_greeting_hello` | Salam, %1$s. | Greeting line 1 (headlineSmall serif); `%1$s` = first word of the display name. 20-char name 275 / 357dp (328): wraps at 1.3 (allowed). |
+| `home_greeting_hello_no_name` | Salam. | Name not known yet. |
+| `home_greeting_1` | Bu gün kimisə [yenək]? | Duel line (skipped while the duel flag is off). 233 / 303dp (328). |
+| `home_greeting_2` | Bu gün nə [öyrənək]? | 212 / 275dp. |
+| `home_greeting_3` | Bir duel, bir fincan [çay]? | Duel line. 252 / 328dp (fits exactly at 1.3). |
+| `home_greeting_4` | Yeni gün, yeni [suallar]. | 235 / 305dp. |
+| `home_greeting_5` | [Əminsən]? Gəl yoxlayaq. | Duel line (Əminlik). 256 / 333dp: wraps at 1.3 (allowed). |
+| `home_greeting_6` | Hazırsan? [Başlayaq]. | 218 / 283dp. |
+| `home_greeting_7` | Bu gün nəyi [bilirsən]? | 225 / 292dp. |
+| `home_greeting_8` | Bir sual, bir [kəşf]. | 179 / 233dp. |
+| `home_duel_duration` | ~%1$d dəq | Value 3 (7 rounds ≈ 2.5 min + intro). labelLarge. 51 / 66dp. |
+| `home_duel_duration_cd` | təxminən %1$d dəqiqə | `plurals`; used inside `home_duel_card_cd`. |
+| `home_duel_sticker_rating` | Reytinq %1$d | Sticker, labelMedium tabular. "Reytinq 12400" 95 / 123dp (150). No colon: a label, not a sentence. |
+| `home_duel_card_cd` | Duel. %1$s. %2$s. %3$s Rəqib tap | `%1$s` = hint text, `%2$s` = `home_duel_duration_cd`, `%3$s` = "Reytinq 1240." or empty. |
+| `home_categories_overline` | TƏK OYNA · %1$d SUAL | `plurals`, value 10. 135 / 175dp (328). |
+| `daily_tab_title` | Gündəlik | Gündəlik tab top app bar. 87 / 113dp (264). |
+| `daily_tab_overline` | GÜNÜN ÇAĞIRIŞI | Challenge card overline. 112 / 146dp. |
+| `daily_tab_streak_overline` | SERİYA | 48 / 62dp. |
+| `daily_tab_streak_best` | ən uzun: %1$d gün | `plurals`. Under "Seriya: 7 gün". 110 / 143dp. |
+| `daily_tab_week_cd` | Bu həftə: %1$s | `%1$s` = day items joined with ", " (days after today left out). |
+| `daily_tab_week_day_cd` | %1$s %2$s | "Bazar ertəsi oynamısan"; `%1$s` weekday or `daily_tab_today_cd`, `%2$s` one of the state keys below. |
+| `daily_tab_today_cd` | bu gün | |
+| `daily_tab_day_active_cd` | oynamısan | |
+| `daily_tab_day_pending_cd` | hələ oynamamısan | Today only. |
+| `daily_tab_day_freeze_cd` | seriya qoruyucusu işlədi | |
+| `daily_tab_day_missed_cd` | oynamamısan | |
+| `daily_tab_reminder_overline` | XATIRLATMA | 84 / 110dp. |
+| `daily_tab_reminder` | Hər gün xatırlat | Switch headline. 117 / 152dp (244): 1 line. Supporting reuses `settings_notif_daily_supporting` (295 / 384dp → 2 lines, allowed). |
+| `daily_result_back_to_tab` | Gündəliyə qayıt | Main button of the daily result in v3 (replaces `common_home` there). ~120 / 155dp (280). |
+| `profile_settings_cd` | Parametrlər | Settings icon in the Profil top app bar. |
+| `profile_streak_open_daily` | Həftəni Gündəlik bölməsində gör | Supporting text of the Profil streak row (`row`, wraps). |
+
+Other v3 strings checked with the same method: "Seriya: 365 gün" serif 24sp
+165 / 215dp (328); "Növbəti çağırış: 05:12:33" 170 / 221dp (264); "#1234"
+numeralLarge 156 / 203dp; "Kinematoqrafiya" category row 130 / 170dp (216);
+"Azərbaycan ədəbiyyatı" 179 / 233dp → 2 lines at 1.3 (allowed); "Səviyyə 123"
+chip 73 / 95dp.
+
+### v3 — removed keys
+
+Delete from `strings.xml` when the v3 screens ship: `home_categories_title`,
+`home_profile_cd`, `profile_open_cd`, and `home_settings_cd` (only after
+`docs/legal/account-deletion.html` no longer names the home settings icon).
+Moved but kept: `home_streak_hint`, `home_streak_freeze_used`, `home_streak_lost`
+and `home_daily_*` (now on the Gündəlik tab; prefix kept to avoid churn),
+`progress_level` (Profil header).
+
+### v3 — changed values
+
+`home_duel_hint`, `home_duel_cta`, `settings_section_theme`,
+`settings_section_language`, `settings_section_notifications`,
+`settings_section_account`, `settings_section_about`, `profile_matches_title`,
+`profile_categories_title` (see their rows above, marked **v3**).
+
 ## Truncation risks
 
 Estimated with the method above. "Used" = which form the specs use.
@@ -771,7 +856,7 @@ Estimated with the method above. "Used" = which form the specs use.
 | `profile_match_date_year` "12 okt 2025" | trailing column, labelSmall | ~62 / ~80dp | ~72dp | Tight at 1.3; trailing column may grow to 80dp (headline still ≥ 180dp). |
 | `home_daily_next_countdown` "Növbəti çağırış: 05:12:33" | finished daily card, titleSmall + 18dp icon | ~207 / ~268dp | 274dp | Fits on 1 line at 1.3 because the white card uses `space.lg` padding (with `space.xl` it would wrap). |
 | "Gündəlik çağırış #123" | daily card title | ~250 / ~325dp as one headline | 2 lines | Split by design: overline `daily_title` + `daily_number` on its own line, so it is always ≤ 2 lines. |
-| `home_rating` "Reytinq: 1000" in the home header with level and streak | labelLarge + icon | ~143 / ~180dp | ~176dp | **Would wrap at 1.3**: above font scale 1.15 the line uses labelMedium (~150dp) (`home.md`). |
+| `home_rating` in the v2 home header | — | — | — | **Obsolete in v3** (no home header; the sticker shows the rating). |
 | `progress_level` "Səviyyə 12" chip + mini bar | home header line 3 | ~95 / ~120dp | ~176dp | Fits; the mini bar moves under the chip when < 48dp is left. |
 | `settings_notif_daily` "Gündəlik çağırış xatırlatması" | switch row | ~255 / ~330dp | ~232dp | **Wraps to 2 lines** at 1.0 and 1.3 (allowed by `row`, SET-07); switch stays centred. |
 | `notif_prompt_allow` "İcazə ver" + `notif_prompt_later` "Sonra" | two buttons in one row of the card | ~140 / ~185dp together | ~296dp | Fit side by side; stack at font scale ≥ 2.0. |

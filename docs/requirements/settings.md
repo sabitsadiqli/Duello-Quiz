@@ -6,6 +6,12 @@ Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and to
 > UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
 > copy and string keys are in `design/copy/az.md`.
 
+> **v3 (2026-11-17).** Settings is opened only from the **Profil** tab (settings icon
+> top-right, PROF-01, HOME-06); back returns to Profil. It is a full-screen flow
+> without the bottom navigation (HOME-09). The in-app path for users and for the legal
+> pages is now "Profil → Parametrlər → …". The daily reminder switch is mirrored on
+> the Gündəlik tab (SET-07, NOTIF-06). Screen spec: `design/screens/settings.md`.
+
 ## 1. Goal
 
 Settings give the player control over how the app looks and over their account:
@@ -18,13 +24,34 @@ account, so it must ship before the first public (closed-test) release.
 
 | ID | Story | Decisions |
 | --- | --- | --- |
-| SET-01 | As a player, I want to choose System, Light or Dark theme and have it remembered, so that the app is comfortable to use. | — |
-| SET-02 | As a player, I want to see the app language, so that I know which languages exist; as the team, we want adding a language to need configuration only. | — |
-| SET-03 | As a player, I want to see the app version, privacy policy and licences, so that I know what I am using and how my data is handled. | OQ-015 |
-| SET-04 | As a signed-in player, I want to sign out from settings, so that I can switch accounts. | — |
-| SET-05 | As a player, I want to delete my account and data from inside the app, so that I control my data (Google Play requirement). | OQ-014 |
-| SET-06 | As a former or current player without the app, I want a web page explaining how to request account deletion, so that I can delete my data anyway (Google Play requirement). | OQ-014, OQ-015 |
-| SET-07 | As a player, I want a "Bildirişlər" section with a switch per reminder type, so that I decide which reminders I get. | Blocked by OQ-090, OQ-091 (`notifications.md` NOTIF-06) |
+| SET-00 | As a player, I want to find settings in one fixed place, the Profil tab, so that I always know where to change the app or my account. Entry point of SET-01 … SET-07. | New (v3, 2026-11-17); HOME-06, PROF-01 |
+| SET-01 | As a player, I want to choose System, Light or Dark theme and have it remembered, so that the app is comfortable to use. | — ; entry (v3, 2026-11-17) |
+| SET-02 | As a player, I want to see the app language, so that I know which languages exist; as the team, we want adding a language to need configuration only. | — ; entry (v3, 2026-11-17) |
+| SET-03 | As a player, I want to see the app version, privacy policy and licences, so that I know what I am using and how my data is handled. | OQ-015; entry (v3, 2026-11-17) |
+| SET-04 | As a signed-in player, I want to sign out from settings, so that I can switch accounts. | — ; entry (v3, 2026-11-17) |
+| SET-05 | As a player, I want to delete my account and data from inside the app, so that I control my data (Google Play requirement). | OQ-014; entry (v3, 2026-11-17) |
+| SET-06 | As a former or current player without the app, I want a web page explaining how to request account deletion, so that I can delete my data anyway (Google Play requirement). | OQ-014, OQ-015; (v3, 2026-11-17): release-blocking path update |
+| SET-07 | As a player, I want a "Bildirişlər" section with a switch per reminder type, so that I decide which reminders I get. | OQ-090, OQ-091 (decided; `notifications.md` NOTIF-06); (v3, 2026-11-17): daily switch mirrored on Gündəlik |
+
+### SET-00 Entry to settings (v3, 2026-11-17)
+
+Applies to SET-01 … SET-07. Built together with HOME-06 (same pull request);
+numbered so tests can reference it.
+
+- Given the Profil tab, When the user taps the settings icon (content description
+  "Parametrlər"), Then the settings screen opens with a back icon and the title
+  "Parametrlər"; the bottom navigation is hidden.
+- Given settings or one of its sub-screens (licences, delete account), When the user
+  presses back until settings closes, Then the Profil tab is shown with its scroll
+  position kept.
+- Given the Oyna or Gündəlik tab, When shown, Then neither has a settings entry
+  (HOME-06).
+- Given the user signs out from settings (SET-04) or deletes the account (SET-05),
+  When it completes, Then the welcome screen is shown and the next sign-in lands on the
+  Oyna tab (HOME-09), not on Profil.
+
+Superseded v2 criteria: settings opened from the home top app bar; back returns to
+home.
 
 ### SET-01 Theme
 
@@ -132,9 +159,37 @@ Recommended flow (blocked by OQ-014 for data handling details):
   stated time with the same backend operation as SET-05 (an admin task, no new UI).
 - This story produces a document and a Play Console entry, not app code.
 
-### SET-07 Notifications
+In-app path on the legal pages (v3, 2026-11-17) — **release-blocking**:
+
+- Given a build with the v3 bottom navigation (HOME-09) is uploaded to any Play
+  testing track or production, When that release is published, Then in the **same
+  release** the public pages describe the in-app path as **"Profil → Parametrlər →
+  Hesabı sil"**:
+  - `docs/legal/account-deletion.html`: the Azerbaijani step "Əsas səhifədə
+    yuxarıdakı Parametrlər ikonuna toxun." and the English step "On the home screen,
+    tap the Parametrlər (settings) icon at the top." are replaced by steps naming the
+    "Profil" tab and its "Parametrlər" icon;
+  - `docs/legal/privacy-policy.html`: "Parametrlər → Hesabı sil" becomes "Profil →
+    Parametrlər → Hesabı sil", and "Parametrlər → Bildirişlər" becomes "Profil →
+    Parametrlər → Bildirişlər" (it may also mention the "Hər gün xatırlat" switch on
+    the Gündəlik tab);
+  - `docs/legal/README.md` (Play Console Data safety answer) uses the same path.
+- Given the release checklist, When any of these pages still names the home settings
+  icon or a path without "Profil", Then the v3 release is not promoted to testers
+  (Google Play requires the in-app deletion path described to users to be correct).
+- Given the pages are published to GitHub Pages, When the old (v2) build is still the
+  one installed by testers, Then the new path is not published earlier than the v3
+  build reaches them (the page must match the app people actually have; publish both
+  on the same day).
+- Given the pages are edited, When published, Then only the path text changes; the
+  data, retention and contact statements stay as decided in OQ-014, OQ-015 (the
+  palette change of the pages is a separate design task, OQ-D37).
+
+### SET-07 Notifications (v3, 2026-11-17)
 
 Added 2026-10-22. Behaviour, states and API: NOTIF-01, NOTIF-06 (`notifications.md`).
+v3: the daily switch is mirrored on the Gündəlik tab as "Hər gün xatırlat"
+(NOTIF-06); both write the same server value `dailyReminder`.
 
 - Given settings, When shown, Then a "Bildirişlər" section between "Dil" and "Hesab"
   has the switches "Gündəlik çağırış xatırlatması" and "Seriya xatırlatması".
@@ -148,6 +203,10 @@ Added 2026-10-22. Behaviour, states and API: NOTIF-01, NOTIF-06 (`notifications.
   account's own preferences are loaded from the server (preferences are per account).
 - Given a 360 dp screen at font scale 1.3, When shown, Then "Gündəlik çağırış
   xatırlatması" wraps to at most 2 lines (`row` budget) and the switch stays aligned.
+- Given the user turned the daily reminder off on the Gündəlik tab, When settings is
+  opened, Then "Gündəlik çağırış xatırlatması" shows off (and vice versa, NOTIF-06).
+- Given the supporting texts, When shown, Then they name no clock time ("Səhər" only;
+  OQ-D36, decided by Sabit 2026-11-17).
 
 ## 3. Business rules
 
@@ -172,6 +231,7 @@ languages, account linking UI. (Notification switches are in scope since
 
 | Event | Properties | When |
 | --- | --- | --- |
+| `settings_opened` | `source`: `profile` (v3; moved from `home.md`) | Settings icon on Profil tapped |
 | `theme_changed` | `theme`: `system` \| `light` \| `dark` | Theme selected |
 | `privacy_policy_opened` | — | Link tapped |
 | `account_deletion_started` | — | "Hesabı sil" screen opened |
@@ -190,5 +250,10 @@ final wording is in `open-questions.md` (Decided).
 OQ-014 (account deletion scope and retention), OQ-015 (privacy policy and deletion
 page hosting).
 
-Open (2026-10-22): OQ-089, OQ-090, OQ-091 (SET-07). Notification analytics events
+Decided 2026-10-22: OQ-089, OQ-090, OQ-091 (SET-07). Notification analytics events
 are listed in `notifications.md` §5.
+
+v3 (2026-11-17): entry from Profil per the direction approved by Sabit 2026-11-16/17.
+Design questions that touch this file: OQ-D36 (decided 2026-11-17: "Səhər", no clock
+time), OQ-D37 (legal pages palette, open, separate task; does not block the SET-06
+path update).

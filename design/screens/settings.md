@@ -1,5 +1,15 @@
 # Settings (incl. account deletion and licences)
 
+> **v3 (tokens 3.0.0, 2026-11-17):** settings is opened from the **Profil tab**
+> top-right icon (not from home); back returns to Profil. It is a full-screen
+> flow (bottom bar hidden). Section headers become overlines (§35a); the
+> `settings_section_*` values are now authored in capitals ("TEMA", "DİL",
+> "BİLDİRİŞLƏR", "HESAB", "HAQQINDA"; `copy/az.md` v3 changes). The daily
+> reminder switch is also mirrored on the Gündəlik tab (`daily-tab.md` C); both
+> show the same value. Licences add Fraunces and Plus Jakarta Sans (OFL) and drop
+> Nunito once the font is removed (`licenses.md`). Buttons on the delete screen:
+> destructive pill + secondary pill. Everything else unchanged.
+
 Stories: SET-01 … SET-05, SET-07 (notifications, added 2026-10-22), AUTH-07
 (sign-out), NOTIF-06. Decisions: OQ-014, OQ-015, OQ-090, OQ-091.
 SET-06 (web deletion page) is a document, not a screen; out of this spec.
@@ -21,7 +31,7 @@ delete), app information.
 
 ## Entry points
 
-- Home top app bar settings icon.
+- v3: Profil tab top app bar settings icon (`profile_settings_cd`).
 
 ## Layout — settings screen (top to bottom)
 
@@ -128,7 +138,7 @@ back stack cleared. No loading state (local, fast).
   `account_deletion_started` when it opens.
 - Delete is two steps on purpose (screen + dialog); no typing confirmation.
 - The delete entry is not reachable from a running quiz or duel (settings is only
-  reachable from home).
+  reachable from the Profil tab, which is hidden during flows).
 
 ## Accessibility
 

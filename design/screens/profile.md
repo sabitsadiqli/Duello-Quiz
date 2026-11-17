@@ -1,5 +1,28 @@
 # Profile
 
+> **v3 (tokens 3.0.0, 2026-11-17): the profile is the "Profil" tab** of the bottom
+> navigation (`components.md` §33), not a pushed screen. Changes, everything else
+> below still holds with v3 tokens (flat cards, serif headline name):
+> - Top app bar: **no back icon**; title `profile_title`; trailing icon button
+>   `settings` (48dp, `profile_settings_cd` "Parametrlər") → settings (full-screen
+>   flow, bottom bar hidden). This is the only settings entry (HOME-06 moved).
+> - Header: avatar `size.avatarXLarge`, name serif `type.headlineSmall`, rating
+>   line, joined line, then `space.md` the **level chip + mini XP bar**
+>   (`components.md` §25, moved from the home header) at max width 240dp,
+>   centred, and under it `progress_xp_into_level` `type.bodySmall`
+>   `scheme.onSurfaceVariant`. Tapping the chip does nothing (the level card is
+>   right below).
+> - Progress sections: level card and category levels stay; the **streak card is
+>   replaced** by one list row (§14): flame icon `game.streak`,
+>   `profile_streak_current` + supporting `profile_streak_open_daily` ("Həftəni
+>   Gündəlik bölməsində gör"), chevron → Gündəlik tab. States of the old streak
+>   card (empty, offline older day, error) apply to this row's text.
+> - Entry points: bottom bar "Profil", home avatar. System back → Oyna tab.
+>   "Duelə başla" in the empty state is a primary pill (no duel colour).
+> - Section headers `profile_categories_title` and `profile_matches_title` use the
+>   overline style (§35a); their values are now authored in capitals
+>   (`copy/az.md` v3 changes).
+
 Stories: PROF-01 … PROF-11, HOME-04 (header now opens the profile), DUEL-21
 (same calibration rule). PROF-09 … PROF-11 (level, category levels, streak) added
 2026-10-22; their elements are specified in `progression.md` C. Decisions: OQ-011 / OQ-042 (display name rules), OQ-014
@@ -32,9 +55,7 @@ Tokens: `design/tokens.json`. Components: `components.md` §2, §9, §13, §20, 
 - Decided: the record uses full-width rows, not three tiles, because
   "Məğlubiyyət" does not fit a tile at font scale 1.3 (`az.md` risks).
 - Decided: name editing is a **dialog** (one field), not a separate screen.
-- Assumption: the profile is reached only from the home header (no bottom
-  navigation in the MVP). The header gets a trailing chevron so it looks tappable
-  (`home.md` updated).
+- Superseded by v3: the profile is a bottom-navigation tab (see the note above).
 
 - **OQ-D33 — open (backend-dev): API fields for bot matches.** This spec assumes
   `MatchSummary` gets an opponent type (e.g. `opponent.isBot` / `opponentType`) and
@@ -51,12 +72,11 @@ the only place to change my public name.
 
 ## Entry points
 
-- Home profile header (PROF-01).
-- Back from the profile → home with its scroll position kept.
+- v3: bottom bar "Profil" and the home avatar (PROF-01). Back → Oyna tab.
 
 ## Layout (top to bottom, 360dp)
 
-1. Top app bar (`components.md` §12): back icon, title `profile_title`.
+1. Top app bar (`components.md` §12): title `profile_title`, trailing settings icon (v3, no back icon).
 2. `LazyColumn`, gutters `space.layout.screenGutter`, pull-to-refresh:
    1. Offline banner (warning, `common_offline_banner`) — only offline over cache.
    2. **Header**, `space.xl` top, centred column:
@@ -76,7 +96,7 @@ the only place to change my public name.
       always shown, also with the duel flag off and for players without duels
       (PROF-07, PROF-09):
       1. `space.xl`, **level card** (PROF-09).
-      2. `space.lg`, **streak card** (PROF-11).
+      2. `space.lg`, **streak row** → Gündəlik tab (PROF-11; v3 replaces the streak card).
       3. `space.xl`, section header `profile_categories_title` + **category levels
          card** (PROF-10).
    4. **Duel sections** — only when the duel build flag is on (OQ-020); with the

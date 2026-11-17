@@ -1,13 +1,20 @@
 # Profile — requirements
 
 Spec: `docs/mvp-spec.md` §2 (Elo, calibration), §3 (display name), §3a (deleted
-players), §6 (data), §7 (`GET /me`, `PATCH /me`). Related: HOME-04 (header summary),
+players), §6 (data), §7 (`GET /me`, `PATCH /me`). Related: HOME-04 (home avatar),
+HOME-06 (settings entry), HOME-09 (bottom navigation),
 DUEL-20 … DUEL-22 (match result, calibration, Elo). Terms:
 `docs/requirements/glossary.md`.
 Quoted UI text is a proposal in Azerbaijani; the designer owns final copy and tone.
 
 > UI tone is "sən" (OQ-041). Quoted Azerbaijani text here is indicative; the final
 > copy and string keys are in `design/copy/az.md`.
+
+> **v3 (2026-11-17).** The profile is the **Profil** tab of the bottom navigation
+> (HOME-09), also opened from the home avatar; it is the only entry to settings
+> (HOME-06). The level chip and XP bar moved here from the home header (PROF-09); the
+> streak card became a row that opens the Gündəlik tab (PROF-11). Direction approved
+> by Sabit 2026-11-16/17; screen spec `design/screens/profile.md`.
 
 ## 1. Goal
 
@@ -22,7 +29,7 @@ personal data of other players beyond their display name.
 
 | ID | Story | Decisions |
 | --- | --- | --- |
-| PROF-01 | As a player, I want to open my profile from the home header, so that I can see my details and progress. | — |
+| PROF-01 | As a player, I want my profile as the "Profil" tab (also reachable from my avatar on home), so that I can see my details, progress and settings in one tap. | (v3, 2026-11-17) |
 | PROF-02 | As a player, I want to see my display name, avatar and Elo rating on the profile, so that I know how others see me and where I stand. | OQ-011 |
 | PROF-03 | As a player, I want to see my duel record (wins, losses, draws), so that I can follow my results. | OQ-026 |
 | PROF-04 | As a player, I want to see my recent matches with opponent, result, score and rating change, so that I remember how they went. | OQ-026, OQ-031 |
@@ -30,9 +37,9 @@ personal data of other players beyond their display name.
 | PROF-06 | As a player, I want to change my display name, so that opponents see the name I choose. | OQ-030 |
 | PROF-07 | As a new player without matches, I want a helpful empty profile, so that I know how to start. | — |
 | PROF-08 | As a player on a weak or missing connection, I want the profile to show the last known data, so that it never looks broken. | — |
-| PROF-09 | As a player, I want to see my level and XP progress on the profile, so that I know how far the next level is. | Blocked by OQ-083 (`progression.md` PROG-03) |
-| PROF-10 | As a player, I want to see my level in every category, so that I know my strong and weak topics. | Blocked by OQ-083, OQ-084 (PROG-04) |
-| PROF-11 | As a player, I want to see my current and best streak on the profile, so that I see my habit over time. | Blocked by OQ-085, OQ-086 (PROG-06, PROG-07) |
+| PROF-09 | As a player, I want to see my level and XP progress on the profile, so that I know how far the next level is. | OQ-083 (decided; `progression.md` PROG-03); (v3, 2026-11-17): level chip in the header |
+| PROF-10 | As a player, I want to see my level in every category, so that I know my strong and weak topics. | OQ-083, OQ-084 (decided; PROG-04) |
+| PROF-11 | As a player, I want to see my current streak on the profile and get to my week with one tap, so that I see my habit without the profile repeating the Gündəlik tab. | OQ-085, OQ-086 (decided; PROG-06, PROG-07); (v3, 2026-11-17): streak row instead of a card |
 
 API (`docs/api/openapi.yaml`): `GET /v1/me` (`Profile`: `id`, `displayName`,
 `avatarUrl`, `rating`, `createdAt`), `GET /v1/me/stats` (`record {wins, losses,
@@ -41,18 +48,31 @@ draws, total}` + `calibration`: always 3 entries `{level, picks, correct}`),
 {displayName}`. The server sends counts only; every percentage, hint text and "Az
 məlumat" decision is made on the client (OQ-059).
 
-### PROF-01 Open the profile
+### PROF-01 Profil tab (v3, 2026-11-17)
 
-- Given home is shown, When the user taps the header (avatar, name, rating), Then the
-  profile screen opens (this replaces "tapping does nothing" in HOME-04).
-- Given the profile is open, When the user presses back, Then home is shown with its
-  scroll position kept.
-- Given the user opens the profile right after a duel, When it loads, Then rating,
-  record, recent matches and calibration include that match (data is reloaded on
-  open, not only taken from cache).
+- Given any tab, When the user taps "Profil" in the bottom navigation or the avatar in
+  the home top row, Then the Profil tab is shown (HOME-09, HOME-04).
+- Given the Profil tab, When shown, Then its top app bar has the title "Profil", no
+  back icon and a settings icon at the end (content description "Parametrlər") that
+  opens settings (HOME-06, SET-00).
+- Given the Profil tab, When the user presses system back, Then the Oyna tab is shown
+  with its scroll position kept; back again exits the app.
+- Given the Profil tab becomes visible (tab switch, avatar, return from settings),
+  When a cache exists, Then the cached data is shown at once and profile, progress,
+  stats and matches are reloaded in the background; a reload already running is not
+  started twice, also when the user switches tabs back and forth quickly.
+- Given the user opens the Profil tab right after a duel, When it loads, Then rating,
+  record, recent matches and calibration include that match (data is reloaded on tab
+  entry, not only taken from cache).
+- Given the user re-selects the Profil tab while it is shown, When tapped, Then it
+  scrolls to the top (HOME-09).
 - Given the duel build flag is off (OQ-020), When the profile is shown, Then the
-  duel-only sections (record, recent matches, calibration) are hidden; name, avatar
-  and rating stay.
+  duel-only sections (record, recent matches, calibration) are hidden; name, avatar,
+  rating, level, category levels and the streak row stay. With the flag off this is
+  the only place that shows the rating (HOME-04).
+
+Superseded v2 criteria: profile opened by tapping the home header; back returns to
+home; the profile as a pushed screen with a back icon.
 
 ### PROF-02 Name, avatar and rating
 
@@ -67,7 +87,8 @@ məlumat" decision is made on the client (OQ-059).
   placeholder is built, Then the first letter or digit of the name is used; if there
   is none, a generic person icon is used. (Names cannot contain emoji, OQ-042.)
 - Given a 20-character name on 360 dp at font scale 1.3, When shown, Then it wraps to
-  at most 2 lines on the profile (no truncation here; the home header truncates).
+  at most 2 lines on the profile (no truncation; home greets with the first word only,
+  HOME-04).
 - Given the email of the account, When the profile is shown, Then the email is not
   shown on the profile screen (it is shown nowhere except settings, if at all), so
   that screenshots do not leak it.
@@ -151,7 +172,7 @@ API: `PATCH /v1/me {displayName}` → updated profile.
   with the current name, "Yadda saxla" and "Ləğv et" is shown.
 - Given a valid name (OQ-042, same rule as sign-up and `PATCH /v1/me` in
   `openapi.yaml`), When the user taps "Yadda saxla", Then the server stores it and
-  the profile, the home header and future match screens show the new name
+  the profile, the home greeting and future match screens show the new name
   ("Adın dəyişdirildi."); the cache is updated.
 - Given the name is normalized, When it is checked, Then client and server apply the
   same steps: Unicode NFC, leading/trailing whitespace trimmed, inner whitespace runs
@@ -201,8 +222,8 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 - Given category quizzes were played, When the profile is shown, Then they do not
   appear in the duel record, list or calibration stats; they count only for XP,
   category levels and the streak (PROF-09 … PROF-11).
-- Given the duel empty state, When the profile is shown, Then the level, category
-  and streak cards (PROF-09 … PROF-11) are still shown above it.
+- Given the duel empty state, When the profile is shown, Then the level card, the
+  streak row and the category levels (PROF-09 … PROF-11) are still shown above it.
 
 ### PROF-08 Loading, offline and cache
 
@@ -223,13 +244,19 @@ API: `PATCH /v1/me {displayName}` → updated profile.
 - Given account deletion, When it completes, Then the profile cache is deleted with
   all local data (SET-05).
 
-### PROF-09 Level and XP
+### PROF-09 Level and XP (v3, 2026-11-17)
 
-Added 2026-10-22. Data: `GET /v1/me/progress`; rules in PROG-03.
+Added 2026-10-22. Data: `GET /v1/me/progress`; rules in PROG-03. v3 adds the level
+chip to the header (moved from the home header).
 
+- Given progress loaded, When the Profil tab is shown, Then the header shows, under
+  the rating and joined lines, a level chip "Səviyyə 5" with a mini XP bar and "270 /
+  500 XP"; tapping the chip does nothing (the level card is right below).
 - Given progress loaded, When the profile is shown, Then a "Səviyyə" card below the
-  name shows "Səviyyə 5", a progress bar and "270 / 500 XP", plus the total "Cəmi
+  header shows "Səviyyə 5", a progress bar and "270 / 500 XP", plus the total "Cəmi
   1 270 XP".
+- Given progress has not loaded and no cache exists, When the header is shown, Then
+  the chip is a skeleton or hidden, never "Səviyyə 1" as a guess.
 - Given a new user, When shown, Then "Səviyyə 1", an empty bar and "0 / 100 XP" are
   shown (never hidden; it invites play).
 - Given the duel build flag is off (OQ-020), When shown, Then the level card stays
@@ -251,18 +278,27 @@ Added 2026-10-22. Rules in PROG-04.
 - Given a row is tapped, When tapped, Then nothing opens in the MVP (no per-category
   detail screen).
 
-### PROF-11 Streak
+### PROF-11 Streak row (v3, 2026-11-17)
 
-Added 2026-10-22. Rules in PROG-05 … PROG-08.
+Added 2026-10-22, rewritten for v3. Rules in PROG-05 … PROG-08; the full streak view
+(best streak, freeze, week row, messages) is on the Gündəlik tab (PROG-06, PROG-11).
 
-- Given progress loaded, When the profile is shown, Then a streak card shows "Seriya:
-  7 gün", "Ən uzun seriya: 12 gün", whether today already counts ("Bu gün oynamısan"
-  / "Bu gün hələ oynamamısan") and, if OQ-086 is accepted, "Seriya qoruyucusu: var"
-  or "Seriya qoruyucusu: 7 günlük seriyada qazanılır".
-- Given streak 0 and best 0, When shown, Then "Hələ seriyan yoxdur. Bu gün bir oyun
-  oyna və başla." is shown.
-- Given offline after midnight Baku, When the cached streak is shown, Then the
-  "today" line is hidden until the server confirms it (PROG-06).
+- Given progress loaded, When the Profil tab is shown, Then between the level card and
+  the category levels one list row shows a flame icon, "Seriya: 7 gün" and the
+  supporting text "Həftəni Gündəlik bölməsində gör", with a chevron.
+- Given the row, When the user taps it, Then the Gündəlik tab opens (HOME-09) showing
+  the streak section; back from there goes to Oyna (HOME-09 back rule).
+- Given streak 0 and best 0, When shown, Then the row text is "Hələ seriyan yoxdur.
+  Bu gün bir oyun oyna və başla." and it still opens the Gündəlik tab.
+- Given offline after midnight Baku, When the cached streak is shown, Then the row
+  shows the cached number only and nothing about today (PROG-06).
+- Given the progress request fails without cache, When the row is shown, Then it shows
+  "Yükləmək alınmadı" with a retry and keeps its height (PROF-08).
+- Given TalkBack, When the row is focused, Then it is one element with role Button
+  read as the streak sentence plus "Gündəlik bölməsini aç".
+
+Superseded v2 criteria: streak card on the profile with best streak, the "today" line
+and the freeze line (they now live on the Gündəlik tab, PROG-06, PROG-07).
 
 ## 3. Business rules
 
@@ -289,14 +325,15 @@ Added 2026-10-22. Rules in PROG-05 … PROG-08.
 Viewing other players' profiles, avatar upload or change, per-match detail and round
 replay, quiz history and per-category accuracy stats (category levels are in scope
 since 2026-10-22, PROF-10), achievements and badges, leaderboards, rating or XP
-history charts, a streak calendar, sharing the profile, reporting players, unique
-usernames.
+history charts, a streak calendar on the profile (the current-week row lives on the
+Gündəlik tab, PROG-11), sharing the profile, reporting players, unique usernames.
 
 ## 5. Analytics events
 
 | Event | Properties | When |
 | --- | --- | --- |
-| `profile_viewed` | `from_cache` (bool), `match_count` (bucketed: 0, 1–4, 5–19, 20+) | Profile visible |
+| `profile_viewed` | `from_cache` (bool), `match_count` (bucketed: 0, 1–4, 5–19, 20+), `source`: `bar` \| `avatar` \| `back` (v3) | Profil tab visible |
+| `profile_streak_row_tapped` | — | Streak row tapped (PROF-11, v3) |
 | `profile_empty_cta_tapped` | — | "Duelə başla" on the empty state |
 | `display_name_changed` | — | `PATCH /me` succeeded (never send the name) |
 | `display_name_rejected` | `reason`: `length` \| `not_allowed` \| `invalid_chars` | Validation failed (client or server) |
@@ -317,4 +354,9 @@ server, hint and percentages on the client), OQ-060 (`createdAt` in `GET /v1/me`
 Decided and used here: OQ-011 (display name), OQ-014 (deleted players), OQ-020 (duel
 flag).
 
-Open (2026-10-22): OQ-083, OQ-084, OQ-085, OQ-086, OQ-095 (PROF-09 … PROF-11).
+Decided 2026-10-22: OQ-083, OQ-084, OQ-085, OQ-086, OQ-095 (PROF-09 … PROF-11).
+
+v3 (2026-11-17): Profil tab, settings entry, level chip and streak row follow the
+direction approved by Sabit 2026-11-16/17. Assumption: the lighter streak row
+replaces the card (the table in `design/screens/v3-migration.md` offered "accept the
+lighter form or keep a card"; the approved mockup uses the row).

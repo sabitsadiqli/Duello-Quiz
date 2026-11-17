@@ -1,5 +1,12 @@
 # Open-source licences
 
+> **v3 (tokens 3.0.0):** the manual font rows become **Fraunces** and **Plus Jakarta
+> Sans** (both SIL OFL 1.1; OFL.txt from `ofl/fraunces` and `ofl/plusjakartasans` in
+> github.com/google/fonts, stored under `android/core/designsystem/third_party/`),
+> then Material Symbols (Outlined is now used as well as Rounded, same Apache 2.0
+> licence). Nunito is removed together with its files. Order: Fraunces, Plus
+> Jakarta Sans, Material Symbols.
+
 Stories: SET-03 ("Açıq mənbə lisenziyaları" shows the list of third-party licences).
 Entry from `settings.md`. Tokens: `design/tokens.json`. Components: `components.md`
 §11, §12, §14. Copy: `copy/az.md` (`settings_licenses_*`).
