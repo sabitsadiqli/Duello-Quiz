@@ -584,8 +584,8 @@ Proposal, blocked by OQ-124:
   `content/schema/question.schema.json` (content-writer + backend-dev, later).
 - Audio: Piper TTS (OQ-120, decided): the bank stores the listening script with a
   speaker role per line; a content tool renders it with the allowed voices
-  (`en_GB-alba-medium`, `en_GB-cori-high`, `en_US-libritts_r-medium` with fixed
-  speaker IDs) to AAC-LC mono 64 kbps (OQ-121) at about 0.9× speed. The voice and
+  (female: `en_GB-alba-medium`, `en_GB-cori-high`; male: `en_US-libritts_r-medium`
+  speaker ID 452, Sabit 2026-11-17) to AAC-LC mono 64 kbps (OQ-121) at about 0.9× speed. The voice and
   speaker ID are recorded per file for attribution. Human recordings remain an option
   per variant (then with a signed consent and licence form outside the public repo).
 

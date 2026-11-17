@@ -383,7 +383,7 @@ Superseded background (Oracle era). Decided 2026-11-16: Cloudflare R2, see the t
 | --- | --- | --- | --- |
 | OQ-007 | Minimum questions per category before the closed test | 60 reviewed per category (duel uses 7 + up to 3 sudden death per match). Met: the private bank holds 60 reviewed questions in each of the 5 categories (300 in total) | Sabit 2026-11-16 |
 | OQ-103 | Off-VM backup location | Cloudflare R2 free tier (details in the 2026-10-25 table below) | Sabit 2026-11-16 |
-| OQ-120 | Mock exams: how is listening audio produced? | **Piper TTS** (open-source, offline, free) for published variants too: Sabit found the quality sufficient after listening to samples. Only voices whose licence allows commercial use without share-alike: `en_GB-alba-medium` (CC BY 4.0), `en_GB-cori-high` (public domain), `en_US-libritts_r-medium` (CC BY 4.0, pick fixed speaker IDs per role). CC BY voices are credited on the licences screen. No CC BY-SA or NC voices, no paid TTS. Human recordings stay possible later per variant | Sabit 2026-11-16 |
+| OQ-120 | Mock exams: how is listening audio produced? | **Piper TTS** (open-source, offline, free) for published variants too: Sabit found the quality sufficient after listening to samples. Only voices whose licence allows commercial use without share-alike: `en_GB-alba-medium` (CC BY 4.0), `en_GB-cori-high` (public domain), `en_US-libritts_r-medium` (CC BY 4.0) speaker ID **452** as the male voice (chosen by Sabit 2026-11-17 from 10 pitch-screened candidates). CC BY voices are credited on the licences screen. No CC BY-SA or NC voices, no paid TTS. Human recordings stay possible later per variant | Sabit 2026-11-16 |
 
 ## Decided by Sabit (2026-10-30) — bot opponent
 
