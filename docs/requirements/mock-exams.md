@@ -319,7 +319,7 @@ Proposal, blocked by OQ-114:
 
 ### EXAM-10 Listening (audio)
 
-Proposal, blocked by OQ-119 … OQ-121:
+Proposal, blocked by OQ-119 and OQ-121 (audio production decided: Piper, OQ-120):
 - Given the package was downloaded, When the listening group is opened, Then the
   audio plays from local storage (never streamed), so buffering never costs time.
 - Given exam rules (proposal: played twice, no seeking, no speed change), When the
@@ -582,8 +582,12 @@ Proposal, blocked by OQ-124:
 - Bank format: new folder `content/bank/exams/<template>/<variant>/` with a variant
   manifest, groups and tasks; a public schema and samples like
   `content/schema/question.schema.json` (content-writer + backend-dev, later).
-- Audio: per OQ-120; speaker consent and licence (form signed, stored outside the
-  public repo).
+- Audio: Piper TTS (OQ-120, decided): the bank stores the listening script with a
+  speaker role per line; a content tool renders it with the allowed voices
+  (female: `en_GB-alba-medium`, `en_GB-cori-high`; male: `en_US-libritts_r-medium`
+  speaker ID 452, Sabit 2026-11-17) to AAC-LC mono 64 kbps (OQ-121) at about 0.9× speed. The voice and
+  speaker ID are recorded per file for attribution. Human recordings remain an option
+  per variant (then with a signed consent and licence form outside the public repo).
 
 ## 8. Suggested phasing
 
@@ -651,7 +655,7 @@ All open, added 2026-11-16, decided by Sabit; details in `open-questions.md`.
 | OQ-117 | Durations, grace, pause | 180 min full, 60 min subject, 2 min grace, no pause |
 | OQ-118 | Offline, resume, late upload | Download before start, online start, offline answering, resume, 24 h late upload |
 | OQ-119 | Listening play rules | Verify DİM; proposal 2 plays, no seek, pause allowed |
-| OQ-120 | Audio production | Human recordings with consent form; Piper only for prototypes |
+| OQ-120 | Audio production | Decided 2026-11-16: Piper TTS with CC BY / public-domain voices, credited on the licences screen |
 | OQ-121 | Audio format and player | AAC-LC mono 64 kbps `.m4a`, Media3 ExoPlayer (ADR) |
 | OQ-122 | Who marks exam tasks `reviewed` | Named subject reviewers; Sabit approves publishing |
 | OQ-123 | Passage copyright | Own texts or public domain / CC BY only, licence recorded |
