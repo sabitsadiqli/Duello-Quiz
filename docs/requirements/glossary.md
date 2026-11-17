@@ -84,7 +84,7 @@ tone, OQ-041). The designer owns final copy; a change there must be mirrored her
 | Elo rating | Reytinq | Per-user number, start 1000, K = 32. Changed only by finished duels against real players (win, loss, draw, forfeit). Never by the category quiz, the daily challenge or a bot match. |
 | Rating change | — | Elo difference caused by one match, e.g. "+16"; stored per match (before/after ratings) and shown on the result screen and in history. Rounding: OQ-038; floor: OQ-039. |
 | Profile | Profil | The user's backend row (`users`): display name, avatar URL, rating. Created on the first authenticated API call. |
-| Profile screen | Profil | Screen opened from the home header: name, avatar, rating, duel record, recent matches, calibration stats, name editing (`profile.md`). |
+| Profile screen (Profil tab) | Profil | Since v3 (2026-11-17) the third tab of the bottom navigation, also opened from the home avatar: name, avatar, rating, level chip and XP, streak row, category levels, duel record, recent matches, calibration stats, name editing and the only settings entry (`profile.md`). Not a pushed screen any more. |
 | Duel record | — | Counts of wins, losses and draws over counted matches (finished, including forfeits; OQ-026). Proposal OQ-110: real matches only; bot matches in a separate "Bota qarşı" line. |
 | Recent matches | Son oyunlar | The last N finished matches on the profile, newest first (OQ-031). |
 | Deleted player | Silinmiş oyunçu | How an opponent whose account was deleted is shown in matches and history (`docs/mvp-spec.md` §3a). |
@@ -104,7 +104,7 @@ the designer adds them to `design/copy/az.md`.
 | Daily number | Gündəlik çağırış #12 | Running number of the daily challenge: days since the configured first day (#1). |
 | Daily attempt | — | One account's play-through of a day's challenge; at most one per (user, day); resumable until its deadline (OQ-079). |
 | Daily set | — | The questions chosen by the server for one day, stored and frozen for that day (OQ-076). |
-| Result squares | — | One square per daily question in order: correct, wrong, no answer. Used on the result screen, the home card and the share text. |
+| Result squares | — | One square per daily question in order: correct, wrong, no answer. Used on the result screen, the Gündəlik tab challenge card (v3: "answer boxes" in the design specs; same thing) and the share text. |
 | Share text | Paylaş | Plain text with the daily number, result squares, score, streak and store link; never question, option or category data (OQ-080). |
 | XP | XP | Experience points earned from quizzes, daily challenges and duels; never decreases; independent of Elo. Always written "XP" in the UI, never "xal" (that is the score). |
 | Level | Səviyyə | Overall level derived on the server from total XP by the level curve (OQ-083). Starts at 1. Not shown to opponents. |
@@ -114,6 +114,9 @@ the designer adds them to `design/copy/az.md`.
 | Streak | Seriya | Number of consecutive active days up to today or yesterday. "7 günlük seriya". |
 | Best streak | Ən uzun seriya | Highest streak ever reached; never decreases. |
 | Streak freeze | Seriya qoruyucusu | Automatic protection of the streak for exactly one missed day; one earned per 7-day streak, at most 1 held (OQ-086). Never bought. |
+| Streak chip | — | The flame and streak number in the home top row (HOME-08); filled when today is active; tap → Gündəlik tab. Not a "badge" (that word is reserved for the bot badge and the Gündəlik badge). |
+| Week row | — | Seven cells for the current Baku week, Monday to Sunday, on the Gündəlik tab: played, today not yet, freeze used, missed, or neutral (future / before the account) (PROG-11, OQ-D35). Not a calendar or history. |
+| Streak message | — | At most one of three one-time / daily texts on the Gündəlik tab, in priority order: streak ended (PROG-08), freeze used (PROG-07), streak hint (PROG-06). Never on home since v3. |
 | Push notification | Bildiriş | A message sent by the server through FCM and shown by Android outside the app. Only the reminder types below exist in the MVP. |
 | Daily reminder | Gündəlik çağırış xatırlatması | Notification type `daily_reminder`: today's daily challenge has not been started (OQ-088). |
 | Streak reminder | Seriya xatırlatması | Notification type `streak_reminder`: streak ≥ 2 and today is not active yet (OQ-088). |
@@ -193,8 +196,14 @@ Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP;
 
 | Term | UI (az) | Meaning |
 | --- | --- | --- |
-| Home | Əsas səhifə | First screen after sign-in: profile summary with level and streak, daily challenge card, duel entry, categories, settings entry. |
-| Settings | Parametrlər | Theme, language, notifications, account actions, about. |
+| Bottom navigation | — | The bar at the bottom of the signed-in root with exactly three tabs, in order "Oyna", "Gündəlik", "Profil" (HOME-09, v3 2026-11-17). Hidden in full-screen flows (quiz, daily play/result, duel, settings, auth). Say "bottom navigation" or "tab bar"; never "menu". |
+| Tab | — | One top-level destination of the bottom navigation. Each tab keeps its own scroll and state; system back on Gündəlik or Profil goes to Oyna; back on Oyna exits. |
+| Oyna tab (home) | Oyna | First tab and start destination after sign-in; "home" in requirements and code means this tab. Shows the date, streak chip, avatar, greeting, duel card and category list (HOME-01 … HOME-08). No daily card, level or settings since v3. "Əsas səhifə" remains only as the label of buttons that return to it from quiz and duel results. |
+| Gündəlik tab | Gündəlik | Second tab: today's daily challenge card, the streak section (current, best, freeze, week row, streak message) and the "Hər gün xatırlat" reminder switch (DAILY-01, PROG-06, PROG-11, NOTIF-06). Target of both push types (NOTIF-05). Not the same as "Gündəlik çağırış", which is the challenge itself; never shorten the challenge to "Gündəlik" in copy. |
+| Gündəlik badge | — | Dot on the Gündəlik tab item while today's daily status is `available` or `in_progress`; hidden when finished, unavailable, unknown, failed or only an older day is cached (HOME-07). |
+| Profil tab | Profil | Third tab; see "Profile screen (Profil tab)". |
+| Home | Əsas səhifə | Since v3 (2026-11-17): the Oyna tab (see above). Before v3: a single screen with the profile header, daily card, duel entry, categories and the settings icon. |
+| Settings | Parametrlər | Theme, language, notifications, account actions, about. Opened only from the Profil tab (v3); in-app path for users and legal pages: "Profil → Parametrlər → …" (SET-00, SET-06). |
 | Theme | Tema | System (Sistem), Light (İşıqlı), Dark (Qaranlıq). Default System. |
 | Language | Dil | App UI language. MVP: Azərbaycan dili only. |
 | Offline | İnternet yoxdur | The device has no usable network connection, or a request failed with a network error. |

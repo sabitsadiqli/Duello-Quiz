@@ -31,8 +31,8 @@ user's choice per type, never fire at night, and stop for users who left.
 | NOTIF-02 | As the product owner, I want each signed-in device to register its push token with the server and remove it on sign-out, so that notifications reach the right account only. | OQ-096 |
 | NOTIF-03 | As a player, I want a reminder when today's daily challenge is waiting and I have not played it, so that I do not miss it. | OQ-088, OQ-089 |
 | NOTIF-04 | As a player with a streak, I want a reminder in the evening if I have not played today, so that I can keep my streak. | OQ-085, OQ-088, OQ-089 |
-| NOTIF-05 | As a player, I want tapping a notification to open the right place in the app, so that I can act on it immediately. | — |
-| NOTIF-06 | As a player, I want to turn each reminder type on or off in settings and see when notifications are blocked by the phone, so that I stay in control. | OQ-091 |
+| NOTIF-05 | As a player, I want tapping a notification to open the right place in the app, so that I can act on it immediately. | (v3, 2026-11-17): both types open the Gündəlik tab |
+| NOTIF-06 | As a player, I want to turn each reminder type on or off in settings, turn the daily reminder on or off right on the Gündəlik tab, and see when notifications are blocked by the phone, so that I stay in control. | OQ-091; (v3, 2026-11-17); OQ-D36 (decided: no clock time) |
 | NOTIF-07 | As a player, I want few, well-timed notifications that stop if I stop playing, so that the app never feels like spam. | OQ-088, OQ-089, OQ-092 |
 | NOTIF-08 | As the product owner, I want tokens cleaned up on account deletion, sign-out, reinstall and invalid tokens, so that no one gets someone else's notifications and data is deleted as promised. | — |
 
@@ -57,10 +57,12 @@ Blocked by OQ-090 (timing).
   shown now.
 - Given the user taps "Sonra", When at least 7 days have passed, Then the card may be
   shown once more on a result screen; after that second "Sonra" it is never shown
-  again automatically (only SET-07 offers it).
+  again automatically (only SET-07 and, since v3, the Gündəlik reminder row offer it,
+  NOTIF-06).
 - Given the system has permanently denied the permission (denied twice, or "Don't ask
-  again"), When the user turns a reminder on in SET-07, Then the app opens the app's
-  system notification settings instead of the dialog.
+  again"), When the user turns a reminder on in SET-07 or on the Gündəlik tab
+  (NOTIF-06), Then the app opens the app's system notification settings instead of
+  the dialog.
 - Given Android 8–12 (API 26–32), When the app runs, Then no runtime permission is
   needed; the in-app card is not shown, the token is registered at sign-in and both
   types are on by default (OQ-091); the user controls them in SET-07 and system
@@ -124,14 +126,28 @@ Blocked by OQ-085 (active day), OQ-088 and OQ-089.
 - Given the user becomes active after the notification, When the result arrives, Then
   the app removes its displayed streak notification.
 
-### NOTIF-05 Opening a notification
+### NOTIF-05 Opening a notification (v3, 2026-11-17)
 
-- Given the user taps a daily reminder, When the app opens (cold or warm), Then home is
-  shown with the daily card in view (DAILY-01); the challenge is not started
-  automatically (the timer must only start on an explicit "Başla").
-- Given the user taps a streak reminder, When the app opens, Then home is shown.
-- Given the notification is tapped on a later day (stale), When home loads, Then the
-  current server state is shown; nothing from the notification payload is trusted.
+- Given the user taps a daily reminder, When the app opens (cold or warm), Then the
+  Gündəlik tab is selected (HOME-09), scrolled to the top, with the challenge card in
+  view (DAILY-01); the challenge is not started automatically (the timer must only
+  start on an explicit "Başla").
+- Given the user taps a streak reminder, When the app opens, Then the Gündəlik tab is
+  shown the same way, with the streak section (PROG-06, PROG-11) visible below the
+  card.
+- Given a cold start from a notification, When the user presses system back on the
+  Gündəlik tab, Then the Oyna tab is shown (not an exit), and back again exits
+  (HOME-09).
+- Given the notification is tapped on a later day (stale), When the Gündəlik tab
+  loads, Then the current server state is shown; nothing from the notification
+  payload is trusted.
+- Given a category quiz or the daily challenge is open, When the user taps a
+  notification, Then the app comes to the foreground on the running screen (same as
+  the duel rule below); the timer is not paused and nothing navigates away; the
+  Gündəlik tab is not forced on top of a running game.
+
+Superseded v2 criteria: daily reminder → home with the daily card in view; streak
+reminder → home.
 - Given the user is signed out or another account is signed in on the device, When a
   notification is tapped, Then the app opens its normal start screen; it never shows
   another account's data.
@@ -142,9 +158,11 @@ Blocked by OQ-085 (active day), OQ-088 and OQ-089.
   (`daily_reminder` | `streak_reminder`), the `dayKey` and the visible text; no user
   data, no question data.
 
-### NOTIF-06 Notification settings
+### NOTIF-06 Notification settings (v3, 2026-11-17)
 
-Blocked by OQ-091 (defaults, server-side storage). Settings UI: SET-07.
+Decided: OQ-091 (defaults, server-side storage). Settings UI: SET-07 (Profil →
+Parametrlər → Bildirişlər). v3 adds a mirror of the **daily** switch on the Gündəlik
+tab (`design/screens/daily-tab.md` C); the streak switch stays in settings only.
 
 - Given settings, When the user opens "Bildirişlər", Then two switches are shown:
   "Gündəlik çağırış xatırlatması" and "Seriya xatırlatması", with the values from
@@ -166,6 +184,37 @@ Blocked by OQ-091 (defaults, server-side storage). Settings UI: SET-07.
   channel per type with Azerbaijani names from resources ("Gündəlik çağırış",
   "Seriya"), default importance (sound per system, no full-screen intent).
 - Given TalkBack, When a switch is focused, Then its name and state are read.
+
+Gündəlik tab mirror (v3):
+
+- Given the Gündəlik tab, When it is shown, Then below the streak section a
+  "XATIRLATMA" row has one switch "Hər gün xatırlat" with the supporting text
+  "Səhər, bugünkü çağırışı hələ oynamamısansa"; it shows and writes the same server
+  value `dailyReminder` as "Gündəlik çağırış xatırlatması" in settings.
+- Given the user changes the switch on one surface, When the other surface is shown
+  next, Then it shows the new value (both read the same account-scoped state; no
+  surface shows a stale opposite value after a successful save).
+- Given the mirror, When toggled, Then the same rules as in settings apply: the
+  Android 13+ permission flow (NOTIF-01, SET-07), optimistic switch with revert and
+  "Dəyişikliyi yadda saxlamaq alınmadı." on failure, offline revert with "Bildiriş
+  ayarlarını dəyişmək üçün internet lazımdır.", disabled with "Bildirişlər telefonda
+  söndürülüb" / "Ayarları aç" when the phone blocks notifications or the "Gündəlik
+  çağırış" channel is off.
+- Given the user toggles the mirror and opens settings before the request finished,
+  When settings is shown, Then it shows the pending value and no second request is
+  sent for the same change; a quick on-off-on sends at most the last value after the
+  running request (no request storm).
+- Given the reminder time, When the row is shown, Then no clock time and no time
+  picker are shown, only the word "Səhər" in the supporting text (OQ-D36, decided by
+  Sabit 2026-11-17); the send time stays the server-fixed 10:00 Baku (OQ-088,
+  `docs/mvp-spec.md` §11).
+- Given the streak reminder, When the Gündəlik tab is shown, Then it has no streak
+  reminder switch (settings only).
+- Given `GET /v1/me/notification-settings` fails without cache, When the tab is shown,
+  Then only the reminder row shows the load error with retry; the challenge card and
+  streak section are not affected.
+
+Superseded v2 criteria: none removed; the settings switches stay as they were.
 
 ### NOTIF-07 Limits, quiet hours and inactivity
 
@@ -228,9 +277,9 @@ user-chosen reminder time, per-user time zones, e-mail or SMS reminders, iOS.
 | --- | --- | --- |
 | `notification_prompt_shown` | `attempt` (1 \| 2), `source`: `quiz_result` \| `daily_result` | In-app permission card shown |
 | `notification_prompt_result` | `choice`: `accept` \| `later`, `system_result`: `granted` \| `denied` \| `not_asked` | Card answered |
-| `notification_opened` | `type`: `daily_reminder` \| `streak_reminder`, `stale` (bool) | App opened from a notification |
-| `notification_setting_changed` | `type`, `enabled` (bool) | Switch changed and saved |
-| `notification_system_settings_opened` | `source`: `settings` \| `prompt` | "Ayarları aç" tapped |
+| `notification_opened` | `type`: `daily_reminder` \| `streak_reminder`, `stale` (bool) | App opened from a notification (lands on the Gündəlik tab, v3) |
+| `notification_setting_changed` | `type`, `enabled` (bool), `source`: `settings` \| `daily_tab` (v3) | Switch changed and saved |
+| `notification_system_settings_opened` | `source`: `settings` \| `prompt` \| `daily_tab` (v3) | "Ayarları aç" tapped |
 
 User property `notifications_enabled` (`all` \| `some` \| `none` \| `blocked`),
 updated on app start. Sends, skips (reason: `played`, `quiet_hours`, `inactive`,
@@ -240,4 +289,8 @@ updated on app start. Sends, skips (reason: `played`, `quiet_hours`, `inactive`,
 
 OQ-085 (active day), OQ-086 (freeze), OQ-088 (types, times, max per day), OQ-089
 (quiet hours), OQ-090 (permission timing), OQ-091 (defaults and storage), OQ-092
-(inactivity stop), OQ-096 (payload type) — all in `open-questions.md`.
+(inactivity stop), OQ-096 (payload type) — all in `open-questions.md`, all decided.
+
+Design decision (owned in `design/`): OQ-D36, decided by Sabit 2026-11-17 — the
+reminder rows say "Səhər" without a clock time and offer no time picker (a picker
+stays out of scope, §4).
