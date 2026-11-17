@@ -66,7 +66,7 @@ import com.sabit.duelloquiz.core.designsystem.component.ConfidenceBadge
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
@@ -399,12 +399,13 @@ private fun PlayerPanel(panel: PanelUi, flip: () -> Float, animate: Boolean, mod
     val showBack = reveal != null && flip() >= HALF_FLIP
     val accent = if (panel.isSelf) scheme.primary else scheme.tertiary
     val look = when {
-        !showBack || reveal == null -> PanelLook(scheme.surfaceContainerLowest, scheme.onSurface, accent, Depth.border, game.cardDepth)
+        // v3 (components.md restyle §16): flat, 1dp border in the player accent; reveal faces without depth.
+        !showBack || reveal == null -> PanelLook(scheme.surface, scheme.onSurface, accent, Borders.hairline)
         reveal.kind == RevealKind.CORRECT ->
-            PanelLook(game.correctContainer, game.onCorrectContainer, game.correct, Depth.borderThick, game.correctDepth)
+            PanelLook(game.correctContainer, game.onCorrectContainer, game.correct, Borders.emphasis)
         reveal.kind == RevealKind.WRONG ->
-            PanelLook(game.wrongContainer, game.onWrongContainer, game.wrong, Depth.borderThick, game.wrongDepth)
-        else -> PanelLook(scheme.surfaceContainerHighest, scheme.onSurface, scheme.outline, Depth.borderThick, game.cardDepth)
+            PanelLook(game.wrongContainer, game.onWrongContainer, game.wrong, Borders.emphasis)
+        else -> PanelLook(scheme.surfaceContainerHighest, scheme.onSurface, scheme.outline, Borders.emphasis)
     }
     val density = LocalDensity.current
     val name = if (panel.isSelf) stringResource(R.string.duel_you) else opponentDisplayName(panel.name, panel.isBot)
@@ -413,11 +414,9 @@ private fun PlayerPanel(panel: PanelUi, flip: () -> Float, animate: Boolean, mod
     PressableSurface(
         onClick = null,
         faceColor = look.container,
-        depthColor = look.depth,
         border = BorderStroke(look.borderWidth, look.border),
         contentColor = look.content,
         shape = MaterialTheme.shapes.large,
-        depth = Depth.card,
         faceMinHeight = Sizes.duelPlayerPanelMinHeight,
         modifier = modifier
             .fillMaxHeight()
@@ -472,13 +471,12 @@ private fun PlayerPanel(panel: PanelUi, flip: () -> Float, animate: Boolean, mod
 
 private const val CAMERA_SCALE = 8f
 
-/** Face, content, border and depth edge of a player panel (components.md §16). */
+/** Face, content and border of a player panel (components.md §16, v3 flat). */
 private data class PanelLook(
     val container: Color,
     val content: Color,
     val border: Color,
     val borderWidth: Dp,
-    val depth: Color,
 )
 
 @Composable

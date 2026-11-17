@@ -241,6 +241,26 @@ class RetentionRepositoryTest {
     }
 
     @Test
+    fun concurrentStatusRefreshesShareOneRequest() = runTest {
+        val repository = dailyRepository()
+        signIn()
+        val gate = CompletableDeferred<Unit>()
+        network.dailyGate = gate
+
+        val home = async { repository.refreshStatus() }
+        val dailyTab = async { repository.refreshStatus() }
+        runCurrent()
+        gate.complete(Unit)
+
+        assertEquals(home.await(), dailyTab.await())
+        assertEquals(1, network.calls.count { it == "getDaily" })
+
+        // A later refresh is a new request.
+        repository.refreshStatus()
+        assertEquals(2, network.calls.count { it == "getDaily" })
+    }
+
+    @Test
     fun aDoubleTapAndTheLoadingScreenShareOneStartRequest() = runTest {
         val repository = dailyRepository()
         signIn()

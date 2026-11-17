@@ -63,8 +63,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.AvatarAccent
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
-import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloSecondaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
@@ -148,7 +148,7 @@ internal fun SearchScreen(search: SearchUi, onCancel: () -> Unit) {
                     InlineProgress()
                 }
             } else {
-                DuelloNeutralButton(
+                DuelloSecondaryButton(
                     text = stringResource(R.string.duel_search_cancel),
                     onClick = onCancel,
                     modifier = Modifier.fillMaxWidth(),
@@ -181,7 +181,8 @@ internal fun CloseBar(contentDescription: String, onClose: () -> Unit) {
 @Composable
 private fun SearchPulse(name: String?, avatarUrl: String?) {
     val reducedMotion = rememberReducedMotion()
-    val primary = MaterialTheme.colorScheme.primary
+    // duel-search.md v3: rings in ink (onSurface) at 20 %.
+    val primary = MaterialTheme.colorScheme.onSurface
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(Sizes.searchPulse).clearAndSetSemantics {}) {
         if (!reducedMotion) {
             val transition = rememberInfiniteTransition(label = "pulse")
@@ -388,14 +389,14 @@ internal fun SearchEndedScreen(reason: SearchEndReason, retrying: Boolean, onRet
         body = stringResource(body),
         onClose = onHome,
     ) {
-        DuelloDuelButton(
+        DuelloPrimaryButton(
             text = stringResource(R.string.duel_search_retry),
             onClick = onRetry,
             loading = retrying,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(Spacing.md))
-        DuelloNeutralButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
+        DuelloSecondaryButton(text = stringResource(R.string.common_home), onClick = onHome, modifier = Modifier.fillMaxWidth())
     }
 }
 
