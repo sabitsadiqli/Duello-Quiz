@@ -1,6 +1,11 @@
 # Shared components
 
-Used by every screen spec. Token names refer to `design/tokens.json`
+Used by every screen spec. **v3 (tokens 3.0.0, 2026-11-17):** flat "dəftər"
+look — paper/ink, one nar accent, pill buttons, hairline cards, no gradients, no
+depth edges. Sections 0, 1, 3, 4, 5, 6, 8, 12, 24, 25, 28, 29 were rewritten or
+retired; §33 … §38 are new; the rest keep their behaviour and get the v3 look
+through tokens plus the restyle notes under "v3 restyle of the remaining
+components" below. Per-screen impact: `v3-migration.md`. Token names refer to `design/tokens.json`
 (`scheme.*` = `color.<theme>.scheme.*`, a Material 3 `ColorScheme` role;
 `game.*` = `color.<theme>.game.*`, a custom game colour; `type.*` =
 `typography.scale.*`; `space.*` = `spacing.*`; `shape.*`, `size.*`,
@@ -12,83 +17,67 @@ General rules for all components:
 - Touch target ≥ `size.minTouchTarget` (48dp) even when the visual is smaller.
 - Disabled: content `scheme.onSurface` at `stateLayer.disabledContentOpacity`,
   container `scheme.onSurface` at `stateLayer.disabledContainerOpacity`.
-- Pressed: **pressable** components (§0) move down onto their depth edge, no
-  ripple. Other components (list rows, icon buttons, text buttons): Material 3
-  state layers (ripple) in the content colour. Focus: 3dp `scheme.primary` ring
-  outside the shape (keyboard / switch access).
+- Pressed (v3, §0): Material 3 ripple in the content colour everywhere; game
+  inputs and the big home entries also scale to 0.98. No depth edges. Focus: 2dp
+  `scheme.onSurface` ring outside the shape (keyboard / switch access).
+- Errors are never colour-only (accent and error are both reds): icon + sentence.
 - Every icon-only control has a content description from `az.md`.
 - Works at font scale 1.3 without truncation and stays usable at 2.0 (text wraps,
   containers grow in height, never clip).
 
 ---
 
-## 0. Pressable surface (v2 "chunky" look) — `PressableSurface`
+## 0. Press feedback (v3) — replaces the v2 `PressableSurface`
 
-The base of every game control: buttons (§1), option cards (§3), category tiles
-(§5), Əminlik tiles (§7), the duel hero card (§6) and white game cards.
+**Removed in v3:** the chunky depth edge (solid bottom edge, face moving down on
+press), `depth.*`, all `game.*Depth` roles and `motion.pressable`. Nothing in v3
+has a depth edge. android-dev deletes the depth drawing from `PressableSurface`
+(or the whole composable) instead of keeping it behind a flag.
 
-Anatomy (bottom to top):
-1. **Depth edge**: same shape as the face, colour = the component's depth role
-   (`game.pressable*Depth`, `game.cardDepth`, `game.correctDepth`, …,
-   `category.<slot>.depth`), offset down by `depth.<component>` (4dp buttons,
-   cards, option cards; 5dp category and Əminlik tiles). Not a shadow, no blur.
-2. **Face**: the container colour, optional 2dp border (`depth.border`) inside the
-   shape (neutral buttons and white cards use `game.pressableNeutralBorder` /
-   `game.cardBorder`).
-3. Content.
+v3 press feedback (`motion.press`):
 
-Build it as one composable: a `Box` with the depth shape drawn behind
-(`drawBehind`) and the face translated by `-depth + pressOffset`. The layout height
-= face + depth, so nothing jumps when pressed.
-
-| State | Face offset | Edge | Notes |
+| Component | Ripple (state layer) | Scale | Haptic |
 | --- | --- | --- | --- |
-| Rest | 0 | visible, `depth` dp | |
-| Pressed (finger down) | +`depth` dp (face covers the edge) | hidden | `motion.pressable.pressDownMs` (60 ms, `standardAccelerate`) |
-| Released | springs back to 0 | visible | `motion.spring.snappy`; the click fires on release as usual and never waits for the animation |
-| Disabled | +`depth` dp (flat) | none | face `scheme.onSurface` 12 %, content 38 % (M3); no border |
-| Reduced motion | 0 | visible | no translation; the face shows the pressed state layer instead |
+| Option card, Əminlik tile | content colour at `stateLayer.pressedOpacity` | 1.0 → `motion.press.scaleTo` (0.98) in `pressDownMs`, back with `spring.gentle` | light tick |
+| Category row, duel card | yes | yes | none |
+| Buttons, list rows, icon buttons, nav items | yes | no | none |
+| Answer boxes, week dots, sticker, info cards | not interactive | — | — |
 
-Haptics: a light tick on press-down for game inputs (option, Əminlik tile,
-category tile), none for buttons (`motion.pressable.haptic`).
-Accessibility: the whole surface is one node with role Button; the depth edge is
-inside the touch target (≥ 48dp total height).
+The click fires on release as usual and never waits for the animation (DUEL-16).
+Disabled: flat, M3 disabled colours, no ripple. Reduced motion: no scale, ripple
+stays. "White game cards" of v2 are now **flat cards**: face `scheme.surface`
+(or a stated container), 1dp `game.cardBorder` hairline, `shape.component.card`,
+no shadow. Wherever an older spec says "white game card (§0 without press)",
+read "flat card".
 
 ## 1. Buttons
 
-All buttons: face height `size.buttonHeight` (52dp) + depth `depth.pressable`
-(4dp) = 56dp, shape `shape.component.button` (medium, 16dp — a rounded
-rectangle, not a pill, so the edge reads as a solid block), label
-`type.labelLarge` (16sp ExtraBold), horizontal padding `space.xl`, icon
-`size.iconSmall`… `size.icon` with `space.sm` gap. Single-line labels (checked in
-`az.md`). Never all caps.
+v3: **pills** (`shape.component.button` = full), flat, height `size.buttonHeight`
+(48dp; `buttonHeightLarge` 52dp only for a single hero action), label
+`type.labelLarge` (15sp Bold, sentence case), horizontal padding `space.xl`, icon
+18–20dp with `space.sm` gap. Single-line labels (checked in `az.md`). Ripple, no
+scale (§0).
 
-| Variant | Face | Label | Depth edge | Use |
+| Variant | Face | Label | Border | Use |
 | --- | --- | --- | --- | --- |
-| Primary (pressable) | `game.pressablePrimary` | `game.onPressablePrimary` | `game.pressablePrimaryDepth` | The one main action per screen: "Daxil ol", "Yenidən oyna" (quiz) |
-| Duel (pressable) | `game.pressableDuel` | `game.onPressableDuel` | `game.pressableDuelDepth` | Duel entry points only: "Yenidən oyna" on the duel result, "Yenidən axtar", "Duelə başla" (profile empty state) |
-| Neutral (pressable) | `game.pressableNeutral` + 2dp `game.pressableNeutralBorder` | `game.onPressableNeutral` | `game.pressableNeutralDepth` | Secondary action of equal weight: "Əsas səhifə", "E-poçtla daxil ol", "Ləğv et" (search). Replaces v1 Tonal and Outlined |
-| Destructive (pressable) | `game.pressableDestructive` | `game.onPressableDestructive` | `game.pressableDestructiveDepth` | "Hesabı həmişəlik sil" only |
-| Text | transparent, no edge | `scheme.primary` (destructive: `scheme.error`), `type.labelLarge` | — | Low emphasis: links, dialog actions, banner actions. Ripple, not pressable |
-| Google sign-in | Neutral pressable | `scheme.onSurface` + multicolour Google "G" (official asset) | `game.pressableNeutralDepth` | Welcome / sign-in. Google branding: the "G" logo is never recoloured; the label stays `scheme.onSurface` (not violet) per Google's guidelines |
+| Primary | `scheme.primary` | `scheme.onPrimary` | — | The one main action per screen: "Daxil ol", "Başla", "Yenidən oyna" |
+| Secondary | transparent | `scheme.onSurface` | 1dp `scheme.outline` | Secondary action of equal weight: "Əsas səhifə", "Paylaş", "Yenidən cəhd et" in state views, "E-poçtla daxil ol". Replaces v2 Neutral (and v1 Tonal / Outlined) |
+| Destructive | `scheme.error` | `scheme.onError` | — | "Hesabı həmişəlik sil" only |
+| Text | transparent | `scheme.primary` (destructive: `scheme.error`) | — | Links, dialog actions, banner actions |
+| On ink | `scheme.surface` | `scheme.onSurface` | — | Only on an `inverseSurface` block (duel card CTA, §6) |
+| Google sign-in | Secondary | `scheme.onSurface` + official multicolour "G" | 1dp `scheme.outline` | Welcome / sign-in; the "G" is never recoloured |
 
-Naming in screen specs: "primary button" = Primary pressable, "neutral button" =
-Neutral pressable (v1 "tonal" and "outlined" both map here), "destructive
-button" = Destructive pressable, "duel button" = Duel pressable. Where a duel
-screen spec says "primary button" for the main duel action (`duel_result_play_again`,
-`duel_search_retry`, `profile_empty_cta`), use the **Duel** variant.
+Naming in older specs: "primary button" / "pressable primary" = Primary;
+"neutral button" / "neutral pressable" = Secondary; "duel button" / "Duel
+pressable" = **Primary** (v3 has no separate duel colour); "destructive
+button" = Destructive.
 
-Full-width buttons on phones: width = content width (360 − 2 × `space.layout.screenGutter`).
-Two buttons stacked: gap `space.md`, primary on top.
+Full width on phones = content width. Two stacked: gap `space.md`, primary on top.
 
-States (on top of §0):
-- **Loading**: label replaced by a 20dp circular progress indicator in the label
-  colour; button keeps its width and stays in the rest position (no layout jump);
-  not clickable; content description `common_loading`. Used for every network
-  submit (double-tap guard).
-- **Disabled**: flat (§0). Countdowns ("Yenidən göndər (42 san.)") keep the label
-  in `scheme.onSurfaceVariant` instead of the 38 % colour (exception, the user must
-  read it).
+States: **Loading** — label replaced by a 20dp circular indicator in the label
+colour, width kept, not clickable, `common_loading`. **Disabled** — M3 disabled
+colours (countdown labels such as "Yenidən göndər (42 san.)" stay
+`scheme.onSurfaceVariant` so they remain readable).
 
 ## 2. Text field
 
@@ -115,157 +104,119 @@ placeholder `scheme.onSurfaceVariant`, supporting text `type.bodySmall`
 
 ## 3. Option card (quiz answer)
 
-Pressable surface (§0): full width, face min height `size.optionCardMinHeight`
-(60dp) + `depth.optionCard`, shape `shape.component.optionCard` (16dp), padding
-`space.md` start / `space.lg` end / `space.md` vertical, gap between cards
-`space.md`.
+v3: flat, `shape.component.optionCard` (12dp), min height
+`size.optionCardMinHeight` (56dp), face `scheme.surface`, 1dp `scheme.outline`
+border, padding `space.md` start / `space.lg` end / `space.md` vertical, gap
+`space.sm` between cards. Press: §0 (ripple + 0.98 scale + light tick).
 
-Content, left to right: **letter badge** (A, B, C, D — `size.optionLetterBadge`
-36dp rounded square `shape.component.optionLetterBadge`, letter `type.labelLarge`),
-`space.md`, option text `type.bodyLarge` (wraps, **never truncated**, up to 3+
-lines), trailing **outcome word** slot (`type.labelMedium`, only after reveal).
+Content: **letter badge** (A–D, `size.optionLetterBadge` 32dp **circle**,
+`type.labelLarge`), `space.md`, option text `type.bodyLarge` (wraps, never
+truncated), trailing outcome word `type.labelMedium` after reveal.
 
-Letters A–D are used (not numbers) so options never look like Əminlik 1/2/3 in the
-duel. TalkBack still reads "1-ci variant: …" (`quiz_option_N_cd`).
+| State | Face | Border | Text | Badge (container / glyph) | Trailing |
+| --- | --- | --- | --- | --- | --- |
+| Default | `scheme.surface` | 1dp `scheme.outline` | `scheme.onSurface` | `scheme.surfaceContainerHigh` / letter `scheme.onSurface` | — |
+| Selected (pending) | `game.pendingContainer` | **2dp `scheme.onSurface` (ink)** | `game.onPendingContainer` | `scheme.inverseSurface` / letter `scheme.inverseOnSurface` | 20dp progress in `scheme.onSurface` |
+| Correct | `game.correctContainer` | 2dp `game.correct` | `game.onCorrectContainer` | `game.correct` / **check** `game.onCorrect` | `quiz_option_outcome_correct` in `game.correct` |
+| Wrong | `game.wrongContainer` | 2dp `game.wrong` | `game.onWrongContainer` | `game.wrong` / **cross** `game.onWrong` | `quiz_option_outcome_wrong` in `game.wrong` |
+| Dimmed | `scheme.surface` | 1dp `game.cardBorder` | `scheme.onSurfaceVariant` | `scheme.surfaceContainerHigh` / `scheme.onSurfaceVariant` | — |
+| Queued (offline) | `scheme.surfaceContainerHigh` | 1dp dashed `scheme.outline` | `scheme.onSurface` | `scheme.secondary` / letter `scheme.onSecondary` | `cloud_upload` `scheme.onSurfaceVariant` |
 
-| State | Face | Border | Depth edge | Text | Badge (container / glyph) | Trailing | When |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | `game.pressableNeutral` | 2dp `game.cardBorder` | `game.cardDepth` | `scheme.onSurface` | `scheme.primaryContainer` / letter `scheme.onPrimaryContainer` | — | Question open, timer running |
-| Pressed | §0 pressed | — | hidden | — | — | — | Finger down |
-| Selected (pending) | `game.pendingContainer` | 3dp `scheme.primary` | `game.pendingDepth` | `game.onPendingContainer` | `scheme.primary` / letter `scheme.onPrimary` | 20dp progress in `scheme.primary` | Tapped, waiting for server |
-| Correct | `game.correctContainer` | 3dp `game.correct` | `game.correctDepth` | `game.onCorrectContainer` | `game.correct` / **check glyph** `game.onCorrect` | `quiz_option_outcome_correct` ("Düzgün") in `game.correct` | Server says correct (tapped or the right one after a wrong tap/timeout) |
-| Wrong | `game.wrongContainer` | 3dp `game.wrong` | `game.wrongDepth` | `game.onWrongContainer` | `game.wrong` / **cross glyph** `game.onWrong` | `quiz_option_outcome_wrong` ("Səhv") in `game.wrong` | The user's tapped option when wrong |
-| Dimmed (other options) | `game.pressableNeutral` | 2dp `game.cardBorder` | none (flat) | `scheme.onSurfaceVariant` | `scheme.surfaceContainerHigh` / letter `scheme.onSurfaceVariant` | — | After a tap or timeout, for options that are neither correct nor wrong. Text stays readable (not 38 % alpha) |
-| Queued (offline) | `scheme.surfaceContainerHigh` | 2dp `scheme.outline` | `game.cardDepth` | `scheme.onSurface` | `scheme.secondary` / letter `scheme.onSecondary` | cloud-upload icon, `scheme.onSurfaceVariant` | Answer saved locally, result unknown (QUIZ-08) |
-
-**Colour-blind safety**: correct and wrong differ in four ways besides hue — the
-badge glyph (check vs cross instead of the letter), the outcome word, the motion
-(pop vs shake) and luminance (crimson `game.wrong` is clearly darker/redder than the
-teal-leaning `game.correct` under deuteranopia and protanopia simulation). Never
-remove the glyph or the word to "clean up" the card.
-
-Motion: colour change `motion.game.optionRevealColour`; correct card pops once
-(`motion.game.optionCorrectPop`, spring `bouncy`) and its check glyph scales in;
-wrong card shakes horizontally `motion.game.optionWrongShake`. Reduced motion: no
-pop or shake.
-
-Accessibility: each card is one focusable element with role Button, label
-`quiz_option_N_cd`, plus state description (`quiz_option_state_*_cd`) after reveal.
-
-**Duel use** (`duel-match.md`, `duel-reveal.md`): same card and states, plus
-**picker markers** in the result phase: small avatars (20dp, accent ring 2dp, §13)
-in the trailing slot, before the outcome word, showing who picked that option —
-self (`scheme.primary` ring) and/or opponent (`scheme.tertiary` ring). The
-opponent's option is shown in the **Wrong** state only if it is wrong and the own
-choice is a different option; otherwise it only gets its marker. State
-description adds `duel_option_picked_by_you_cd` / `duel_option_picked_by_opponent_cd`.
-In the duel the "Selected (pending)" state never turns into correct/wrong before
-the result phase (DUEL-08).
+The selected state uses **ink**, not the accent, so red on the question screen
+only ever means "wrong" (the accent is a red too). Colour-blind safety unchanged:
+glyph, outcome word, motion (pop vs shake) and luminance. Motion:
+`motion.game.optionRevealColour`, `optionCorrectPop` (now 1.02),
+`optionWrongShake` (now 4dp); none with reduced motion. Accessibility and the
+duel picker markers: unchanged (self ring `scheme.primary`, opponent
+`scheme.tertiary`).
 
 ## 4. Question timer
 
-Linear bar + numeric countdown in the quiz top bar (single-player). The duel later
-reuses the same tokens with a ring variant.
+v3 restyle, same behaviour:
+- **Bar**: thin line `size.progressBarHeight` (4dp), track `game.timerTrack`,
+  indicator `game.timerNormal` (ink), `shape.full`, **no highlight stripe**.
+  Wall-clock driven.
+- **Digits**: timer pill, `shape.full`, face `scheme.surface`, 1dp
+  `scheme.outline`, 18dp `timer` icon + digits `type.titleMedium` tabular,
+  `game.timerNormal`.
+- **Warning** (≤ 5 s): bar, pill border, icon, digits `game.timerWarning`
+  (burnt saffron-orange); digits pulse (`timerWarningPulse`, now 1.05); TalkBack
+  at 5 s. Reduced motion: colour only.
+- **Stopped**: freeze in `scheme.onSurfaceVariant`. **Expired**: "0" in
+  `game.timerWarning`.
+- **Ring variant (duel)**: `size.timerRing`, stroke `size.timerStroke` (4dp,
+  round caps), track `game.timerTrack`, arc `game.timerNormal`, digits
+  `type.titleSmall` tabular. Rules for fraction, per-phase warning, frozen and
+  expired states unchanged (DUEL-12).
 
-- **Bar**: full content width, height `size.progressBarHeight` (12dp, chunky),
-  track `game.timerTrack`, indicator `game.timerNormal`, shape `shape.full`, plus a
-  decorative highlight stripe on the indicator (3dp, white at 30 %, inset 8dp from
-  the start, `space.xxs` from the top) for the glossy game look. Shrinks from
-  full to empty over 20 s, driven by wall-clock remaining time (not by an animation
-  that could drift or pause).
-- **Digits**: a **timer pill** right-aligned in the top bar: `shape.full`,
-  container `scheme.surfaceContainerLowest`, 2dp border `game.cardBorder`, padding
-  `space.sm` + 2dp × 6dp, 20dp `timer` icon + "17" in `type.titleMedium` with
-  tabular figures, both `game.timerNormal`.
-- **Warning (≤ `motion.game.timerWarningThresholdMs`, 5 s)**: bar, pill border,
-  icon and digits switch to `game.timerWarning`; digits pulse once per second
-  (`motion.game.timerWarningPulse`); TalkBack announces `quiz_timer_cd` at 5 s.
-  Reduced motion: no pulse, colour change only.
-- **Stopped** (after a tap): bar and digits freeze at the remaining value in
-  `scheme.onSurfaceVariant`.
-- **Expired**: bar empty, digits "0" in `game.timerWarning`, then the reveal shows
-  `quiz_timeout`.
-- **Ring variant (duel)**: circle `size.timerRing`, stroke `size.timerStroke` (5dp, round caps),
-  track `game.timerTrack`, arc `game.timerNormal`, digits inside in `type.titleSmall`
-  tabular figures. The arc drains clockwise from 12 o'clock; fraction =
-  remaining / `motion.duel.phaseNominalMs.<phase>` (clamped), remaining computed
-  from the server deadline and the clock offset (DUEL-12), never from an animation.
-  Warning per phase: `motion.duel.timerWarningThresholdMs` (Əminlik ≤ 2 s, answer
-  ≤ 3 s, none in question and result) → arc and digits `game.timerWarning` + pulse.
-  **Frozen** (own answer sent; result phase): arc and digits
-  `scheme.onSurfaceVariant` on `game.timerTrack`; in the result phase the arc keeps
-  draining (it shows the time to the next round) but never turns orange. **Expired**:
-  digits "0", arc empty; the ring waits for the next server message (no negative
-  numbers, DUEL-12). Content description `quiz_timer_cd`, announced at most at the
-  warning threshold, polite.
+## 5. Category list row (home) — replaces the v2 category tile grid
 
-## 5. Category tile (home grid)
+**Removed in v3:** the 2-column tile grid, the 8 category accent slots, the
+single-column fallback and `accentKey` (OQ-D27 superseded). One colour for all
+categories.
 
-Pressable surface (§0) in the category's own accent colour. **2-column grid**,
-gap `space.layout.gridGap`, cell width = (content width − gap) / 2 (158dp on a
-360dp phone), face min height `size.categoryTileMinHeight` (132dp) + 
-`depth.categoryTile`, shape `shape.component.categoryTile` (20dp). All tiles in a
-row take the height of the tallest one. An odd last tile stays one cell wide
-(start-aligned).
+Row, full content width, min height `size.categoryRowMinHeight` (52dp, grows),
+no container (`shape.component.categoryRow` = none), 1dp `game.cardBorder`
+divider between rows (inset 0). Padding `space.sm` vertical. Content, vertically
+centred:
+1. **Numeral** "01"… (index + 1, two digits) `typography.custom.numeral`
+   (Fraunces Regular 20sp) `scheme.primary`, fixed width
+   `size.categoryNumeralWidth` (32dp), start-aligned. From 10 on: "10", "11".
+2. 24dp **line icon** (Material Symbols **Outlined**, weight 300) in
+   `scheme.onSurfaceVariant`, mapped by `icon_key` (table below), `space.md` after.
+3. Name `type.titleMedium` `scheme.onSurface`, weight 1, max 2 lines, wraps at
+   word boundaries, never ellipsized or hyphenated.
+4. 24dp `chevron_right` `scheme.onSurfaceVariant`, `space.sm` before.
 
-Colours: `category.<slot>.face` / `.onFace` / `.depth`, where `<slot>` comes from
-the category's `accentKey` (one of `color.categoryAccentOrder`: violet, blue, teal,
-green, orange, rose, pink, ocean). Unknown/missing key → slot by index
-(`categoryAccentOrder[index % 8]`, server order), so a new category always gets a
-colour without an app release. Proposed defaults for the seed categories:
-`color.categoryAccentDefaults` (Coğrafiya ocean, Tarix orange, Biologiya green,
-Fizika violet, İdman rose).
-
-Content, top to bottom, padding `space.lg`, gap `space.md`:
-1. Icon box: `size.categoryIconContainer` (48dp) rounded square
-   (`shape.component.categoryIcon`), `category.<slot>.onFace` at 20 %; icon 28dp
-   `category.<slot>.onFace`.
-2. Name `type.titleMedium` `category.<slot>.onFace`, **max 3 lines**, wraps at word
-   boundaries, never hyphenated, never ellipsized.
-3. `space.xxs`, `home_category_question_count` `type.bodyMedium`
-   `category.<slot>.onFace`.
-
-**Single-column fallback** (no truncation at 360dp): when font scale > 1.15 **or**
-the window is narrower than 360dp **or** any category name has a single word wider
-than the cell's text width (measure with `TextMeasurer`; Azerbaijani words such as
-"Astronomiya" at 1.3 do not fit 126dp), switch to one column: full-width tiles,
-face min height 88dp, icon box at the start and the text column beside it.
-
-Icons (Material Symbols Rounded, Apache 2.0, bundled as vector drawables), mapped by
-`icon_key`. The key values are decided (OQ-044):
-
-| icon_key | Symbol |
+| icon_key | Symbol (Outlined) |
 | --- | --- |
 | `geography` | `public` |
 | `history` | `history_edu` |
 | `biology` | `eco` |
 | `physics` | `science` |
 | `sports` | `sports_soccer` |
-| unknown | `category` (generic fallback, HOME-01) |
+| unknown | `category` (HOME-01 fallback) |
 
-States: rest / pressed (§0); **loading** (the count line is replaced by a 20dp
-progress indicator in `onFace`, the tile is not clickable and all other tiles
-ignore taps — HOME-02 double-tap rule); **skeleton** (tile face
-`scheme.surfaceContainerHighest`, no depth, icon box and two text bars in
-`scheme.surfaceContainerHigh`, shimmer alpha 0.5 ↔ 1.0 over 1 s, no shimmer with
-reduced motion). First appearance: `motion.game.categoryGridEnter` (stagger).
+States: rest; pressed (§0: ripple + scale); **loading** (chevron → 20dp progress
+in `scheme.onSurface`; all rows and the duel card ignore taps, HOME-02);
+**skeleton** (numeral, icon and name as `scheme.surfaceContainerHighest` bars;
+shimmer alpha 0.5 ↔ 1.0 over 1 s; none with reduced motion). First appearance:
+`motion.game.categoryListEnter`.
+Accessibility: one node per row, role Button, label "name, 10 sual"; the numeral
+is not announced.
 
-## 6. Duel hero card (home, behind build flag)
+## 6. Duel card v3 (home, behind build flag) — replaces the gradient duel hero card
 
-Hidden until the duel ships (OQ-020) — the layout slot simply does not exist.
-When enabled: full-width pressable card (§0), shape `shape.extraLarge` − 4 (24dp),
-face = `gradient.duelHero` (violet → pink, 135°), depth `game.pressableDuelDepth`
-5dp, padding `space.xl` × 18dp, gap `space.md`:
-- Row: column (title `home_duel_title` `type.headlineMedium`, hint
-  `home_duel_hint` `type.bodyMedium`, both `gradient.duelHero.on`) + decorative
-  56dp rounded square (white 18 %) with the 32dp `swords` symbol (two crossed
-  swords = a duel; no coins, dice, cards or casino imagery).
-- Full-width white pressable button (face #FFFFFF = `game.pressableNeutral` light
-  value in both themes, label `game.onPressableNeutral` light value `#4426D6`,
-  depth `scheme.primaryContainer` light value): `home_duel_cta` ("Duelə başla").
-The whole card is one touch target; the button is its visual anchor.
+Hidden when the duel build flag is off (OQ-020): no slot, no placeholder.
+
+Full-width solid block — the "inverted page": face `scheme.inverseSurface` (ink in
+light theme, paper in dark theme), `shape.component.duelCard` (18dp), padding
+`space.lg`, min height `size.duelCardMinHeight`, no border, no shadow, no
+gradient. The whole card is one touch target (§0: ripple in
+`scheme.inverseOnSurface` + scale).
+
+- **Sticker** (§34) on the top edge, end inset `space.lg`, vertically centred on
+  the edge (half outside the card), rotated `size.stickerRotationDeg`.
+- Title `home_duel_title` "Duel" `type.headlineLarge` (Fraunces)
+  `scheme.inverseOnSurface`.
+- `space.xs`, hint `home_duel_hint` `type.bodyMedium` `scheme.inverseOnSurface`.
+- `space.lg`, row (space between): duration 16dp `schedule` +
+  `home_duel_duration` `type.labelLarge` `game.inverseOnSurfaceVariant`; CTA pill
+  ("On ink" button, §1): `home_duel_cta` + 18dp `arrow_forward` (mirrored in RTL).
+  If both do not fit, the pill goes under the duration at full width.
+
+No crossed-swords tile any more (the swords icon now lives in the bottom bar).
+Never coins, dice, cards or casino imagery.
 
 ## 7. Əminlik tiles (duel)
+
+> v3: no depth edge (`depth.confidenceChip` and `game.confidenceNDepth` removed),
+> press = §0 (ripple + scale + tick), shape 16dp (`shape.component.confidenceChip`
+> = large). Levels are ink density: 1 paper, 2 sand, 3 solid ink
+> (`game.confidenceNContainer`), plus the signal bars and the numeral (now Fraunces
+> `type.displaySmall`). Selected ring = 3dp `game.confidenceSelectedOutline`
+> (the accent). Tile 1 keeps a 1dp `scheme.outline` border. Everything else below
+> is unchanged.
 
 Three pressable tiles (§0) side by side in the confidence panel (§18). Width =
 (content width − 2 × `space.md`) / 3 (~101dp on 360dp), face min height
@@ -319,21 +270,26 @@ Accessibility: each chip is one element, role Button, label
 
 ## 8. Banners
 
-Inline, full-width, placed directly under the top app bar (pushes content down,
-never overlays it). Shape `shape.component.banner`, padding `space.lg`, min height
-`size.bannerMinHeight`, leading 24dp icon, text `type.bodyMedium`, optional title
-`type.titleSmall`, actions as text buttons on their own row, right-aligned, under
-the text (so long Azerbaijani labels never squeeze the message).
+v3: flat, `shape.component.banner` (12dp), no border. Two sizes.
+
+**Compact** (home, Gündəlik, Profil — tab roots): height
+`size.bannerCompactHeight` (40dp, grows with font scale), padding `space.md`
+horizontal, row: 20dp icon, `space.sm`, one sentence `type.bodyMedium` (wraps to
+2 lines, never truncated), optional trailing text button or chevron. Tapping a
+compact banner with a chevron expands it into the full banner in place.
+
+**Full** (all other screens, and an expanded compact one): min height
+`size.bannerMinHeight`, padding `space.lg`, leading 24dp icon, optional title
+`type.titleSmall`, text `type.bodyMedium`, actions as text buttons on their own row.
 
 | Variant | Container | Content | Icon | Use |
 | --- | --- | --- | --- | --- |
 | Info | `game.bannerInfoContainer` | `game.onBannerInfoContainer` | `mail` / `info` | Email verification (AUTH-08), result not synced |
-| Warning / offline | `game.bannerWarningContainer` | `game.onBannerWarningContainer` | `cloud_off` | Offline over cached data (HOME-05), quiz offline (QUIZ-08) |
+| Warning / offline | `game.bannerWarningContainer` | `game.onBannerWarningContainer` | `cloud_off` | Offline over cached data (HOME-05), quiz offline (QUIZ-08), notifications blocked |
 
-Enter: expand + fade `motion.duration.medium1` `emphasizedDecelerate`; exit:
-collapse + fade `motion.duration.short4` `emphasizedAccelerate`. Text actions in a
-banner use the banner's content colour, not `scheme.primary` (contrast).
-Accessibility: live region polite; announced once when it appears.
+Enter: expand + fade `motion.duration.medium1`; exit: collapse + fade
+`short4`. Banner text actions use the banner content colour. Polite live region,
+announced once.
 
 ## 9. Dialogs
 
@@ -369,24 +325,33 @@ padding `space.xl`:
   offline). No raster illustrations in the MVP.
 - `space.lg`, title `type.titleMedium` `scheme.onSurface`, centred, wraps.
 - `space.sm`, body `type.bodyMedium` `scheme.onSurfaceVariant`, centred, optional.
-- `space.xl`, primary action: neutral pressable button (`common_retry` / `common_refresh`);
-  optional secondary text button under it.
+- `space.xl`, action: secondary pill button (§1) (`common_retry` / `common_refresh`);
+  optional text button under it.
+- v3: the icon sits without the 120dp circle (just the 48dp line icon in
+  `scheme.onSurfaceVariant`); title in serif `type.headlineSmall`.
+- **Compact** variant (inside a tab root list, e.g. the home category area): no
+  max-height centring, padding `space.lg`, 32dp icon, title `type.titleMedium`,
+  button inline under it; keeps the rest of the screen visible.
 - **Loading**: circular indicator 48dp `scheme.primary`, optional caption
   `type.bodyMedium` `scheme.onSurfaceVariant` (e.g. `quiz_loading`). Shown only after
   300 ms to avoid flashing on fast networks.
 
 ## 12. Top app bar
 
-`TopAppBar` (small), height `size.topAppBarHeight`, container `scheme.surface`
-(scrolled: same colour plus a 2dp `game.cardBorder` line at the bottom, no tonal
-change), title `type.titleLarge` (20sp ExtraBold) `scheme.onSurface` single line,
-navigation icon `scheme.onSurface`, action icons `scheme.onSurfaceVariant`. Titles longer than ~16 characters are
-not allowed here (see `az.md` risks); auth screens put their title in the content
-as `type.headlineSmall` instead.
+v3: `TopAppBar` (small), height `size.topAppBarHeight`, container
+`scheme.surface`; when content is scrolled under it a 1dp `game.cardBorder`
+hairline appears (no colour change). Title `type.titleLarge` (sans 20sp Bold)
+`scheme.onSurface`, single line, ≤ ~16 characters; navigation icon
+`scheme.onSurface`, actions `scheme.onSurfaceVariant`. Screen headlines inside
+content (auth, result screens, empty states) use the serif `type.headline*`.
+
+Tab roots (Gündəlik, Profil) have no navigation icon; the Oyna tab has no top app
+bar at all (its top row, `home.md`, replaces it). Full-screen flows keep a close
+or back icon.
 
 ## 13. Avatar
 
-Circle `size.avatar` (home header, duel panels, match history), `size.avatarLarge`
+Circle `size.avatarSmall` (home top row, v3), `size.avatar` ( duel panels, match history), `size.avatarLarge`
 (result screen), `size.avatarXLarge` (profile header, match intro, search). Image
 via Coil, crop centre. Fallback (no URL or load failed): `scheme.tertiaryContainer`
 with the first letter of the display name (uppercase, Azerbaijani-aware: "i" → "İ",
@@ -669,47 +634,20 @@ no coins, chips, gems, gold, treasure chests, slot reels, "jackpot" counters or
 falling confetti. The flame is the only streak symbol; XP is a plain number and a
 bar.
 
-## 24. Streak badge (home header)
+## 24. Streak badge (home header) — removed in v3
 
-Trailing block of the home profile header card (`home.md`). Not a separate touch
-target: it is part of the header card (taps open the profile, HOME-08).
+Replaced by the streak chip in the home top row (§35) and the streak section of
+the Gündəlik tab (`daily-tab.md` B). The state rules (active / not yet today /
+zero / unconfirmed cache / hidden / skeleton) carry over to §35 unchanged.
 
-- Box: min width `size.streakBadgeMinWidth` (56dp), shape
-  `shape.component.streakBadge`, padding `space.sm` × `space.xs`, content centred,
-  column: flame icon 28dp (`local_fire_department`, Material Symbols Rounded),
-  `space.xxs`, number `type.titleMedium` tabular figures, 1 line (grows in width for
-  4-digit streaks; never truncates).
-- **Freeze dot**: when `freezeAvailable`, a 20dp circle at the top-end corner
-  (offset −`space.xs`), `scheme.secondaryContainer` with a 2dp ring of the card face
-  colour, 14dp `shield` icon (filled) in `scheme.onSecondaryContainer`.
+## 25. Level chip and mini XP bar — moved to the Profil header in v3
 
-| State | Container | Flame | Number | When |
-| --- | --- | --- | --- | --- |
-| Active today | `game.streakContainer` | filled, `game.streak` | `game.onStreakContainer` | `todayActive = true` |
-| Not yet today | `scheme.surfaceContainerHigh` | outlined, `scheme.onSurfaceVariant` | `scheme.onSurface` | `streakCurrent ≥ 1`, `todayActive = false` |
-| Zero | `scheme.surfaceContainerHigh` | outlined, `scheme.onSurfaceVariant` | "0" `scheme.onSurface` | `streakCurrent = 0` (no warning colour) |
-| Unconfirmed (cache after Baku midnight) | as "Not yet today" | outlined | cached number | PROG-06: the "today" state is never claimed from cache |
-| Hidden | — | — | — | No progress and no cache (HOME-08: never show "0" as a guess); the header text column takes the width |
-| Skeleton | `scheme.surfaceContainerHighest` block, same size | — | — | First load |
-
-Motion: the first time home shows `todayActive = true` on a given Baku day, the
-flame ignites once (`motion.progression.streakIgnite`). Reduced motion: final state.
-Accessibility: merged into the header node; the header content description gets
-`progress_streak_cd_active` / `progress_streak_cd_inactive` (+
-`progress_streak_freeze_cd` when a freeze is held) appended.
-
-## 25. Level chip and mini XP bar (home header)
-
-Third line of the home header text column: a row, vertically centred:
-- **Level chip**: `shape.component.levelChip`, `scheme.primaryContainer`, padding
-  `space.sm` × `space.xxs`, text `progress_level` ("Səviyyə 5") `type.labelMedium`
-  `scheme.onPrimaryContainer`, 1 line, never truncated.
-- `space.sm`, **mini XP bar**: fills the remaining width, height
-  `size.xpBarMiniHeight`, `shape.full`, track `scheme.surfaceContainerHighest`, fill
-  `scheme.primary` = `xpIntoLevel / xpForNextLevel` (server values, never derived
-  from `xpTotal`). Decorative (the header content description reads the level). If
-  the remaining width is < 48dp (large font scale), the bar moves below the chip at
-  full column width.
+Same content, now under the name in the Profil header (`profile.md`). v3 look:
+chip `shape.component.levelChip`, face `scheme.surfaceContainerHigh`, text
+`progress_level` `type.labelMedium` `scheme.onSurface`; `space.sm`, bar
+`size.xpBarMiniHeight` (4dp), track `scheme.surfaceContainerHighest`, fill
+`scheme.primary`. If < 48dp is left for the bar, it moves under the chip at full
+width. Decorative bar; the level is read in text.
 
 ## 26. Progress card (XP, level, streak on result screens)
 
@@ -793,77 +731,26 @@ The large variant shows the question number ("1"…"5", `type.labelSmall`
 `motion.progression.resultSquaresEnter`. Glyphs are never removed: colour is never
 the only signal (the share text uses 🟩 🟥 ⬜, which is outside the app).
 
-## 28. Daily challenge card (home)
+## 28. Daily challenge card (home) — removed in v3
 
-Same frame as the duel hero card (§6): full-width pressable surface (§0),
-`shape.component.dailyCard` (24dp), padding `space.xl` × 18dp, gap `space.md`. The
-face depends on the state; the card keeps the **same minimum height in every state**
-(the height of the "available" layout at the current font scale) so home never
-jumps (DAILY-01, HOME-07).
+The card moved to the Gündəlik tab as the flat challenge card (§37,
+`daily-tab.md` A). No gradient face, no "white face" variant: one flat card with
+all states. The state list of v2 is carried over 1:1 in `daily-tab.md`.
 
-**Gradient face** (available, in progress): face `gradient.dailyHero` (sky blue →
-teal, 135°), depth `gradient.dailyHero.depth` 5dp, all text
-`gradient.dailyHero.on`:
-- Row: column (overline `daily_title` "Gündəlik çağırış" `type.labelLarge`, then
-  `daily_number` "#12" `type.headlineMedium`; at font scale ≥ 1.3 they stay on two
-  lines, so "Gündəlik çağırış #123" never needs more than 2 lines) + decorative 56dp
-  rounded square (white 18 %) with the 32dp `today` symbol (a calendar page — no
-  dice, no wheel).
-- Hint `type.bodyMedium`: available → `home_daily_hint` ("5 sual · hamı üçün
-  eyni"); in progress → `home_daily_in_progress_hint`.
-- Full-width white pressable button (same recipe as §6: face `#FFFFFF`, label
-  `#4426D6`, depth `scheme.primaryContainer` light value): `home_daily_start`
-  ("Başla") or `home_daily_resume` ("Davam et"), leading 20dp `play_arrow`.
+## 29. Streak message (v3, Gündəlik tab)
 
-**White face** (finished, unavailable, offline-unknown, error): white game card
-(`game.pressableNeutral`, 2dp `game.cardBorder`, depth `game.cardDepth`), padding
-`space.lg` (not `space.xl`, so the countdown fits one line at 1.3), text
-`scheme.onSurface` / `scheme.onSurfaceVariant`, icon square in
-`scheme.secondaryContainer` / `scheme.onSecondaryContainer`:
-- **Finished**: row: column (`daily_title` overline `type.labelLarge`
-  `scheme.onSurfaceVariant` + `daily_number` `type.headlineMedium`) + trailing
-  score `daily_score_short` ("4 / 5") `type.headlineMedium` `scheme.primary`
-  tabular; `space.md`, compact result squares (§27); `space.md`, row: 18dp
-  `schedule` icon + `home_daily_next_countdown` ("Növbəti çağırış: 05:12:33")
-  `type.titleSmall` `scheme.onSurfaceVariant` tabular, 1 line (≈ 268dp at 1.3 vs
-  274dp available: 360 − 32 gutters − 32 padding − 22 icon); `space.md`, neutral
-  pressable button `daily_share` with 20dp `share` icon, full width. The card itself
-  is not pressable in this state (only the button); the countdown is not a link.
-- **Countdown at 0**: the countdown row shows a 16dp progress indicator +
-  `home_daily_refreshing` ("Yeni çağırış yüklənir…"); never negative values.
-- **Unavailable**: `event_busy` icon square, `daily_title`,
-  `home_daily_unavailable` (`type.bodyMedium`, wraps); no button.
-- **Offline, cache of an older day**: `cloud_off` icon square, `daily_title` (no
-  number), `home_daily_offline_unknown`; no button (DAILY-01: never claim
-  "finished" for a new day from old cache).
-- **Error** (`GET /v1/daily` failed, no usable cache): `error` icon square,
-  `daily_title`, `home_daily_error`, text button `common_retry`.
-- **Skeleton** (first load): `scheme.surfaceContainerHighest` face, no depth, two
-  text bars and a button-sized bar in `scheme.surfaceContainerHigh`, shimmer as §5.
-- **Start running**: the button shows its loading state (§1), the card ignores
-  further taps (no second request, DAILY-02).
+Moved from under the home header to the streak section of the Gündəlik tab
+(`daily-tab.md` B). Same variants, priority (streak ended → freeze used → hint),
+dismiss rules and live-region behaviour; geometry of the full §8 banner with a
+trailing 48dp close icon (`common_close`):
 
-Accessibility: the gradient card is one node, role Button, label
-`home_daily_card_cd` / `home_daily_card_in_progress_cd`; the finished card is a
-traversal group read as `home_daily_card_finished_cd` with the share button as its
-own element; the countdown is not a live region (it would announce every second).
+| Variant | Container / content | Icon |
+| --- | --- | --- |
+| Streak hint | `game.streakContainer` / `game.onStreakContainer` | outlined `local_fire_department` in `game.streak` |
+| Freeze used | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | `shield` |
+| Streak ended | `scheme.surfaceContainerHigh` / `scheme.onSurface` | `restart_alt` |
 
-## 29. Home message banner (streak messages)
-
-At most one under the profile header (HOME-08), in this priority: streak ended →
-freeze used → streak hint. Geometry of §8 banners (shape
-`shape.component.homeMessage`, padding `space.lg`, 24dp leading icon,
-`type.bodyMedium` text, actions on their own row), plus a trailing 48dp close icon
-button (`common_close`) for dismissible variants.
-
-| Variant | Container / content | Icon | Text | Dismiss |
-| --- | --- | --- | --- | --- |
-| Streak hint | `game.streakContainer` / `game.onStreakContainer` | `local_fire_department` (outlined) | `home_streak_hint` | Close icon; hidden for the rest of the Baku day once closed or once the day becomes active |
-| Freeze used | `scheme.secondaryContainer` / `scheme.onSecondaryContainer` | `shield` | `home_streak_freeze_used` | Close icon; shown once (server event) |
-| Streak ended | `scheme.surfaceContainerHigh` / `scheme.onSurface` | `restart_alt` | `home_streak_lost` (with the best streak) | Close icon; shown once (server event) |
-
-Enter/exit as §8. Polite live region, announced once. No red, no warning triangle,
-no sad faces: a lost streak is a fresh start, not a failure.
+No red, no warning triangle, no sad faces.
 
 ## 30. Notification permission card (result screens)
 
@@ -943,3 +830,158 @@ Width check (360dp, font scale 1.3): intro name column 240dp — "Duello Bot"
 `type.titleMedium` ≈ 130dp + 8 + 64 = 202dp, one line. History headline 264dp —
 ≈ 124dp + 8 + 64 = 196dp, one line. Panel name slot 84dp — badge 64dp, fits.
 Result column — stacked, fits.
+
+---
+
+## v3 restyle of the remaining components
+
+These keep their anatomy, states and behaviour; only the look changes:
+
+| § | Component | v3 change |
+| --- | --- | --- |
+| 2 | Text field | `shape.small` (8dp), face `scheme.surfaceContainerLowest`, 1dp `scheme.outline` (focused 2dp `scheme.onSurface`, no glow ring); error unchanged |
+| 9 | Dialogs | Container `scheme.surface`, `shape.extraLarge` (18dp), title serif `type.headlineSmall` |
+| 10 | Snackbars | `shape.small`; ink in light / paper in dark (`inverseSurface`); action `scheme.inversePrimary` |
+| 13 | Avatar | Letter fallback on `scheme.surfaceContainerHigh` with the letter in serif `type.titleMedium` `scheme.onSurface` (was tertiary). Bot avatar unchanged. Duel accent rings: self `scheme.primary`, opponent `scheme.tertiary` (plum) |
+| 14 | List rows | Unchanged; section headers become the overline (§35a) |
+| 15 | Duel top bar / stepper | Segments 4dp, done/current `scheme.onSurface` (ink), upcoming `game.timerTrack` |
+| 16 | Duel player panel | Flat: face `scheme.surface`, 1dp border in the player accent, no depth; reveal faces as before without depth |
+| 17–19 | Status pill, confidence panel, round banner | Tokens only |
+| 20, 23, 26, 30 | Calibration card, stat rows, progress card, permission card | Flat cards (§0); category icon squares in the progress card use `scheme.surfaceContainerHigh` / `scheme.onSurfaceVariant` (category colours removed); XP bars thin (`size.xpBarHeight` 6dp, no highlight stripe); "+70 XP" stays `scheme.primary` |
+| 21 | Match history row | Tokens only |
+| 22 | Duel overlay card | `scheme.surface`, `shape.extraLarge` |
+| 27 | Result squares | Kept for the daily result share card; same glyph rules; `shape.extraSmall` |
+| 31 | Switch row | M3 switch from the scheme: checked track `scheme.primary` |
+| 32 | Bot badge | Tokens only (plum `tertiaryContainer`) |
+
+## 33. Bottom navigation bar — `DuelloNavigationBar`
+
+Three destinations, shown only on the three tab roots (Oyna, Gündəlik, Profil);
+every full-screen flow (quiz, daily play / result, duel, settings, licences,
+delete account, auth) hides it.
+
+- Container `scheme.surfaceContainer`, height `size.bottomBarHeight` (64dp) +
+  system navigation inset below, 1dp `game.cardBorder` hairline on top, no
+  shadow.
+- Three equal items (≥ 120dp wide on 360dp). Item, stacked and centred: indicator
+  pill `size.navIndicatorWidth` × `size.navIndicatorHeight` (56 × 28dp,
+  `shape.full`) holding the 24dp icon; `space.xxs`; label `type.labelMedium`, 1
+  line (all labels fit at 1.3: "Gündəlik" 74dp of 104dp).
+
+| Item | Label | Icon unselected / selected | Content description extra |
+| --- | --- | --- | --- |
+| Oyna | `nav_play` | `swords` outlined / filled | — |
+| Gündəlik | `nav_daily` | `calendar_today` outlined / filled | `nav_daily_badge_cd` when the dot shows |
+| Profil | `nav_profile` | `person` outlined / filled | — |
+
+| State | Indicator | Icon + label |
+| --- | --- | --- |
+| Selected | `game.navIndicator` | `scheme.onSurface`, filled icon, label Bold 700 |
+| Unselected | none | `scheme.onSurfaceVariant`, outlined icon |
+| Pressed | ripple on the indicator area | — |
+
+**Badge dot** (Gündəlik only): `size.navBadgeDot` (8dp) circle `scheme.primary`
+at the icon's top-end corner (offset 2dp), with a 2dp ring of the bar colour.
+Shown when today's daily is `available` or `in_progress` (`daily-tab.md`);
+appears / disappears with a 150ms fade. Not a count.
+
+Behaviour: tabs keep their own back stack and scroll position (Navigation Compose
+`saveState` / `restoreState`); re-selecting the current tab scrolls it to the
+top; switching uses fade-through 200ms (`motion.game.screenTransition`). System
+back on Gündəlik / Profil → Oyna; on Oyna → exit. Accessibility: M3
+`NavigationBarItem` semantics (role Tab, selected state); the badge is read as
+part of the item label.
+
+## 34. Sticker pill — `Sticker`
+
+The only rotated element in the app; used **only** for the rating on the home
+duel card. Pill `shape.component.sticker`, min height `size.stickerMinHeight`
+(28dp), padding `space.md` × `space.xs`, face `scheme.primary`, text
+`home_duel_sticker_rating` `type.labelMedium` `scheme.onPrimary` tabular,
+rotation `size.stickerRotationDeg` (−4°) around its centre, no shadow. Settles
+once (`motion.game.stickerSettle`). Not interactive, not focusable (its text is
+part of the duel card's content description). Never truncated: it grows.
+Never reused for prices, rewards or counts of anything collectible (no casino
+"badge" look).
+
+## 35. Streak chip (home top row)
+
+Row: 20dp flame (`local_fire_department`) + `space.xs` + number
+`type.titleSmall` tabular, both `game.streak`; pill `shape.component.streakBadge`
+with no fill; min width `size.streakBadgeMinWidth`, touch target 48 × 48dp,
+ripple. States (from v2 §24): active today = filled flame; not yet today / zero /
+unconfirmed cache = outlined flame in `game.streak`, number `game.streak`;
+freeze held = 12dp `shield` in `scheme.secondary` after the number; hidden
+without progress and cache; skeleton 48 × 24dp bar. Tap → Gündəlik tab. Ignite
+once per Baku day (`motion.progression.streakIgnite`).
+
+## 35a. Section overline
+
+`typography.custom.overline` (11sp, ExtraBold, letter-spacing 1.4sp)
+`scheme.onSurfaceVariant`, 1 line at 1.0 (wraps if needed, never truncated),
+heading semantics. Strings are authored in capitals in `az.md` (never uppercased
+at runtime). Used: home category section, Gündəlik sections, Profil sections,
+settings section headers.
+
+## 36. Greeting with squiggle underline
+
+Two lines in `type.headlineSmall` (Fraunces SemiBold) `scheme.onSurface`
+(`home.md`). Line 2 comes from `home_greeting_N`; its string contains one
+`<annotation squiggle="1">…</annotation>` span (Android `getText()` keeps it as
+an `Annotation` span; convert to an `AnnotatedString` range).
+
+**Squiggle**: drawn under that range with `TextLayoutResult.getPathForRange` /
+the range's bounding box: a stroked path, colour `scheme.primary`, width
+`size.squiggleStroke` (2.5dp, round caps), baseline offset
+`size.squiggleOffsetBelowBaseline` (4dp), a sine-like wave with wavelength
+`size.squiggleWavelength` (11dp) and amplitude `size.squiggleAmplitude` (2.5dp),
+started and ended 2dp outside the word, with a fixed small irregularity (±0.4dp
+per crest from a seed = dayKey) so it looks hand-drawn but is stable for the
+day. Reference shape: `design/brand/squiggle-underline.svg`. Draws in once per
+app start (`motion.game.squiggleDraw`). Decorative (not in semantics).
+
+Where hand-drawn touches are allowed (the full list; do not add more without a
+spec change):
+
+| Touch | Allowed only on |
+| --- | --- |
+| Squiggle underline | Home greeting (one word per day) |
+| Rotated sticker | Rating on the home duel card |
+| Dashed boxes / rings | Gündəlik answer boxes before playing, today's week dot, queued (offline) answer states |
+| Serif numerals | Home category numbers, "#12" and the score on the Gündəlik tab, big scores on result screens, the Əminlik tile numerals |
+
+## 37. Daily challenge card v3 (Gündəlik tab)
+
+Flat card (§0): face `scheme.surface`, 1dp `game.cardBorder`,
+`shape.component.dailyCard` (16dp), padding `space.lg`. Content and all states:
+`daily-tab.md` A. Primary pill "Başla" / "Davam et"; finished: countdown row +
+secondary pill "Paylaş". Same minimum height in every state. The card itself is
+not a touch target in the finished state (only its button).
+
+## 38. Answer boxes (Gündəlik)
+
+Row of 5 rounded squares `size.resultBox` (44dp, `shape.component.resultBox`),
+gap `space.sm`; compact `size.resultBoxCompact` where needed.
+
+| State | Face | Border | Glyph |
+| --- | --- | --- | --- |
+| Not played yet | none | 1.5dp **dashed** `scheme.outline` (dash 4dp, gap 3dp) | — |
+| Correct | `game.correct` | — | 20dp `check` `game.onCorrect` |
+| Wrong | `game.wrong` | — | 20dp `close` `game.onWrong` |
+| No answer | `scheme.surfaceContainerHighest` | 1dp `scheme.outline` | 20dp `remove` `scheme.onSurfaceVariant` |
+| Not confirmed (offline) | none | 1.5dp dashed `scheme.outline` | 18dp `cloud_upload` `scheme.onSurfaceVariant` |
+| Result unknown (OQ-D28 missing) | `scheme.surfaceContainerHighest` | — | — (decorative; score is in text) |
+
+Fill left to right after a result (`motion.progression.resultSquaresEnter`).
+Not interactive. TalkBack: part of the card node, or `daily_squares_cd`.
+
+### 38a. Week row (Gündəlik streak section)
+
+7 equal cells (Mon → Sun of the current Baku week), each ≥ 40dp; dot
+`size.weekDot` (28dp, `shape.full`) over the day abbreviation
+(`common_weekdays_short`, `type.labelSmall`). Dot states and glyphs:
+`daily-tab.md` B (active = saffron fill + ring + check, today pending = dashed
+saffron ring, freeze = blue-ink fill + ring + shield, missed = outline ring +
+dash, future = hairline ring). One TalkBack element (`daily_tab_week_cd`). Not
+interactive.
+

@@ -1,5 +1,12 @@
 # Email verification banner
 
+> **v3:** on the home (Oyna) tab the banner starts in its **compact** form
+> (`components.md` §8): 20dp `mail` icon + `auth_verify_banner_title` + chevron,
+> 40dp high, under the top row. Tap expands it in place to the full banner below
+> (body with the address, resend action, countdown). Collapsing again: tap the
+> title row. All states below apply to the expanded form; the "verified"
+> confirmation stays a snackbar.
+
 Story: AUTH-08. Decision: OQ-010 (send a verification email, show a banner, never
 block play). Placement: top of home (`home.md`).
 Tokens: `design/tokens.json`. Components: `components.md` §8. Copy: `copy/az.md`.

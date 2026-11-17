@@ -98,51 +98,73 @@ GAME = [
     ("onBannerWarningContainer", "bannerWarningContainer", TEXT, "web: 'Mətn hazırlanır' placeholder box"),
     ("onPrimary", "primary", TEXT, "web: skip link"),
     ("primary", "surface", UI, "web: 3px focus ring"),
-    # Play Store graphics (design/store/, light colours only on export)
-    ("onPrimary", "primary", TEXT, "store: app name on the feature graphic"),
-    ("tertiaryContainer", "primary", UI, "store: back bubble of the mark on the feature graphic"),
-    ("primaryContainer", "primary", UI, "store: decorative option bars on the feature graphic"),
-    # v2 (tokens 2.0.0): pressable buttons, game cards, gradients
-    ("onPressablePrimary", "pressablePrimary", TEXT, "pressable primary button label"),
-    ("onPressableNeutral", "pressableNeutral", TEXT, "pressable neutral (secondary) button label"),
-    ("onPressableDestructive", "pressableDestructive", TEXT, "pressable destructive button label"),
-    ("onPressableDuel", "pressableDuel", TEXT, "duel CTA button label (home duel card, play again)"),
-    ("onSurface", "pressableNeutral", TEXT, "option card text on the white game card"),
-    ("onSurfaceVariant", "pressableNeutral", TEXT, "supporting text on white game cards"),
-    ("primary", "surfaceContainerLowest", TEXT, "option letter / link on a white game card"),
-    ("onPrimaryContainer", "primaryContainer", TEXT, "default option letter badge"),
-    ("primary", "pendingContainer", UI, "selected option 2dp border vs its container"),
+    # v3 (tokens 3.0.0): buttons, cards, options
+    ("onPrimary", "primary", TEXT, "primary pill button label (components.md §1)"),
+    ("onSurface", "surface", TEXT, "secondary pill button label (transparent face on the page)"),
+    ("outline", "surface", UI, "secondary pill button 1dp border"),
+    ("onError", "error", TEXT, "destructive pill button label"),
+    ("onSurface", "surfaceContainerLowest", TEXT, "text on the lightest container (text field)"),
+    ("primary", "surfaceContainerLowest", TEXT, "link on the lightest container"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "default option letter badge (v2) / level-up strip"),
+    ("onSurface", "pendingContainer", UI, "selected option 2dp ink border vs its container"),
+    ("onPendingContainer", "pendingContainer", TEXT, "selected option text"),
+    ("outline", "surface", UI, "option card 1dp border vs page"),
+    ("onSurface", "surfaceContainerHigh", TEXT, "option letter badge (dimmed) / list row on panel"),
     ("onConfidence1Container", "confidence1Container", UI, "Əminlik 1 signal bars"),
+    ("onConfidence2Container", "confidence2Container", UI, "Əminlik 2 signal bars"),
     ("onConfidence3Container", "confidence3Container", UI, "Əminlik 3 signal bars"),
     ("onTertiaryContainer", "tertiaryContainer", TEXT, "round-7 pill, opponent badge, Bot badge text + icon (components.md §32)"),
-    ("gradient.duelHero.on", "gradient.duelHero.start", TEXT, "duel hero card text, gradient start"),
-    ("gradient.duelHero.on", "gradient.duelHero.end", TEXT, "duel hero card text, gradient end"),
-    ("gradient.resultWin.on", "gradient.resultWin.start", TEXT, "win result hero text, gradient start"),
-    ("gradient.resultWin.on", "gradient.resultWin.end", TEXT, "win result hero text, gradient end"),
-    # v2.1 (tokens 2.1.0): daily challenge, streak, XP, notifications
-    ("gradient.dailyHero.on", "gradient.dailyHero.start", TEXT, "daily card / daily result hero text, gradient start"),
-    ("gradient.dailyHero.on", "gradient.dailyHero.end", TEXT, "daily card / daily result hero text, gradient end"),
-    ("streak", "surfaceContainerLowest", TEXT, "streak flame icon on white game cards (profile streak card, progress card)"),
-    ("streak", "surface", UI, "streak flame icon on the page"),
-    ("streak", "streakContainer", UI, "filled flame in the active streak badge (home header)"),
-    ("onStreakContainer", "streakContainer", TEXT, "streak number in the active streak badge, streak hint banner, '+1' chip"),
-    ("onSurface", "surfaceContainerHigh", TEXT, "streak number in the inactive streak badge"),
-    ("onSurfaceVariant", "surfaceContainerHigh", UI, "outlined flame in the inactive streak badge"),
-    ("primary", "surfaceContainerHighest", UI, "XP bar fill vs track (result card, profile, home mini bar, category rows)"),
-    ("onPrimaryContainer", "primaryContainer", TEXT, "level chip (home header), level-up strip"),
-    ("onPressablePrimary", "pressablePrimary", TEXT, "level badge number (profile level card)"),
-    ("onSecondaryContainer", "secondaryContainer", TEXT, "streak freeze row / freeze-used banner"),
-    ("secondary", "surfaceContainerLowest", UI, "streak freeze shield icon on a white card"),
-    ("correct", "surfaceContainerLowest", UI, "daily result square (correct) vs white share card"),
-    ("wrong", "surfaceContainerLowest", UI, "daily result square (wrong) vs white share card"),
-    ("outline", "surfaceContainerLowest", UI, "daily result square (no answer) border vs white share card"),
+    # v3: bottom navigation bar (components.md §33)
+    ("onSurface", "surfaceContainer", TEXT, "nav: selected label and icon on the bar"),
+    ("onSurfaceVariant", "surfaceContainer", TEXT, "nav: unselected label and icon"),
+    ("onSurface", "navIndicator", TEXT, "nav: selected icon on the indicator pill"),
+    ("primary", "surfaceContainer", UI, "nav: 'not played yet' badge dot on the Gündəlik item"),
+    # v3: home (home.md, components.md §6, §34, §35, §36)
+    ("onSurfaceVariant", "surface", TEXT, "home: date line, overline 'TƏK OYNA · 10 SUAL'"),
+    ("streak", "surface", TEXT, "home top row: streak number and flame (saffron)"),
+    ("primary", "surface", TEXT, "home: category numerals 01-05 (serif)"),
+    ("primary", "surface", UI, "home: squiggle underline under the greeting word"),
+    ("onSurfaceVariant", "surface", UI, "home: category line icons and chevrons"),
+    ("inverseOnSurface", "inverseSurface", TEXT, "duel card: 'Duel' title and hint"),
+    ("inverseOnSurfaceVariant", "inverseSurface", TEXT, "duel card: '~3 dəq' and muted text"),
+    ("onSurface", "surface", TEXT, "duel card CTA pill (page colours on the inverted card)"),
+    ("surface", "inverseSurface", UI, "duel card CTA pill boundary vs the card"),
+    ("onPrimary", "primary", TEXT, "rating sticker text on the accent pill"),
+    # v3: Gündəlik tab (daily-tab.md, components.md §37, §38)
+    ("outline", "surface", UI, "Gündəlik: dashed empty answer box"),
+    ("correct", "surface", UI, "Gündəlik: filled correct answer box vs card"),
+    ("onCorrect", "correct", TEXT, "Gündəlik: check glyph in a correct box"),
+    ("wrong", "surface", UI, "Gündəlik: filled wrong answer box vs card"),
+    ("onWrong", "wrong", TEXT, "Gündəlik: cross glyph in a wrong box"),
+    ("onSurfaceVariant", "surfaceContainerHighest", TEXT, "Gündəlik: dash glyph in a 'no answer' box"),
+    ("onSurface", "surface", TEXT, "Gündəlik: '#12' serif numeral, streak title"),
+    ("streak", "surface", UI, "week dot: 1.5dp saffron ring (active) and dashed ring (today pending)"),
+    ("onStreakFill", "streakFill", TEXT, "week dot: check glyph on the saffron fill"),
+    ("secondary", "surface", UI, "week dot: freeze ring"),
+    ("onSecondaryContainer", "secondaryContainer", TEXT, "week dot: shield glyph on the freeze fill; freeze message"),
+    ("outline", "surface", UI, "week dot: missed-day ring"),
+    ("onSurfaceVariant", "surface", TEXT, "week row: day abbreviations 'B.e … B'"),
+    ("onSurface", "surface", TEXT, "week row: today's abbreviation (bold)"),
+    ("onStreakContainer", "streakContainer", TEXT, "streak hint message on the Gündəlik tab"),
+    ("streak", "streakContainer", UI, "flame icon in the streak hint message"),
+    ("onSurface", "surfaceContainerHigh", TEXT, "'streak lost' message"),
+    # Game roles (quiz, duel, profile) — unchanged keys, v3 values
+    ("timerNormal", "surfaceContainerLow", TEXT, "duel: search countdown digits on the search card"),
+    ("correct", "surfaceContainer", TEXT, "duel result / profile: positive rating change on the rating card"),
+    ("wrong", "surfaceContainer", TEXT, "duel result / profile: negative rating change on the rating card"),
+    ("onSurfaceVariant", "surfaceContainer", TEXT, "duel result / profile: zero rating change, captions on the rating card"),
+    ("correct", "correctContainer", TEXT, "duel reveal: points text on a correct player panel"),
+    ("wrong", "wrongContainer", TEXT, "duel reveal: points text on a wrong player panel"),
+    ("primary", "surfaceContainerHighest", UI, "XP bar fill vs track (result card, profile, category rows)"),
+    ("onSecondaryContainer", "secondaryContainer", TEXT, "streak freeze row / freeze-used message"),
+    ("secondary", "surface", UI, "streak freeze shield icon on a card"),
+    ("correct", "surfaceContainerLowest", UI, "daily result square (correct) vs share card"),
+    ("wrong", "surfaceContainerLowest", UI, "daily result square (wrong) vs share card"),
+    ("outline", "surfaceContainerLowest", UI, "daily result square (no answer) border vs share card"),
     ("onSurfaceVariant", "surfaceContainerHighest", TEXT, "dash glyph in the no-answer square, notification card supporting text"),
+    ("onSurfaceVariant", "surfaceContainerHigh", UI, "outlined flame (not yet today)"),
+    ("streak", "surfaceContainerLowest", TEXT, "streak flame + number on the lightest card"),
 ]
-CATEGORY_SLOTS = ["violet", "blue", "teal", "green", "orange", "rose", "pink", "ocean"]
-for slot in CATEGORY_SLOTS:
-    GAME.append((f"category.{slot}.onFace", f"category.{slot}.face", TEXT, f"category tile name + count, slot {slot}"))
-    GAME.append((f"category.{slot}.onContainer", f"category.{slot}.container", TEXT, f"category chip / quiz top bar tint, slot {slot}"))
-
 
 
 def lum(hex_colour):
@@ -192,12 +214,14 @@ Colour is never the only signal: correct/wrong option states also show a check o
 cross icon and a text label for TalkBack; the timer warning also changes the arc
 and pulses the digits; Əminlik chips always show the number 1, 2 or 3.
 
-Palette v2 (tokens 2.0.0, vivid game style): saturated faces (pressable buttons,
-category tiles, Əminlik 3) carry white text only where #FFFFFF passes 4.5:1; dark
-theme text accents use light tones. Depth edges (`*Depth`, `cardDepth`) and the
-neutral button border are decorative (the label identifies the control) and are
-not checked. Category slots are named `category.<slot>.*`, gradients
-`gradient.<name>.*`; text on a gradient is checked against both stops.
+Palette v3 (tokens 3.0.0, "dəftər": paper, ink, one nar accent, saffron streak).
+Not checked on purpose in v3: `game.cardBorder` / `outlineVariant` hairlines
+(decorative, never the only boundary of a control), `game.streakFill` against the
+page (the filled week dot is identified by its saffron ring and check glyph, both
+checked), `game.navIndicator` against the bar (selection is also shown by the
+filled icon, bold label and ink colour), and the sticker's rotation. The duel
+card is `inverseSurface`; its CTA pill uses the page colours, checked against the
+card.
 """
 
 

@@ -1,5 +1,17 @@
 # Progression — XP, levels, streak ("Seriya")
 
+> **v3 (tokens 3.0.0, 2026-11-17) — placement changes:** the streak badge and the
+> level chip + mini XP bar left the home header. Streak: chip in the home top row
+> (`components.md` §35) and the streak section of the Gündəlik tab
+> (`daily-tab.md` B, with the week row). Level chip + XP bar: Profil header
+> (`profile.md`). The streak message banners (section B) moved from home to the
+> Gündəlik tab with the same priority and rules. The profile **streak card** (C)
+> is replaced by a one-line link row to the Gündəlik tab (the tab shows more).
+> Level badge, bars and category icon squares: flat v3 look (`components.md`
+> "v3 restyle"); `game.pressablePrimary*` → `scheme.primary` / `onPrimary`,
+> `category.<slot>.*` → `scheme.surfaceContainerHigh` / `onSurfaceVariant`. All
+> states below still apply; read "home header" as "home top row + Gündəlik tab".
+
 Stories: PROG-01 … PROG-10, HOME-08, PROF-09 … PROF-11, QUIZ-05 / DUEL-20 / DAILY-04
 (XP bullets). Decisions: OQ-081 (XP amounts), OQ-082 (caps), OQ-083 (curve),
 OQ-084 (category XP), OQ-085 (active day), OQ-086 (freeze), OQ-087 (midnight),
@@ -49,13 +61,13 @@ streak flame on home — without touching the Elo rating and without casino trop
 
 | Element | Home | Profile | Quiz result | Daily result | Duel result |
 | --- | --- | --- | --- | --- | --- |
-| Streak badge (§24) | header trailing | — | — | — | — |
-| Level chip + mini XP bar (§25) | header line 3 | — | — | — | — |
+| Streak chip (§35, v3) | top row | — | — | — | — |
+| Level chip + mini XP bar (§25) | — (v3: Profil header) | — | — | — | — |
 | Level card | — | yes (PROF-09) | — | — | — |
 | Category levels | — | yes (PROF-10) | — | — | — |
 | Streak card | — | yes (PROF-11) | — | — | — |
 | Progress card (§26) | — | — | yes | yes | yes (not for abandoned / own forfeit with 0 XP: see below) |
-| Home message banner (§29) | under header | — | — | — | — |
+| Streak message (§29) | — (v3: Gündəlik tab B) | — | — | — | — |
 
 ## A. XP gain and level-up (result screens)
 
@@ -94,7 +106,7 @@ Per game type:
 | Duel abandoned | **No progress card** | DUEL-20: no XP |
 | Duel over a cap (20/day or 3 vs same opponent) | Cap note (needs OQ-D29) | Elo still changes |
 
-## B. Streak on home
+## B. Streak on home (v3: chip on home, section + messages on the Gündəlik tab, `daily-tab.md` B)
 
 - **Streak badge** (§24) at the trailing end of the profile header card, always
   visible when progress (or a same-account cache) exists.

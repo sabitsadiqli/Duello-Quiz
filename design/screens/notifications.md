@@ -1,5 +1,16 @@
 # Notifications ("Bildirişlər")
 
+> **v3 (tokens 3.0.0, 2026-11-17):** (1) A tap on either push (`daily_reminder`,
+> `streak_reminder`) opens the **Gündəlik tab** (`daily-tab.md`), scrolled to the
+> top; nothing starts automatically (NOTIF-05 changed, see `v3-migration.md`).
+> (2) The daily reminder switch is **mirrored** on the Gündəlik tab as "Hər gün
+> xatırlat" (`daily_tab_reminder`) with the same supporting text, states and
+> permission flow as B; both rows read and write the same server value. The
+> settings section B stays (it also holds the streak reminder). (3) Small icon
+> accent colour becomes `scheme.primary` light `#A82D25` (pending the brand
+> recolour, OQ-D37). (4) The permission card (§30) is a flat card with a primary
+> pill "İcazə ver".
+
 Stories: NOTIF-01 … NOTIF-08, SET-07, QUIZ-05 / DAILY-04 (where the permission card
 appears). Decisions: OQ-088 (two types, 10:00 / 20:00 Baku, max 2 per day), OQ-089
 (quiet hours), OQ-090 (in-app card first, one retry after 7 days), OQ-091 (both on
@@ -39,7 +50,7 @@ short, kind notifications a day.
 
 - Quiz result / daily result: the permission card (A).
 - Settings → "Bildirişlər" section (B).
-- System notification tap → home (C).
+- System notification tap → Gündəlik tab (C; v3).
 
 ## A. Permission card (in-app, Android 13+ only)
 
@@ -121,8 +132,8 @@ same meaning exist only for the channel names and descriptions.
 
 | Type (`data.type`) | Channel | Title (≤ 40) | Body (≤ 90) | Tap |
 | --- | --- | --- | --- | --- |
-| `daily_reminder` (10:00 Baku, only if today's daily is not started) | `daily` "Gündəlik çağırış" | `push_daily_reminder_title`: "Gündəlik çağırış #{dailyNumber} hazırdır" (31 chars at #1234) | `push_daily_reminder_body`: "5 sual səni gözləyir. Bu gün neçəsini tapacaqsan?" (49) | Home, daily card in view, never auto-start |
-| `streak_reminder` (20:00 Baku, streak ≥ 2, today not active) | `streak` "Seriya" | `push_streak_reminder_title`: "{streak} günlük seriyanı qoru" (25 chars at 1000) | `push_streak_reminder_body`: "Bu gün bir oyun oyna ki, seriyan davam etsin." (45) | Home |
+| `daily_reminder` (10:00 Baku, only if today's daily is not started) | `daily` "Gündəlik çağırış" | `push_daily_reminder_title`: "Gündəlik çağırış #{dailyNumber} hazırdır" (31 chars at #1234) | `push_daily_reminder_body`: "5 sual səni gözləyir. Bu gün neçəsini tapacaqsan?" (49) | Gündəlik tab (v3), never auto-start |
+| `streak_reminder` (20:00 Baku, streak ≥ 2, today not active) | `streak` "Seriya" | `push_streak_reminder_title`: "{streak} günlük seriyanı qoru" (25 chars at 1000) | `push_streak_reminder_body`: "Bu gün bir oyun oyna ki, seriyan davam etsin." (45) | Gündəlik tab (v3) |
 
 Rules for the texts: no guilt, no false urgency, no other players, no "bet"/"mərc",
 no emoji (they render inconsistently across OEM notification shades), no exclamation

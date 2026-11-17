@@ -17,13 +17,15 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/sign-up.md` | Email sign-up with "Ad" (AUTH-02, OQ-011) |
 | `screens/password-reset.md` | Password reset (AUTH-04) |
 | `screens/email-verification-banner.md` | Verification banner on home (AUTH-08, OQ-010) |
-| `screens/home.md` | Home (HOME-01 … HOME-08: header with level and streak, daily card) |
-| `screens/daily-challenge.md` | Daily challenge: home card states, loading, play, result, share text (DAILY-01 … DAILY-10, HOME-07) |
-| `screens/progression.md` | XP gain and level-up on results, streak on home, level / streak / category levels on the profile (PROG-01 … PROG-10, HOME-08, PROF-09 … PROF-11) |
+| `screens/v3-migration.md` | **v3 minimal**: per-screen impact, Android notes (3 tabs, fonts, removed components), font verification, impact on requirements |
+| `screens/home.md` | Home = "Oyna" tab (v3): top row with date, streak, avatar; greeting; duel card; category list (HOME-01 … HOME-06) |
+| `screens/daily-tab.md` | "Gündəlik" tab (v3): today's challenge, streak + week row + messages, daily reminder switch |
+| `screens/daily-challenge.md` | Daily challenge: loading, play, result, share text (DAILY-02 … DAILY-10; card states moved to `daily-tab.md` in v3) |
+| `screens/progression.md` | XP gain and level-up on results; level / category levels on Profil; streak elements (placed on home top row and Gündəlik in v3) (PROG-01 … PROG-10, PROF-09 … PROF-11) |
 | `screens/notifications.md` | Permission card, settings switches, push texts (NOTIF-01 … NOTIF-08, SET-07) |
 | `screens/quiz-question.md` | Quiz loading + question screen + exit dialog (QUIZ-01 … QUIZ-04, QUIZ-07, QUIZ-08) |
 | `screens/quiz-result.md` | Result + wrong-answer review, XP card, permission card (QUIZ-05, QUIZ-06) |
-| `screens/settings.md` | Settings, notifications, delete account (SET-01 … SET-05, SET-07, AUTH-07) |
+| `screens/settings.md` | Settings (opened from Profil in v3), notifications, delete account (SET-01 … SET-05, SET-07, AUTH-07) |
 | `screens/licenses.md` | Open-source licences list and detail (SET-03) |
 | `screens/duel-search.md` | Duel search / queue, bot countdown, timeout, retry, leave (DUEL-02 … DUEL-04, DUEL-23) |
 | `screens/duel-intro.md` | Match found + 3 s intro (DUEL-05) |
@@ -33,8 +35,8 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/duel-interruptions.md` | Disconnect overlays, rejoin, leave dialog, session replaced, match lost (DUEL-13 … DUEL-16) |
 | `screens/duel-result.md` | Match result + calibration card (DUEL-20 … DUEL-22) |
 | `screens/duel-availability.md` | Upgrade required, duel unavailable, connection failed (DUEL-01) |
-| `screens/profile.md` | Profile, level / streak / category levels, match history, calibration stats, edit name (PROF-01 … PROF-11) |
-| `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon |
+| `screens/profile.md` | "Profil" tab (v3): profile, level chip + XP, category levels, match history, calibration stats, edit name, settings entry (PROF-01 … PROF-11) |
+| `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon (still v2 colours, OQ-D37); `brand/squiggle-underline.svg` (v3 greeting underline) |
 | `screens/web-legal.md` | Public GitHub Pages: app intro, privacy policy, account deletion (`docs/legal/`, SET-06) |
 | `store/` | Google Play listing text, screenshot plan, feature graphic |
 
@@ -55,7 +57,31 @@ avatar = app mark (§13), no rating ("—"); search countdown to the bot moment 
 `duel-search.md`, `duel-intro.md`, `duel-match.md`, `duel-reveal.md`,
 `duel-interruptions.md`, `duel-result.md` and `profile.md`.
 
-## Design direction (v2, tokens 2.0.0)
+## Design direction (v3 minimal, tokens 3.0.0) — current
+
+Approved by Sabit 2026-11-16 (mockup), specified 2026-11-17. Replaces v2 below
+(v2 notes are kept as history; where they conflict, v3 wins). Full impact:
+`screens/v3-migration.md`.
+
+- **"Dəftər" (notebook)**: warm paper `#F5EFE3` / ink `#1E1B16` in light, ink
+  `#17150F` / paper `#EFE7D6` in dark. One accent, **nar** red (`#A82D25` /
+  `#EC7B6F`, tuned from the mockup for AA). **Saffron** only for the streak
+  (`game.streak`, `game.streakFill`). Blue ink secondary (freeze, info), plum
+  tertiary (opponent, Bot badge).
+- **Navigation**: bottom bar with Oyna / Gündəlik (badge dot) / Profil; flows
+  (quiz, daily play, duel, settings) are full screen without the bar.
+- **Type**: Fraunces (display/headline serif, numerals) + **Plus Jakarta Sans**
+  (UI) — Manrope from the mockup lacks capital Ə (OQ-D34). Both bundled as static
+  instances; coverage verified from the font files.
+- **Shapes**: flat, hairline cards 16dp, duel card 18dp, pill buttons. No
+  gradients, no depth edges, no category colours. Press = ripple + 0.98 scale.
+- **Human touches**, a fixed list (`components.md` §36): squiggle under one
+  greeting word, the rotated rating sticker, dashed boxes / rings for "not yet",
+  serif numerals.
+- Unchanged rules: no casino visuals, never "bet", colour never the only signal,
+  AA contrast, no truncation at 360dp / 1.3.
+
+## Design direction (v2, tokens 2.0.0) — superseded by v3
 
 Vivid game style in the spirit of Duolingo / Trivia Crack (decided by Sabit,
 2026-10-21; full before/after table in `brand.md`).
@@ -82,8 +108,8 @@ Vivid game style in the spirit of Duolingo / Trivia Crack (decided by Sabit,
   https://www.figma.com/design/7ik6IU2tYVByPYP2jBRcLB — foundations, components and
   360 × 800 mockups in light and dark.
 
-Azerbaijani glyph test string (must render with Nunito, no fallback glyphs, in every
-weight): `Əə Ğğ Iı İi Öö Üü Çç Şş — Coğrafiya, Şəki, İsmayıllı, Gəncə, Ağdaş`.
+Azerbaijani glyph test string (v3: must render with Fraunces and Plus Jakarta Sans, no fallback glyphs, in every
+bundled instance): `Əə Ğğ Iı İi Öö Üü Çç Şş — Coğrafiya, Şəki, İsmayıllı, Gəncə, Ağdaş`.
 Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
 
 ## How android-dev consumes this
@@ -96,20 +122,18 @@ Also check that `"i".uppercase(Locale("az"))` gives "İ" for the avatar letter.
 - `color.<theme>.game` → an immutable `GameColors` data class exposed through a
   `CompositionLocal` (e.g. `MaterialTheme.gameColors`), one instance per theme,
   same property names as the JSON keys.
-- `color.<theme>.category.<slot>` → `CategoryColors(face, onFace, depth, container,
-  onContainer)` per slot in a `CompositionLocal` (`LocalCategoryColors`), keyed by
-  the slot name. Resolve a category's slot from its `accentKey`; unknown or missing
-  key → `color.categoryAccentOrder[index % 8]` by server order.
-- `color.<theme>.gradient.*` → `Brush.linearGradient` (135°) for the duel hero card
-  and the win hero; text on it is `on` (white), checked against both stops.
-- `depth.*` → dp constants for the pressable depth edge (`components.md` §0).
+- v3 removed `color.<theme>.category`, `color.<theme>.gradient`, `depth.*` and the
+  pressable/depth game roles; `color.deprecated` names the replacement token for
+  any old reference. Do not keep aliases in Kotlin.
 - `color.stateLayer` → Material 3 defaults already match; only use the values for
   custom components.
 - Theme choice (Sistem/İşıqlı/Qaranlıq) is read before the first frame so the
   splash already has the right background (SET-01).
 
 ### Typography, shapes, spacing, sizes, motion
-- `typography.scale` → `Typography(...)` with the Nunito `FontFamily`; names match.
+- `typography.scale` → `Typography(...)`; each style's `family` picks the display
+  (Fraunces) or brand (Plus Jakarta Sans) `FontFamily`; `typography.custom` →
+  extra styles (overline, numeral, numeralLarge). Names match.
   Use `fontFeatureSettings = "tnum"` where `tokens.json` says so.
 - `shape` → `Shapes(extraSmall…extraLarge)`; `shape.component` says which one each
   component uses.
