@@ -26,24 +26,69 @@ cd android && ./gradlew lint test assembleDebug
 
 | Module | Content |
 | --- | --- |
-| `:app` | Application (Coil image loader, sign-out cleanup), MainActivity (splash, edge-to-edge, theme), NavHost driven by the auth state, network security config |
+| `:app` | Application (Coil image loader, sign-out cleanup), MainActivity (splash, edge-to-edge, theme), NavHost driven by the auth state with the three-tab scaffold and bottom bar (Gündəlik badge, reminder taps), network security config |
 | `:feature:auth` | Welcome, sign-in, sign-up (sends the name with `PATCH /v1/me`), password reset |
-| `:feature:home` | Profile header with level and streak, streak messages, daily challenge card (countdown, share), category list with loading/empty/error/offline states, quiz start, verification banner |
+| `:feature:home` | The Oyna tab (Baku date, streak chip, avatar, rotating greeting, duel card, category list with loading/empty/error/offline states, quiz start, verification banner) and the Gündəlik tab (`daily/`: challenge card with countdown and share, streak section with the week row and messages, daily reminder switch) |
 | `:feature:quiz` | Quiz loading and question screen, result, wrong-answer review; the daily challenge (play, result with share card, review) on the shared `QuestionRunner`; XP/streak card and notification permission card on results |
 | `:feature:duel` | The whole duel flow as one destination: search, intro, question → Əminlik → answer → reveal, round 7 and sudden death, disconnect overlays, leave dialog, result with the Əminlik kartı, upgrade/unavailable/connection states |
-| `:feature:profile` | Name, avatar, rating, Qoşulub, level, streak and category levels, duel record, Əminlik statistikası, last 20 matches, name editing |
+| `:feature:profile` | The Profil tab: name, avatar, rating, Qoşulub, level and XP, streak row (→ Gündəlik), category levels, duel record, Əminlik statistikası, last 20 matches, name editing, the settings entry |
 | `:feature:settings` | Theme, language, notification reminders, account (sign-out, delete via `DELETE /v1/me`), about, open-source licences (list + detail) |
-| `:core:notifications` | FCM messaging service (token refresh, reminders shown in the foreground), reminder channels `daily_reminder` / `streak_reminder`, phone notification state, push token registration, reminder taps → home |
+| `:core:notifications` | FCM messaging service (token refresh, reminders shown in the foreground), reminder channels `daily_reminder` / `streak_reminder`, phone notification state, push token registration, reminder taps → Gündəlik tab, `ReminderSettingsController` (reminder switches shared by settings and the Gündəlik tab) |
 | `:core:network` | Ktor client (OkHttp) for `docs/api/openapi.yaml`: Bearer ID token with one refresh on 401, `Accept-Language`, error `code` mapping, DTOs (internal) → `:core:model`; the duel WebSocket (`/v1/duel?protocolVersion=1`) with its internal wire types and codec |
 | `:core:duel` | `DuelClient` for `docs/api/duel-protocol.md`: ping, 15 s silence watchdog, clock offset on the monotonic clock, `seq` ordering with `match.rejoin` on gaps, `hello`/`match.state` resync, close codes (no reconnect after 4000/4001), reconnect with backoff in a match, saved running match and "left while offline" marker |
 | `:core:data` | Repositories (profile incl. name editing, categories, quiz sessions and daily attempts with the shared offline answer queue, progress, notification settings, push tokens, duel stats and history, account), per-account cache, `NetworkMonitor`, preferences |
 | `:core:auth` | `AuthRepository` (Firebase or in-memory fake), Credential Manager Google client, validation rules |
 | `:core:datastore` | Preferences DataStore (theme mode, notification card counter, shown streak messages, daily question show times, push registration) and the per-account cache store |
-| `:core:designsystem` | Theme from `design/tokens.json` (v2: scheme, game, category accents, gradients, depth), Nunito font, icons, components (pressable surface, buttons, option card, quiz timer, category tile grid, duel hero, Əminlik tiles, state views), **all UI strings** |
+| `:core:designsystem` | Theme from `design/tokens.json` 3.0.0 (scheme, game colours, typography, shapes, motion), Fraunces + Plus Jakarta Sans, icons, components (navigation bar, buttons, option card, quiz timer, category row, duel card, sticker, streak chip, greeting with squiggle, daily card, answer boxes, week row, Əminlik tiles, state views), **all UI strings** |
 | `:core:common` | `AppConfig`, `WallClock`, application scope, navigation result keys, external links |
 | `:core:model` | Plain models (`AuthUser`, `Profile`, `Category`, quiz types, `DataResult`/`DataError`) |
 
 Features never depend on each other. Navigation between graphs happens in `:app`.
+
+## Navigation (v3, HOME-09)
+
+Signed in, the root is a `Scaffold` with `DuelloNavigationBar` over three tabs, in this order:
+**Oyna** (`PlayDestination`, `:feature:home`), **Gündəlik** (`DailyTabDestination`,
+`:feature:home`) and **Profil** (`ProfileDestination`, `:feature:profile`). All destinations share
+one back stack in `DuelloNavHost`:
+
+- Switching tabs is `navigate(tab) { popUpTo<PlayDestination> { saveState = true };
+  launchSingleTop = true; restoreState = true }` (`navigateToTab`), so each tab keeps its scroll
+  and state. System back on Gündəlik or Profil lands on Oyna; back on Oyna finishes the activity.
+- Re-selecting the shown tab scrolls it to the top (a conflated channel per tab, passed to the
+  route as `scrollToTop: Flow<Unit>`); nothing reloads.
+- Full-screen flows (quiz, daily play/result/review, duel, settings, licences, delete account,
+  auth) are pushed above the tab they start from and hide the bar. Quiz and duel return to Oyna
+  (`popBackToPlay`), the daily flow to Gündəlik (`popBackToDailyTab`); one-off messages travel as
+  `NavResults.HOME_NOTICE`. Whenever the back stack goes from a flow back to a tab, `:app` sets
+  `NavResults.TAB_REFRESH` on that tab's entry and its ViewModel refreshes once.
+- Reminder pushes (`daily_reminder`, `streak_reminder`, `ReminderOpens`) open Gündəlik scrolled
+  to the top; while a full-screen flow or the auth graph is shown the tap is ignored.
+- The Gündəlik badge dot (`MainTabsViewModel`) reads only the cached `GET /v1/daily` status:
+  shown for `available` / `in_progress` of today, hidden otherwise and after Baku midnight. Home
+  refreshes the status with its own refresh; the Gündəlik tab on return from the daily flow.
+- Settings is reached from the Profil tab only.
+
+The pure rules (tab selection, reminder taps, return refresh, badge) are unit-tested in
+`app/src/test/.../navigation/TabNavigationTest.kt`.
+
+## Theme and fonts (v3)
+
+`DuelloTheme` maps `design/tokens.json` 3.0.0 1:1: `color.light.scheme` / `color.dark.scheme`
+(every Material role, `surfaceTint` = surface) plus `GameColors` (streak fill, nav indicator,
+card border, banners …), the type scale (`typography.scale.*.family`), shapes and motion. The
+v3 look is flat: no depth edges, gradients or per-category colours; presses are ripple plus the
+`motion.press` scale. Status and navigation bar icons follow the app theme (dark icons on paper,
+light icons on ink). Theme mode (System / Light / Dark) is stored in DataStore.
+
+Two font families, bundled as static instances because minSdk 24 has no variable-font axes:
+**Fraunces** (display and numerals: `fraunces_regular`, `fraunces_semibold`) and **Plus Jakarta
+Sans** (brand/body: medium, semibold, bold, extrabold), each subset to Latin + Latin Extended +
+the Azerbaijani letters and the listed punctuation. `DuelloTypography` adds `overline`,
+`numeral` and `numeralLarge`. The instances are produced by
+`core/designsystem/third_party/build_fonts.py` (fontTools; axis values, subset ranges and the
+cmap check are in `core/designsystem/third_party/README.md`); re-run the glyph test string from
+`design/README.md` on a device in every weight after regenerating them.
 
 ## Conventions
 
@@ -116,13 +161,13 @@ at start; the client only renders `correct` / `correctOptionId`.
 
 The duel is behind the build flag `BuildConfig.DUEL_ENABLED` of `:app` (OQ-020): on in debug, off
 in release. Override for every build type with `-PduelEnabled=true|false`. With the flag off there
-is no duel card on home, no duel sections on the profile and no duel route at all.
+is no duel card on Oyna (and no duel greeting lines), no duel sections on the profile and no duel route at all.
 
 The socket belongs to the duel screen (`DuelViewModel`): it survives rotation, is closed when the
 user leaves the flow, keeps running in the background during a match and sends `queue.leave` when
 the app is backgrounded while searching. Countdowns are server deadlines minus the clock offset,
 read from `SystemClock.elapsedRealtime`; the client never computes points or correctness. After a
-process death home reopens the duel on the saved running match (`resume = true`). The result
+process death the Oyna tab reopens the duel on the saved running match (`resume = true`). The result
 screen takes names and avatars from `match.result.you/opponent` (a deleted opponent shows as
 "Silinmiş oyunçu") and names the forfeit cause (`forfeitCause`); a rejoin snapshot keeps the
 opponent's reconnect countdown from `match.state.opponent.reconnectDeadlineEpochMs`.
@@ -156,11 +201,12 @@ the in-app card appears on the first quiz/daily result and once more 7 days afte
 
 ## Open-source licences
 
-"Açıq mənbə lisenziyaları" (`design/screens/licenses.md`) lists two manual entries (Nunito with
-the full OFL text, Material Symbols) and the libraries generated by the AboutLibraries Gradle
+"Açıq mənbə lisenziyaları" (`design/screens/licenses.md`) lists three manual entries (Fraunces
+and Plus Jakarta Sans with the full OFL texts, Material Symbols) and the libraries generated by the AboutLibraries Gradle
 plugin in `:app` from each variant's runtime classpath into `res/raw/aboutlibraries.json`, so the
 release list always matches the shipped dependencies. `:core:designsystem` copies
-`third_party/nunito/OFL.txt` into the asset `licenses/nunito/OFL.txt` at build time.
+`third_party/fraunces/OFL.txt` and `third_party/plusjakartasans/OFL.txt` into the assets
+`licenses/fraunces/OFL.txt` and `licenses/plusjakartasans/OFL.txt` at build time.
 `LicenseRepository` (`:core:data`) parses both; unreadable metadata is a Crashlytics non-fatal and
 the screen shows only the manual section.
 

@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,16 +71,15 @@ import com.sabit.duelloquiz.core.designsystem.daily.ResourceDailyShareStrings
 import com.sabit.duelloquiz.core.designsystem.daily.ResultSquareState
 import com.sabit.duelloquiz.core.designsystem.daily.shareDailyResult
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Depth
+import com.sabit.duelloquiz.core.designsystem.theme.Borders
+import com.sabit.duelloquiz.core.designsystem.theme.DuelCardShape
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
-import com.sabit.duelloquiz.core.designsystem.theme.HeroShape
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
-import com.sabit.duelloquiz.core.designsystem.theme.gradients
+import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
-import com.sabit.duelloquiz.core.designsystem.theme.toBrush
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import com.sabit.duelloquiz.core.designsystem.util.rememberNotificationPermissionRequester
 import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
@@ -214,7 +214,7 @@ internal fun DailyResultScreen(
                 }
                 Spacer(Modifier.height(Spacing.xl))
                 DuelloPrimaryButton(
-                    text = stringResource(R.string.common_home),
+                    text = stringResource(R.string.daily_result_back_to_tab),
                     onClick = { onAction(DailyResultAction.HomeClicked) },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -233,10 +233,10 @@ private fun ExpandIn(visible: Boolean, content: @Composable () -> Unit) {
     ) { content() }
 }
 
-/** Score hero (daily-challenge.md D.2): dailyHero gradient, day pill, big score; one TalkBack element. */
+/** Score hero (daily-challenge.md D.2, v3): flat paper card, day pill, big serif score; one TalkBack element. */
 @Composable
 private fun DailyScoreHero(uiState: DailyResultUiState) {
-    val gradient = MaterialTheme.gradients.dailyHero
+    val onFace = MaterialTheme.colorScheme.onSurface
     val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
     val shown = remember { Animatable(if (reducedMotion) uiState.correctCount.toFloat() else 0f) }
     val pop = remember { Animatable(if (uiState.isPerfect && !reducedMotion) Motion.PERFECT_HERO_POP_FROM else 1f) }
@@ -256,12 +256,10 @@ private fun DailyScoreHero(uiState: DailyResultUiState) {
     val description = stringResource(R.string.daily_result_score_cd, uiState.correctCount, uiState.total, uiState.number)
     PressableSurface(
         onClick = null,
-        faceColor = gradient.start,
-        faceBrush = gradient.toBrush(),
-        depthColor = gradient.depth,
-        contentColor = gradient.on,
-        shape = HeroShape,
-        depth = Depth.pressableLarge,
+        faceColor = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(Borders.hairline, MaterialTheme.gameColors.cardBorder),
+        contentColor = onFace,
+        shape = DuelCardShape,
         contentAlignment = Alignment.Center,
         contentPadding = PaddingValues(Spacing.xl),
         modifier = Modifier
@@ -277,46 +275,46 @@ private fun DailyScoreHero(uiState: DailyResultUiState) {
                 Icon(
                     painter = painterResource(DuelloIcons.Celebration),
                     contentDescription = null,
-                    tint = gradient.on,
+                    tint = onFace,
                     modifier = Modifier.size(Sizes.iconLarge),
                 )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .background(gradient.on.copy(alpha = PILL_ALPHA), FullShape)
+                    .background(onFace.copy(alpha = PILL_ALPHA), FullShape)
                     .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
             ) {
                 Icon(
                     painter = painterResource(DuelloIcons.Today),
                     contentDescription = null,
-                    tint = gradient.on,
+                    tint = onFace,
                     modifier = Modifier.size(Sizes.pillIcon),
                 )
                 Spacer(Modifier.width(Spacing.xs))
                 Text(
                     text = stringResource(R.string.daily_number, uiState.number),
                     style = MaterialTheme.typography.labelMedium.tabularFigures(),
-                    color = gradient.on,
+                    color = onFace,
                 )
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = shown.value.toInt().toString(),
                     style = MaterialTheme.typography.displayLarge.tabularFigures(),
-                    color = gradient.on,
+                    color = onFace,
                 )
                 Text(
                     text = stringResource(R.string.quiz_result_score_suffix, uiState.total),
                     style = MaterialTheme.typography.headlineMedium.tabularFigures(),
-                    color = gradient.on,
+                    color = onFace,
                     modifier = Modifier.padding(bottom = Spacing.sm),
                 )
             }
             Text(
                 text = stringResource(R.string.daily_result_correct_count, uiState.correctCount, uiState.total),
                 style = MaterialTheme.typography.titleMedium,
-                color = gradient.on,
+                color = onFace,
                 textAlign = TextAlign.Center,
             )
         }

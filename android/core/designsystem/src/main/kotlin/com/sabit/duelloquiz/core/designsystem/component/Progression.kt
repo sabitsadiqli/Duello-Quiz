@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -49,22 +50,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
-import com.sabit.duelloquiz.core.designsystem.theme.categoryColors
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
@@ -75,113 +77,124 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Glossy stripe on XP bars, white at 35 % like the timer bar (components.md §4 / §26). */
-private val BarHighlight = Color.White.copy(alpha = 0.35f)
-
-/** components.md §24 streak badge states. */
-enum class StreakBadgeState {
-    /** `todayActive`: filled flame on `game.streakContainer`. */
+/** Whether today already counts for the streak (filled flame) or not yet (outlined). */
+enum class StreakDayState {
+    /** `todayActive` of a progress of today. */
     ActiveToday,
 
-    /** Streak ≥ 1 but today not yet (or a cache from an earlier Baku day): outlined flame. */
+    /** Streak ≥ 0 but today not yet, or a cache from an earlier Baku day: outlined flame. */
     NotYetToday,
 }
 
 /**
- * Streak badge (components.md §24): flame + number, min width 56dp, grows for 4-digit streaks and
- * never truncates; a freeze dot at the top-end corner when a freeze is held. Decorative for
- * TalkBack (the home header content description carries the streak).
+ * Streak chip (components.md §35, home top row): 20dp flame + number in `game.streak`, a pill
+ * without fill, min width `size.streakBadgeMinWidth`, 48dp touch target, ripple. Active today =
+ * filled flame, otherwise outlined; a held freeze adds a 12dp shield in `scheme.secondary`. It
+ * grows for long numbers and never truncates. The flame ignites once when [ignite] (first frame
+ * of a Baku day). One TalkBack node with [contentDescription] and the [onClickLabel] action.
  */
 @Composable
-fun StreakBadge(
+fun StreakChip(
     days: Int,
-    state: StreakBadgeState,
+    state: StreakDayState,
     freezeAvailable: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onClickLabel: String? = null,
     ignite: Boolean = false,
 ) {
     val game = MaterialTheme.gameColors
-    val scheme = MaterialTheme.colorScheme
-    val active = state == StreakBadgeState.ActiveToday
-    val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
-    val scale = remember { Animatable(1f) }
-    LaunchedEffect(ignite, active) {
-        if (ignite && active && !reducedMotion) {
-            scale.snapTo(Motion.Progression.STREAK_IGNITE_FROM)
-            scale.animateTo(1f, Motion.bouncy())
-        }
-    }
-    Box(modifier = modifier.clearAndSetSemantics {}) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .widthIn(min = Sizes.streakBadgeMinWidth)
-                .background(if (active) game.streakContainer else scheme.surfaceContainerHigh, MaterialTheme.shapes.medium)
-                .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
-        ) {
+    val active = state == StreakDayState.ActiveToday
+    val scale = rememberIgniteScale(ignite = ignite && active)
+    PressableSurface(
+        onClick = onClick,
+        faceColor = Color.Transparent,
+        contentColor = game.streak,
+        shape = FullShape,
+        contentAlignment = Alignment.Center,
+        faceMinHeight = Sizes.minTouchTarget,
+        contentPadding = PaddingValues(horizontal = Spacing.sm),
+        onClickLabel = onClickLabel,
+        modifier = modifier
+            .widthIn(min = Sizes.streakBadgeMinWidth)
+            .clearAndSetSemantics {
+                this.contentDescription = contentDescription
+                role = Role.Button
+                onClick(label = onClickLabel) { onClick(); true }
+            },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = painterResource(if (active) DuelloIcons.FlameFilled else DuelloIcons.Flame),
                 contentDescription = null,
-                tint = if (active) game.streak else scheme.onSurfaceVariant,
+                tint = game.streak,
                 modifier = Modifier
-                    .size(GameSizes.streakFlame)
+                    .size(GameSizes.streakChipFlame)
                     .graphicsLayer {
-                        scaleX = scale.value
-                        scaleY = scale.value
+                        scaleX = scale()
+                        scaleY = scale()
                     },
             )
-            Spacer(Modifier.height(Spacing.xxs))
+            Spacer(Modifier.width(Spacing.xs))
             Text(
                 text = days.toString(),
-                style = MaterialTheme.typography.titleMedium.tabularFigures(),
-                color = if (active) game.onStreakContainer else scheme.onSurface,
+                style = MaterialTheme.typography.titleSmall.tabularFigures(),
+                color = game.streak,
                 maxLines = 1,
             )
-        }
-        if (freezeAvailable) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = Spacing.xs, y = -Spacing.xs)
-                    .size(GameSizes.freezeDot)
-                    .background(scheme.surfaceContainerLowest, FullShape)
-                    .padding(GameSizes.freezeDotRing)
-                    .background(scheme.secondaryContainer, FullShape),
-            ) {
+            if (freezeAvailable) {
+                Spacer(Modifier.width(Spacing.xxs))
                 Icon(
                     painter = painterResource(DuelloIcons.ShieldFilled),
                     contentDescription = null,
-                    tint = scheme.onSecondaryContainer,
-                    modifier = Modifier.size(GameSizes.freezeDotIcon),
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(GameSizes.streakChipShield),
                 )
             }
         }
     }
 }
 
-/** Skeleton of the streak badge (first load). */
+/** Skeleton of the streak chip (first load): a 48 × 24dp bar. */
 @Composable
-fun StreakBadgeSkeleton(alpha: () -> Float, modifier: Modifier = Modifier) {
+fun StreakChipSkeleton(alpha: () -> Float, modifier: Modifier = Modifier) {
     SkeletonBlock(
         alpha = alpha,
-        shape = MaterialTheme.shapes.medium,
+        shape = FullShape,
         modifier = modifier
             .width(Sizes.streakBadgeMinWidth)
-            .height(Sizes.streakBadgeMinWidth),
+            .height(Sizes.icon),
     )
 }
 
 /**
- * Rounded XP bar (components.md §25 / §26): track `surfaceContainerHighest`, fill `primary`;
- * [fraction] 0…1 from the server values. The full-height variant has the glossy stripe.
- * Decorative: the surrounding text carries the value.
+ * motion.progression.streakIgnite: the flame pops 0.8 → 1.08 → 1 once when [ignite] turns true;
+ * none with reduced motion or in previews.
+ */
+@Composable
+fun rememberIgniteScale(ignite: Boolean): () -> Float {
+    val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
+    val scale = remember { Animatable(1f) }
+    LaunchedEffect(ignite) {
+        if (ignite && !reducedMotion) {
+            scale.snapTo(Motion.Progression.STREAK_IGNITE_FROM)
+            scale.animateTo(Motion.Progression.STREAK_IGNITE_PEAK, tween(Motion.Progression.STREAK_IGNITE_MS, easing = Motion.Standard))
+            scale.animateTo(1f, Motion.bouncy())
+        }
+    }
+    return { scale.value }
+}
+
+/**
+ * Thin XP bar (components.md §25 / §26 v3): track `surfaceContainerHighest`, fill `primary`, no
+ * highlight stripe; [fraction] 0…1 from the server values. Decorative: the surrounding text
+ * carries the value.
  */
 @Composable
 fun XpBar(fraction: () -> Float, modifier: Modifier = Modifier, height: Dp = Sizes.xpBarHeight) {
     val track = MaterialTheme.colorScheme.surfaceContainerHighest
     val fill = MaterialTheme.colorScheme.primary
-    val stripe = height >= Sizes.xpBarHeight
     Spacer(
         modifier = modifier
             .fillMaxWidth()
@@ -193,25 +206,13 @@ fun XpBar(fraction: () -> Float, modifier: Modifier = Modifier, height: Dp = Siz
                 val width = size.width * fraction().coerceIn(0f, 1f)
                 if (width <= 0f) return@drawBehind
                 drawRoundRect(fill, size = Size(width, size.height), cornerRadius = radius)
-                if (!stripe) return@drawBehind
-                val inset = GameSizes.timerHighlightInset.toPx()
-                val stripeHeight = GameSizes.timerHighlightHeight.toPx()
-                val stripeWidth = width - inset * 2
-                if (stripeWidth > 0f) {
-                    drawRoundRect(
-                        color = BarHighlight,
-                        topLeft = Offset(inset, Spacing.xxs.toPx()),
-                        size = Size(stripeWidth, stripeHeight),
-                        cornerRadius = CornerRadius(stripeHeight / 2),
-                    )
-                }
             },
     )
 }
 
 /**
- * Level chip + mini XP bar (components.md §25), third line of the home header. The bar moves under
- * the chip when less than 48dp would be left next to it (large font scale).
+ * Level chip + mini XP bar (components.md §25, v3: in the Profil header). The bar moves under the
+ * chip when less than 48dp would be left next to it (large font scale).
  */
 @Composable
 fun LevelChipRow(level: Int, fraction: Float, modifier: Modifier = Modifier) {
@@ -238,10 +239,10 @@ private fun LevelChip(level: Int) {
     Text(
         text = stringResource(R.string.progress_level, level),
         style = MaterialTheme.typography.labelMedium.tabularFigures(),
-        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.primaryContainer, FullShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh, FullShape)
             .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
     )
 }
@@ -258,9 +259,9 @@ fun LevelChipSkeleton(alpha: () -> Float, modifier: Modifier = Modifier) {
     )
 }
 
-/** A category level-up line of the progress card. [accent] is a category accent slot. */
+/** A category level-up line of the progress card (v3: one neutral icon square for all categories). */
 @Immutable
-data class CategoryLevelUpUi(val name: String, val iconKey: String, val accent: String, val level: Int)
+data class CategoryLevelUpUi(val name: String, val iconKey: String, val level: Int)
 
 /**
  * Everything the progress card (components.md §26) shows, from the server `progress` object.
@@ -315,10 +316,8 @@ fun ProgressGain.toCardUi(
     xpIntoLevel = xpIntoLevel,
     xpForNextLevel = xpForNextLevel,
     categoryLevelUps = categoryLevelUps.mapNotNull { up ->
-        val index = categories.indexOfFirst { it.id == up.categoryId }
-        if (index < 0) return@mapNotNull null
-        val category = categories[index]
-        CategoryLevelUpUi(category.name, category.iconKey, CategoryAccent.resolve(index), up.levelAfter)
+        val category = categories.firstOrNull { it.id == up.categoryId } ?: return@mapNotNull null
+        CategoryLevelUpUi(category.name, category.iconKey, up.levelAfter)
     },
     streakDays = streakCurrent,
     streakExtended = streakExtendedToday,
@@ -516,18 +515,17 @@ private fun InfoLine(icon: Int, text: String) {
 
 @Composable
 private fun CategoryLevelUpRow(up: CategoryLevelUpUi, modifier: Modifier = Modifier) {
-    val colors = categoryColors(up.accent)
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(GameSizes.categoryLevelUpBox)
-                .background(colors.container, MaterialTheme.shapes.extraSmall),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraSmall),
         ) {
             Icon(
                 painter = painterResource(DuelloIcons.category(up.iconKey)),
                 contentDescription = null,
-                tint = colors.onContainer,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(Sizes.pillIcon),
             )
         }
@@ -543,8 +541,7 @@ private fun CategoryLevelUpRow(up: CategoryLevelUpUi, modifier: Modifier = Modif
 @Composable
 private fun StreakRow(days: Int, filled: Boolean, extended: Boolean, ignite: Boolean) {
     val game = MaterialTheme.gameColors
-    val scale = remember { Animatable(if (ignite && extended) Motion.Progression.STREAK_IGNITE_FROM else 1f) }
-    LaunchedEffect(Unit) { if (ignite && extended) scale.animateTo(1f, Motion.bouncy()) }
+    val scale = rememberIgniteScale(ignite = ignite && extended)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
             painter = painterResource(if (filled) DuelloIcons.FlameFilled else DuelloIcons.Flame),
@@ -553,8 +550,8 @@ private fun StreakRow(days: Int, filled: Boolean, extended: Boolean, ignite: Boo
             modifier = Modifier
                 .size(Sizes.icon)
                 .graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
+                    scaleX = scale()
+                    scaleY = scale()
                 },
         )
         Spacer(Modifier.width(Spacing.sm))
@@ -579,16 +576,17 @@ private fun StreakRow(days: Int, filled: Boolean, extended: Boolean, ignite: Boo
     }
 }
 
-/** Variants of the home message banner (components.md §29), in priority order. */
-enum class HomeMessageVariant { StreakLost, FreezeUsed, StreakHint }
+/** Variants of the streak message (components.md §29), in priority order. */
+enum class StreakMessageVariant { StreakLost, FreezeUsed, StreakHint }
 
 /**
- * Home message banner (components.md §29): at most one under the header; dismissible with the
- * close icon; polite live region. No red, no warning triangle: a lost streak is a fresh start.
+ * Streak message (components.md §29 v3, Gündəlik tab streak section): at most one; dismissible
+ * with the close icon; polite live region. No red, no warning triangle: a lost streak is a fresh
+ * start.
  */
 @Composable
-fun HomeMessageBanner(
-    variant: HomeMessageVariant,
+fun StreakMessageBanner(
+    variant: StreakMessageVariant,
     text: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -596,9 +594,9 @@ fun HomeMessageBanner(
     val game = MaterialTheme.gameColors
     val scheme = MaterialTheme.colorScheme
     val (container, content, icon) = when (variant) {
-        HomeMessageVariant.StreakHint -> Triple(game.streakContainer, game.onStreakContainer, DuelloIcons.Flame)
-        HomeMessageVariant.FreezeUsed -> Triple(scheme.secondaryContainer, scheme.onSecondaryContainer, DuelloIcons.Shield)
-        HomeMessageVariant.StreakLost -> Triple(scheme.surfaceContainerHigh, scheme.onSurface, DuelloIcons.RestartAlt)
+        StreakMessageVariant.StreakHint -> Triple(game.streakContainer, game.onStreakContainer, DuelloIcons.Flame)
+        StreakMessageVariant.FreezeUsed -> Triple(scheme.secondaryContainer, scheme.onSecondaryContainer, DuelloIcons.Shield)
+        StreakMessageVariant.StreakLost -> Triple(scheme.surfaceContainerHigh, scheme.onSurface, DuelloIcons.RestartAlt)
     }
     Surface(
         color = container,
@@ -609,7 +607,13 @@ fun HomeMessageBanner(
             .semantics { liveRegion = LiveRegionMode.Polite },
     ) {
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = Spacing.lg, top = Spacing.lg, bottom = Spacing.lg)) {
-            Icon(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(Sizes.icon))
+            // The hint flame is outlined in game.streak (components.md §29); the others use the content colour.
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = if (variant == StreakMessageVariant.StreakHint) game.streak else LocalContentColor.current,
+                modifier = Modifier.size(Sizes.icon),
+            )
             Spacer(Modifier.width(Spacing.md))
             Text(text = text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             IconButton(
@@ -635,7 +639,7 @@ private val previewProgress = ProgressCardUi(
     fractionAfter = 0.08f,
     xpIntoLevel = 40,
     xpForNextLevel = 500,
-    categoryLevelUps = listOf(CategoryLevelUpUi("Coğrafiya", "geography", "ocean", 3)),
+    categoryLevelUps = listOf(CategoryLevelUpUi("Coğrafiya", "geography", 3)),
     streakDays = 8,
     streakExtended = true,
     dayActive = true,
@@ -652,12 +656,12 @@ private fun ProgressCardPreview() {
                 ProgressCard(previewProgress.copy(xpGained = 25, botNote = true, levelBefore = 5, categoryLevelUps = emptyList()))
                 ProgressCard(previewProgress.copy(xpGained = 0, showCapNote = true, levelBefore = 5, categoryLevelUps = emptyList(), streakExtended = false))
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                    StreakBadge(days = 7, state = StreakBadgeState.ActiveToday, freezeAvailable = true)
-                    StreakBadge(days = 1234, state = StreakBadgeState.NotYetToday, freezeAvailable = false)
+                    StreakChip(days = 7, state = StreakDayState.ActiveToday, freezeAvailable = true, contentDescription = "", onClick = {})
+                    StreakChip(days = 1234, state = StreakDayState.NotYetToday, freezeAvailable = false, contentDescription = "", onClick = {})
                 }
                 LevelChipRow(level = 12, fraction = 0.54f)
-                HomeMessageBanner(HomeMessageVariant.StreakHint, stringResource(R.string.home_streak_hint), onDismiss = {})
-                HomeMessageBanner(HomeMessageVariant.FreezeUsed, stringResource(R.string.home_streak_freeze_used), onDismiss = {})
+                StreakMessageBanner(StreakMessageVariant.StreakHint, stringResource(R.string.home_streak_hint), onDismiss = {})
+                StreakMessageBanner(StreakMessageVariant.FreezeUsed, stringResource(R.string.home_streak_freeze_used), onDismiss = {})
             }
         }
     }

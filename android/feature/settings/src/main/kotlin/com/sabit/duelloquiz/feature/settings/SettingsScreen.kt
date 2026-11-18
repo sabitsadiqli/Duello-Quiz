@@ -39,7 +39,7 @@ import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.feature.settings.notifications.NotificationSectionRoute
-import com.sabit.duelloquiz.feature.settings.notifications.NotificationSettingsMessage
+import com.sabit.duelloquiz.core.notifications.NotificationSettingsMessage
 import com.sabit.duelloquiz.feature.settings.notifications.NotificationSettingsViewModel
 import kotlinx.coroutines.launch
 

@@ -28,14 +28,19 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
+import com.sabit.duelloquiz.core.designsystem.theme.overline
 
-/** Section header for settings lists (components.md §14): titleSmall in primary. */
+/**
+ * Section header for lists (components.md §14 v3): the overline (§35a, strings authored in
+ * capitals) in onSurfaceVariant. [overline] false keeps a sentence-case titleSmall header for
+ * strings that are not authored in capitals (licences screen).
+ */
 @Composable
-fun SectionHeader(text: String, modifier: Modifier = Modifier) {
+fun SectionHeader(text: String, modifier: Modifier = Modifier, overline: Boolean = true) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
+        style = if (overline) MaterialTheme.typography.overline else MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
             .fillMaxWidth()
             .padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.xl, bottom = Spacing.sm)

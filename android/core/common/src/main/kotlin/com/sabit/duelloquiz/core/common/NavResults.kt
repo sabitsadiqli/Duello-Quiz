@@ -5,8 +5,14 @@ package com.sabit.duelloquiz.core.common
  * (features never depend on each other; :app writes, the receiving ViewModel reads).
  */
 object NavResults {
-    /** Value: a [HomeNotice] name. Home shows the matching snackbar once and clears it. */
+    /**
+     * Value: a [HomeNotice] name. The tab a flow returns to (Oyna for quiz and duel, Gündəlik for
+     * the daily challenge) shows the matching snackbar once and clears it.
+     */
     const val HOME_NOTICE = "home_notice"
+
+    /** Value: true. A full-screen flow returned to this tab: refresh once (HOME-04, HOME-07, HOME-08). */
+    const val TAB_REFRESH = "tab_refresh"
 }
 
 /** One-off messages another flow asks home to show on return. */
