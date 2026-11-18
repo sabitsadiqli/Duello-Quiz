@@ -24,7 +24,7 @@ class LicensesViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val apache = OpenSourceLicense("Apache License 2.0", "https://spdx.org/licenses/Apache-2.0.html", "Apache License\n\n  TERMS\n\n\n1. Definitions.\n")
-    private val fraunces = OpenSourceComponent("asset:fraunces", "Fraunces", null, "Undercase Type", "https://github.com/undercasetype/Fraunces", listOf(OpenSourceLicense("SIL Open Font License 1.1", null, null)))
+    private val nunito = OpenSourceComponent("asset:nunito", "Nunito", null, "Vernon Adams", "https://github.com/googlefonts/nunito", listOf(OpenSourceLicense("SIL Open Font License 1.1", null, null)))
     private val coil = OpenSourceComponent("io.coil-kt.coil3:coil", "Coil", "3.6.3", null, null, listOf(apache, OpenSourceLicense("MIT License", null, "MIT")))
     private val bare = OpenSourceComponent("x:y", "Bare", "1.0", null, null, emptyList())
 
@@ -35,13 +35,13 @@ class LicensesViewModelTest {
 
     @Test
     fun listShowsManualAndGeneratedRows() = runTest {
-        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(fraunces), listOf(coil, bare))))
+        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(nunito), listOf(coil, bare))))
         runCurrent()
 
         val state = vm.uiState.value
         assertFalse(state.loading)
         assertFalse(state.librariesError)
-        assertEquals(listOf(LicenseRowUi("asset:fraunces", "Fraunces", null, "SIL Open Font License 1.1")), state.assets)
+        assertEquals(listOf(LicenseRowUi("asset:nunito", "Nunito", null, "SIL Open Font License 1.1")), state.assets)
         assertEquals(
             listOf(
                 LicenseRowUi("io.coil-kt.coil3:coil", "Coil", "3.6.3", "Apache License 2.0, MIT License"),
@@ -53,7 +53,7 @@ class LicensesViewModelTest {
 
     @Test
     fun unreadableMetadataShowsInlineErrorButKeepsAssets() = runTest {
-        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(fraunces), libraries = null)))
+        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(nunito), libraries = null)))
         runCurrent()
 
         assertTrue(vm.uiState.value.librariesError)
@@ -63,10 +63,10 @@ class LicensesViewModelTest {
 
     @Test
     fun rowAndBackClicksBecomeEvents() = runTest {
-        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(fraunces), emptyList())))
+        val vm = LicensesViewModel(FakeRepository(OpenSourceNotices(listOf(nunito), emptyList())))
         vm.events.test {
-            vm.onAction(LicensesAction.RowClicked("asset:fraunces"))
-            assertEquals(LicensesEvent.OpenDetail("asset:fraunces"), awaitItem())
+            vm.onAction(LicensesAction.RowClicked("asset:nunito"))
+            assertEquals(LicensesEvent.OpenDetail("asset:nunito"), awaitItem())
             vm.onAction(LicensesAction.BackClicked)
             assertEquals(LicensesEvent.NavigateBack, awaitItem())
         }
@@ -74,7 +74,7 @@ class LicensesViewModelTest {
 
     @Test
     fun detailSplitsTextIntoParagraphsAndOpensLinks() = runTest {
-        val repository = FakeRepository(OpenSourceNotices(listOf(fraunces), listOf(coil)))
+        val repository = FakeRepository(OpenSourceNotices(listOf(nunito), listOf(coil)))
         val vm = LicenseDetailViewModel(SavedStateHandle(mapOf(LicenseDetailViewModel.ARG_ID to coil.id)), repository)
         runCurrent()
 
@@ -97,22 +97,22 @@ class LicensesViewModelTest {
     @Test
     fun detailWithoutTextMarksItMissing() = runTest {
         val vm = LicenseDetailViewModel(
-            SavedStateHandle(mapOf(LicenseDetailViewModel.ARG_ID to fraunces.id)),
-            FakeRepository(OpenSourceNotices(listOf(fraunces), null)),
+            SavedStateHandle(mapOf(LicenseDetailViewModel.ARG_ID to nunito.id)),
+            FakeRepository(OpenSourceNotices(listOf(nunito), null)),
         )
         runCurrent()
 
         val detail = requireNotNull(vm.uiState.value.detail)
         assertNull(detail.licenses.single().paragraphs)
         assertNull(detail.licenseUrl)
-        assertEquals("https://github.com/undercasetype/Fraunces", detail.websiteUrl)
+        assertEquals("https://github.com/googlefonts/nunito", detail.websiteUrl)
     }
 
     @Test
     fun unknownIdNavigatesBack() = runTest {
         val vm = LicenseDetailViewModel(
             SavedStateHandle(mapOf(LicenseDetailViewModel.ARG_ID to "gone")),
-            FakeRepository(OpenSourceNotices(listOf(fraunces), emptyList())),
+            FakeRepository(OpenSourceNotices(listOf(nunito), emptyList())),
         )
         vm.events.test {
             assertEquals(LicenseDetailEvent.NavigateBack, awaitItem())

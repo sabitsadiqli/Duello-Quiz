@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,30 +33,37 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.Dp
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Borders
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
-import com.sabit.duelloquiz.core.designsystem.theme.FullShape
+import com.sabit.duelloquiz.core.designsystem.theme.GameColors
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
+import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 
-/**
- * Button variants (components.md §1, v3 pills). v2 "Neutral" is [Secondary]; the v2 duel colour
- * is gone ("duel button" = [Primary]). [OnInk] only sits on an `inverseSurface` block.
- */
-enum class ButtonVariant { Primary, Secondary, OnInk, Destructive }
+/** Pressable button variants (components.md §1). v1 Tonal and Outlined both map to [Neutral]. */
+enum class ButtonVariant { Primary, Neutral, Duel, Destructive }
 
-/** Face, label and optional border of a button. */
+/** Face, label, edge and optional border of a pressable button. */
 @Immutable
-internal data class ButtonStyle(val face: Color, val label: Color, val border: Color?)
+internal data class ButtonStyle(val face: Color, val label: Color, val depth: Color, val border: Color?)
 
-internal fun ButtonVariant.style(scheme: ColorScheme): ButtonStyle = when (this) {
-    ButtonVariant.Primary -> ButtonStyle(scheme.primary, scheme.onPrimary, null)
-    ButtonVariant.Secondary -> ButtonStyle(Color.Transparent, scheme.onSurface, scheme.outline)
-    ButtonVariant.OnInk -> ButtonStyle(scheme.surface, scheme.onSurface, null)
-    ButtonVariant.Destructive -> ButtonStyle(scheme.error, scheme.onError, null)
+internal fun ButtonVariant.style(game: GameColors): ButtonStyle = when (this) {
+    ButtonVariant.Primary -> ButtonStyle(game.pressablePrimary, game.onPressablePrimary, game.pressablePrimaryDepth, null)
+    ButtonVariant.Neutral -> ButtonStyle(
+        game.pressableNeutral,
+        game.onPressableNeutral,
+        game.pressableNeutralDepth,
+        game.pressableNeutralBorder,
+    )
+    ButtonVariant.Duel -> ButtonStyle(game.pressableDuel, game.onPressableDuel, game.pressableDuelDepth, null)
+    ButtonVariant.Destructive -> ButtonStyle(
+        game.pressableDestructive,
+        game.onPressableDestructive,
+        game.pressableDestructiveDepth,
+        null,
+    )
 }
 
 /**
@@ -89,10 +95,9 @@ private fun ButtonLabel(text: String, loading: Boolean) {
 }
 
 /**
- * Pill button (components.md §1 v3): flat, height `size.buttonHeight` (48dp), labelLarge, ripple
- * without scale. Disabled: M3 disabled colours (a countdown label stays readable in
- * onSurfaceVariant with [readableWhenDisabled]). Loading: label hidden, width kept, not clickable.
- * [trailing] is an optional icon after the label (duel card "Rəqib tap →").
+ * Pressable button (components.md §0/§1): face `size.buttonHeight` (52dp) on a 4dp depth edge,
+ * 16dp rounded rectangle, labelLarge. Disabled: flat, M3 disabled colours (a countdown label stays
+ * readable in onSurfaceVariant with [readableWhenDisabled]). Loading: rest position, not clickable.
  */
 @Composable
 fun DuelloButton(
@@ -104,12 +109,10 @@ fun DuelloButton(
     loading: Boolean = false,
     readableWhenDisabled: Boolean = false,
     leading: (@Composable () -> Unit)? = null,
-    trailing: (@Composable () -> Unit)? = null,
     labelColor: Color? = null,
-    height: Dp = Sizes.buttonHeight,
 ) {
+    val style = variant.style(MaterialTheme.gameColors)
     val scheme = MaterialTheme.colorScheme
-    val style = variant.style(scheme)
     val disabledLabel = if (readableWhenDisabled) {
         scheme.onSurfaceVariant
     } else {
@@ -118,14 +121,18 @@ fun DuelloButton(
     PressableSurface(
         onClick = onClick,
         faceColor = if (enabled) style.face else scheme.onSurface.copy(alpha = DisabledContainerAlpha),
-        border = if (enabled && style.border != null) BorderStroke(Borders.hairline, style.border) else null,
+        depthColor = if (enabled) style.depth else null,
+        border = if (enabled && style.border != null) BorderStroke(Depth.border, style.border) else null,
         contentColor = if (enabled) labelColor ?: style.label else disabledLabel,
         interactive = enabled && !loading,
-        shape = FullShape,
-        faceMinHeight = height,
+        shape = MaterialTheme.shapes.medium,
+        depth = Depth.pressable,
+        faceMinHeight = Sizes.buttonHeight,
         contentAlignment = Alignment.Center,
         contentPadding = PaddingValues(horizontal = Spacing.xl),
-        modifier = modifier.then(if (!enabled) Modifier.semantics { disabled() } else Modifier),
+        modifier = modifier
+            .heightIn(min = Sizes.buttonHeight + Depth.pressable)
+            .then(if (!enabled) Modifier.semantics { disabled() } else Modifier),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (leading != null) {
@@ -133,10 +140,6 @@ fun DuelloButton(
                 Spacer(Modifier.width(Spacing.sm))
             }
             ButtonLabel(text, loading)
-            if (trailing != null) {
-                Spacer(Modifier.width(Spacing.sm))
-                Box(Modifier.alpha(if (loading) 0f else 1f)) { trailing() }
-            }
         }
     }
 }
@@ -152,15 +155,25 @@ fun DuelloPrimaryButton(
     readableWhenDisabled: Boolean = false,
 ) = DuelloButton(text, onClick, ButtonVariant.Primary, modifier, enabled, loading, readableWhenDisabled)
 
-/** Secondary: action of equal weight ("Əsas səhifə", "Paylaş", "E-poçtla daxil ol", "Ləğv et"). */
+/** Neutral: secondary action of equal weight ("Əsas səhifə", "E-poçtla daxil ol", "Ləğv et"). */
 @Composable
-fun DuelloSecondaryButton(
+fun DuelloNeutralButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
-) = DuelloButton(text, onClick, ButtonVariant.Secondary, modifier, enabled, loading)
+) = DuelloButton(text, onClick, ButtonVariant.Neutral, modifier, enabled, loading)
+
+/** Duel: duel entry points only ("Yenidən oyna" on the duel result, "Yenidən axtar", "Duelə başla"). */
+@Composable
+fun DuelloDuelButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    loading: Boolean = false,
+) = DuelloButton(text, onClick, ButtonVariant.Duel, modifier, enabled, loading)
 
 /** Destructive: only "Hesabı həmişəlik sil". */
 @Composable
@@ -201,15 +214,15 @@ fun DuelloTextButton(
         modifier = modifier.heightIn(min = Sizes.minTouchTarget),
         enabled = enabled,
         colors = colors,
-        shape = FullShape,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Text(text = text, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 /**
- * Google sign-in button (components.md §1): Secondary pill, label in onSurface and the
- * untinted multicolour "G" (never recoloured).
+ * Google sign-in button (components.md §1): Neutral pressable, label in onSurface (not violet,
+ * Google branding) and the untinted multicolour "G".
  */
 @Composable
 fun GoogleSignInButton(
@@ -222,7 +235,7 @@ fun GoogleSignInButton(
     DuelloButton(
         text = text,
         onClick = onClick,
-        variant = ButtonVariant.Secondary,
+        variant = ButtonVariant.Neutral,
         modifier = modifier,
         enabled = enabled,
         loading = loading,
@@ -266,7 +279,8 @@ private fun ButtonsPreview() {
                     enabled = false,
                     readableWhenDisabled = true,
                 )
-                DuelloSecondaryButton(stringResource(R.string.auth_sign_up_cta), {}, Modifier.fillMaxWidth())
+                DuelloNeutralButton(stringResource(R.string.auth_sign_up_cta), {}, Modifier.fillMaxWidth())
+                DuelloDuelButton(stringResource(R.string.duel_search_retry), {}, Modifier.fillMaxWidth())
                 DuelloDestructiveButton(
                     stringResource(R.string.settings_delete_confirm_button),
                     {},

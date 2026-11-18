@@ -94,6 +94,7 @@ class ProfileViewModelTest {
         assertEquals(listOf(2, 1), ui.categories.map { it.level })
         assertEquals(60L, ui.categories[0].xpToNext)
         // Same accent slots as the home tiles (server order).
+        assertEquals(listOf("violet", "blue"), ui.categories.map { it.accent })
     }
 
     @Test
@@ -298,20 +299,6 @@ class ProfileViewModelTest {
         vm.onAction(ProfileAction.StartDuelClicked)
         runCurrent()
         assertEquals(ProfileEvent.OpenDuel, events.last())
-    }
-
-    // Tab form (profile.md v3, HOME-06, PROF-11)
-
-    @Test
-    fun theSettingsIconAndTheStreakRowNavigate() = runTest {
-        val vm = viewModel()
-        runCurrent()
-        vm.onAction(ProfileAction.SettingsClicked)
-        runCurrent()
-        assertEquals(ProfileEvent.OpenSettings, events.last())
-        vm.onAction(ProfileAction.StreakClicked)
-        runCurrent()
-        assertEquals(ProfileEvent.OpenDaily, events.last())
     }
 
     // Dates (PROF-02, PROF-04)

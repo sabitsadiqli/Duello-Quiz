@@ -34,7 +34,7 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloConfirmDialog
 import com.sabit.duelloquiz.core.designsystem.component.DuelloDestructiveButton
-import com.sabit.duelloquiz.core.designsystem.component.DuelloSecondaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloNeutralButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
 import com.sabit.duelloquiz.core.designsystem.component.FormError
 import com.sabit.duelloquiz.core.designsystem.component.ScreenHeadline
@@ -126,7 +126,7 @@ internal fun DeleteAccountScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(Spacing.md))
-                    DuelloSecondaryButton(
+                    DuelloNeutralButton(
                         text = stringResource(R.string.common_cancel),
                         onClick = { onAction(DeleteAccountAction.CancelClicked) },
                         enabled = !uiState.isDeleting,

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,28 +20,33 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.PressableSurface
-import com.sabit.duelloquiz.core.designsystem.component.SectionOverline
 import com.sabit.duelloquiz.core.designsystem.component.XpBar
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
+import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
+import com.sabit.duelloquiz.core.designsystem.theme.categoryColors
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
 import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
+
+/** OQ-086: a freeze is earned per 7-day streak (profile_streak_freeze_earn). */
+private const val FREEZE_EVERY_DAYS = 7
 
 /** progression.md C: 4-digit levels shrink the badge number to titleLarge. */
 private const val BADGE_LARGE_LEVEL = 1_000
@@ -61,12 +65,13 @@ internal fun LevelCard(progress: ProgressUi, modifier: Modifier = Modifier) {
     GameCard(modifier = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // v3: flat level badge (48dp, shape.small), no depth edge.
+                val game = MaterialTheme.gameColors
                 PressableSurface(
                     onClick = null,
-                    faceColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = MaterialTheme.shapes.small,
+                    faceColor = game.pressablePrimary,
+                    depthColor = game.pressablePrimaryDepth,
+                    contentColor = game.onPressablePrimary,
+                    depth = Depth.pressable,
                     contentAlignment = Alignment.Center,
                     faceMinHeight = Sizes.levelBadge,
                     modifier = Modifier.widthIn(min = Sizes.levelBadge),
@@ -75,7 +80,7 @@ internal fun LevelCard(progress: ProgressUi, modifier: Modifier = Modifier) {
                         text = progress.level.toString(),
                         style = (if (progress.level >= BADGE_LARGE_LEVEL) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium)
                             .tabularFigures(),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = game.onPressablePrimary,
                         maxLines = 1,
                         modifier = Modifier.padding(horizontal = Spacing.xs),
                     )
@@ -118,59 +123,81 @@ internal fun LevelCard(progress: ProgressUi, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Streak row (PROF-11, profile.md v3): replaces the streak card. Flame in `game.streak`,
- * "Seriya: 7 gün" (or the empty text for a new player) and "Həftəni Gündəlik bölməsində gör",
- * chevron; the whole row opens the Gündəlik tab. One TalkBack node, role Button.
- */
+/** Streak card (PROF-11): current and best streak, today line, freeze line. */
 @Composable
-internal fun StreakRow(progress: ProgressUi, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun StreakCard(progress: ProgressUi, modifier: Modifier = Modifier) {
     val game = MaterialTheme.gameColors
     val scheme = MaterialTheme.colorScheme
     val empty = progress.streakCurrent == 0 && progress.streakBest == 0
-    val headline = if (empty) {
+    val today = progress.todayActive
+    val filled = today == true
+    val description = if (empty) {
         stringResource(R.string.profile_streak_empty)
     } else {
-        pluralStringResource(R.plurals.profile_streak_current, progress.streakCurrent, progress.streakCurrent)
+        stringResource(R.string.profile_streak_cd, progress.streakCurrent, progress.streakBest)
     }
-    val supporting = stringResource(R.string.profile_streak_open_daily)
-    val description = if (empty) {
-        "$headline $supporting"
-    } else {
-        stringResource(R.string.profile_streak_cd, progress.streakCurrent, progress.streakBest) + ". " + supporting
-    }
-    GameCard(
-        onClick = onClick,
-        onClickLabel = stringResource(R.string.nav_daily_open_cd),
-        contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
-        modifier = modifier
-            .fillMaxWidth()
-            .clearAndSetSemantics {
-                contentDescription = description
-                role = Role.Button
-                onClick { onClick(); true }
-            },
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(if (progress.todayActive == true) DuelloIcons.FlameFilled else DuelloIcons.Flame),
-                contentDescription = null,
-                tint = game.streak,
-                modifier = Modifier.size(Sizes.icon),
-            )
-            Spacer(Modifier.width(Spacing.md))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = headline, style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface)
-                Text(text = supporting, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+    GameCard(modifier = modifier.fillMaxWidth()) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+            ) {
+                Icon(
+                    painter = painterResource(if (filled) DuelloIcons.FlameFilled else DuelloIcons.Flame),
+                    contentDescription = null,
+                    tint = if (filled) game.streak else scheme.onSurfaceVariant,
+                    modifier = Modifier.size(GameSizes.profileStreakFlame),
+                )
+                Spacer(Modifier.width(Spacing.md))
+                if (empty) {
+                    Text(
+                        text = stringResource(R.string.profile_streak_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.onSurface,
+                    )
+                } else {
+                    Column {
+                        Text(
+                            text = pluralStringResource(R.plurals.profile_streak_current, progress.streakCurrent, progress.streakCurrent),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = scheme.onSurface,
+                        )
+                        Text(
+                            text = pluralStringResource(R.plurals.profile_streak_best, progress.streakBest, progress.streakBest),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = scheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.width(Spacing.sm))
-            Icon(
-                painter = painterResource(DuelloIcons.ChevronRight),
-                contentDescription = null,
-                tint = scheme.onSurfaceVariant,
-                modifier = Modifier.size(Sizes.icon),
+            if (!empty && today != null) {
+                Spacer(Modifier.height(Spacing.md))
+                InfoRow(
+                    icon = if (today) DuelloIcons.CheckCircle else DuelloIcons.Schedule,
+                    tint = if (today) game.correct else scheme.onSurfaceVariant,
+                    text = stringResource(if (today) R.string.profile_streak_today_done else R.string.profile_streak_today_pending),
+                )
+            }
+            Spacer(Modifier.height(Spacing.sm))
+            InfoRow(
+                icon = if (progress.freezeAvailable) DuelloIcons.ShieldFilled else DuelloIcons.Shield,
+                tint = scheme.secondary,
+                text = if (progress.freezeAvailable) {
+                    stringResource(R.string.profile_streak_freeze_available)
+                } else {
+                    stringResource(R.string.profile_streak_freeze_earn, FREEZE_EVERY_DAYS)
+                },
             )
         }
+    }
+}
+
+@Composable
+private fun InfoRow(icon: Int, tint: Color, text: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Icon(painter = painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(Sizes.inlineIcon))
+        Spacer(Modifier.width(Spacing.sm))
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -178,9 +205,13 @@ internal fun StreakRow(progress: ProgressUi, onClick: () -> Unit, modifier: Modi
 @Composable
 internal fun CategoryLevelsSection(categories: List<CategoryLevelUi>, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        SectionOverline(
+        Text(
             text = stringResource(R.string.profile_categories_title),
-            modifier = Modifier.padding(bottom = Spacing.sm),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .padding(bottom = Spacing.sm)
+                .semantics { heading() },
         )
         GameCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -192,6 +223,7 @@ internal fun CategoryLevelsSection(categories: List<CategoryLevelUi>, modifier: 
 
 @Composable
 private fun CategoryLevelRow(category: CategoryLevelUi) {
+    val colors = categoryColors(category.accent)
     val description = stringResource(
         R.string.profile_category_level_cd,
         category.name,
@@ -210,12 +242,12 @@ private fun CategoryLevelRow(category: CategoryLevelUi) {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(Sizes.avatar)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.small),
+                .background(colors.container, MaterialTheme.shapes.small),
         ) {
             Icon(
                 painter = painterResource(DuelloIcons.category(category.iconKey)),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = colors.onContainer,
                 modifier = Modifier.size(Sizes.icon),
             )
         }
@@ -262,8 +294,8 @@ internal val previewProgressUi = ProgressUi(
     todayActive = true,
     freezeAvailable = true,
     categories = listOf(
-        CategoryLevelUi("Coğrafiya", "geography", 3, 0.4f, 180),
-        CategoryLevelUi("Tarix", "history", 1, 0f, 100),
+        CategoryLevelUi("Coğrafiya", "geography", "violet", 3, 0.4f, 180),
+        CategoryLevelUi("Tarix", "history", "blue", 1, 0f, 100),
     ),
 )
 
@@ -274,8 +306,8 @@ private fun ProgressSectionsPreview() {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.padding(Spacing.lg)) {
                 LevelCard(previewProgressUi)
-                StreakRow(previewProgressUi, onClick = {})
-                StreakRow(previewProgressUi.copy(streakCurrent = 0, streakBest = 0, freezeAvailable = false), onClick = {})
+                StreakCard(previewProgressUi)
+                StreakCard(previewProgressUi.copy(streakCurrent = 0, streakBest = 0, freezeAvailable = false))
                 CategoryLevelsSection(previewProgressUi.categories)
             }
         }

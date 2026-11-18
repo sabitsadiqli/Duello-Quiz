@@ -61,21 +61,21 @@ internal class BundledLicenseRepository(
         return OpenSourceNotices(assets = manualEntries(apache), libraries = libraries)
     }
 
-    /** Entries no Gradle scan can find, always first and in this order (licenses.md, v3). */
+    /** Entries no Gradle scan can find, always first and in this order (licenses.md). */
     private fun manualEntries(apache: OpenSourceLicense) = listOf(
-        font(
-            id = FRAUNCES_ID,
-            name = "Fraunces",
-            author = "Undercase Type, Phaedra Charles, Flavia Zimbardi",
-            websiteUrl = "https://github.com/undercasetype/Fraunces",
-            directory = "fraunces",
-        ),
-        font(
-            id = PLUS_JAKARTA_SANS_ID,
-            name = "Plus Jakarta Sans",
-            author = "Tokotype",
-            websiteUrl = "https://github.com/tokotype/PlusJakartaSans",
-            directory = "plusjakartasans",
+        OpenSourceComponent(
+            id = NUNITO_ID,
+            name = "Nunito",
+            version = null,
+            author = "Vernon Adams, Cyreal, Jacques Le Bailly",
+            websiteUrl = "https://github.com/googlefonts/nunito",
+            licenses = listOf(
+                OpenSourceLicense(
+                    name = "SIL Open Font License 1.1",
+                    url = "https://openfontlicense.org",
+                    text = runCatching { files.nunitoLicenseText() }.getOrNull()?.takeIf { it.isNotBlank() },
+                ),
+            ),
         ),
         OpenSourceComponent(
             id = MATERIAL_SYMBOLS_ID,
@@ -87,30 +87,11 @@ internal class BundledLicenseRepository(
         ),
     )
 
-    private fun font(id: String, name: String, author: String, websiteUrl: String, directory: String) =
-        OpenSourceComponent(
-            id = id,
-            name = name,
-            version = null,
-            author = author,
-            websiteUrl = websiteUrl,
-            licenses = listOf(
-                OpenSourceLicense(
-                    name = OFL_NAME,
-                    url = OFL_URL,
-                    text = runCatching { files.fontLicenseText(directory) }.getOrNull()?.takeIf { it.isNotBlank() },
-                ),
-            ),
-        )
-
     internal companion object {
-        const val FRAUNCES_ID = "asset:fraunces"
-        const val PLUS_JAKARTA_SANS_ID = "asset:plusjakartasans"
+        const val NUNITO_ID = "asset:nunito"
         const val MATERIAL_SYMBOLS_ID = "asset:material-symbols"
         private const val APACHE_2 = "Apache-2.0"
         private const val APACHE_2_NAME = "Apache License 2.0"
-        private const val OFL_NAME = "SIL Open Font License 1.1"
-        private const val OFL_URL = "https://openfontlicense.org"
         private const val APACHE_2_URL = "https://www.apache.org/licenses/LICENSE-2.0"
         private const val TAG = "Licenses"
     }

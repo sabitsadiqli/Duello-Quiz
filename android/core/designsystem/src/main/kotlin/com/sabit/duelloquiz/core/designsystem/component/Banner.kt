@@ -3,7 +3,6 @@ package com.sabit.duelloquiz.core.designsystem.component
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +37,7 @@ import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 enum class BannerVariant { Info, Warning }
 
 /**
- * Full banner (components.md §8 v3: flat, no border): pushes content down, never overlays it. Actions sit on their
+ * Inline banner (components.md §8): pushes content down, never overlays it. Actions sit on their
  * own end-aligned row under the text and should use [LocalContentColor] (the banner's content
  * colour), e.g. `DuelloTextButton(contentColor = LocalContentColor.current)`.
  */
@@ -102,59 +101,6 @@ fun DuelloBanner(
     }
 }
 
-/**
- * Compact banner (components.md §8 v3, tab roots): min height `size.bannerCompactHeight`, 20dp
- * icon, one sentence (wraps to 2 lines, never truncated), an optional trailing [action] (text
- * button) or, with [onExpand], a chevron: tapping the banner then expands it in place (the caller
- * swaps it for the full [DuelloBanner]).
- */
-@Composable
-fun DuelloCompactBanner(
-    variant: BannerVariant,
-    @DrawableRes icon: Int,
-    body: String,
-    modifier: Modifier = Modifier,
-    onExpand: (() -> Unit)? = null,
-    expandLabel: String? = null,
-    action: (@Composable RowScope.() -> Unit)? = null,
-) {
-    val colors = MaterialTheme.gameColors
-    val (container, content) = when (variant) {
-        BannerVariant.Info -> colors.bannerInfoContainer to colors.onBannerInfoContainer
-        BannerVariant.Warning -> colors.bannerWarningContainer to colors.onBannerWarningContainer
-    }
-    PressableSurface(
-        onClick = onExpand,
-        faceColor = container,
-        contentColor = content,
-        shape = MaterialTheme.shapes.medium,
-        faceMinHeight = Sizes.bannerCompactHeight,
-        contentAlignment = Alignment.CenterStart,
-        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
-        onClickLabel = expandLabel,
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics { liveRegion = LiveRegionMode.Polite },
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(Sizes.inlineIcon))
-            Spacer(Modifier.width(Spacing.sm))
-            Text(text = body, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            if (action != null) {
-                Spacer(Modifier.width(Spacing.xs))
-                action()
-            } else if (onExpand != null) {
-                Spacer(Modifier.width(Spacing.sm))
-                Icon(
-                    painter = painterResource(DuelloIcons.ChevronRight),
-                    contentDescription = null,
-                    modifier = Modifier.size(Sizes.icon),
-                )
-            }
-        }
-    }
-}
-
 @PreviewLightDark
 @Composable
 private fun BannerPreview() {
@@ -164,16 +110,10 @@ private fun BannerPreview() {
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
                 modifier = Modifier.padding(Spacing.lg),
             ) {
-                DuelloCompactBanner(
+                DuelloBanner(
                     variant = BannerVariant.Warning,
                     icon = DuelloIcons.CloudOff,
                     body = stringResource(R.string.common_offline_banner),
-                )
-                DuelloCompactBanner(
-                    variant = BannerVariant.Info,
-                    icon = DuelloIcons.Mail,
-                    body = stringResource(R.string.auth_verify_banner_title),
-                    onExpand = {},
                 )
                 DuelloBanner(
                     variant = BannerVariant.Info,

@@ -2,14 +2,13 @@ package com.sabit.duelloquiz.core.designsystem.component
 
 import com.sabit.duelloquiz.core.designsystem.theme.DarkColorScheme
 import com.sabit.duelloquiz.core.designsystem.theme.DarkGameColors
-import com.sabit.duelloquiz.core.designsystem.theme.Borders
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.LightColorScheme
 import com.sabit.duelloquiz.core.designsystem.theme.LightGameColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** components.md §3 state table. */
@@ -39,57 +38,55 @@ class OptionCardStyleTest {
     }
 
     @Test
-    fun defaultIsAFlatCardWithAHairline() {
+    fun defaultIsAWhiteCardWithTheCardEdge() {
         val default = style(OptionCardState.Default)
-        assertEquals(scheme.surface, default.face)
-        assertEquals(scheme.outline, default.border)
-        assertEquals(Borders.hairline, default.borderWidth)
-        assertFalse(default.dashed)
-        assertEquals(scheme.surfaceContainerHigh, default.badge)
-        assertEquals(scheme.onSurface, default.onBadge)
+        assertEquals(game.pressableNeutral, default.face)
+        assertEquals(game.cardBorder, default.border)
+        assertEquals(Depth.border, default.borderWidth)
+        assertEquals(game.cardDepth, default.depth)
+        assertEquals(scheme.primaryContainer, default.badge)
+        assertEquals(scheme.onPrimaryContainer, default.onBadge)
     }
 
     @Test
-    fun revealedStatesUseTheirGameRolesAndAnEmphasisBorder() {
+    fun revealedStatesUseTheirGameRolesAndAThickBorder() {
         val correct = style(OptionCardState.Correct)
         assertEquals(game.correctContainer, correct.face)
         assertEquals(game.correct, correct.border)
+        assertEquals(game.correctDepth, correct.depth)
         assertEquals(game.correct, correct.badge)
         assertEquals(game.onCorrect, correct.onBadge)
-        assertEquals(Borders.emphasis, correct.borderWidth)
+        assertEquals(Depth.borderThick, correct.borderWidth)
 
         val wrong = style(OptionCardState.Wrong)
         assertEquals(game.wrongContainer, wrong.face)
         assertEquals(game.wrong, wrong.border)
-        assertEquals(Borders.emphasis, wrong.borderWidth)
+        assertEquals(game.wrongDepth, wrong.depth)
+        assertEquals(Depth.borderThick, wrong.borderWidth)
     }
 
     @Test
-    fun selectedIsMarkedInInkNotTheAccent() {
+    fun selectedShowsProgressAndPendingRoles() {
         val selected = style(OptionCardState.Selected)
         assertEquals(game.pendingContainer, selected.face)
-        assertEquals(scheme.onSurface, selected.border)
-        assertEquals(Borders.emphasis, selected.borderWidth)
-        assertEquals(scheme.inverseSurface, selected.badge)
-        assertEquals(scheme.inverseOnSurface, selected.onBadge)
-        assertNotEquals(scheme.primary, selected.border)
+        assertEquals(scheme.primary, selected.border)
+        assertEquals(game.pendingDepth, selected.depth)
         assertEquals(OptionTrailing.Progress, selected.trailing)
     }
 
     @Test
-    fun dimmedIsReadable() {
+    fun dimmedIsFlatButReadable() {
         val dimmed = style(OptionCardState.Dimmed)
-        assertEquals(game.cardBorder, dimmed.border)
+        assertNull(dimmed.depth)
         assertEquals(scheme.onSurfaceVariant, dimmed.text)
         assertEquals(1f, dimmed.text.alpha)
     }
 
     @Test
-    fun queuedIsDashedWithTheCloudIcon() {
+    fun queuedShowsTheCloudIcon() {
         val queued = style(OptionCardState.Queued)
         assertEquals(OptionTrailing.CloudUpload, queued.trailing)
-        assertTrue(queued.dashed)
-        OptionCardState.entries.filter { it != OptionCardState.Queued }.forEach { assertFalse(it.name, style(it).dashed) }
+        assertNotNull(queued.depth)
     }
 
     @Test

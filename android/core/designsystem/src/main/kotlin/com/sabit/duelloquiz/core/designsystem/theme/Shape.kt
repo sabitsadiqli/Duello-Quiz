@@ -5,23 +5,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-/** shape from design/tokens.json 3.0.0 (extraSmall 4 … extraLarge 18). */
+/** shape from design/tokens.json 2.1.0 (extraSmall 8 … extraLarge 28). */
 internal val DuelloShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(18.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
-/** shape.full ("50%") for pills (buttons, chips, sticker), avatars, dots and progress bars. */
+/** shape.full ("50%") for pills, avatars and progress bars. */
 val FullShape = CircleShape
 
-/** shape.component.card / dailyCard / progressCard (large, 16dp): flat hairline cards. */
-val CardShape = RoundedCornerShape(16.dp)
+/**
+ * Hero cards (components.md §6 duel hero, quiz-result.md score hero, duel-result.md outcome
+ * hero): `shape.extraLarge` − 4 = 24dp.
+ */
+val HeroShape = RoundedCornerShape(24.dp)
 
-/** shape.component.duelCard and the v3 result heroes (extraLarge, 18dp). */
-val DuelCardShape = RoundedCornerShape(18.dp)
+/** shape.component.confidencePanel: extraLarge, top corners only. */
+val ConfidencePanelShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
-/** shape.component.confidencePanel / bottomSheet: extraLarge, top corners only. */
-val ConfidencePanelShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+/** shape.component (2.1.0): daily card = hero card (24dp). */
+val DailyCardShape = HeroShape

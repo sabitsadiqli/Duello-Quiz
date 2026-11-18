@@ -23,43 +23,39 @@ object Spacing {
     val sectionGap = 24.dp
     val listItemGap = 12.dp
     val gridGap = 12.dp
-
-    /** tokens 3.0.0: vertical gap between the home blocks (greeting, duel card, category section). */
-    val homeSectionGap = 20.dp
 }
 
 /** size from design/tokens.json. */
 object Sizes {
     val minTouchTarget = 48.dp
-    val buttonHeight = 48.dp
-    val buttonHeightLarge = 52.dp
+    val buttonHeight = 52.dp
+    val buttonHeightLarge = 56.dp
     val textFieldHeight = 56.dp
     val iconSmall = 18.dp
     val icon = 24.dp
     val iconLarge = 32.dp
-    val avatarSmall = 32.dp
     val avatar = 40.dp
     val avatarLarge = 56.dp
     val topAppBarHeight = 64.dp
-    val optionCardMinHeight = 56.dp
-    val categoryIconContainer = 40.dp
+    val optionCardMinHeight = 60.dp
+    val categoryTileMinHeight = 132.dp
+    val categoryIconContainer = 48.dp
     val timerRing = 48.dp
-    val timerStroke = 4.dp
-    val progressBarHeight = 4.dp
+    val timerStroke = 5.dp
+    val progressBarHeight = 12.dp
     val questionImageMaxHeight = 200.dp
     val reviewThumbnail = 64.dp
     val confidenceChip = 104.dp
-    val bannerMinHeight = 48.dp
-    val bannerCompactHeight = 40.dp
+    val bannerMinHeight = 56.dp
     val splashLogo = 112.dp
 
     /** tokens 1.1.0: duel and profile (components.md §13–§23). */
     val avatarXLarge = 80.dp
     val duelBadge = 32.dp
     val duelPlayerPanelMinHeight = 100.dp
-    val phaseSegmentHeight = 4.dp
+    val phaseSegmentHeight = 6.dp
     val searchPulse = 176.dp
-    val calibrationBarHeight = 6.dp
+    val calibrationBarHeight = 10.dp
 
     /** components.md §13: accent ring around duel avatars (avatarXLarge: 3dp). */
     val accentRing = 2.dp
@@ -108,8 +104,12 @@ object Sizes {
     /** components.md §11: loading state indicator. */
     val stateLoadingIndicator = 48.dp
 
-    /** components.md §3: A–D letter badge of an option card (a circle in v3). */
-    val optionLetterBadge = 32.dp
+    /** components.md §5: tile face min height in the single-column fallback, and the tile icon. */
+    val categoryTileSingleColumnMinHeight = 88.dp
+    val categoryTileIcon = 28.dp
+
+    /** components.md §3: A–D letter badge of an option card. */
+    val optionLetterBadge = 36.dp
 
     /** quiz-question.md: reserved status line under the options, and its 16dp indicator. */
     val statusLineHeight = 24.dp
@@ -118,29 +118,10 @@ object Sizes {
     /** tokens 2.1.0: retention (components.md §24–§28). */
     val resultSquare = 40.dp
     val resultSquareCompact = 24.dp
-    val levelBadge = 48.dp
-    val streakBadgeMinWidth = 48.dp
-    val xpBarHeight = 6.dp
-    val xpBarMiniHeight = 4.dp
-
-    /** tokens 3.0.0: home top row, bottom bar, category rows, duel card, sticker, squiggle, Gündəlik. */
-    val homeTopRowHeight = 48.dp
-    val bottomBarHeight = 64.dp
-    val navIndicatorWidth = 56.dp
-    val navIndicatorHeight = 28.dp
-    val navBadgeDot = 8.dp
-    val categoryRowMinHeight = 52.dp
-    val categoryNumeralWidth = 32.dp
-    val duelCardMinHeight = 152.dp
-    val stickerMinHeight = 28.dp
-    const val STICKER_ROTATION_DEG = -4f
-    val squiggleStroke = 2.5.dp
-    val squiggleAmplitude = 2.5.dp
-    val squiggleWavelength = 11.dp
-    val squiggleOffsetBelowBaseline = 4.dp
-    val weekDot = 28.dp
-    val resultBox = 44.dp
-    val resultBoxCompact = 24.dp
+    val levelBadge = 56.dp
+    val streakBadgeMinWidth = 56.dp
+    val xpBarHeight = 12.dp
+    val xpBarMiniHeight = 8.dp
 
     /** Skeleton text bars (home header, category card). */
     val skeletonLineHeight = 12.dp
@@ -149,26 +130,37 @@ object Sizes {
 }
 
 /**
- * Border widths used by the v3 flat components (tokens 3.0.0 has no depth: no solid edges).
- * [hairline] = 1dp card / option / divider border, [emphasis] = 2dp selected, correct, wrong and
- * focus ring, [ring] = 3dp Əminlik selection ring.
+ * depth from design/tokens.json: the solid bottom edge of pressables and game cards
+ * (components.md §0). Pressed, the face moves down by this amount and covers the edge.
  */
-object Borders {
-    val hairline = 1.dp
-    val emphasis = 2.dp
-    val ring = 3.dp
+object Depth {
+    val pressable = 4.dp
+    val pressableLarge = 5.dp
+    val card = 4.dp
+    val optionCard = 4.dp
+    val confidenceChip = 5.dp
+    val categoryTile = 5.dp
 
-    /** components.md §38: dashed answer box / week dot border (1.5dp, dash 4dp, gap 3dp). */
-    val dashed = 1.5.dp
-    val dash = 4.dp
-    val dashGap = 3.dp
+    /** 2dp borders on neutral pressables, white cards and option cards. */
+    val border = 2.dp
+
+    /** components.md §3 / §16: the thicker border of selected, correct and wrong states. */
+    val borderThick = 3.dp
 }
 
-/** Component sizes that tokens.json gives only inside components.md / screen specs. */
+/** v2 component sizes that tokens.json gives only inside components.md / screen specs. */
 object GameSizes {
     /** components.md §4: timer pill icon and its padding. */
-    val timerPillIcon = 18.dp
+    val timerPillIcon = 20.dp
     val timerPillPaddingVertical = 6.dp
+
+    /** components.md §4: glossy highlight stripe on the timer bar indicator. */
+    val timerHighlightHeight = 3.dp
+    val timerHighlightInset = 8.dp
+
+    /** components.md §6: duel hero card padding and the decorative swords box. */
+    val duelHeroPaddingVertical = 18.dp
+    val duelHeroDecor = 56.dp
 
     /** components.md §7: Əminlik signal bars (3 bars, 6dp wide, 8/13/18dp tall, 3dp gap). */
     val signalBarWidth = 6.dp
@@ -180,6 +172,9 @@ object GameSizes {
     val tileLockIcon = 14.dp
     val tileBadgeProgress = 16.dp
 
+    /** home.md: avatar in the profile header card. */
+    val homeHeaderAvatar = 48.dp
+
     /** quiz-result.md: review entry icon box; duel-result.md: hero icon; profile/rating card padding. */
     val reviewEntryIconBox = 44.dp
     val heroIcon = 40.dp
@@ -188,16 +183,11 @@ object GameSizes {
     /** duel player panel padding (components.md §16). */
     val playerPanelPadding = 10.dp
 
-    /** components.md §35: streak chip flame and the freeze shield after the number. */
-    val streakChipFlame = 20.dp
-    val streakChipShield = 12.dp
-
-    /** components.md §38a: glyphs inside a week dot (check / shield 14dp, dash 12dp). */
-    val weekDotGlyph = 14.dp
-    val weekDotDash = 12.dp
-
-    /** components.md §6: duration clock icon and CTA arrow on the duel card. */
-    val duelCardClock = 16.dp
+    /** components.md §24: streak flame, freeze dot (20dp circle, 14dp shield, 2dp ring). */
+    val streakFlame = 28.dp
+    val freezeDot = 20.dp
+    val freezeDotIcon = 14.dp
+    val freezeDotRing = 2.dp
 
     /** components.md §27: glyphs of the large and compact result squares. */
     val resultSquareGlyph = 20.dp
@@ -211,13 +201,8 @@ object GameSizes {
     /** components.md §25: the mini XP bar moves under the level chip below this width. */
     val miniBarMinWidth = 48.dp
 
-    /** components.md §33: badge dot offset and the ring in the bar colour around it. */
-    val navBadgeOffset = 2.dp
-    val navBadgeRing = 2.dp
-
-    /** components.md §36: the squiggle starts and ends this far outside the word; ±crest jitter. */
-    val squiggleOverhang = 2.dp
-    val squiggleJitter = 0.4.dp
+    /** components.md §28: daily card vertical padding (same frame as the duel hero card). */
+    val dailyCardPaddingVertical = 18.dp
 }
 
 /** elevation from design/tokens.json (Material 3 tonal elevation levels). */

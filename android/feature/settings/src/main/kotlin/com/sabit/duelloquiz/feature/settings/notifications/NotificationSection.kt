@@ -32,11 +32,6 @@ import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import com.sabit.duelloquiz.core.designsystem.util.rememberNotificationPermissionRequester
 import com.sabit.duelloquiz.core.designsystem.util.startSettingsIntent
 import com.sabit.duelloquiz.core.model.ReminderType
-import com.sabit.duelloquiz.core.notifications.NotificationSectionUi
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsAction
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsEvent
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsMessage
-import com.sabit.duelloquiz.core.notifications.ReminderSwitchUi
 
 /** The "Bildirişlər" section with its own ViewModel (SET-07); [onMessage] shows a snackbar. */
 @Composable
