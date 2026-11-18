@@ -63,7 +63,7 @@ General answers:
 | --- | --- |
 | Does the app collect or share any required user data types? | Yes |
 | Is all user data encrypted in transit? | **Yes** (HTTPS/TLS, WSS for the duel) |
-| Do you provide a way for users to request that their data be deleted? | **Yes**: in the app ("Parametrlər → Hesabı sil") and `https://sabitsadiqli.github.io/Duello-Quiz/legal/account-deletion.html` |
+| Do you provide a way for users to request that their data be deleted? | **Yes**: in the app ("Profil → Parametrlər → Hesabı sil") and `https://sabitsadiqli.github.io/Duello-Quiz/legal/account-deletion.html` |
 | Account creation | Yes, username/email + password and Google sign-in ("OAuth") |
 | Delete account URL | `https://sabitsadiqli.github.io/Duello-Quiz/legal/account-deletion.html` |
 | Data shared with third parties | **None** |
