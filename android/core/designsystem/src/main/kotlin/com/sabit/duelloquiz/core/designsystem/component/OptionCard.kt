@@ -48,9 +48,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Borders
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
-import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.GameColors
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
@@ -75,15 +74,15 @@ enum class OptionTrailing { None, Progress, CloudUpload }
 
 /**
  * Resolved look of an option card. Colour is never the only signal: correct and wrong always
- * change the [glyph] and show an [outcome] word. The selected state uses ink, never the accent.
+ * change the [glyph] and show an [outcome] word.
  */
 @Immutable
 data class OptionCardStyle(
     val face: Color,
     val border: Color,
     val borderWidth: Dp,
-    /** Queued (offline) answers get a dashed border instead of a solid one. */
-    val dashed: Boolean,
+    /** Null = flat (no depth edge). */
+    val depth: Color?,
     val text: Color,
     val badge: Color,
     val onBadge: Color,
@@ -92,44 +91,43 @@ data class OptionCardStyle(
     val trailing: OptionTrailing,
 )
 
-/** The state → visual table of components.md §3 (v3), as a pure function (unit-tested). */
+/** The state → visual table of components.md §3, as a pure function (unit-tested). */
 fun optionCardStyle(state: OptionCardState, scheme: ColorScheme, game: GameColors): OptionCardStyle = when (state) {
     OptionCardState.Default -> OptionCardStyle(
-        face = scheme.surface, border = scheme.outline, borderWidth = Borders.hairline, dashed = false,
-        text = scheme.onSurface, badge = scheme.surfaceContainerHigh, onBadge = scheme.onSurface,
+        face = game.pressableNeutral, border = game.cardBorder, borderWidth = Depth.border, depth = game.cardDepth,
+        text = scheme.onSurface, badge = scheme.primaryContainer, onBadge = scheme.onPrimaryContainer,
         glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.None,
     )
     OptionCardState.Selected -> OptionCardStyle(
-        face = game.pendingContainer, border = scheme.onSurface, borderWidth = Borders.emphasis, dashed = false,
-        text = game.onPendingContainer, badge = scheme.inverseSurface, onBadge = scheme.inverseOnSurface,
+        face = game.pendingContainer, border = scheme.primary, borderWidth = Depth.borderThick, depth = game.pendingDepth,
+        text = game.onPendingContainer, badge = scheme.primary, onBadge = scheme.onPrimary,
         glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.Progress,
     )
     OptionCardState.Correct -> OptionCardStyle(
-        face = game.correctContainer, border = game.correct, borderWidth = Borders.emphasis, dashed = false,
+        face = game.correctContainer, border = game.correct, borderWidth = Depth.borderThick, depth = game.correctDepth,
         text = game.onCorrectContainer, badge = game.correct, onBadge = game.onCorrect,
         glyph = OptionBadgeGlyph.Check, outcome = OptionOutcome.Correct, trailing = OptionTrailing.None,
     )
     OptionCardState.Wrong -> OptionCardStyle(
-        face = game.wrongContainer, border = game.wrong, borderWidth = Borders.emphasis, dashed = false,
+        face = game.wrongContainer, border = game.wrong, borderWidth = Depth.borderThick, depth = game.wrongDepth,
         text = game.onWrongContainer, badge = game.wrong, onBadge = game.onWrong,
         glyph = OptionBadgeGlyph.Cross, outcome = OptionOutcome.Wrong, trailing = OptionTrailing.None,
     )
     // Text stays readable during the reveal (not the 38 % disabled alpha).
     OptionCardState.Dimmed -> OptionCardStyle(
-        face = scheme.surface, border = game.cardBorder, borderWidth = Borders.hairline, dashed = false,
+        face = game.pressableNeutral, border = game.cardBorder, borderWidth = Depth.border, depth = null,
         text = scheme.onSurfaceVariant, badge = scheme.surfaceContainerHigh, onBadge = scheme.onSurfaceVariant,
         glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.None,
     )
     OptionCardState.Queued -> OptionCardStyle(
-        face = scheme.surfaceContainerHigh, border = scheme.outline, borderWidth = Borders.hairline, dashed = true,
+        face = scheme.surfaceContainerHigh, border = scheme.outline, borderWidth = Depth.border, depth = game.cardDepth,
         text = scheme.onSurface, badge = scheme.secondary, onBadge = scheme.onSecondary,
         glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.CloudUpload,
     )
 }
 
 /**
- * Quiz answer card (components.md §3 v3): a flat card (ripple + 0.98 press scale + light tick)
- * with the letter badge A–D in a circle (check /
+ * Quiz answer card (components.md §3): a pressable surface with the letter badge A–D (check /
  * cross glyph after the reveal), the option text (wraps, never truncated), an optional [markers]
  * slot (duel picker avatars) and the outcome word. One TalkBack element with
  * [contentDescription] ("1-ci variant: …") and [stateDescription]; clickable only when
@@ -156,23 +154,22 @@ fun OptionCard(
     val shake = rememberShakeOffset(active = state == OptionCardState.Wrong)
     val pop = rememberPopScale(active = state == OptionCardState.Correct)
 
-    val shape = MaterialTheme.shapes.medium
     PressableSurface(
         onClick = onClick,
         faceColor = face,
-        border = if (style.dashed) null else BorderStroke(style.borderWidth, border),
+        depthColor = style.depth,
+        border = BorderStroke(style.borderWidth, border),
         contentColor = style.text,
         interactive = clickable,
         haptic = true,
-        scaleOnPress = true,
-        shape = shape,
+        shape = MaterialTheme.shapes.medium,
+        depth = Depth.optionCard,
         faceMinHeight = Sizes.optionCardMinHeight,
         contentAlignment = Alignment.CenterStart,
         contentPadding = PaddingValues(start = Spacing.md, end = Spacing.lg, top = Spacing.md, bottom = Spacing.md),
         modifier = modifier
             .fillMaxWidth()
             .offset { IntOffset(shake().roundToPx(), 0) }
-            .then(if (style.dashed) Modifier.dashedBorder(border, shape, width = style.borderWidth) else Modifier)
             .graphicsLayer {
                 scaleX = pop()
                 scaleY = pop()
@@ -209,7 +206,7 @@ private fun LetterBadge(letter: String, style: OptionCardStyle) {
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(Sizes.optionLetterBadge)
-            .background(badge, FullShape),
+            .background(badge, MaterialTheme.shapes.small),
     ) {
         when (style.glyph) {
             OptionBadgeGlyph.Letter -> Text(text = letter, style = MaterialTheme.typography.labelLarge, color = style.onBadge)
@@ -231,7 +228,7 @@ private fun OptionTrailingSlot(style: OptionCardStyle) {
         OptionTrailing.Progress -> {
             Spacer(Modifier.width(Spacing.sm))
             CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.primary,
                 strokeWidth = Sizes.progressStroke,
                 modifier = Modifier.size(Sizes.inlineProgress),
             )
@@ -278,7 +275,7 @@ private fun ScaledInGlyph(icon: Int, tint: Color) {
     )
 }
 
-/** optionCorrectPop: the correct card pops once 1 → 1.02 → 1 (spring bouncy); none with reduced motion. */
+/** optionCorrectPop: the correct card pops once 1 → 1.04 → 1 (spring bouncy); none with reduced motion. */
 @Composable
 private fun rememberPopScale(active: Boolean): () -> Float {
     val reducedMotion = rememberReducedMotion()
@@ -294,7 +291,7 @@ private fun rememberPopScale(active: Boolean): () -> Float {
     return { scale.value }
 }
 
-/** Horizontal shake of a wrong card: 2 cycles, ±4dp over 300 ms; none with reduced motion. */
+/** Horizontal shake of a wrong card: 2 cycles, ±6dp over 300 ms; none with reduced motion. */
 @Composable
 private fun rememberShakeOffset(active: Boolean): () -> Dp {
     val reducedMotion = rememberReducedMotion()

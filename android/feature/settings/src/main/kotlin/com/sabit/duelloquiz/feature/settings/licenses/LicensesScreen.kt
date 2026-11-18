@@ -92,12 +92,12 @@ private fun LicensesList(uiState: LicensesUiState, onAction: (LicensesAction) ->
                 modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.sm, bottom = Spacing.md),
             )
         }
-        item(key = "assets_header") { SectionHeader(stringResource(R.string.settings_licenses_section_assets), overline = false) }
+        item(key = "assets_header") { SectionHeader(stringResource(R.string.settings_licenses_section_assets)) }
         items(uiState.assets, key = { "asset_${it.id}" }) { row ->
             LicenseRow(row, onClick = { onAction(LicensesAction.RowClicked(row.id)) })
         }
         if (uiState.librariesError || uiState.libraries.isNotEmpty()) {
-            item(key = "libraries_header") { SectionHeader(stringResource(R.string.settings_licenses_section_libraries), overline = false) }
+            item(key = "libraries_header") { SectionHeader(stringResource(R.string.settings_licenses_section_libraries)) }
         }
         if (uiState.librariesError) {
             item(key = "libraries_error") {
@@ -164,8 +164,7 @@ private fun LicenseRow(row: LicenseRowUi, onClick: () -> Unit) {
 internal val PreviewLicensesState = LicensesUiState(
     loading = false,
     assets = listOf(
-        LicenseRowUi("asset:fraunces", "Fraunces", version = null, licenseNames = "SIL Open Font License 1.1"),
-        LicenseRowUi("asset:plusjakartasans", "Plus Jakarta Sans", version = null, licenseNames = "SIL Open Font License 1.1"),
+        LicenseRowUi("asset:nunito", "Nunito", version = null, licenseNames = "SIL Open Font License 1.1"),
         LicenseRowUi("asset:material-symbols", "Material Symbols", version = null, licenseNames = "Apache License 2.0"),
     ),
     libraries = listOf(

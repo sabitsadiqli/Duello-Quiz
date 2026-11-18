@@ -152,7 +152,7 @@ class QuizResultViewModelTest {
     }
 
     @Test
-    fun theHeroUsesTheCategoryIconFromTheCachedList() = runTest {
+    fun theHeroUsesTheCategorysAccentAndIconFromTheServerOrder() = runTest {
         repository.register(testQuizSession())
         categories.nextRefresh = DataResult.Success(
             listOf(
@@ -165,15 +165,17 @@ class QuizResultViewModelTest {
         val vm = viewModel()
         runCurrent()
 
+        assertEquals("teal", vm.uiState.value.categoryAccent)
         assertEquals("geography", vm.uiState.value.categoryIconKey)
     }
 
     @Test
-    fun withoutCachedCategoriesTheHeroUsesTheGenericIcon() = runTest {
+    fun withoutCachedCategoriesTheHeroKeepsTheDefaultAccent() = runTest {
         repository.register(testQuizSession())
         val vm = viewModel()
         runCurrent()
 
+        assertEquals("violet", vm.uiState.value.categoryAccent)
         assertEquals("", vm.uiState.value.categoryIconKey)
     }
 

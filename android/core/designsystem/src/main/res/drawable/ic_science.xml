@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Material Symbols Outlined, weight 300 "science" (Apache License 2.0, https://fonts.google.com/icons). -->
+<!-- Material Symbols Rounded "science" (Apache License 2.0, https://fonts.google.com/icons). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="960"
     android:viewportHeight="960">
-    <group android:translateY="960">
-        <path
-            android:fillColor="#FF000000"
-            android:pathData="M200-140q-38.27 0-54.4-34.15-16.14-34.16 7.79-63.54L380-513.08V-760h-47.69q-12.75 0-21.38-8.63-8.62-8.63-8.62-21.38 0-12.76 8.62-21.37 8.63-8.62 21.38-8.62h295.38q12.75 0 21.38 8.63 8.62 8.63 8.62 21.38 0 12.76-8.62 21.37-8.63 8.62-21.38 8.62H580v246.92l226.61 275.39q23.93 29.38 7.79 63.54Q798.27-140 760-140H200Zm0-60h560L520-492v-268h-80v268L200-200Zm280-280Z" />
-    </group>
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M200,840Q149,840 127.5,794.5Q106,749 138,710L360,440L360,200L320,200Q303,200 291.5,188.5Q280,177 280,160Q280,143 291.5,131.5Q303,120 320,120L640,120Q657,120 668.5,131.5Q680,143 680,160Q680,177 668.5,188.5Q657,200 640,200L600,200L600,440L822,710Q854,749 832.5,794.5Q811,840 760,840L200,840ZM200,760L760,760L520,468L520,200L440,200L440,468L200,760ZM480,480L480,480L480,480L480,480L480,480L480,480L480,480Z" />
 </vector>

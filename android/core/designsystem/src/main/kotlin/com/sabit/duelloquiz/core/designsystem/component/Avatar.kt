@@ -21,11 +21,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import coil3.compose.AsyncImage
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.DisplayFontFamily
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.FullShape
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
@@ -54,8 +52,8 @@ fun avatarLetter(name: String?): String {
 enum class AvatarAccent { None, Self, Opponent }
 
 /**
- * Avatar (components.md §13, v3): the image from [imageUrl] (Coil, centre crop) over a
- * `surfaceContainerHigh` circle with the placeholder letter in the serif face, which stays visible while loading and when
+ * Avatar (components.md §13): the image from [imageUrl] (Coil, centre crop) over a
+ * tertiaryContainer circle with the placeholder letter, which stays visible while loading and when
  * there is no URL or the image fails (the duel never waits for an avatar). Without a letter the
  * `person` icon is shown; [deleted] shows the deleted-player variant. [bot] shows the bot variant
  * (OQ-107): the local app mark on `surface`, or below the 24dp brand minimum the `smart_toy`
@@ -93,8 +91,7 @@ fun DuelloAvatar(
     val container = when {
         deleted -> MaterialTheme.colorScheme.surfaceContainerHighest
         botMark -> MaterialTheme.colorScheme.surface
-        bot -> MaterialTheme.colorScheme.tertiaryContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+        else -> MaterialTheme.colorScheme.tertiaryContainer
     }
     Box(
         contentAlignment = Alignment.Center,
@@ -121,16 +118,12 @@ fun DuelloAvatar(
             letter.isEmpty() -> Icon(
                 painter = painterResource(DuelloIcons.Person),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             else -> Text(
                 text = letter,
-                style = if (large) {
-                    MaterialTheme.typography.headlineMedium
-                } else {
-                    MaterialTheme.typography.titleMedium.copy(fontFamily = DisplayFontFamily, fontWeight = FontWeight.W600)
-                },
-                color = MaterialTheme.colorScheme.onSurface,
+                style = if (large) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
         }
         if (!deleted && !bot && !imageUrl.isNullOrBlank()) {

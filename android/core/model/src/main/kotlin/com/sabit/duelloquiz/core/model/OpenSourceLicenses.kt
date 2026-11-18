@@ -25,7 +25,7 @@ data class OpenSourceLicense(
 )
 
 /**
- * Content of the licences screen. [assets] are the manual entries (Fraunces, Plus Jakarta Sans, Material Symbols) and
+ * Content of the licences screen. [assets] are the manual entries (Nunito, Material Symbols) and
  * always present; [libraries] is the generated list sorted by name, or null when the bundled
  * metadata could not be read.
  */

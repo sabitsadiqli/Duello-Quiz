@@ -119,7 +119,6 @@ internal class FakeNetworkDataSource : DuelloNetworkDataSource {
     // Retention (openapi 0.2.0)
 
     var daily: DataResult<DailyStatus> = DataResult.Failure(DataError.Server)
-    var dailyGate: CompletableDeferred<Unit>? = null
     var dailyStart: DataResult<DailyStart> = DataResult.Failure(DataError.Server)
     var dailyStartGate: CompletableDeferred<Unit>? = null
     var dailyFinish: DataResult<DailyResult> = DataResult.Failure(DataError.Server)
@@ -130,7 +129,6 @@ internal class FakeNetworkDataSource : DuelloNetworkDataSource {
 
     override suspend fun getDaily(): DataResult<DailyStatus> {
         calls += "getDaily"
-        dailyGate?.await()
         return daily
     }
 

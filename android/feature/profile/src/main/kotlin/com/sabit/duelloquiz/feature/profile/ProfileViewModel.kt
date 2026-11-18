@@ -12,6 +12,7 @@ import com.sabit.duelloquiz.core.data.repository.DuelHistoryRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
 import com.sabit.duelloquiz.core.data.repository.ProgressRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
+import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
@@ -60,11 +61,12 @@ data class ProfileHeaderUi(
 @Immutable
 data class StatsUi(val stats: DuelStats, val hint: CalibrationHint)
 
-/** One playable category with its level (PROF-10). */
+/** One playable category with its level (PROF-10). [accent] is a category accent slot. */
 @Immutable
 data class CategoryLevelUi(
     val name: String,
     val iconKey: String,
+    val accent: String,
     val level: Int,
     val fraction: Float,
     val xpToNext: Long,
@@ -122,11 +124,7 @@ data class ProfileUiState(
 )
 
 sealed interface ProfileAction {
-    /** v3: the settings icon in the Profil top app bar (the only settings entry, HOME-06). */
-    data object SettingsClicked : ProfileAction
-
-    /** PROF-11 v3: the streak row opens the Gündəlik tab. */
-    data object StreakClicked : ProfileAction
+    data object Back : ProfileAction
     data object Refresh : ProfileAction
     data object RetryHeader : ProfileAction
     data object RetryStats : ProfileAction
@@ -142,8 +140,7 @@ sealed interface ProfileAction {
 enum class ProfileMessage { NAME_SAVED, DUEL_NEEDS_INTERNET }
 
 sealed interface ProfileEvent {
-    data object OpenSettings : ProfileEvent
-    data object OpenDaily : ProfileEvent
+    data object NavigateBack : ProfileEvent
     data object OpenDuel : ProfileEvent
     data class ShowMessage(val message: ProfileMessage) : ProfileEvent
 }
@@ -200,8 +197,7 @@ class ProfileViewModel @Inject constructor(
 
     fun onAction(action: ProfileAction) {
         when (action) {
-            ProfileAction.SettingsClicked -> _events.trySend(ProfileEvent.OpenSettings)
-            ProfileAction.StreakClicked -> _events.trySend(ProfileEvent.OpenDaily)
+            ProfileAction.Back -> _events.trySend(ProfileEvent.NavigateBack)
             ProfileAction.Refresh -> refresh(pull = true)
             ProfileAction.RetryHeader -> launchLoad { loadHeader() }
             ProfileAction.RetryStats -> launchLoad { loadStats() }
@@ -342,7 +338,7 @@ class ProfileViewModel @Inject constructor(
     }
 }
 
-/** Server values only; the categories keep the server's `sortOrder`. */
+/** Server values only; the categories keep the server's `sortOrder` and get the home accent slots. */
 internal fun ProgressSummary.toUi(localNowMs: Long) = ProgressUi(
     level = level,
     xpIntoLevel = xpIntoLevel,
@@ -353,10 +349,11 @@ internal fun ProgressSummary.toUi(localNowMs: Long) = ProgressUi(
     streakBest = streakBest,
     todayActive = todayActive.takeUnless { isFromEarlierDay(localNowMs) },
     freezeAvailable = freezeAvailable,
-    categories = categories.map { category ->
+    categories = categories.mapIndexed { index, category ->
         CategoryLevelUi(
             name = category.name,
             iconKey = category.iconKey,
+            accent = CategoryAccent.resolve(index),
             level = category.level,
             fraction = RetentionFormat.fraction(category.xpIntoLevel, category.xpForNextLevel),
             xpToNext = (category.xpForNextLevel - category.xpIntoLevel).coerceAtLeast(0),

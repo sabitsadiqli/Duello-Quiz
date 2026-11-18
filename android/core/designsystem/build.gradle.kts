@@ -26,14 +26,11 @@ dependencies {
 }
 
 // The OFL requires the licence to travel with the font (licenses.md): ship
-// third_party/<font>/OFL.txt as the asset licenses/<font>/OFL.txt, without copying it in git.
+// third_party/nunito/OFL.txt as the asset licenses/nunito/OFL.txt, without copying it in git.
 abstract class LicenseAssetsTask : DefaultTask() {
-    @get:InputDirectory
+    @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val thirdPartyDir: DirectoryProperty
-
-    @get:Input
-    abstract val fonts: ListProperty<String>
+    abstract val nunitoLicense: RegularFileProperty
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -42,15 +39,12 @@ abstract class LicenseAssetsTask : DefaultTask() {
     fun copy() {
         val root = outputDir.get().asFile
         root.deleteRecursively()
-        fonts.get().forEach { font ->
-            thirdPartyDir.get().asFile.resolve("$font/OFL.txt").copyTo(root.resolve("licenses/$font/OFL.txt"))
-        }
+        nunitoLicense.get().asFile.copyTo(root.resolve("licenses/nunito/OFL.txt"))
     }
 }
 
 val licenseAssets = tasks.register<LicenseAssetsTask>("licenseAssets") {
-    thirdPartyDir.set(layout.projectDirectory.dir("third_party"))
-    fonts.set(listOf("fraunces", "plusjakartasans"))
+    nunitoLicense.set(layout.projectDirectory.file("third_party/nunito/OFL.txt"))
 }
 
 androidComponents {

@@ -1,7 +1,7 @@
 package com.sabit.duelloquiz.core.designsystem.theme
 
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
@@ -10,13 +10,16 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** typography.scale and typography.custom in design/tokens.json must match the theme 1:1. */
+/** typography.scale in design/tokens.json must match [DuelloTypography] 1:1. */
 class TypographyTokensTest {
 
-    private val typography: JsonObject by lazy { readTokens().getValue("typography").jsonObject }
+    private val scale: JsonObject by lazy {
+        Json.parseToJsonElement(findTokensFile().readText()).jsonObject
+            .getValue("typography").jsonObject.getValue("scale").jsonObject
+    }
 
     @Test
-    fun everyScaleStyleMatchesTokens() {
+    fun everyStyleMatchesTokens() {
         val styles: Map<String, TextStyle> = with(DuelloTypography) {
             mapOf(
                 "displayLarge" to displayLarge, "displayMedium" to displayMedium, "displaySmall" to displaySmall,
@@ -26,39 +29,20 @@ class TypographyTokensTest {
                 "labelLarge" to labelLarge, "labelMedium" to labelMedium, "labelSmall" to labelSmall,
             )
         }
-        val scale = typography.getValue("scale").jsonObject
         assertEquals(scale.keys, styles.keys)
-        styles.forEach { (name, style) -> assertStyle(name, scale.getValue(name).jsonObject, style) }
-    }
-
-    @Test
-    fun customStylesMatchTokens() {
-        val styles = mapOf(
-            "overline" to DuelloTextStyles.overline,
-            "numeral" to DuelloTextStyles.numeral,
-            "numeralLarge" to DuelloTextStyles.numeralLarge,
-        )
-        val custom = typography.getValue("custom").jsonObject
-        assertEquals(custom.keys, styles.keys)
-        styles.forEach { (name, style) -> assertStyle(name, custom.getValue(name).jsonObject, style) }
-    }
-
-    private fun assertStyle(name: String, token: JsonObject, style: TextStyle) {
-        assertEquals("$name.fontSize", token.getValue("fontSize").jsonPrimitive.double, style.fontSize.value.toDouble(), EPS)
-        assertEquals("$name.lineHeight", token.getValue("lineHeight").jsonPrimitive.double, style.lineHeight.value.toDouble(), EPS)
-        assertEquals("$name.fontWeight", token.getValue("fontWeight").jsonPrimitive.int, style.fontWeight?.weight)
-        assertEquals(
-            "$name.letterSpacing",
-            token.getValue("letterSpacing").jsonPrimitive.double,
-            style.letterSpacing.value.toDouble(),
-            EPS,
-        )
-        val expectedFamily: FontFamily = when (val family = token.getValue("family").jsonPrimitive.content) {
-            "display" -> DisplayFontFamily
-            "brand" -> BrandFontFamily
-            else -> throw AssertionError("$name: unknown family $family")
+        styles.forEach { (name, style) ->
+            val token = scale.getValue(name).jsonObject
+            assertEquals("$name.fontSize", token.getValue("fontSize").jsonPrimitive.double, style.fontSize.value.toDouble(), EPS)
+            assertEquals("$name.lineHeight", token.getValue("lineHeight").jsonPrimitive.double, style.lineHeight.value.toDouble(), EPS)
+            assertEquals("$name.fontWeight", token.getValue("fontWeight").jsonPrimitive.int, style.fontWeight?.weight)
+            assertEquals(
+                "$name.letterSpacing",
+                token.getValue("letterSpacing").jsonPrimitive.double,
+                style.letterSpacing.value.toDouble(),
+                EPS,
+            )
+            assertEquals("$name.fontFamily", NunitoFontFamily, style.fontFamily)
         }
-        assertEquals("$name.fontFamily", expectedFamily, style.fontFamily)
     }
 
     private companion object {

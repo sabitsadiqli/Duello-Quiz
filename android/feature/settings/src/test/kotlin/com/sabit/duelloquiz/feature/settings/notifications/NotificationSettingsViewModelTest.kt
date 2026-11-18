@@ -6,10 +6,6 @@ import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.SystemNotificationState
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsAction
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsEvent
-import com.sabit.duelloquiz.core.notifications.NotificationSettingsMessage
-import com.sabit.duelloquiz.core.notifications.ReminderSwitchUi
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestNotificationPromptRepository

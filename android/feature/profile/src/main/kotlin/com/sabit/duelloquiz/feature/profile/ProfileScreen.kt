@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -36,8 +34,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,14 +66,12 @@ import com.sabit.duelloquiz.core.designsystem.component.CalibrationCard
 import com.sabit.duelloquiz.core.designsystem.component.CalibrationRowSpec
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloAvatar
-import com.sabit.duelloquiz.core.designsystem.component.DuelloPrimaryButton
+import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
+import com.sabit.duelloquiz.core.designsystem.component.DuelloDuelButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloStateView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextField
-import com.sabit.duelloquiz.core.designsystem.component.DuelloCompactBanner
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTopAppBar
-import com.sabit.duelloquiz.core.designsystem.component.LevelChipRow
-import com.sabit.duelloquiz.core.designsystem.component.SectionOverline
 import com.sabit.duelloquiz.core.designsystem.component.GameCard
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
 import com.sabit.duelloquiz.core.designsystem.component.SkeletonBlock
@@ -89,7 +83,6 @@ import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
-import com.sabit.duelloquiz.core.designsystem.util.RetentionFormat
 import com.sabit.duelloquiz.core.designsystem.util.ObserveAsEvents
 import com.sabit.duelloquiz.core.model.duel.OpponentType
 import com.sabit.duelloquiz.core.model.duel.CalibrationHint
@@ -100,29 +93,22 @@ import com.sabit.duelloquiz.core.model.duel.DuelStats
 import com.sabit.duelloquiz.core.model.duel.MatchEndReason
 import com.sabit.duelloquiz.core.model.duel.MatchOutcome
 import com.sabit.duelloquiz.core.model.duel.MatchSummary
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
 internal fun ProfileRoute(
-    onOpenSettings: () -> Unit,
-    onOpenDaily: () -> Unit,
+    onBack: () -> Unit,
     onOpenDuel: () -> Unit,
-    scrollToTop: Flow<Unit>,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState = rememberLazyListState()
-    // HOME-09: re-selecting the Profil tab scrolls it to the top.
-    LaunchedEffect(scrollToTop) { scrollToTop.collect { listState.animateScrollToItem(0) } }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            ProfileEvent.OpenSettings -> onOpenSettings()
-            ProfileEvent.OpenDaily -> onOpenDaily()
+            ProfileEvent.NavigateBack -> onBack()
             ProfileEvent.OpenDuel -> onOpenDuel()
             is ProfileEvent.ShowMessage -> scope.launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -134,37 +120,19 @@ internal fun ProfileRoute(
             }
         }
     }
-    ProfileScreen(uiState, viewModel::onAction, snackbarHostState, listState)
+    ProfileScreen(uiState, viewModel::onAction, snackbarHostState)
 }
 
-/**
- * Profil tab (profile.md v3): no back icon, the settings icon top-right; header with the level chip
- * and XP bar, streak row → Gündəlik, record, Əminlik statistikası, last 20 matches, name editing.
- */
+/** Profile (profile.md): header, record, Əminlik statistikası, last 20 matches, name editing. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ProfileScreen(
     uiState: ProfileUiState,
     onAction: (ProfileAction) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    listState: LazyListState = rememberLazyListState(),
 ) {
-    val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
     Scaffold(
-        topBar = {
-            DuelloTopAppBar(
-                title = stringResource(R.string.profile_title),
-                showDivider = scrolled,
-                actions = {
-                    IconButton(onClick = { onAction(ProfileAction.SettingsClicked) }) {
-                        Icon(
-                            painter = painterResource(DuelloIcons.Settings),
-                            contentDescription = stringResource(R.string.profile_settings_cd),
-                        )
-                    }
-                },
-            )
-        },
+        topBar = { DuelloTopAppBar(title = stringResource(R.string.profile_title), onBack = { onAction(ProfileAction.Back) }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         val modifier = Modifier
@@ -185,13 +153,12 @@ internal fun ProfileScreen(
         PullToRefreshBox(isRefreshing = uiState.isRefreshing, onRefresh = { onAction(ProfileAction.Refresh) }, modifier = modifier) {
             ContentWidth(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
-                    state = listState,
                     contentPadding = PaddingValues(start = Spacing.screenGutter, end = Spacing.screenGutter, bottom = Spacing.xl),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (uiState.showOfflineBanner) {
                         item(key = "offline") {
-                            DuelloCompactBanner(
+                            DuelloBanner(
                                 variant = BannerVariant.Warning,
                                 icon = DuelloIcons.CloudOff,
                                 body = stringResource(R.string.common_offline_banner),
@@ -199,7 +166,7 @@ internal fun ProfileScreen(
                             )
                         }
                     }
-                    item(key = "header") { HeaderSection(uiState.header, uiState.progress, onAction) }
+                    item(key = "header") { HeaderSection(uiState.header, onAction) }
                     progressSections(uiState.progress, onAction)
                     if (uiState.duelEnabled) duelSections(uiState, onAction)
                 }
@@ -210,7 +177,7 @@ internal fun ProfileScreen(
 }
 
 @Composable
-private fun HeaderSection(header: SectionUi<ProfileHeaderUi>, progress: SectionUi<ProgressUi>, onAction: (ProfileAction) -> Unit) {
+private fun HeaderSection(header: SectionUi<ProfileHeaderUi>, onAction: (ProfileAction) -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -266,30 +233,12 @@ private fun HeaderSection(header: SectionUi<ProfileHeaderUi>, progress: SectionU
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                // v3 (profile.md): level chip + mini XP bar under the header, max 240dp, centred.
-                (progress as? SectionUi.Content)?.value?.let { level ->
-                    Spacer(Modifier.height(Spacing.md))
-                    LevelChipRow(level = level.level, fraction = level.fraction, modifier = Modifier.widthIn(max = HeaderLevelMaxWidth))
-                    Spacer(Modifier.height(Spacing.xs))
-                    Text(
-                        text = stringResource(
-                            R.string.progress_xp_into_level,
-                            RetentionFormat.xp(level.xpIntoLevel),
-                            RetentionFormat.xp(level.xpForNextLevel),
-                        ),
-                        style = MaterialTheme.typography.bodySmall.tabularFigures(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }
 }
 
-/** profile.md v3: the level chip + XP bar in the header is at most 240dp wide. */
-private val HeaderLevelMaxWidth = Sizes.skeletonLineWidth * 2
-
-/** progression.md C (v3): level card, streak row → Gündəlik, category levels — always shown (PROF-09). */
+/** progression.md C: level card, streak card, category levels — always shown (PROF-09). */
 private fun LazyListScope.progressSections(progress: SectionUi<ProgressUi>, onAction: (ProfileAction) -> Unit) {
     when (progress) {
         SectionUi.Loading -> {
@@ -301,9 +250,7 @@ private fun LazyListScope.progressSections(progress: SectionUi<ProgressUi>, onAc
         }
         is SectionUi.Content -> {
             item(key = "level") { SectionBox { LevelCard(progress.value) } }
-            item(key = "streak") {
-                StreakRow(progress.value, onClick = { onAction(ProfileAction.StreakClicked) }, modifier = Modifier.padding(top = Spacing.lg))
-            }
+            item(key = "streak") { StreakCard(progress.value, modifier = Modifier.padding(top = Spacing.lg)) }
             if (progress.value.categories.isNotEmpty()) {
                 item(key = "category_levels") {
                     SectionBox { CategoryLevelsSection(progress.value.categories) }
@@ -337,9 +284,13 @@ private fun LazyListScope.duelSections(uiState: ProfileUiState, onAction: (Profi
         }
     }
     item(key = "matches_title") {
-        SectionOverline(
+        Text(
             text = stringResource(R.string.profile_matches_title),
-            modifier = Modifier.padding(top = Spacing.xl, bottom = Spacing.sm),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .padding(top = Spacing.xl, bottom = Spacing.sm)
+                .semantics { heading() },
         )
     }
     when (val matches = uiState.matches) {
@@ -361,7 +312,7 @@ private fun SectionBox(content: @Composable () -> Unit) {
 @Composable
 private fun CardSkeleton() {
     val alpha = rememberSkeletonAlpha()
-    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.duelPlayerPanelMinHeight), shape = MaterialTheme.shapes.large)
+    SkeletonBlock(alpha, Modifier.fillMaxWidth().height(Sizes.categoryTileSingleColumnMinHeight), shape = MaterialTheme.shapes.large)
 }
 
 @Composable
@@ -400,7 +351,7 @@ private fun EmptyCard(onStart: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(Spacing.lg))
-            DuelloPrimaryButton(text = stringResource(R.string.profile_empty_cta), onClick = onStart)
+            DuelloDuelButton(text = stringResource(R.string.profile_empty_cta), onClick = onStart)
         }
     }
 }
@@ -475,28 +426,10 @@ private fun RecordCard(record: DuelRecord, botRecord: DuelRecord) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                // v3 (profile.md): level chip + mini XP bar under the header, max 240dp, centred.
-                (progress as? SectionUi.Content)?.value?.let { level ->
-                    Spacer(Modifier.height(Spacing.md))
-                    LevelChipRow(level = level.level, fraction = level.fraction, modifier = Modifier.widthIn(max = HeaderLevelMaxWidth))
-                    Spacer(Modifier.height(Spacing.xs))
-                    Text(
-                        text = stringResource(
-                            R.string.progress_xp_into_level,
-                            RetentionFormat.xp(level.xpIntoLevel),
-                            RetentionFormat.xp(level.xpForNextLevel),
-                        ),
-                        style = MaterialTheme.typography.bodySmall.tabularFigures(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }
 }
-
-/** profile.md v3: the level chip + XP bar in the header is at most 240dp wide. */
-private val HeaderLevelMaxWidth = Sizes.skeletonLineWidth * 2
 
 @Composable
 private fun RecordRow(icon: Int, tint: Color, @StringRes label: Int, count: Int) {

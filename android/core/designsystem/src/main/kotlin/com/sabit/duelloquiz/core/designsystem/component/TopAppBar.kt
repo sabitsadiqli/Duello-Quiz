@@ -10,24 +10,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Borders
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
-import com.sabit.duelloquiz.core.designsystem.theme.gameColors
 
 /**
- * Small top app bar (components.md §12 v3). [showDivider]: the 1dp `game.cardBorder` hairline at
- * the bottom while content is scrolled under the bar (no colour change). [title] is optional: auth screens show only the back
+ * Small top app bar (components.md §12). [title] is optional: auth screens show only the back
  * icon and put their title in the content as headlineSmall. [navigationIcon] replaces the back
  * arrow (e.g. the quiz close icon).
  */
@@ -39,17 +32,8 @@ fun DuelloTopAppBar(
     backEnabled: Boolean = true,
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
-    showDivider: Boolean = false,
 ) {
-    val divider = MaterialTheme.gameColors.cardBorder
     TopAppBar(
-        modifier = Modifier.drawWithContent {
-            drawContent()
-            if (showDivider) {
-                val stroke = Borders.hairline.toPx()
-                drawRect(divider, topLeft = Offset(0f, size.height - stroke), size = Size(size.width, stroke))
-            }
-        },
         title = {
             if (title != null) {
                 Text(text = title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -71,7 +55,7 @@ fun DuelloTopAppBar(
         expandedHeight = Sizes.topAppBarHeight,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
-            // No tonal change when content scrolls under the bar (components.md §12).
+            // v2: no tonal change when content scrolls under the bar (components.md §12).
             scrolledContainerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
@@ -93,7 +77,7 @@ private fun TopAppBarPreview() {
                     IconButton(onClick = {}) {
                         Icon(
                             painter = painterResource(DuelloIcons.Settings),
-                            contentDescription = stringResource(R.string.profile_settings_cd),
+                            contentDescription = stringResource(R.string.home_settings_cd),
                         )
                     }
                 },

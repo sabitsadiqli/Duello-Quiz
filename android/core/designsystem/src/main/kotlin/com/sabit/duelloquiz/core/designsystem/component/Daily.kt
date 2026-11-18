@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,7 +28,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -40,28 +45,38 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.daily.ResultSquareState
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
-import com.sabit.duelloquiz.core.designsystem.theme.Borders
-import com.sabit.duelloquiz.core.designsystem.theme.CardShape
+import com.sabit.duelloquiz.core.designsystem.theme.DailyCardShape
+import com.sabit.duelloquiz.core.designsystem.theme.Depth
 import com.sabit.duelloquiz.core.designsystem.theme.DuelloTheme
 import com.sabit.duelloquiz.core.designsystem.theme.GameSizes
+import com.sabit.duelloquiz.core.designsystem.theme.LightColorScheme
+import com.sabit.duelloquiz.core.designsystem.theme.LightGameColors
 import com.sabit.duelloquiz.core.designsystem.theme.Motion
 import com.sabit.duelloquiz.core.designsystem.theme.Sizes
 import com.sabit.duelloquiz.core.designsystem.theme.Spacing
 import com.sabit.duelloquiz.core.designsystem.theme.gameColors
-import com.sabit.duelloquiz.core.designsystem.theme.numeralLarge
-import com.sabit.duelloquiz.core.designsystem.theme.overline
+import com.sabit.duelloquiz.core.designsystem.theme.gradients
 import com.sabit.duelloquiz.core.designsystem.theme.tabularFigures
+import com.sabit.duelloquiz.core.designsystem.theme.toBrush
 import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
 import kotlinx.coroutines.delay
 
+/** components.md §28: decorative icon square on the gradient face, white at 18 %. */
+private const val DailyDecorAlpha = 0.18f
+
+/** components.md §27: dash length of the "not confirmed" square border. */
+private const val PendingDashPx = 8f
+
 /**
  * Result squares (components.md §27): one per daily question in order. [large] = the result share
- * card (40dp, numbers under the squares); compact = 24dp inline. Glyphs are never removed
+ * card (40dp, numbers under the squares); compact = the home card (24dp). Glyphs are never removed
  * (colour is never the only signal). One TalkBack element ("Nəticələr: sual 1 düzgün, …").
  * [animate]: squares pop in left to right (motion.progression.resultSquaresEnter).
  */
@@ -129,8 +144,15 @@ private fun ResultSquare(state: ResultSquareState, size: Dp, large: Boolean) {
             .background(face, shape)
             .then(
                 when (state) {
-                    ResultSquareState.None -> Modifier.border(BorderStroke(Borders.emphasis, outline), shape)
-                    ResultSquareState.Pending -> Modifier.dashedBorder(outline, shape, width = Borders.emphasis)
+                    ResultSquareState.None -> Modifier.border(BorderStroke(Depth.border, outline), shape)
+                    ResultSquareState.Pending -> Modifier.drawBehind {
+                        val stroke = Depth.border.toPx()
+                        drawRoundRect(
+                            color = outline,
+                            cornerRadius = CornerRadius(stroke * 2),
+                            style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(PendingDashPx, PendingDashPx / 2))),
+                        )
+                    }
                     else -> Modifier
                 },
             ),
@@ -151,45 +173,19 @@ private fun ResultSquareState.descriptionRes(): Int = when (this) {
     ResultSquareState.Pending -> R.string.daily_square_pending_cd
 }
 
-/** One answer box of the Gündəlik card (components.md §38). */
-enum class AnswerBoxState {
-    /** Not played yet: dashed outline, no glyph. */
-    NotPlayed,
-    Correct,
-    Wrong,
-
-    /** No answer (timeout, deadline). */
-    None,
-
-    /** Answered offline, not confirmed yet: dashed outline + `cloud_upload`. */
-    Pending,
-
-    /** Finished without per-question results in the response (OQ-D28): decorative neutral box. */
-    Unknown,
-}
-
-/** The box of a result square (finished card). */
-fun ResultSquareState.toAnswerBox(): AnswerBoxState = when (this) {
-    ResultSquareState.Correct -> AnswerBoxState.Correct
-    ResultSquareState.Wrong -> AnswerBoxState.Wrong
-    ResultSquareState.None -> AnswerBoxState.None
-    ResultSquareState.Pending -> AnswerBoxState.Pending
-}
-
-/** The faces of the Gündəlik challenge card (daily-tab.md A, components.md §37). */
+/** The faces of the home daily card (components.md §28, daily-challenge.md A). */
 @Immutable
 sealed interface DailyCardUi {
     data object Skeleton : DailyCardUi
 
     data class Available(val number: Int, val questionCount: Int, val starting: Boolean = false) : DailyCardUi
 
-    /** [boxes]: answered questions filled, the rest [AnswerBoxState.NotPlayed]. */
-    data class InProgress(val number: Int, val boxes: List<AnswerBoxState>, val starting: Boolean = false) : DailyCardUi
+    data class InProgress(val number: Int, val starting: Boolean = false) : DailyCardUi
 
     /**
-     * [squares] null: the response had no per-question results (neutral boxes, no share).
-     * [countdown] null = the countdown reached 0 and the new day is loading. [shareEnabled] false
-     * while any square is unconfirmed.
+     * [squares] null: the response had no squares (no squares row, no share). [countdown] null =
+     * the countdown reached 0 and the new day is loading. [shareEnabled] false while any square
+     * is unconfirmed.
      */
     data class Finished(
         val number: Int,
@@ -200,161 +196,158 @@ sealed interface DailyCardUi {
         val remainingHours: Int,
         val remainingMinutes: Int,
         val shareEnabled: Boolean,
-    ) : DailyCardUi {
-        val boxes: List<AnswerBoxState>
-            get() = squares?.map { it.toAnswerBox() } ?: List(total) { AnswerBoxState.Unknown }
-    }
+    ) : DailyCardUi
 
     data object Unavailable : DailyCardUi
 
     /** Offline with a cache of an older day: never claim "finished" for a new day (DAILY-01). */
     data object OfflineUnknown : DailyCardUi
 
-    /** `GET /v1/daily` failed without a usable cache: only the card retries. */
+    /** `GET /v1/daily` failed without a usable cache: only the card retries (HOME-07). */
     data object Error : DailyCardUi
 }
 
-/** daily-tab.md A: 5 questions per challenge (the server's count wins when known). */
-private const val DEFAULT_QUESTION_COUNT = 5
-
 /**
- * Daily challenge card v3 (components.md §37, daily-tab.md A): a flat card with the overline,
- * the serif "#12" (finished: the score "4 / 5" on the same baseline), the hint, the answer boxes
- * and the action (primary pill "Başla" / "Davam et", or countdown + "Paylaş"). Every state keeps
- * the height of the available layout, so the streak section below never jumps. Available / in
- * progress: one TalkBack node, role Button; finished: a traversal group with the share button.
+ * Daily challenge card (components.md §28). Gradient face while there is something to do
+ * (available, in progress), white face once the day is done or unknown. The same minimum height
+ * in every state keeps home from jumping.
  */
 @Composable
-fun DailyChallengeCard(
+fun DailyCard(
     ui: DailyCardUi,
     onStart: () -> Unit,
     onShare: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
-    animateBoxes: Boolean = false,
 ) {
-    GameCard(
-        shape = CardShape,
-        contentPadding = PaddingValues(Spacing.lg),
-        modifier = modifier.fillMaxWidth(),
+    val minHeight = Modifier.heightIn(min = DailyCardMinHeight)
+    when (ui) {
+        DailyCardUi.Skeleton -> DailySkeleton(modifier.then(minHeight))
+        is DailyCardUi.Available -> DailyGradientCard(
+            number = ui.number,
+            hint = pluralStringResource(R.plurals.home_daily_hint, ui.questionCount, ui.questionCount),
+            action = stringResource(R.string.home_daily_start),
+            description = pluralStringResource(R.plurals.home_daily_card_cd, ui.questionCount, ui.number, ui.questionCount),
+            starting = ui.starting,
+            onClick = onStart,
+            modifier = modifier.then(minHeight),
+        )
+        is DailyCardUi.InProgress -> DailyGradientCard(
+            number = ui.number,
+            hint = stringResource(R.string.home_daily_in_progress_hint),
+            action = stringResource(R.string.home_daily_resume),
+            description = stringResource(R.string.home_daily_card_in_progress_cd, ui.number),
+            starting = ui.starting,
+            onClick = onStart,
+            modifier = modifier.then(minHeight),
+        )
+        is DailyCardUi.Finished -> DailyFinishedCard(ui, onShare, modifier.then(minHeight))
+        DailyCardUi.Unavailable -> DailyMessageCard(DuelloIcons.EventBusy, stringResource(R.string.home_daily_unavailable), null, modifier.then(minHeight))
+        DailyCardUi.OfflineUnknown -> DailyMessageCard(DuelloIcons.CloudOff, stringResource(R.string.home_daily_offline_unknown), null, modifier.then(minHeight))
+        DailyCardUi.Error -> DailyMessageCard(DuelloIcons.Error, stringResource(R.string.home_daily_error), onRetry, modifier.then(minHeight))
+    }
+}
+
+/** Height of the "available" layout at font scale 1.0; larger fonts grow every face alike. */
+private val DailyCardMinHeight = Sizes.categoryTileMinHeight + Sizes.buttonHeightLarge + Spacing.xl
+
+@Composable
+private fun DailyGradientCard(
+    number: Int,
+    hint: String,
+    action: String,
+    description: String,
+    starting: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    val gradient = MaterialTheme.gradients.dailyHero
+    PressableSurface(
+        onClick = onClick,
+        faceColor = gradient.start,
+        faceBrush = gradient.toBrush(),
+        depthColor = gradient.depth,
+        contentColor = gradient.on,
+        shape = DailyCardShape,
+        depth = Depth.pressableLarge,
+        interactive = !starting,
+        contentPadding = PaddingValues(horizontal = Spacing.xl, vertical = GameSizes.dailyCardPaddingVertical),
+        modifier = modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics {
+                role = Role.Button
+                contentDescription = description
+                if (!starting) onClick(label = action) { onClick(); true }
+            },
     ) {
-        // The invisible available layout reserves the same minimum height in every state; its
-        // button is in the loading state, so it never takes a tap.
-        if (ui !is DailyCardUi.Available) {
-            Box(
-                Modifier
-                    .alpha(0f)
-                    .clearAndSetSemantics {},
-            ) { AvailableContent(number = 0, questionCount = DEFAULT_QUESTION_COUNT, starting = true, onStart = {}) }
-        }
-        when (ui) {
-            DailyCardUi.Skeleton -> SkeletonContent()
-            is DailyCardUi.Available -> {
-                val action = stringResource(R.string.home_daily_start)
-                val description = pluralStringResource(R.plurals.home_daily_card_cd, ui.questionCount, ui.number, ui.questionCount)
-                Box(Modifier.actionNode(description, action, enabled = !ui.starting, onStart)) {
-                    AvailableContent(ui.number, ui.questionCount, ui.starting, onStart)
-                }
-            }
-            is DailyCardUi.InProgress -> {
-                val action = stringResource(R.string.home_daily_resume)
-                val description = stringResource(R.string.home_daily_card_in_progress_cd, ui.number)
-                Column(Modifier.actionNode(description, action, enabled = !ui.starting, onStart)) {
-                    CardHeader(number = ui.number, score = null)
-                    Spacer(Modifier.height(Spacing.xs))
-                    Hint(stringResource(R.string.home_daily_in_progress_hint))
-                    Spacer(Modifier.height(Spacing.lg))
-                    AnswerBoxes(ui.boxes)
-                    Spacer(Modifier.height(Spacing.lg))
-                    StartButton(action, starting = ui.starting, onClick = onStart)
-                }
-            }
-            is DailyCardUi.Finished -> FinishedContent(ui, onShare, animateBoxes)
-            DailyCardUi.Unavailable -> MessageContent(DuelloIcons.EventBusy, stringResource(R.string.home_daily_unavailable), null)
-            DailyCardUi.OfflineUnknown -> MessageContent(DuelloIcons.CloudOff, stringResource(R.string.home_daily_offline_unknown), null)
-            DailyCardUi.Error -> MessageContent(DuelloIcons.Error, stringResource(R.string.home_daily_error), onRetry)
-        }
-    }
-}
-
-/** One Button node for the whole available / in-progress card (daily-tab.md accessibility). */
-private fun Modifier.actionNode(description: String, action: String, enabled: Boolean, onClick: () -> Unit): Modifier =
-    clearAndSetSemantics {
-        role = Role.Button
-        contentDescription = description
-        if (enabled) onClick(label = action) { onClick(); true }
-    }
-
-@Composable
-private fun AvailableContent(number: Int, questionCount: Int, starting: Boolean, onStart: () -> Unit) {
-    Column {
-        CardHeader(number = number, score = null)
-        Spacer(Modifier.height(Spacing.xs))
-        Hint(pluralStringResource(R.plurals.home_daily_hint, questionCount, questionCount))
-        Spacer(Modifier.height(Spacing.lg))
-        AnswerBoxes(List(questionCount) { AnswerBoxState.NotPlayed })
-        Spacer(Modifier.height(Spacing.lg))
-        StartButton(stringResource(R.string.home_daily_start), starting = starting, onClick = onStart)
-    }
-}
-
-@Composable
-private fun CardHeader(number: Int?, score: String?) {
-    Column {
-        SectionOverline(stringResource(R.string.daily_tab_overline))
-        if (number != null) {
-            Spacer(Modifier.height(Spacing.xs))
-            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.daily_number, number),
-                    style = MaterialTheme.typography.numeralLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .weight(1f)
-                        .alignByBaseline(),
-                )
-                if (score != null) {
-                    Spacer(Modifier.width(Spacing.md))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(R.string.daily_title), style = MaterialTheme.typography.labelLarge, color = gradient.on)
                     Text(
-                        text = score,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        modifier = Modifier.alignByBaseline(),
+                        text = stringResource(R.string.daily_number, number),
+                        style = MaterialTheme.typography.headlineMedium.tabularFigures(),
+                        color = gradient.on,
+                    )
+                }
+                Spacer(Modifier.width(Spacing.md))
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(GameSizes.duelHeroDecor)
+                        .background(Color.White.copy(alpha = DailyDecorAlpha), MaterialTheme.shapes.medium),
+                ) {
+                    Icon(
+                        painter = painterResource(DuelloIcons.Today),
+                        contentDescription = null,
+                        tint = gradient.on,
+                        modifier = Modifier.size(Sizes.iconLarge),
                     )
                 }
             }
+            Text(text = hint, style = MaterialTheme.typography.bodyMedium, color = gradient.on)
+            // Same recipe as the duel hero card button: light-theme values in both themes.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(LightColorScheme.primaryContainer, MaterialTheme.shapes.medium)
+                    .padding(bottom = Depth.pressable)
+                    .background(LightGameColors.pressableNeutral, MaterialTheme.shapes.medium)
+                    .heightIn(min = Sizes.buttonHeight),
+            ) {
+                if (starting) {
+                    CircularProgressIndicator(
+                        color = LightGameColors.onPressableNeutral,
+                        strokeWidth = Sizes.progressStroke,
+                        modifier = Modifier.size(Sizes.inlineProgress),
+                    )
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = Spacing.xl)) {
+                        Icon(
+                            painter = painterResource(DuelloIcons.PlayArrow),
+                            contentDescription = null,
+                            tint = LightGameColors.onPressableNeutral,
+                            modifier = Modifier.size(Sizes.inlineIcon),
+                        )
+                        Spacer(Modifier.width(Spacing.sm))
+                        Text(
+                            text = action,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = LightGameColors.onPressableNeutral,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun Hint(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-@Composable
-private fun StartButton(text: String, starting: Boolean, onClick: () -> Unit) {
-    DuelloButton(
-        text = text,
-        onClick = onClick,
-        variant = ButtonVariant.Primary,
-        loading = starting,
-        leading = {
-            Icon(
-                painter = painterResource(DuelloIcons.PlayArrow),
-                contentDescription = null,
-                tint = LocalContentColor.current,
-                modifier = Modifier.size(Sizes.inlineIcon),
-            )
-        },
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun FinishedContent(ui: DailyCardUi.Finished, onShare: () -> Unit, animateBoxes: Boolean) {
+private fun DailyFinishedCard(ui: DailyCardUi.Finished, onShare: () -> Unit, modifier: Modifier) {
     val description = stringResource(
         R.string.home_daily_card_finished_cd,
         ui.number,
@@ -363,15 +356,45 @@ private fun FinishedContent(ui: DailyCardUi.Finished, onShare: () -> Unit, anima
         ui.remainingHours,
         ui.remainingMinutes,
     )
-    Column(Modifier.semantics { isTraversalGroup = true }) {
-        Column(Modifier.clearAndSetSemantics { contentDescription = description }) {
-            CardHeader(number = ui.number, score = stringResource(R.string.daily_score_short, ui.correctCount, ui.total))
-            Spacer(Modifier.height(Spacing.xs))
-            Hint(pluralStringResource(R.plurals.home_daily_hint, ui.total, ui.total))
-            Spacer(Modifier.height(Spacing.lg))
-            AnswerBoxes(ui.boxes, animate = animateBoxes)
-            Spacer(Modifier.height(Spacing.lg))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    GameCard(
+        faceColor = MaterialTheme.gameColors.pressableNeutral,
+        contentPadding = PaddingValues(Spacing.lg),
+        shape = DailyCardShape,
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { isTraversalGroup = true },
+    ) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.daily_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(R.string.daily_number, ui.number),
+                        style = MaterialTheme.typography.headlineMedium.tabularFigures(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                Spacer(Modifier.width(Spacing.md))
+                Text(
+                    text = stringResource(R.string.daily_score_short, ui.correctCount, ui.total),
+                    style = MaterialTheme.typography.headlineMedium.tabularFigures(),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                )
+            }
+            ui.squares?.let { squares ->
+                Spacer(Modifier.height(Spacing.md))
+                ResultSquaresRow(squares = squares, large = false)
+            }
+            Spacer(Modifier.height(Spacing.md))
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clearAndSetSemantics {}) {
                 if (ui.countdown != null) {
                     Icon(
                         painter = painterResource(DuelloIcons.Schedule),
@@ -384,6 +407,7 @@ private fun FinishedContent(ui: DailyCardUi.Finished, onShare: () -> Unit, anima
                         text = stringResource(R.string.home_daily_next_countdown, ui.countdown),
                         style = MaterialTheme.typography.titleSmall.tabularFigures(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                     )
                 } else {
                     CircularProgressIndicator(
@@ -396,147 +420,25 @@ private fun FinishedContent(ui: DailyCardUi.Finished, onShare: () -> Unit, anima
                         text = stringResource(R.string.home_daily_refreshing),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                     )
                 }
             }
-        }
-        if (ui.squares != null) {
-            Spacer(Modifier.height(Spacing.md))
-            ShareButton(enabled = ui.shareEnabled, onClick = onShare, modifier = Modifier.fillMaxWidth())
-            if (!ui.shareEnabled && ui.squares.any { it == ResultSquareState.Pending }) {
-                Spacer(Modifier.height(Spacing.xs))
-                Text(
-                    text = stringResource(R.string.daily_share_pending),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (ui.squares != null) {
+                Spacer(Modifier.height(Spacing.md))
+                ShareButton(enabled = ui.shareEnabled, onClick = onShare, modifier = Modifier.fillMaxWidth())
             }
         }
     }
 }
 
-@Composable
-private fun MessageContent(icon: Int, text: String, onRetry: (() -> Unit)?) {
-    Column {
-        SectionOverline(stringResource(R.string.daily_tab_overline))
-        Spacer(Modifier.height(Spacing.md))
-        Row(verticalAlignment = Alignment.Top) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(Sizes.icon),
-            )
-            Spacer(Modifier.width(Spacing.md))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (onRetry != null) {
-            Spacer(Modifier.height(Spacing.sm))
-            DuelloTextButton(text = stringResource(R.string.common_retry), onClick = onRetry)
-        }
-    }
-}
-
-@Composable
-private fun SkeletonContent() {
-    val alpha = rememberSkeletonAlpha()
-    Column(Modifier.clearAndSetSemantics {}) {
-        SectionOverline(stringResource(R.string.daily_tab_overline))
-        Spacer(Modifier.height(Spacing.sm))
-        SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidthShort).height(Sizes.iconLarge))
-        Spacer(Modifier.height(Spacing.sm))
-        SkeletonBlock(alpha, Modifier.width(Sizes.skeletonLineWidth).height(Sizes.skeletonLineHeight))
-        Spacer(Modifier.height(Spacing.lg))
-        AnswerBoxes(List(DEFAULT_QUESTION_COUNT) { AnswerBoxState.NotPlayed })
-        Spacer(Modifier.height(Spacing.lg))
-        SkeletonBlock(
-            alpha = alpha,
-            shape = androidx.compose.foundation.shape.CircleShape,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(Sizes.buttonHeight),
-        )
-    }
-}
-
-/**
- * Answer boxes (components.md §38): one rounded square per question, `size.resultBox` (compact:
- * `resultBoxCompact`), gap `space.sm`. Not interactive; decorative inside the card node. With
- * [animate] the filled boxes pop in left to right once (motion.progression.resultSquaresEnter).
- */
-@Composable
-fun AnswerBoxes(
-    boxes: List<AnswerBoxState>,
-    modifier: Modifier = Modifier,
-    compact: Boolean = false,
-    animate: Boolean = false,
-) {
-    val reducedMotion = rememberReducedMotion() || LocalInspectionMode.current
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = modifier.clearAndSetSemantics {}) {
-        boxes.forEachIndexed { index, box ->
-            val pop = animate && !reducedMotion && box != AnswerBoxState.NotPlayed
-            val scale = remember { Animatable(if (pop) Motion.Progression.RESULT_SQUARES_FROM else 1f) }
-            LaunchedEffect(pop) {
-                if (pop) {
-                    delay(index * Motion.Progression.RESULT_SQUARES_STAGGER_MS.toLong())
-                    scale.animateTo(1f, Motion.bouncy())
-                }
-            }
-            AnswerBox(
-                state = box,
-                size = if (compact) Sizes.resultBoxCompact else Sizes.resultBox,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun AnswerBox(state: AnswerBoxState, size: Dp, modifier: Modifier = Modifier) {
-    val game = MaterialTheme.gameColors
-    val scheme = MaterialTheme.colorScheme
-    val shape = MaterialTheme.shapes.small
-    val base = modifier.size(size)
-    val styled = when (state) {
-        AnswerBoxState.NotPlayed, AnswerBoxState.Pending -> base.dashedBorder(scheme.outline, shape)
-        AnswerBoxState.Correct -> base.background(game.correct, shape)
-        AnswerBoxState.Wrong -> base.background(game.wrong, shape)
-        AnswerBoxState.None -> base
-            .background(scheme.surfaceContainerHighest, shape)
-            .border(BorderStroke(Borders.hairline, scheme.outline), shape)
-        AnswerBoxState.Unknown -> base.background(scheme.surfaceContainerHighest, shape)
-    }
-    Box(contentAlignment = Alignment.Center, modifier = styled) {
-        when (state) {
-            AnswerBoxState.Correct -> BoxGlyph(DuelloIcons.Check, game.onCorrect, GameSizes.resultSquareGlyph)
-            AnswerBoxState.Wrong -> BoxGlyph(DuelloIcons.Close, game.onWrong, GameSizes.resultSquareGlyph)
-            AnswerBoxState.None -> BoxGlyph(DuelloIcons.Remove, scheme.onSurfaceVariant, GameSizes.resultSquareGlyph)
-            AnswerBoxState.Pending -> BoxGlyph(DuelloIcons.CloudUpload, scheme.onSurfaceVariant, Sizes.iconSmall)
-            AnswerBoxState.NotPlayed, AnswerBoxState.Unknown -> Unit
-        }
-    }
-}
-
-@Composable
-private fun BoxGlyph(icon: Int, tint: androidx.compose.ui.graphics.Color, size: Dp) {
-    Icon(painter = painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(size))
-}
-
-/** Secondary pill "Paylaş" with the 20dp share icon (daily result and the finished Gündəlik card). */
+/** Neutral pressable "Paylaş" with the 20dp share icon (daily result card and finished home card). */
 @Composable
 fun ShareButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     DuelloButton(
         text = stringResource(R.string.daily_share),
         onClick = onClick,
-        variant = ButtonVariant.Secondary,
+        variant = ButtonVariant.Neutral,
         enabled = enabled,
         readableWhenDisabled = true,
         leading = {
@@ -551,21 +453,71 @@ fun ShareButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modi
     )
 }
 
+@Composable
+private fun DailyMessageCard(icon: Int, text: String, onRetry: (() -> Unit)?, modifier: Modifier) {
+    GameCard(
+        faceColor = MaterialTheme.gameColors.pressableNeutral,
+        contentPadding = PaddingValues(Spacing.lg),
+        shape = DailyCardShape,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(GameSizes.duelHeroDecor)
+                    .background(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.shapes.medium),
+            ) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(Sizes.iconLarge),
+                )
+            }
+            Spacer(Modifier.width(Spacing.md))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    text = stringResource(R.string.daily_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                if (onRetry != null) {
+                    DuelloTextButton(text = stringResource(R.string.common_retry), onClick = onRetry)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailySkeleton(modifier: Modifier) {
+    val alpha = rememberSkeletonAlpha()
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = DailyCardShape,
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { this.alpha = alpha() }
+            .clearAndSetSemantics {},
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.padding(Spacing.xl)) {
+            Box(Modifier.width(Sizes.skeletonLineWidthShort).height(Sizes.skeletonLineHeight).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraSmall))
+            Box(Modifier.width(Sizes.skeletonLineWidth).height(Sizes.skeletonLineHeight).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraSmall))
+            Box(Modifier.fillMaxWidth().height(Sizes.buttonHeight).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.medium))
+        }
+    }
+}
+
 @PreviewLightDark
 @Composable
-private fun DailyChallengeCardPreview() {
+private fun DailyCardPreview() {
     DuelloTheme {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg), modifier = Modifier.padding(Spacing.lg)) {
-                DailyChallengeCard(DailyCardUi.Available(number = 12, questionCount = 5), {}, {}, {})
-                DailyChallengeCard(
-                    DailyCardUi.InProgress(
-                        number = 12,
-                        boxes = listOf(AnswerBoxState.Correct, AnswerBoxState.Pending) + List(3) { AnswerBoxState.NotPlayed },
-                    ),
-                    {}, {}, {},
-                )
-                DailyChallengeCard(
+                DailyCard(DailyCardUi.Available(number = 12, questionCount = 5), {}, {}, {})
+                DailyCard(
                     DailyCardUi.Finished(
                         number = 12,
                         correctCount = 3,
@@ -581,8 +533,7 @@ private fun DailyChallengeCardPreview() {
                     ),
                     {}, {}, {},
                 )
-                DailyChallengeCard(DailyCardUi.Unavailable, {}, {}, {})
-                DailyChallengeCard(DailyCardUi.Skeleton, {}, {}, {})
+                DailyCard(DailyCardUi.Unavailable, {}, {}, {})
                 ResultSquaresRow(
                     squares = listOf(ResultSquareState.Correct, ResultSquareState.Pending, ResultSquareState.None),
                     large = true,

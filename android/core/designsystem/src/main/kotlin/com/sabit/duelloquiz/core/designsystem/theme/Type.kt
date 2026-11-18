@@ -9,75 +9,47 @@ import androidx.compose.ui.unit.sp
 import com.sabit.duelloquiz.core.designsystem.R
 
 /**
- * typography.fontFamily.display: Fraunces, static instances (third_party/README.md). Display,
- * headline and the numeral roles only; it has no tabular figures, so only static numbers.
+ * Nunito, bundled as static instances (design/README.md, third_party/nunito/README.md):
+ * weights 500/600/700/800/900, no downloadable fonts.
  */
-val DisplayFontFamily = FontFamily(
-    Font(R.font.fraunces_regular, FontWeight.W400),
-    Font(R.font.fraunces_semibold, FontWeight.W600),
+val NunitoFontFamily = FontFamily(
+    Font(R.font.nunito_medium, FontWeight.W500),
+    Font(R.font.nunito_semibold, FontWeight.W600),
+    Font(R.font.nunito_bold, FontWeight.W700),
+    Font(R.font.nunito_extrabold, FontWeight.W800),
+    Font(R.font.nunito_black, FontWeight.W900),
 )
 
-/** typography.fontFamily.brand: Plus Jakarta Sans 500/600/700/800, all UI text. */
-val BrandFontFamily = FontFamily(
-    Font(R.font.plusjakartasans_medium, FontWeight.W500),
-    Font(R.font.plusjakartasans_semibold, FontWeight.W600),
-    Font(R.font.plusjakartasans_bold, FontWeight.W700),
-    Font(R.font.plusjakartasans_extrabold, FontWeight.W800),
-)
-
-private fun style(family: FontFamily, fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Double) = TextStyle(
-    fontFamily = family,
+private fun style(fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Double) = TextStyle(
+    fontFamily = NunitoFontFamily,
     fontWeight = FontWeight(weight),
     fontSize = fontSize.sp,
     lineHeight = lineHeight.sp,
     letterSpacing = letterSpacing.sp,
 )
 
-private fun display(fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Double) =
-    style(DisplayFontFamily, fontSize, lineHeight, weight, letterSpacing)
-
-private fun brand(fontSize: Int, lineHeight: Int, weight: Int, letterSpacing: Double) =
-    style(BrandFontFamily, fontSize, lineHeight, weight, letterSpacing)
-
-/** typography.scale from design/tokens.json 3.0.0, 1:1 (family per `scale.*.family`). */
+/** typography.scale from design/tokens.json 2.1.0, 1:1. */
 internal val DuelloTypography = Typography(
-    displayLarge = display(52, 56, 600, -1.0),
-    displayMedium = display(44, 48, 600, -0.5),
-    displaySmall = display(36, 40, 600, -0.25),
-    headlineLarge = display(32, 36, 600, -0.25),
-    headlineMedium = display(28, 34, 600, 0.0),
-    headlineSmall = display(24, 30, 600, 0.0),
-    titleLarge = brand(20, 28, 700, 0.0),
-    titleMedium = brand(16, 24, 700, 0.1),
-    titleSmall = brand(14, 20, 700, 0.1),
-    bodyLarge = brand(16, 24, 500, 0.0),
-    bodyMedium = brand(14, 20, 500, 0.1),
-    bodySmall = brand(12, 16, 500, 0.2),
-    labelLarge = brand(15, 20, 700, 0.1),
-    labelMedium = brand(13, 16, 700, 0.2),
-    labelSmall = brand(11, 16, 700, 0.4),
+    displayLarge = style(56, 64, 900, -0.5),
+    displayMedium = style(44, 52, 900, -0.25),
+    displaySmall = style(36, 44, 900, 0.0),
+    headlineLarge = style(32, 40, 800, 0.0),
+    headlineMedium = style(28, 36, 800, 0.0),
+    headlineSmall = style(24, 32, 800, 0.0),
+    titleLarge = style(20, 28, 800, 0.0),
+    titleMedium = style(17, 24, 800, 0.0),
+    titleSmall = style(14, 20, 800, 0.1),
+    bodyLarge = style(16, 24, 600, 0.1),
+    bodyMedium = style(14, 20, 600, 0.15),
+    bodySmall = style(12, 16, 600, 0.3),
+    labelLarge = style(16, 20, 800, 0.2),
+    labelMedium = style(13, 16, 800, 0.2),
+    labelSmall = style(11, 16, 700, 0.3),
 )
 
-/** typography.custom: extra roles that Material 3 Typography does not have. */
-object DuelloTextStyles {
-    /** Section labels ("TƏK OYNA · 10 SUAL"); strings are authored in capitals, never uppercased at runtime. */
-    val overline: TextStyle = brand(11, 16, 800, 1.4)
-
-    /** Category list numbers 01–05 (Fraunces Regular). Static numbers only. */
-    val numeral: TextStyle = display(20, 24, 400, 0.0)
-
-    /** "#12" on the Gündəlik tab, the final daily score (Fraunces SemiBold). Static numbers only. */
-    val numeralLarge: TextStyle = display(56, 60, 600, -1.0)
-}
-
-/** `MaterialTheme.typography.overline` etc. (custom roles of [DuelloTextStyles]). */
-val Typography.overline: TextStyle get() = DuelloTextStyles.overline
-val Typography.numeral: TextStyle get() = DuelloTextStyles.numeral
-val Typography.numeralLarge: TextStyle get() = DuelloTextStyles.numeralLarge
-
 /**
- * Tabular figures for timers, progress, scores, rating and countdowns (tokens:
- * fontFamily.brand.features). Plus Jakarta Sans has `tnum`; Fraunces has none, so do not use
- * this on display styles for numbers that change while visible.
+ * Tabular figures for timers, progress, scores and rating (tokens: fontFamily.brand.features).
+ * Nunito has no `tnum` feature but its default digits are already fixed-width, so this is a
+ * no-op today and only matters if the font changes.
  */
 fun TextStyle.tabularFigures(): TextStyle = copy(fontFeatureSettings = "tnum")
