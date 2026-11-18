@@ -15,7 +15,6 @@ import com.sabit.duelloquiz.core.data.repository.QuizRepository
 import com.sabit.duelloquiz.core.data.util.NetworkMonitor
 import com.sabit.duelloquiz.core.designsystem.component.ProgressCardUi
 import com.sabit.duelloquiz.core.designsystem.component.toCardUi
-import com.sabit.duelloquiz.core.designsystem.theme.CategoryAccent
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
@@ -49,11 +48,6 @@ data class QuizResultUiState(
     val categoryName: String,
     /** Icon key of the played category for the hero pill; empty = generic icon. */
     val categoryIconKey: String = "",
-    /**
-     * Accent slot of the score hero (quiz-result.md v2): the category's position in the cached
-     * server list, like its home tile ([CategoryAccent.resolve]).
-     */
-    val categoryAccent: String = CategoryAccent.Order.first(),
     val correctCount: Int = 0,
     val total: Int = 0,
     /** The session deadline passed: unanswered questions counted as wrong. */
@@ -161,15 +155,12 @@ class QuizResultViewModel @Inject constructor(
         }
     }
 
-    /** Same accent and icon as the category's home tile (the list is cached by home). */
+    /** Same icon as the category's home row (the list is cached by home). */
     private fun loadCategoryLook() {
         viewModelScope.launch {
             val categories = categoryRepository.categories.first() ?: return@launch
-            val index = categories.indexOfFirst { it.id == args.categoryId }
-            if (index < 0) return@launch
-            _uiState.update {
-                it.copy(categoryAccent = CategoryAccent.resolve(index), categoryIconKey = categories[index].iconKey)
-            }
+            val category = categories.firstOrNull { it.id == args.categoryId } ?: return@launch
+            _uiState.update { it.copy(categoryIconKey = category.iconKey) }
         }
     }
 

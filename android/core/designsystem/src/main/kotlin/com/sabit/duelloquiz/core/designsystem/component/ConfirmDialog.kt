@@ -38,7 +38,8 @@ fun DuelloConfirmDialog(
         title = { Text(text = title, style = MaterialTheme.typography.headlineSmall) },
         text = { Text(text = body, style = MaterialTheme.typography.bodyMedium) },
         shape = MaterialTheme.shapes.extraLarge,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        // v3 (components.md restyle §9): paper container, 18dp, serif title.
+        containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         tonalElevation = Elevation.level0,

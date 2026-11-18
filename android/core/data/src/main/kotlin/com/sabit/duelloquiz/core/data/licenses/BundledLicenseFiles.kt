@@ -8,6 +8,9 @@ interface BundledLicenseFiles {
     /** The generated library metadata; throws when the resource is missing or unreadable. */
     fun librariesJson(): String
 
-    /** Full SIL OFL 1.1 text shipped with Nunito (`core/designsystem/third_party/nunito/OFL.txt`). */
-    fun nunitoLicenseText(): String?
+    /**
+     * Full SIL OFL 1.1 text shipped with a bundled font (`core/designsystem/third_party/<font>/OFL.txt`);
+     * [font] is the directory name ("fraunces", "plusjakartasans"). Null when missing.
+     */
+    fun fontLicenseText(font: String): String?
 }

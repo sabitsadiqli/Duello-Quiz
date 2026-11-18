@@ -55,6 +55,10 @@ interface DailyRepository {
     /** Last known `GET /v1/daily` of the signed-in account (possibly of an earlier day). */
     val status: Flow<DailyStatus?>
 
+    /**
+     * `GET /v1/daily`. A call while another refresh runs joins it (home and the Gündəlik tab refresh
+     * together without a second request, HOME-07).
+     */
     suspend fun refreshStatus(): DataResult<DailyStatus>
 
     /**
@@ -109,16 +113,24 @@ internal class DefaultDailyRepository @Inject constructor(
     private val records = LinkedHashMap<String, AttemptRecord>()
     private val results = LinkedHashMap<String, DailyResult>()
     private var pendingStart: Deferred<DataResult<DailyStart>>? = null
+    private var pendingRefresh: Deferred<DataResult<DailyStatus>>? = null
 
     override val status: Flow<DailyStatus?> =
         cache.readFor(uid, CacheKeys.DAILY_STATUS, CachedDailyStatus.serializer()).map { it?.toModelOrNull() }
 
     override suspend fun refreshStatus(): DataResult<DailyStatus> {
         val currentUid = uid.first() ?: return DataResult.Failure(DataError.Unauthorized)
+        val request = synchronized(lock) {
+            pendingRefresh?.takeIf { it.isActive } ?: newRefresh(currentUid).also { pendingRefresh = it }
+        }
+        return request.await()
+    }
+
+    private fun newRefresh(currentUid: String): Deferred<DataResult<DailyStatus>> = appScope.async(start = CoroutineStart.LAZY) {
         val result = network.getDaily()
         if (result is DataResult.Success) storeStatus(currentUid, result.value)
-        return result
-    }
+        result
+    }.also { it.start() }
 
     override suspend fun start(): DataResult<DailyStart> {
         val request = synchronized(lock) {

@@ -94,9 +94,7 @@
 
     <!-- home_ (the duel entry keys come with the duel, OQ-020) -->
     <string name="home_rating">Reytinq: %1$d</string>
-    <string name="home_profile_cd">%1$s, reytinq %2$d</string>
     <string name="home_settings_cd">Parametrlər</string>
-    <string name="home_categories_title">Kateqoriyalar</string>
     <plurals name="home_category_question_count">
         <item quantity="one">%1$d sual</item>
         <item quantity="other">%1$d sual</item>
@@ -166,21 +164,21 @@
 
     <!-- settings_ -->
     <string name="settings_title">Parametrlər</string>
-    <string name="settings_section_theme">Tema</string>
+    <string name="settings_section_theme">TEMA</string>
     <string name="settings_theme_system">Sistem</string>
     <string name="settings_theme_system_supporting">Telefonun ayarına uyğun</string>
     <string name="settings_theme_light">İşıqlı</string>
     <string name="settings_theme_dark">Qaranlıq</string>
-    <string name="settings_section_language">Dil</string>
+    <string name="settings_section_language">DİL</string>
     <string name="settings_language_value">Azərbaycan dili</string>
-    <string name="settings_section_account">Hesab</string>
+    <string name="settings_section_account">HESAB</string>
     <string name="settings_signed_in_as">%1$s</string>
     <string name="settings_sign_out">Hesabdan çıx</string>
     <string name="settings_sign_out_title">Hesabdan çıxmaq istəyirsən?</string>
     <string name="settings_sign_out_body">Nəticələrin və reytinqin hesabında qalır. İstədiyin vaxt yenidən daxil ola bilərsən.</string>
     <string name="settings_sign_out_confirm">Çıx</string>
     <string name="settings_delete_account">Hesabı sil</string>
-    <string name="settings_section_about">Haqqında</string>
+    <string name="settings_section_about">HAQQINDA</string>
     <string name="settings_version">Versiya %1$s (%2$d)</string>
     <string name="settings_privacy_policy">Məxfilik siyasəti</string>
     <string name="settings_licenses">Açıq mənbə lisenziyaları</string>
@@ -225,8 +223,11 @@
     <string name="error_display_name_not_allowed">Bu ad istifadə edilə bilməz.</string>
     <string name="error_invalid_display_name">Bu ad uyğun deyil. Ad 2–20 simvol olmalı, yalnız hərf, rəqəm, boşluq, «-», «\'» və «.» ola bilər.</string>
     <string name="home_duel_title">Duel</string>
-    <string name="home_duel_hint">Əminliyini sına, reytinq qazan</string>
-    <string name="home_duel_cta">Duelə başla</string>
+    <plurals name="home_duel_hint">
+        <item quantity="one">%1$d sual · nə qədər əminsən?</item>
+        <item quantity="other">%1$d sual · nə qədər əminsən?</item>
+    </plurals>
+    <string name="home_duel_cta">Rəqib tap</string>
     <string name="home_duel_needs_internet">Duel üçün internet lazımdır.</string>
     <string name="duel_you">Sən</string>
     <string name="duel_delta_positive">+%1$d</string>
@@ -386,7 +387,6 @@
     <string name="duel_connect_failed_title">Duelə qoşulmaq alınmadı</string>
     <string name="duel_connect_failed_body">Bağlantını yoxla və yenidən cəhd et.</string>
     <string name="profile_title">Profil</string>
-    <string name="profile_open_cd">Profili aç</string>
     <string name="profile_edit_name_cd">Adı dəyiş</string>
     <string name="profile_joined">Qoşulub: %1$s %2$d</string>
     <string-array name="profile_months">
@@ -441,7 +441,7 @@
     <string name="profile_match_loss">Məğlubiyyət</string>
     <string name="profile_match_draw">Heç-heçə</string>
     <string name="profile_match_abandoned">Ləğv edildi</string>
-    <string name="profile_matches_title">Son oyunlar</string>
+    <string name="profile_matches_title">SON OYUNLAR</string>
     <string name="profile_match_supporting">%1$s · %2$s</string>
     <string name="profile_match_label_opponent_forfeit">Rəqib tərk etdi</string>
     <string name="profile_match_label_self_forfeit">Texniki məğlubiyyət</string>
@@ -583,7 +583,7 @@
     <string name="profile_streak_freeze_earn">Seriya qoruyucusu %1$d günlük seriyada qazanılır</string>
     <string name="profile_streak_empty">Hələ seriyan yoxdur. Bu gün bir oyun oyna və başla.</string>
     <string name="profile_streak_cd">Seriya %1$d gün, ən uzun seriya %2$d gün</string>
-    <string name="profile_categories_title">Kateqoriyalar</string>
+    <string name="profile_categories_title">KATEQORİYALAR</string>
     <string name="profile_category_level_cd">%1$s: səviyyə %2$d, növbəti səviyyəyə %3$s XP qalıb</string>
 
     <!-- notif_ / settings_notif_ (retention, 2026-10-22) -->
@@ -593,7 +593,7 @@
     <string name="notif_prompt_later">Sonra</string>
     <string name="notif_open_settings">Ayarları aç</string>
     <string name="notif_enabled_snackbar">Bildirişlər açıldı. Parametrlərdən istədiyin vaxt dəyişə bilərsən.</string>
-    <string name="settings_section_notifications">Bildirişlər</string>
+    <string name="settings_section_notifications">BİLDİRİŞLƏR</string>
     <string name="settings_notif_daily">Gündəlik çağırış xatırlatması</string>
     <string name="settings_notif_daily_supporting">Səhər, bugünkü çağırışı hələ oynamamısansa</string>
     <string name="settings_notif_streak">Seriya xatırlatması</string>
@@ -608,4 +608,72 @@
     <string name="notif_channel_daily_description">Bugünkü çağırışı hələ oynamamısansa, səhər xatırladırıq.</string>
     <string name="notif_channel_streak_name">Seriya</string>
     <string name="notif_channel_streak_description">Seriyan bitmək üzrə olanda axşam xatırladırıq.</string>
+
+    <!-- v3 minimal (tokens 3.0.0): bottom navigation, Oyna, Gündəlik and Profil tabs (design/copy/az.md "v3 minimal"). -->
+    <string name="nav_play">Oyna</string>
+    <string name="nav_daily">Gündəlik</string>
+    <string name="nav_profile">Profil</string>
+    <string name="nav_daily_badge_cd">bugünkü çağırış hələ oynanmayıb</string>
+    <string name="nav_daily_open_cd">Gündəlik bölməsini aç</string>
+    <string name="nav_profile_open_cd">Profil</string>
+    <string-array name="common_weekdays">
+        <item>Bazar ertəsi</item>
+        <item>Çərşənbə axşamı</item>
+        <item>Çərşənbə</item>
+        <item>Cümə axşamı</item>
+        <item>Cümə</item>
+        <item>Şənbə</item>
+        <item>Bazar</item>
+    </string-array>
+    <string-array name="common_weekdays_short">
+        <item>B.e</item>
+        <item>Ç.a</item>
+        <item>Ç</item>
+        <item>C.a</item>
+        <item>C</item>
+        <item>Ş</item>
+        <item>B</item>
+    </string-array>
+    <string name="home_date_line">%1$s, %2$d %3$s</string>
+    <string name="home_greeting_hello">Salam, %1$s.</string>
+    <string name="home_greeting_hello_no_name">Salam.</string>
+    <!-- Each pool line marks one squiggle word with <annotation squiggle="1"> (components.md §36). Lines 1, 3 and 5 mention the duel / Əminlik. -->
+    <string name="home_greeting_1">Bu gün kimisə <annotation squiggle="1">yenək</annotation>?</string>
+    <string name="home_greeting_2">Bu gün nə <annotation squiggle="1">öyrənək</annotation>?</string>
+    <string name="home_greeting_3">Bir duel, bir fincan <annotation squiggle="1">çay</annotation>?</string>
+    <string name="home_greeting_4">Yeni gün, yeni <annotation squiggle="1">suallar</annotation>.</string>
+    <string name="home_greeting_5"><annotation squiggle="1">Əminsən</annotation>? Gəl yoxlayaq.</string>
+    <string name="home_greeting_6">Hazırsan? <annotation squiggle="1">Başlayaq</annotation>.</string>
+    <string name="home_greeting_7">Bu gün nəyi <annotation squiggle="1">bilirsən</annotation>?</string>
+    <string name="home_greeting_8">Bir sual, bir <annotation squiggle="1">kəşf</annotation>.</string>
+    <string name="home_duel_duration">~%1$d dəq</string>
+    <plurals name="home_duel_duration_cd">
+        <item quantity="one">təxminən %1$d dəqiqə</item>
+        <item quantity="other">təxminən %1$d dəqiqə</item>
+    </plurals>
+    <string name="home_duel_sticker_rating">Reytinq %1$d</string>
+    <string name="home_duel_card_cd">Duel. %1$s. %2$s. %3$s Rəqib tap</string>
+    <plurals name="home_categories_overline">
+        <item quantity="one">TƏK OYNA · %1$d SUAL</item>
+        <item quantity="other">TƏK OYNA · %1$d SUAL</item>
+    </plurals>
+    <string name="daily_tab_title">Gündəlik</string>
+    <string name="daily_tab_overline">GÜNÜN ÇAĞIRIŞI</string>
+    <string name="daily_tab_streak_overline">SERİYA</string>
+    <plurals name="daily_tab_streak_best">
+        <item quantity="one">ən uzun: %1$d gün</item>
+        <item quantity="other">ən uzun: %1$d gün</item>
+    </plurals>
+    <string name="daily_tab_week_cd">Bu həftə: %1$s</string>
+    <string name="daily_tab_week_day_cd">%1$s %2$s</string>
+    <string name="daily_tab_today_cd">bu gün</string>
+    <string name="daily_tab_day_active_cd">oynamısan</string>
+    <string name="daily_tab_day_pending_cd">hələ oynamamısan</string>
+    <string name="daily_tab_day_freeze_cd">seriya qoruyucusu işlədi</string>
+    <string name="daily_tab_day_missed_cd">oynamamısan</string>
+    <string name="daily_tab_reminder_overline">XATIRLATMA</string>
+    <string name="daily_tab_reminder">Hər gün xatırlat</string>
+    <string name="daily_result_back_to_tab">Gündəliyə qayıt</string>
+    <string name="profile_settings_cd">Parametrlər</string>
+    <string name="profile_streak_open_daily">Həftəni Gündəlik bölməsində gör</string>
 </resources>

@@ -80,8 +80,20 @@ object DuelloIcons {
     @DrawableRes val StarFilled = R.drawable.ic_star_filled
     @DrawableRes val Today = R.drawable.ic_today
 
+    // v3 (components.md §33, §6, daily-tab.md C): bottom bar items (Outlined / filled when
+    // selected), the duel card CTA arrow (auto-mirrored in RTL), the reminder row.
+    @DrawableRes val NavPlay = R.drawable.ic_nav_swords
+    @DrawableRes val NavPlaySelected = R.drawable.ic_nav_swords_filled
+    @DrawableRes val NavDaily = R.drawable.ic_calendar_today
+    @DrawableRes val NavDailySelected = R.drawable.ic_calendar_today_filled
+    @DrawableRes val NavProfile = R.drawable.ic_nav_person
+    @DrawableRes val NavProfileSelected = R.drawable.ic_nav_person_filled
+    @DrawableRes val ArrowForward = R.drawable.ic_arrow_forward
+    @DrawableRes val Notifications = R.drawable.ic_notifications
+
     /**
-     * Category icon by the server `iconKey` (OQ-044, components.md §5). Unknown keys get the
+     * Category icon by the server `iconKey` (OQ-044, components.md §5; v3: Material Symbols
+     * Outlined, weight 300). Unknown keys get the
      * generic `category` icon, so a new server category never needs an app update (HOME-01).
      */
     @DrawableRes

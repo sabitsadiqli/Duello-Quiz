@@ -20,14 +20,14 @@ class BundledLicenseRepositoryTest {
         }
     }
 
-    private class Files(private val json: () -> String, private val ofl: String? = "Copyright Nunito\n\nSIL OFL") :
+    private class Files(private val json: () -> String, private val ofl: (String) -> String? = { "Copyright $it\n\nSIL OFL" }) :
         BundledLicenseFiles {
         var reads = 0
         override fun librariesJson(): String {
             reads++
             return json()
         }
-        override fun nunitoLicenseText(): String? = ofl
+        override fun fontLicenseText(font: String): String? = ofl(font)
     }
 
     private val sample = """
@@ -82,12 +82,13 @@ class BundledLicenseRepositoryTest {
     fun manualEntriesComeFirstWithBundledTexts() = runTest {
         val notices = repository(Files({ sample }), scheduler = testScheduler).notices()
 
-        assertEquals(listOf("Nunito", "Material Symbols"), notices.assets.map { it.name })
-        val nunito = notices.assets[0].licenses.single()
-        assertEquals("SIL Open Font License 1.1", nunito.name)
-        assertEquals("Copyright Nunito\n\nSIL OFL", nunito.text)
+        assertEquals(listOf("Fraunces", "Plus Jakarta Sans", "Material Symbols"), notices.assets.map { it.name })
+        val fraunces = notices.assets[0].licenses.single()
+        assertEquals("SIL Open Font License 1.1", fraunces.name)
+        assertEquals("Copyright fraunces\n\nSIL OFL", fraunces.text)
+        assertEquals("Copyright plusjakartasans\n\nSIL OFL", notices.assets[1].licenses.single().text)
         // Material Symbols reuses the Apache 2.0 text of the generated metadata.
-        assertEquals("Apache text", notices.assets[1].licenses.single().text)
+        assertEquals("Apache text", notices.assets[2].licenses.single().text)
     }
 
     @Test
@@ -100,11 +101,19 @@ class BundledLicenseRepositoryTest {
         repository.notices()
 
         assertNull(notices.libraries)
-        assertEquals(2, notices.assets.size)
-        assertNull(notices.assets[1].licenses.single().text)
-        assertEquals("https://www.apache.org/licenses/LICENSE-2.0", notices.assets[1].licenses.single().url)
+        assertEquals(3, notices.assets.size)
+        assertNull(notices.assets[2].licenses.single().text)
+        assertEquals("https://www.apache.org/licenses/LICENSE-2.0", notices.assets[2].licenses.single().url)
         assertEquals(1, telemetry.errors.size)
         assertEquals(1, files.reads)
+    }
+
+    @Test
+    fun missingFontLicenceTextIsNull() = runTest {
+        val notices = repository(Files({ sample }, ofl = { null }), scheduler = testScheduler).notices()
+
+        assertNull(notices.assets[0].licenses.single().text)
+        assertNull(notices.assets[1].licenses.single().text)
     }
 
     @Test
@@ -112,7 +121,8 @@ class BundledLicenseRepositoryTest {
         val repository = repository(Files({ sample }), scheduler = testScheduler)
 
         assertEquals("Coil", repository.component("io.coil-kt.coil3:coil")?.name)
-        assertEquals("Nunito", repository.component(BundledLicenseRepository.NUNITO_ID)?.name)
+        assertEquals("Fraunces", repository.component(BundledLicenseRepository.FRAUNCES_ID)?.name)
+        assertEquals("Plus Jakarta Sans", repository.component(BundledLicenseRepository.PLUS_JAKARTA_SANS_ID)?.name)
         assertNull(repository.component("unknown"))
     }
 }
