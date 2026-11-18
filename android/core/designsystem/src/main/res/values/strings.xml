@@ -94,7 +94,6 @@
 
     <!-- home_ (the duel entry keys come with the duel, OQ-020) -->
     <string name="home_rating">Reytinq: %1$d</string>
-    <string name="home_settings_cd">Parametrlər</string>
     <plurals name="home_category_question_count">
         <item quantity="one">%1$d sual</item>
         <item quantity="other">%1$d sual</item>
