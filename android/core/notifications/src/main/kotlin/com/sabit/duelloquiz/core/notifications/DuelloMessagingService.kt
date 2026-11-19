@@ -56,7 +56,7 @@ class DuelloMessagingService : FirebaseMessagingService() {
         )
         val built = NotificationCompat.Builder(this, type.wire)
             .setSmallIcon(R.drawable.ic_stat_duello)
-            .setColor(ContextCompat.getColor(this, DesignR.color.ds_notification_accent))
+            .setColor(ContextCompat.getColor(this, DesignR.color.notification_accent))
             .setContentTitle(notification.title)
             .setContentText(notification.body)
             .setAutoCancel(true)
