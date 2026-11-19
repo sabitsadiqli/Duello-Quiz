@@ -32,7 +32,7 @@ card.
 
 ## Summary
 
-Pairs checked: 294, failures: 0.
+Pairs checked: 306, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
@@ -127,10 +127,16 @@ Pairs checked: 294, failures: 0.
 | onSurface | surfaceContainer | #1E1B16 | #EDE5D5 | 13.71 | 4.5 | pass | web: nav link on hover |
 | primary | surfaceContainerLow | #A82D25 | #F1EADD | 5.72 | 4.5 | pass | web: link card title, table-of-contents links |
 | onSurfaceVariant | surfaceContainerLow | #5F574C | #F1EADD | 5.94 | 4.5 | pass | web: link card supporting text |
-| onPrimaryContainer | primaryContainer | #5C140E | #F5DCD3 | 10.29 | 4.5 | pass | web: current nav pill, callout |
+| onPrimaryContainer | primaryContainer | #5C140E | #F5DCD3 | 10.29 | 4.5 | pass | web: callout box |
 | onBannerWarningContainer | bannerWarningContainer | #3D2A00 | #F3E2B8 | 10.71 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
 | onPrimary | primary | #FFFFFF | #A82D25 | 6.85 | 4.5 | pass | web: skip link |
 | primary | surface | #A82D25 | #F5EFE3 | 5.98 | 3.0 | pass | web: 3px focus ring |
+| onSurface | navIndicator | #1E1B16 | #E0D6C3 | 11.91 | 4.5 | pass | web: current-page nav pill (v3) |
+| onSurface | surface | #1E1B16 | #F5EFE3 | 14.99 | 3.0 | pass | brand: ink front bubble on paper (mark, launcher, feature graphic) |
+| primary | surface | #A82D25 | #F5EFE3 | 5.98 | 3.0 | pass | brand: nar back bubble on paper |
+| surface | onSurface | #F5EFE3 | #1E1B16 | 14.99 | 4.5 | pass | brand: paper '?' inside the ink bubble |
+| onSurfaceVariant | surface | #5F574C | #F5EFE3 | 6.21 | 4.5 | pass | store: feature graphic tagline |
+| primary | surface | #A82D25 | #F5EFE3 | 5.98 | 3.0 | pass | store: nar squiggle under the tagline word |
 | onPrimary | primary | #FFFFFF | #A82D25 | 6.85 | 4.5 | pass | primary pill button label (components.md §1) |
 | onSurface | surface | #1E1B16 | #F5EFE3 | 14.99 | 4.5 | pass | secondary pill button label (transparent face on the page) |
 | outline | surface | #7A6F60 | #F5EFE3 | 4.29 | 3.0 | pass | secondary pill button 1dp border |
@@ -279,10 +285,16 @@ Pairs checked: 294, failures: 0.
 | onSurface | surfaceContainer | #EFE7D6 | #23201A | 13.20 | 4.5 | pass | web: nav link on hover |
 | primary | surfaceContainerLow | #EC7B6F | #1D1A14 | 6.30 | 4.5 | pass | web: link card title, table-of-contents links |
 | onSurfaceVariant | surfaceContainerLow | #B5AB97 | #1D1A14 | 7.63 | 4.5 | pass | web: link card supporting text |
-| onPrimaryContainer | primaryContainer | #FFDAD3 | #5C1F18 | 9.75 | 4.5 | pass | web: current nav pill, callout |
+| onPrimaryContainer | primaryContainer | #FFDAD3 | #5C1F18 | 9.75 | 4.5 | pass | web: callout box |
 | onBannerWarningContainer | bannerWarningContainer | #F6E2B5 | #4A3812 | 8.83 | 4.5 | pass | web: 'Mətn hazırlanır' placeholder box |
 | onPrimary | primary | #2B0A06 | #EC7B6F | 6.64 | 4.5 | pass | web: skip link |
 | primary | surface | #EC7B6F | #17150F | 6.63 | 3.0 | pass | web: 3px focus ring |
+| onSurface | navIndicator | #EFE7D6 | #38332A | 10.19 | 4.5 | pass | web: current-page nav pill (v3) |
+| onSurface | surface | #EFE7D6 | #17150F | 14.84 | 3.0 | pass | brand: ink front bubble on paper (mark, launcher, feature graphic) |
+| primary | surface | #EC7B6F | #17150F | 6.63 | 3.0 | pass | brand: nar back bubble on paper |
+| surface | onSurface | #17150F | #EFE7D6 | 14.84 | 4.5 | pass | brand: paper '?' inside the ink bubble |
+| onSurfaceVariant | surface | #B5AB97 | #17150F | 8.03 | 4.5 | pass | store: feature graphic tagline |
+| primary | surface | #EC7B6F | #17150F | 6.63 | 3.0 | pass | store: nar squiggle under the tagline word |
 | onPrimary | primary | #2B0A06 | #EC7B6F | 6.64 | 4.5 | pass | primary pill button label (components.md §1) |
 | onSurface | surface | #EFE7D6 | #17150F | 14.84 | 4.5 | pass | secondary pill button label (transparent face on the page) |
 | outline | surface | #8C8272 | #17150F | 4.82 | 3.0 | pass | secondary pill button 1dp border |

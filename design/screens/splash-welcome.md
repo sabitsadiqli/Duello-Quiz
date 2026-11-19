@@ -30,7 +30,9 @@ Google in one tap, email sign-in, or sign-up.
 - Background: `scheme.surface` of the theme that will be used (SET-01: the stored
   theme choice is applied before the first frame; "Sistem" follows the device).
 - Centre: app icon (adaptive icon foreground) `size.splashLogo`, no text, no
-  animation beyond the system default.
+  animation beyond the system default. v3 (OQ-D37): dark theme uses
+  `design/brand/splash-icon-dark.svg` (`drawable-night`), since the ink bubble of
+  the foreground would vanish on the ink background (`design/brand.md` "Splash").
 - Kept on screen (`setKeepOnScreenCondition`) until the sign-in state is resolved;
   no upper time limit (AUTH-01: never a blank screen).
 

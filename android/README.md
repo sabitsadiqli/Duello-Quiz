@@ -26,7 +26,7 @@ cd android && ./gradlew lint test assembleDebug
 
 | Module | Content |
 | --- | --- |
-| `:app` | Application (Coil image loader, sign-out cleanup), MainActivity (splash, edge-to-edge, theme), NavHost driven by the auth state with the three-tab scaffold and bottom bar (Gündəlik badge, reminder taps), network security config |
+| `:app` | Application (Coil image loader, sign-out cleanup), MainActivity (splash, edge-to-edge, theme), v3 launcher icon (adaptive + themed layers, legacy WebP mipmaps for API 24–25) and splash icon (`drawable-night` variant) from `design/brand/`, NavHost driven by the auth state with the three-tab scaffold and bottom bar (Gündəlik badge, reminder taps), network security config |
 | `:feature:auth` | Welcome, sign-in, sign-up (sends the name with `PATCH /v1/me`), password reset |
 | `:feature:home` | The Oyna tab (Baku date, streak chip, avatar, rotating greeting, duel card, category list with loading/empty/error/offline states, quiz start, verification banner) and the Gündəlik tab (`daily/`: challenge card with countdown and share, streak section with the week row and messages, daily reminder switch) |
 | `:feature:quiz` | Quiz loading and question screen, result, wrong-answer review; the daily challenge (play, result with share card, review) on the shared `QuestionRunner`; XP/streak card and notification permission card on results |
@@ -39,7 +39,7 @@ cd android && ./gradlew lint test assembleDebug
 | `:core:data` | Repositories (profile incl. name editing, categories, quiz sessions and daily attempts with the shared offline answer queue, progress, notification settings, push tokens, duel stats and history, account), per-account cache, `NetworkMonitor`, preferences |
 | `:core:auth` | `AuthRepository` (Firebase or in-memory fake), Credential Manager Google client, validation rules |
 | `:core:datastore` | Preferences DataStore (theme mode, notification card counter, shown streak messages, daily question show times, push registration) and the per-account cache store |
-| `:core:designsystem` | Theme from `design/tokens.json` 3.0.0 (scheme, game colours, typography, shapes, motion), Fraunces + Plus Jakarta Sans, icons, components (navigation bar, buttons, option card, quiz timer, category row, duel card, sticker, streak chip, greeting with squiggle, daily card, answer boxes, week row, Əminlik tiles, state views), **all UI strings** |
+| `:core:designsystem` | Theme from `design/tokens.json` 3.0.0 (scheme, game colours, typography, shapes, motion), Fraunces + Plus Jakarta Sans, icons, components (navigation bar, buttons, option card, quiz timer, category row, duel card, sticker, streak chip, greeting with squiggle, daily card, answer boxes, week row, Əminlik tiles, state views, `DuelloLogoMark` coloured from the scheme), **all UI strings** |
 | `:core:common` | `AppConfig`, `WallClock`, application scope, navigation result keys, external links |
 | `:core:model` | Plain models (`AuthUser`, `Profile`, `Category`, quiz types, `DataResult`/`DataError`) |
 

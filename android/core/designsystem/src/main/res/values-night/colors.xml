@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Window and splash background before Compose draws: color.dark.scheme.surface. -->
-    <color name="ds_window_background">#FF121027</color>
+    <!-- Window background before Compose draws: color.dark.scheme.surface. -->
+    <color name="ds_window_background">#FF17150F</color>
+    <!-- Splash background: color.dark.scheme.surface. -->
+    <color name="splash_background">#FF17150F</color>
+    <!-- Dark nar (color.dark.scheme.primary): the light nar would be 2.04:1 on a dark shade. -->
+    <color name="notification_accent">#FFEC7B6F</color>
 </resources>

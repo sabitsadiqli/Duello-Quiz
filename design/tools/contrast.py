@@ -94,10 +94,17 @@ GAME = [
     ("onSurface", "surfaceContainer", TEXT, "web: nav link on hover"),
     ("primary", "surfaceContainerLow", TEXT, "web: link card title, table-of-contents links"),
     ("onSurfaceVariant", "surfaceContainerLow", TEXT, "web: link card supporting text"),
-    ("onPrimaryContainer", "primaryContainer", TEXT, "web: current nav pill, callout"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "web: callout box"),
     ("onBannerWarningContainer", "bannerWarningContainer", TEXT, "web: 'Mətn hazırlanır' placeholder box"),
     ("onPrimary", "primary", TEXT, "web: skip link"),
     ("primary", "surface", UI, "web: 3px focus ring"),
+    ("onSurface", "navIndicator", TEXT, "web: current-page nav pill (v3)"),
+    # Brand v3 (design/brand.md, OQ-D37): mark, launcher icon, feature graphic
+    ("onSurface", "surface", UI, "brand: ink front bubble on paper (mark, launcher, feature graphic)"),
+    ("primary", "surface", UI, "brand: nar back bubble on paper"),
+    ("surface", "onSurface", TEXT, "brand: paper '?' inside the ink bubble"),
+    ("onSurfaceVariant", "surface", TEXT, "store: feature graphic tagline"),
+    ("primary", "surface", UI, "store: nar squiggle under the tagline word"),
     # v3 (tokens 3.0.0): buttons, cards, options
     ("onPrimary", "primary", TEXT, "primary pill button label (components.md §1)"),
     ("onSurface", "surface", TEXT, "secondary pill button label (transparent face on the page)"),

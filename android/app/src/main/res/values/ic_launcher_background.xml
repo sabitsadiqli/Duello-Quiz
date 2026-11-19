@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- design/brand/ic-launcher-background.svg: solid paper in both system themes (OQ-D38),
+         so there is deliberately no values-night override. -->
+    <color name="ic_launcher_background">#FFF5EFE3</color>
+</resources>

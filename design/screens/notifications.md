@@ -7,8 +7,9 @@
 > xatırlat" (`daily_tab_reminder`) with the same supporting text, states and
 > permission flow as B; both rows read and write the same server value. The
 > settings section B stays (it also holds the streak reminder). (3) Small icon
-> accent colour becomes `scheme.primary` light `#A82D25` (pending the brand
-> recolour, OQ-D37). (4) The permission card (§30) is a flat card with a primary
+> accent colour becomes nar: `@color/notification_accent` `#A82D25`, night
+> `#EC7B6F`; the small icon is redrawn (`design/brand/ic-stat-duello.svg`)
+> (OQ-D37, `design/brand.md` "Notification icon and accent"). (4) The permission card (§30) is a flat card with a primary
 > pill "İcazə ver".
 
 Stories: NOTIF-01 … NOTIF-08, SET-07, QUIZ-05 / DAILY-04 (where the permission card
@@ -31,9 +32,10 @@ Copy: `copy/az.md` (`notif_`, `settings_notif_`, `push_` = backend i18n).
 - Decided: settings switch rows explain *when* each reminder comes in words
   ("səhər" / "axşam"), not times, so travellers outside Baku are not confused
   (DAILY-07 rule).
-- Decided: small notification icon = monochrome logo mark
-  (`design/brand/ic-launcher-monochrome.svg` → `ic_stat_duello`, 24dp, white on
-  transparent); accent colour `scheme.primary` light value `#5334E6`. No large
+- Decided: small notification icon = the logo mark silhouette
+  (v3: `design/brand/ic-stat-duello.svg` → `ic_stat_duello`, 24dp, white on
+  transparent, `?` as a hole); accent colour `@color/notification_accent`
+  `#A82D25` (values) / `#EC7B6F` (values-night) (v2 was `#5334E6`). No large
   icon, no image (out of scope).
 - **OQ-D31 — open (backend-dev): placeholder syntax in backend i18n.** The push
   texts below use `{dailyNumber}` and `{streak}`. backend-dev picks the final

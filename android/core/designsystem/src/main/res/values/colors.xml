@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Window and splash background before Compose draws: color.light.scheme.surface. -->
-    <color name="ds_window_background">#FFF7F5FF</color>
-    <!-- notifications.md: accent of the status bar icon = color.light.scheme.primary (both themes). -->
-    <color name="ds_notification_accent">#FF5334E6</color>
+    <!-- Window background before Compose draws: color.light.scheme.surface. -->
+    <color name="ds_window_background">#FFF5EFE3</color>
+    <!-- Splash background (design/brand.md "Splash"): color.light.scheme.surface. -->
+    <color name="splash_background">#FFF5EFE3</color>
+    <!-- Notification accent (design/brand.md, OQ-D37): nar, color.light.scheme.primary. -->
+    <color name="notification_accent">#FFA82D25</color>
 </resources>
