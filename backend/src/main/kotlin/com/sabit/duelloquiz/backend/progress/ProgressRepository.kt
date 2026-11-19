@@ -3,6 +3,7 @@ package com.sabit.duelloquiz.backend.progress
 import com.sabit.duelloquiz.backend.common.db.ProgressAwardsTable
 import com.sabit.duelloquiz.backend.common.db.UserActiveDaysTable
 import com.sabit.duelloquiz.backend.common.db.UserCategoryXpTable
+import com.sabit.duelloquiz.backend.common.db.UserFreezeDaysTable
 import com.sabit.duelloquiz.backend.common.db.UserProgressTable
 import com.sabit.duelloquiz.backend.common.db.UsersTable
 import com.sabit.duelloquiz.backend.common.db.XpEventsTable
@@ -13,6 +14,8 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.jetbrains.exposed.v1.jdbc.batchInsert
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.select
@@ -167,6 +170,55 @@ class ProgressRepository {
             .where { UserActiveDaysTable.userId eq userId }
             .orderBy(UserActiveDaysTable.day to SortOrder.ASC)
             .map { it[UserActiveDaysTable.day] }
+
+    /** Records that a consumed freeze covered [day] (PROG-07). */
+    fun JdbcTransaction.addFreezeDay(userId: UUID, day: LocalDate) {
+        UserFreezeDaysTable.insertIgnore {
+            it[UserFreezeDaysTable.userId] = userId
+            it[UserFreezeDaysTable.day] = day
+        }
+    }
+
+    /** Replaces all freeze days of [userId] (after the streak was replayed from all active days). */
+    fun JdbcTransaction.replaceFreezeDays(userId: UUID, days: Collection<LocalDate>) {
+        UserFreezeDaysTable.deleteWhere { UserFreezeDaysTable.userId eq userId }
+        UserFreezeDaysTable.batchInsert(days.distinct()) { day ->
+            this[UserFreezeDaysTable.userId] = userId
+            this[UserFreezeDaysTable.day] = day
+        }
+    }
+
+    /**
+     * The stored facts of the week [monday] … [sunday] in one round trip (OQ-D35): active
+     * and freeze days inside the week (primary-key range scans on `(user_id, day)`) and
+     * the latest active day before Monday (index-only backward scan; NULL if none).
+     */
+    fun JdbcTransaction.weekHistory(userId: UUID, monday: LocalDate, sunday: LocalDate): WeekHistory {
+        val id = UserActiveDaysTable.userId.columnType to userId
+        val date = UserActiveDaysTable.day.columnType
+        val sql = """
+            SELECT 'active' AS kind, day FROM user_active_days WHERE user_id = ? AND day BETWEEN ? AND ?
+            UNION ALL
+            SELECT 'freeze' AS kind, day FROM user_freeze_days WHERE user_id = ? AND day BETWEEN ? AND ?
+            UNION ALL
+            SELECT 'before' AS kind, max(day) AS day FROM user_active_days WHERE user_id = ? AND day < ?
+        """.trimIndent()
+        val args = listOf(id, date to monday, date to sunday, id, date to monday, date to sunday, id, date to monday)
+        return exec(sql, args) { rs ->
+            val active = mutableSetOf<LocalDate>()
+            val freeze = mutableSetOf<LocalDate>()
+            var before = false
+            while (rs.next()) {
+                val day = rs.getObject("day", LocalDate::class.java) ?: continue
+                when (rs.getString("kind")) {
+                    "active" -> active += day
+                    "freeze" -> freeze += day
+                    "before" -> before = true
+                }
+            }
+            WeekHistory(active, freeze, before)
+        } ?: WeekHistory()
+    }
 
     private fun ResultRow.toStored() = StoredProgress(
         xpTotal = this[UserProgressTable.xpTotal],

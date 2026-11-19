@@ -1,7 +1,9 @@
 package com.sabit.duelloquiz.backend.progress
 
 import com.sabit.duelloquiz.backend.common.BakuTime
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import kotlin.math.sqrt
 
 /**
@@ -202,7 +204,34 @@ object Streaks {
 
     /** Streak state from the full set of active days (used when a day arrives out of order). */
     fun simulate(days: Iterable<LocalDate>, freezeEveryDays: Int = 7): StreakState =
-        days.distinct().sorted().fold(StreakState()) { state, day -> apply(state, day, freezeEveryDays) }
+        replay(days, freezeEveryDays).state
+
+    /** Result of [replay]: the streak state and every missed day a freeze covered, ascending. */
+    data class Replay(val state: StreakState, val freezeDays: List<LocalDate>)
+
+    /**
+     * Replays [days] through [apply] and also collects the day each used freeze covered
+     * (OQ-D35 week row). Same result as [simulate] for the state.
+     */
+    fun replay(days: Iterable<LocalDate>, freezeEveryDays: Int = 7): Replay {
+        val freezeDays = mutableListOf<LocalDate>()
+        val state = days.distinct().sorted().fold(StreakState()) { state, day ->
+            apply(state, day, freezeEveryDays).also { next ->
+                if (next.freezeUsedDay != null && next.freezeUsedDay != state.freezeUsedDay) freezeDays += next.freezeUsedDay
+            }
+        }
+        return Replay(state, freezeDays)
+    }
+
+    /**
+     * The missed day a held freeze covers right now but has not consumed yet: yesterday,
+     * while the last active day is the day before yesterday (consumed when the player
+     * plays today, PROG-07). Null otherwise.
+     */
+    fun pendingFreezeDay(state: StreakState, today: LocalDate): LocalDate? {
+        val last = state.lastActiveDay ?: return null
+        return if (BakuTime.daysBetween(last, today) == 2L && state.freezeHeld && state.current > 0) today.minusDays(1) else null
+    }
 
     /**
      * Lazy evaluation on read: the stored streak is alive while the last active day is
@@ -217,7 +246,7 @@ object Streaks {
     fun view(state: StreakState, today: LocalDate): StreakView {
         val last = state.lastActiveDay ?: return StreakView(0, todayActive = false, event = null)
         val gap = BakuTime.daysBetween(last, today)
-        val pendingFreeze = gap == 2L && state.freezeHeld && state.current > 0
+        val pendingFreeze = pendingFreezeDay(state, today) != null
         val alive = gap <= 1 || pendingFreeze
         val yesterday = today.minusDays(1)
         val event = when {
@@ -229,5 +258,70 @@ object Streaks {
             else -> null
         }
         return StreakView(current = if (alive) state.current else 0, todayActive = gap <= 0, event = event)
+    }
+}
+
+/** State of one day in the week row (PROG-11, OQ-D35). [api] is the wire value. */
+enum class WeekDayState(val api: String) {
+    /** The day counted for the streak (an active day, PROG-05). */
+    ACTIVE("active"),
+
+    /** A freeze covered the day (used, or held and covering yesterday right now, PROG-07). */
+    FREEZE("freeze"),
+
+    /** A past day without activity and without freeze, after the user's first active day. */
+    MISSED("missed"),
+
+    /** Today, not active yet. */
+    TODAY_PENDING("today_pending"),
+
+    /** A future day, or a day before the user's first active day. */
+    NONE("none"),
+}
+
+/**
+ * Stored facts for one Baku week (one query, `ProgressRepository.weekHistory`).
+ *
+ * @param activeDays active days inside the week.
+ * @param freezeDays days a consumed freeze covered, inside the week.
+ * @param activeBeforeWeek the user has an active day before the week's Monday.
+ */
+data class WeekHistory(
+    val activeDays: Set<LocalDate> = emptySet(),
+    val freezeDays: Set<LocalDate> = emptySet(),
+    val activeBeforeWeek: Boolean = false,
+)
+
+/** The current Baku week, Monday → Sunday, with a state per day; pure. */
+object WeekRow {
+    /** Monday of the week [day] is in (ISO week, Monday first). */
+    fun monday(day: LocalDate): LocalDate = day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+    /** Sunday of the week [day] is in. */
+    fun sunday(day: LocalDate): LocalDate = monday(day).plusDays(6)
+
+    /**
+     * Exactly 7 entries for the week of [today] (a Baku day). Days after today are
+     * `none`; today is `active` or `today_pending`; a past day is `active`, `freeze`
+     * (stored, or the pending freeze of [streak]), `missed` when it comes after the
+     * user's first active day, otherwise `none` (also for a new user, PROG-11).
+     */
+    fun build(today: LocalDate, history: WeekHistory, streak: StreakState): List<Pair<LocalDate, WeekDayState>> {
+        val monday = monday(today)
+        val pendingFreeze = Streaks.pendingFreezeDay(streak, today)
+        // Days after this one can be missed: before the week if any activity was earlier.
+        val countsAfter: LocalDate? = if (history.activeBeforeWeek) monday.minusDays(1) else history.activeDays.minOrNull()
+        return (0L until 7L).map { offset ->
+            val day = monday.plusDays(offset)
+            val state = when {
+                day.isAfter(today) -> WeekDayState.NONE
+                day in history.activeDays -> WeekDayState.ACTIVE
+                day == today -> WeekDayState.TODAY_PENDING
+                day in history.freezeDays || day == pendingFreeze -> WeekDayState.FREEZE
+                countsAfter != null && day.isAfter(countsAfter) -> WeekDayState.MISSED
+                else -> WeekDayState.NONE
+            }
+            day to state
+        }
     }
 }
