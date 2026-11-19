@@ -950,6 +950,10 @@ spec change):
 | Dashed boxes / rings | Gündəlik answer boxes before playing, today's week dot, queued (offline) answer states |
 | Serif numerals | Home category numbers, "#12" and the score on the Gündəlik tab, big scores on result screens, the Əminlik tile numerals |
 
+Outside the app UI, the squiggle is also used once on the Play feature graphic
+(under one tagline word, `design/brand.md` do / don't); the brand mark itself has
+no hand-drawn touches.
+
 ## 37. Daily challenge card v3 (Gündəlik tab)
 
 Flat card (§0): face `scheme.surface`, 1dp `game.cardBorder`,

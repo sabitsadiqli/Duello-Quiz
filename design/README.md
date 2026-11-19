@@ -36,7 +36,8 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `screens/duel-result.md` | Match result + calibration card (DUEL-20 … DUEL-22) |
 | `screens/duel-availability.md` | Upgrade required, duel unavailable, connection failed (DUEL-01) |
 | `screens/profile.md` | "Profil" tab (v3): profile, level chip + XP, category levels, match history, calibration stats, edit name, settings entry (PROF-01 … PROF-11) |
-| `brand.md`, `brand/*.svg` | Logo mark and adaptive app icon (still v2 colours, OQ-D37); `brand/squiggle-underline.svg` (v3 greeting underline) |
+| `brand.md`, `brand/*.svg` | v3 logo mark, adaptive icon layers, splash and notification icons (OQ-D37), `brand/squiggle-underline.svg` (v3 greeting underline); review PNGs in `brand/previews/` |
+| `tools/brand_assets.py`, `tools/brand_previews.py` | Generate the brand / store / favicon SVGs and the inline web marks from one geometry (fontTools); render the review PNGs (macOS) |
 | `screens/web-legal.md` | Public GitHub Pages: app intro, privacy policy, account deletion (`docs/legal/`, SET-06) |
 | `store/` | Google Play listing text, screenshot plan, feature graphic |
 

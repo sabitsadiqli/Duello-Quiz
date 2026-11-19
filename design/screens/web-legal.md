@@ -31,12 +31,18 @@ Open (need Sabit):
 Decided:
 - No JavaScript, no external requests (no web fonts, no analytics, no CDN): the
   pages load instantly, work behind any firewall and add nothing to the privacy
-  policy. Font stack: `Inter` if installed locally, else the system UI font
-  (`system-ui`, Roboto, Segoe UI, Noto Sans), all of which cover Azerbaijani Latin.
+  policy. v3 (OQ-D37): headings and the brand name use `Fraunces` if installed
+  locally, else the system serif (`ui-serif`, Noto Serif, Source Serif, Charter,
+  Georgia); body uses `Plus Jakarta Sans` if installed, else the system UI font
+  (`system-ui`, Roboto, Segoe UI, Noto Sans). Google Fonts is not used: it would
+  send visitors' IP addresses to Google, contradicting the privacy policy.
+  Self-hosted fonts are an open question (OQ-D39, `design/brand.md`).
 - Light/dark via `prefers-color-scheme` only (no toggle: would need JS).
 - Brand mark is inline SVG with CSS classes, so its colours follow the theme
-  exactly like `design/brand/logo-mark-light.svg` / `-dark.svg` (gap ring =
-  page background). Favicon = `design/brand/app-icon-full.svg` (fixed colours).
+  exactly like `design/brand/logo-mark-light.svg` / `-dark.svg` (v3: back
+  `primary`, front `onSurface`, `?` `surface`; the gap is real transparency).
+  The inline marks are written by `design/tools/brand_assets.py`. Favicon =
+  `design/brand/app-icon-full.svg` (fixed colours).
 - All links are relative (`privacy-policy.html`, `legal.css`), so the pages work
   under `/Duello-Quiz/legal/`, on a custom domain later, and opened as local files.
 - Legal text placeholders: every section the business-analyst writes is a visible
@@ -116,13 +122,15 @@ silinir", "Nələr qalır və nə qədər" placeholders; a "Diqqət" callout
 | Component | Colours (both themes) | Shape |
 | --- | --- | --- |
 | Page | `surface` / `onSurface`, secondary text `onSurfaceVariant` | — |
-| Nav pill (current) | `primaryContainer` / `onPrimaryContainer` | `shape.full` |
+| Nav pill (current) | `game.navIndicator` / `onSurface` (v3, like the bottom bar) | `shape.full` |
 | Nav pill (hover) | `surfaceContainer` / `onSurface` | `shape.full` |
-| TOC card, link card | `surfaceContainerLow`; text `onSurface`, `onSurfaceVariant`, links `primary` | `shape.large` |
+| TOC card | `surfaceContainerLow`, 1px `game.cardBorder`; links `primary` | `shape.large` |
+| Link card | `surface`, 1px `game.cardBorder` (hover `surfaceContainerLow`, border `outline`); title Fraunces `primary` underlined, text `onSurfaceVariant` | `shape.large` |
+| Headings | h1/h2 Fraunces SemiBold `onSurface`; h3 sans Bold | — |
 | Callout | `primaryContainer` / `onPrimaryContainer` | `shape.large` |
 | Placeholder | `bannerWarningContainer` / `onBannerWarningContainer`, 2px dashed border in the text colour | `shape.medium` |
 | Focus ring | 3px `primary`, 2px offset | — |
-| Dividers | `outlineVariant` (decorative only) | — |
+| Dividers | `game.cardBorder` (= `outlineVariant`, decorative only) | — |
 
 All text pairs are in `design/tools/contrast.py` (group "Web legal pages") and pass
 4.5:1 in both themes.

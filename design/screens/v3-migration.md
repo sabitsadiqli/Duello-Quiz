@@ -13,7 +13,9 @@ content off the home dashboard.
 | **OQ-D34** | UI sans font: Manrope (approved in the mockup) has **no capital Ə (U+018F)** — verified in the font's cmap (google/fonts `ofl/manrope`, updated 2026-09-14) and by the Google Fonts subset response (empty kit). | **Plus Jakarta Sans** (verified full coverage incl. Ə ə, tnum). Verified alternatives: Onest, Hanken Grotesk, Work Sans, Public Sans, DM Sans, Inter. | **Decided 2026-11-17: Plus Jakarta Sans** (Sabit) |
 | **OQ-D35** | The Gündəlik week row needs per-day streak states (active / freeze / missed). `GET /v1/me/progress` has none. | Add `week: [{dayKey, state}]` for the current Baku week; fallback derives active days from `streakCurrent`, never shows freeze dots. | **Decided and built 2026-11-19** (backend `week`, 5 states incl. `today_pending`) |
 | **OQ-D36** | Brief says the reminder row shows a "time"; the reminder is server-fixed at 10:00 Baku (OQ-088) and settings decided "no clock times". | Keep "Səhər" without a time, no picker. Alternative: "Səhər, 10:00 (Bakı vaxtı)". | **Decided 2026-11-17: "Səhər", no time, no picker** (Sabit) |
-| **OQ-D37** | Logo mark, adaptive icon, notification accent, Play feature graphic and the web legal pages still use the v2 violet/pink palette. | Separate follow-up task: recolour `design/brand/*.svg`, `design/store/`, `docs/legal/legal.css` to v3 (ink mark on paper, nar accent). Until then the v2 icon ships. | Sabit / designer |
+| **OQ-D37** | Logo mark, adaptive icon, notification accent, Play feature graphic and the web legal pages still use the v2 violet/pink palette. | Redrawn in v3 (`design/brand.md`): ink speech bubble with a Fraunces `?` in front, nar bubble behind, real 3-unit gap, brush-curved tails; paper launcher background; notification accent nar (`#A82D25` / night `#EC7B6F`), new small icon; feature graphic on paper with Fraunces wordmark; `legal.css` on paper/ink tokens. Previews `design/brand/previews/`. Follow-ups: OQ-D38 (launcher background paper vs ink), OQ-D39 (self-hosted web fonts). | **Decided by design 2026-11-19, pending Sabit's approval of the look** |
+| **OQ-D38** | Launcher icon background: paper or ink? | Paper `#F5EFE3` in both system themes (ink bubble is the figure, matches the first frame, distinct from white icons). Alternative: ink tile with the dark-theme mark | Sabit |
+| **OQ-D39** | Legal pages: brand fonts on the web? | Keep local-only fonts (system serif / sans fallback); no Google Fonts (privacy policy says no other third parties). Alternative: self-host subset WOFF (~60 KB) | Sabit |
 | OQ-D27 | `accentKey` on Category | **Superseded** — no category colours in v3. | — |
 | OQ-D28, OQ-D30 | (unchanged, still open) per-question daily results; one-time streak events | Now needed by the Gündəlik tab instead of home. | backend-dev |
 
@@ -60,7 +62,7 @@ pass before or soon after the v3 release.
 | `notifications.md` | Push taps → Gündəlik tab; daily switch mirrored on the tab | **Updated** (note at top) |
 | `email-verification-banner.md` | Compact collapsed form on home | **Updated** (note at top) |
 | `licenses.md` | Font rows Fraunces + Plus Jakarta Sans; Nunito removed | **Updated** (note at top) |
-| `splash-welcome.md` | Paper background, serif app name, pill buttons; logo still v2 until OQ-D37 | Tokens only (logo: OQ-D37) |
+| `splash-welcome.md` | Paper background, serif app name, pill buttons; v3 logo mark and splash icon (`brand.md`, OQ-D37) | Tokens only (logo files replaced) |
 | `sign-in.md`, `sign-up.md`, `password-reset.md` | Serif headline, flat fields, pill buttons | Tokens only |
 | `quiz-question.md` | Thin timer line, flat option cards (ink selection), no category tint in the top bar (`category.<slot>.container` → `scheme.surface`) | Tokens only |
 | `quiz-result.md` | Score hero is a v2 game card; progress card flat; "Əsas səhifə" returns to the Oyna tab | Rewrite later (hero: serif score on paper, no gradient) |
@@ -72,7 +74,7 @@ pass before or soon after the v3 release.
 | `duel-interruptions.md` | Overlay card flat on paper | Tokens only |
 | `duel-result.md` | Win hero used `gradient.resultWin` → solid `inverseSurface` block (ink / paper), headline serif | Rewrite later (hero proportions) |
 | `duel-availability.md` | State views without the icon circle | Tokens only |
-| `web-legal.md` | Pages use v2 colours; account-deletion steps name the home settings icon — **wrong in v3** (now Profil → Parametrlər) | Update needed (OQ-D37 palette; step text now, see requirements below) |
+| `web-legal.md` | `legal.css` on v3 tokens (paper / ink, nar links, serif headings, hairline cards, nav pill = `navIndicator`), v3 inline mark and favicon (OQ-D37); account-deletion steps already say Profil → Parametrlər | **Updated** (fonts: OQ-D39) |
 
 Token references that no longer exist are mapped in `tokens.json`
 `color.deprecated` (e.g. `gradient.resultWin` → `scheme.inverseSurface`,
@@ -135,6 +137,35 @@ Token references that no longer exist are mapped in `tokens.json`
 - Status / navigation bar icons: dark icons on paper (light theme), light icons
   on ink (dark theme).
 
+### Brand assets (OQ-D37)
+
+Source files in `design/brand/` (`brand.md` has the rules). Import each SVG with
+Android Studio → New → Vector Asset → Local file (keep the 108 × 108 size for
+launcher layers; if the importer drops the `<g transform>`, add
+`<group android:translateX/Y android:scaleX/Y>` with the values from the SVG).
+
+| Source SVG | Android resource | Notes |
+| --- | --- | --- |
+| `ic-launcher-background.svg` | `app/src/main/res/values/ic_launcher_background.xml` → `<color name="ic_launcher_background">#F5EFE3</color>` (or `drawable/ic_launcher_background.xml`) | Solid paper, same in night mode (no `values-night` override) |
+| `ic-launcher-foreground.svg` | `drawable/ic_launcher_foreground.xml` | Fixed colours `#1E1B16`, `#A82D25`, `#F5EFE3` |
+| `ic-launcher-monochrome.svg` | `drawable/ic_launcher_monochrome.xml` | Keep `android:fillType="evenOdd"` on the front-bubble path (the `?` is a hole) |
+| — | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | `<background>` / `<foreground>` / `<monochrome>` → the three above |
+| `app-icon-full.svg` | `mipmap-mdpi … xxxhdpi/ic_launcher.webp` and `ic_launcher_round.webp` (48 / 72 / 96 / 144 / 192 px) | Image Asset Studio or export; only for API < 26 |
+| `ic-launcher-foreground.svg` | `drawable/ic_splash_icon.xml` | `windowSplashScreenAnimatedIcon` (values-v31 theme and the `Theme.SplashScreen` compat theme) |
+| `splash-icon-dark.svg` | `drawable-night/ic_splash_icon.xml` | Same name, night qualifier; splash background `@color/splash_background` = `#F5EFE3` / night `#17150F` |
+| `logo-mark-light.svg`, `logo-mark-dark.svg` | `DuelloLogoMark` in `core/designsystem` as an `ImageVector` with three paths | Colours from the active scheme: back `primary`, front `onSurface`, `?` `surface` — so the in-app manual theme override is respected (a `drawable-night` file would follow the system, not the app setting). Decorative, no content description. Size `size.splashLogo` |
+| `ic-stat-duello.svg` | `drawable/ic_stat_duello.xml` (24 × 24dp) | Manifest `com.google.firebase.messaging.default_notification_icon` = `@drawable/ic_stat_duello`; keep `evenOdd` |
+| — | `values/colors.xml` `notification_accent` `#A82D25`, `values-night/colors.xml` `#EC7B6F` | Manifest `com.google.firebase.messaging.default_notification_color` = `@color/notification_accent`; also `NotificationCompat.Builder.setColor` for any local notification |
+
+Play Console (Sabit): app icon = `app-icon-full.svg` exported as a 512 × 512
+PNG (32-bit, sRGB, no rounded corners); feature graphic = `design/store/feature-graphic.svg`
+exported at 1024 × 500 without alpha (`listing-az.md`). Both SVGs have all text
+as outlines, so any SVG renderer gives the same result.
+
+Checks: the icon at 48dp on a light and a dark launcher, a themed-icon launcher
+(Android 13+), the splash in light and dark system mode, one push in the light
+and the dark notification shade.
+
 ## Impact on requirements (for business-analyst)
 
 Do not treat these as decided product changes until business-analyst updates
@@ -166,7 +197,7 @@ direction meanwhile.
 ## Definition-of-done status
 
 - Light and dark: every colour role has both values (`tokens.json`).
-- Contrast: `python3 design/tools/contrast.py --check` passes, 294 pairs, lowest
+- Contrast: `python3 design/tools/contrast.py --check` passes, 306 pairs (incl. brand / store / web v3), lowest
   text 4.75 (light) / 4.55 (dark), lowest non-text 3.41 / 3.31
   (`design/contrast-report.md`).
 - Truncation: every new v3 string measured at 360dp / font scale 1.3

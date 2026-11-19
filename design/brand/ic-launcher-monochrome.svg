@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
-  <g transform="translate(2.7 2.7) scale(0.95)">
-    <title>Adaptive icon monochrome (themed icons, Android 13+)</title>
-    <path d="M67,38 H70 A10,10 0 0 1 80,48 V60 A10,10 0 0 1 72.5,69.7 L75,77 L64,70 H56 A10,10 0 0 1 48.86,67" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M38,30 H52 A10,10 0 0 1 62,40 V52 A10,10 0 0 1 52,62 H40 L31,70 L28,56 V40 A10,10 0 0 1 38,30 Z" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M39.2,40.5 A5.8,5.8 0 1 1 47.9,45.52 C46.2,46.5 45,47.4 45,49" fill="none" stroke="#000000" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="45" cy="56" r="2.5" fill="#000000"/>
+  <title>Adaptive icon monochrome (themed icons, Android 13+)</title>
+  <!--
+    Single colour, only alpha matters (the system tints it). The '?' is a hole
+    (fill-rule evenodd = android:fillType="evenOdd"), the gap between the bubbles is empty.
+    Same geometry and scale as the foreground.
+  -->
+  <g transform="translate(7.73 8.12) scale(0.781)">
+    <path d="M69,38 H77 A11,11 0 0 1 88,49 V70 C88,76 86.5,81 89,86 C82,83.5 76.5,79 73,74 H61 A11,11 0 0 1 50.75,67 H54 A15,15 0 0 0 69,52 Z" fill="#000000"/>
+    <path d="M38,28 H54 A12,12 0 0 1 66,40 V52 A12,12 0 0 1 54,64 H41 C37.5,69 32,73.5 25,76 C27.5,71 26,66 26,60 V40 A12,12 0 0 1 38,28 Z M44.15 47.56 44.32 49.77Q44.42 50.12 44.62 50.32Q44.82 50.51 45.17 50.51Q45.51 50.51 45.7 50.34Q45.89 50.17 46.05 49.72L46.24 47.73Q46.31 47.33 46.47 47.1Q46.63 46.87 47.01 46.77L47.79 46.56Q50.27 45.89 51.41 44.51Q52.56 43.13 52.56 41.11Q52.56 38.65 50.87 37.33Q49.19 36 46.01 36Q44.11 36 42.63 36.65Q41.14 37.3 40.29 38.38Q39.44 39.47 39.44 40.74Q39.44 41.79 39.99 42.38Q40.54 42.98 41.47 42.96Q42.5 42.96 43.06 42.31Q43.62 41.66 43.62 40.49V39.4Q43.62 38.43 44.17 37.85Q44.72 37.28 45.82 37.28Q46.86 37.28 47.49 38.13Q48.12 38.97 48.12 40.62Q48.12 42.45 47.6 43.58Q47.09 44.72 45.82 45.4L45.01 45.84Q44.45 46.14 44.25 46.56Q44.04 46.99 44.15 47.56ZM45.08 57Q44.42 57 43.9 56.66Q43.37 56.33 43.05 55.78Q42.74 55.23 42.74 54.57Q42.74 53.9 43.05 53.35Q43.37 52.81 43.9 52.48Q44.44 52.16 45.08 52.16Q45.76 52.16 46.3 52.49Q46.83 52.82 47.14 53.36Q47.45 53.9 47.45 54.57Q47.45 55.23 47.14 55.78Q46.83 56.33 46.3 56.66Q45.76 57 45.08 57Z" fill="#000000" fill-rule="evenodd"/>
   </g>
 </svg>
