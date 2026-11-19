@@ -47,7 +47,13 @@ internal data class NetworkProgressSummary(
     val nextResetEpochMs: Long,
     val serverNowEpochMs: Long,
     val categories: List<NetworkCategoryProgress> = emptyList(),
+    /** OQ-D35 (API 0.4.0): 7 days Monday → Sunday of the current Baku week; absent on older servers. */
+    val week: List<NetworkWeekDay>? = null,
 )
+
+/** `state`: `active` | `freeze` | `missed` | `today_pending` | `none`; kept as a string (forward compatible). */
+@Serializable
+internal data class NetworkWeekDay(val dayKey: String, val state: String = "none")
 
 @Serializable
 internal data class NetworkStreakEvent(val type: String, val dayKey: String, val previousStreak: Int)

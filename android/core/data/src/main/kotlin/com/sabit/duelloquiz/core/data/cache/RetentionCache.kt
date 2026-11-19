@@ -7,6 +7,8 @@ import com.sabit.duelloquiz.core.model.DailyStatus
 import com.sabit.duelloquiz.core.model.DailyStatusType
 import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.ProgressSummary
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import kotlinx.serialization.Serializable
 
 // Cache shapes of the retention data (per account, HOME-05 / PROG-10). The one-time streak event
@@ -26,7 +28,15 @@ internal data class CachedProgress(
     val nextResetEpochMs: Long,
     val clockOffsetMs: Long = 0,
     val categories: List<CachedCategoryProgress> = emptyList(),
+    /**
+     * OQ-D35 week states as API values; null in entries written before API 0.4.0 (no migration:
+     * the field is optional, the week row falls back until the next refresh).
+     */
+    val week: List<CachedWeekDay>? = null,
 )
+
+@Serializable
+internal data class CachedWeekDay(val dayKey: String, val state: String)
 
 @Serializable
 internal data class CachedCategoryProgress(
@@ -65,6 +75,7 @@ internal fun ProgressSummary.toCached() = CachedProgress(
     categories.map {
         CachedCategoryProgress(it.categoryId, it.slug, it.name, it.iconKey, it.xp, it.level, it.xpIntoLevel, it.xpForNextLevel)
     },
+    week?.map { CachedWeekDay(it.dayKey, it.state.wire) },
 )
 
 internal fun CachedProgress.toModel() = ProgressSummary(
@@ -83,6 +94,7 @@ internal fun CachedProgress.toModel() = ProgressSummary(
         CategoryProgress(it.categoryId, it.slug, it.name, it.iconKey, it.xp, it.level, it.xpIntoLevel, it.xpForNextLevel)
     },
     clockOffsetMs = clockOffsetMs,
+    week = week?.map { WeekDay(it.dayKey, WeekDayState.fromWire(it.state)) },
 )
 
 internal fun DailyStatus.toCached() = CachedDailyStatus(

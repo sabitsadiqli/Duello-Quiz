@@ -16,11 +16,11 @@ and the reminder row.
 
 ## Questions and decisions
 
-- **OQ-D35 — open (backend-dev): per-day streak history for the week row.**
-  `GET /v1/me/progress` has `streakCurrent`, `streakBest`, `todayActive`,
-  `freezeAvailable` and `streakEvent` (OQ-D30), but no per-day states. Proposal:
-  add `week: [{dayKey, state: "active" | "freeze" | "missed" | "none"}]` for the
-  current Baku week (Monday–Sunday, days up to today). Fallback until then: mark
+- **OQ-D35 — decided and built (2026-11-19): per-day streak history for the week row.**
+  `GET /v1/me/progress` returns `week: [{dayKey, state: "active" | "freeze" |
+  "missed" | "today_pending" | "none"}]`, 7 entries Monday–Sunday of the current Baku
+  week; `missed` only after the user's first active day (`docs/api/openapi.yaml`
+  0.4.0). Fallback only for a cached response without `week`: mark
   the last `streakCurrent` days up to yesterday (today too if `todayActive`) as
   active, all other past days as "none", never show a freeze dot (it cannot be
   inferred), and say nothing in text that the fallback cannot know.
@@ -195,7 +195,7 @@ wall-clock time, never negative, clamped to 23:59:59.
 | Error, cache | Cached values (after Baku midnight: today shown as "not yet", PROG-06) |
 | Error, no cache | Section shows `profile_section_error` + text button `common_retry`, height kept |
 | Offline, cache older Baku day | Today dashed; no hint message (cannot know) |
-| Week history missing (OQ-D35 fallback) | Derived dots as described; no freeze dots |
+| Cached response without `week` (before API 0.4.0) | Derived dots as described; no freeze dots; replaced on the next refresh |
 | Large numbers ("Seriya: 365 gün", "ən uzun: 1000 gün") | Wrap, never truncate |
 
 ### C. Reminder row

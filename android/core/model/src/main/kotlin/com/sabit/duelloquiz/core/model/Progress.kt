@@ -64,12 +64,45 @@ data class ProgressSummary(
     val categories: List<CategoryProgress>,
     /** server clock − local wall clock, measured around the request. */
     val clockOffsetMs: Long = 0,
+    /**
+     * Server states of the current Baku week, Monday → Sunday (OQ-D35, API 0.4.0). Null when the
+     * response or the cached entry predates `week`: the week row then uses its documented fallback.
+     */
+    val week: List<WeekDay>? = null,
 ) {
     /**
      * True once Baku midnight has passed since the server answered (offline cache after
      * midnight): the "today" state must not be claimed any more (PROG-06).
      */
     fun isFromEarlierDay(localNowMs: Long): Boolean = localNowMs + clockOffsetMs >= nextResetEpochMs
+}
+
+/** One day of [ProgressSummary.week]: the server decides the state, the client only renders it. */
+@Immutable
+data class WeekDay(val dayKey: String, val state: WeekDayState)
+
+/** `week[].state` of `GET /v1/me/progress`; [wire] is the API value. */
+enum class WeekDayState(val wire: String) {
+    /** The day counted for the streak (PROG-05). */
+    ACTIVE("active"),
+
+    /** A held freeze covered the day (PROG-07). */
+    FREEZE("freeze"),
+
+    /** A past day without activity or freeze, after the first active day. */
+    MISSED("missed"),
+
+    /** Today (server Baku day), not active yet. */
+    TODAY_PENDING("today_pending"),
+
+    /** A future day, a day before the first active day, or a state this app does not know. */
+    NONE("none"),
+    ;
+
+    companion object {
+        /** Unknown values (a newer server) are neutral, never an error. */
+        fun fromWire(value: String?): WeekDayState = entries.firstOrNull { it.wire == value } ?: NONE
+    }
 }
 
 @Immutable

@@ -6,11 +6,13 @@ import com.sabit.duelloquiz.core.designsystem.component.WeekDotState.Freeze
 import com.sabit.duelloquiz.core.designsystem.component.WeekDotState.Missed
 import com.sabit.duelloquiz.core.designsystem.component.WeekDotState.TodayPending
 import com.sabit.duelloquiz.core.designsystem.component.WeekDotState.Unknown
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Baku day math and the OQ-D35 week-row fallback (daily-tab.md B). */
+/** Baku day math, the server week states and the OQ-D35 week-row fallback (daily-tab.md B, PROG-11). */
 class BakuDayTest {
 
     /** 2026-11-18, a Wednesday (index 2); Monday of that week is 2026-11-16. */
@@ -116,5 +118,70 @@ class BakuDayTest {
         )
         // An event day outside this week changes nothing.
         assertEquals(states(streak = 1, todayActive = true), states(streak = 1, todayActive = true, missed = monday - 3))
+    }
+
+    // Server week states (OQ-D35)
+
+    /** The example of docs/api/openapi.yaml 0.4.0: Monday 2026-11-16 … Sunday 2026-11-22, today Thursday. */
+    private val serverExample = listOf(
+        WeekDay("2026-11-16", WeekDayState.ACTIVE),
+        WeekDay("2026-11-17", WeekDayState.FREEZE),
+        WeekDay("2026-11-18", WeekDayState.MISSED),
+        WeekDay("2026-11-19", WeekDayState.TODAY_PENDING),
+        WeekDay("2026-11-20", WeekDayState.NONE),
+        WeekDay("2026-11-21", WeekDayState.NONE),
+        WeekDay("2026-11-22", WeekDayState.NONE),
+    )
+    private val thursday = wednesday + 1
+
+    private fun server(today: Long, week: List<WeekDay>) = BakuDay.serverWeek(today, week).map { it.state }
+
+    @Test
+    fun serverStatesMapToTheirDots() {
+        val week = BakuDay.serverWeek(thursday, serverExample)
+        assertEquals(listOf(Active, Freeze, Missed, TodayPending, Unknown, Unknown, Unknown), week.map { it.state })
+        assertEquals((0..6).toList(), week.map { it.weekdayIndex })
+        assertEquals(listOf(false, false, false, true, false, false, false), week.map { it.isToday })
+    }
+
+    @Test
+    fun anActiveTodayIsFilled() {
+        val played = serverExample.map { if (it.dayKey == "2026-11-19") it.copy(state = WeekDayState.ACTIVE) else it }
+        assertEquals(listOf(Active, Freeze, Missed, Active, Unknown, Unknown, Unknown), server(thursday, played))
+    }
+
+    @Test
+    fun noneAndUnknownStatesAreNeutralAndFutureDaysAreNeverClaimed() {
+        val odd = listOf(
+            WeekDay("2026-11-16", WeekDayState.NONE),
+            WeekDay("2026-11-17", WeekDayState.TODAY_PENDING),
+            WeekDay("not-a-day", WeekDayState.ACTIVE),
+            WeekDay("2026-11-19", WeekDayState.NONE),
+            WeekDay("2026-11-20", WeekDayState.ACTIVE),
+        )
+        assertEquals(listOf(Unknown, Unknown, Unknown, TodayPending, Unknown, Unknown, Unknown), server(thursday, odd))
+    }
+
+    @Test
+    fun aStaleWeekOfTheSameWeekKeepsPastFactsAndNeverClaimsToday() {
+        // Cached on Thursday (today_pending), it is Friday now: Thursday is not claimed as missed.
+        assertEquals(listOf(Active, Freeze, Missed, Unknown, TodayPending, Unknown, Unknown), server(thursday + 1, serverExample))
+        // Cached on Thursday with Thursday active: the fact stays, Friday is dashed.
+        val played = serverExample.map { if (it.dayKey == "2026-11-19") it.copy(state = WeekDayState.ACTIVE) else it }
+        assertEquals(listOf(Active, Freeze, Missed, Active, TodayPending, Unknown, Unknown), server(thursday + 1, played))
+    }
+
+    @Test
+    fun aStaleWeekOfAPreviousWeekShowsTheCurrentWeekNeutral() {
+        // Cached last week, it is Monday 2026-11-23 now: last week is not a history (PROG-11).
+        val nextMonday = monday + 7
+        assertEquals(
+            listOf(TodayPending, Unknown, Unknown, Unknown, Unknown, Unknown, Unknown),
+            server(nextMonday, serverExample),
+        )
+        assertEquals(
+            listOf(Unknown, Unknown, TodayPending, Unknown, Unknown, Unknown, Unknown),
+            server(nextMonday + 2, serverExample),
+        )
     }
 }

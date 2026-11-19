@@ -115,7 +115,7 @@ the designer adds them to `design/copy/az.md`.
 | Best streak | Ən uzun seriya | Highest streak ever reached; never decreases. |
 | Streak freeze | Seriya qoruyucusu | Automatic protection of the streak for exactly one missed day; one earned per 7-day streak, at most 1 held (OQ-086). Never bought. |
 | Streak chip | — | The flame and streak number in the home top row (HOME-08); filled when today is active; tap → Gündəlik tab. Not a "badge" (that word is reserved for the bot badge and the Gündəlik badge). |
-| Week row | — | Seven cells for the current Baku week, Monday to Sunday, on the Gündəlik tab: played, today not yet, freeze used, missed, or neutral (future / before the account) (PROG-11, OQ-D35). Not a calendar or history. |
+| Week row | — | Seven cells for the current Baku week, Monday to Sunday, on the Gündəlik tab: played, today not yet, freeze used, missed, or neutral (future / before the first active day) (PROG-11, OQ-D35). Not a calendar or history. |
 | Streak message | — | At most one of three one-time / daily texts on the Gündəlik tab, in priority order: streak ended (PROG-08), freeze used (PROG-07), streak hint (PROG-06). Never on home since v3. |
 | Push notification | Bildiriş | A message sent by the server through FCM and shown by Android outside the app. Only the reminder types below exist in the MVP. |
 | Daily reminder | Gündəlik çağırış xatırlatması | Notification type `daily_reminder`: today's daily challenge has not been started (OQ-088). |

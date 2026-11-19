@@ -261,7 +261,11 @@ private fun StreakSection(
                 )
                 DuelloTextButton(text = stringResource(R.string.common_retry), onClick = { onAction(DailyTabAction.RetryStreakClicked) })
             }
-            is StreakSectionUi.Content -> StreakContent(streak)
+            is StreakSectionUi.Content -> {
+                // streak_week_viewed: the ViewModel logs it at most once per Baku day.
+                LaunchedEffect(streak.todayEpochDay) { onAction(DailyTabAction.WeekRowShown) }
+                StreakContent(streak)
+            }
         }
         if (message != null) {
             Spacer(Modifier.height(Spacing.lg))

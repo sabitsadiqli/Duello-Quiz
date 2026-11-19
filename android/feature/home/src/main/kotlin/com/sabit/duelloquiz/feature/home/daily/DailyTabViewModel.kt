@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sabit.duelloquiz.core.common.NavResults
+import com.sabit.duelloquiz.core.common.Telemetry
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.data.repository.DailyRepository
 import com.sabit.duelloquiz.core.data.repository.NotificationPromptRepository
@@ -89,6 +90,9 @@ sealed interface DailyTabAction {
     /** The boxes animation of [DailyTabUiState.animateBoxes] has been shown. */
     data object BoxesAnimated : DailyTabAction
 
+    /** The week row with content became visible (analytics `streak_week_viewed`, once per Baku day). */
+    data object WeekRowShown : DailyTabAction
+
     /** The reminder row (same actions as the settings section). */
     data class Reminder(val action: NotificationSettingsAction) : DailyTabAction
 }
@@ -136,6 +140,7 @@ class DailyTabViewModel @Inject constructor(
     networkMonitor: NetworkMonitor,
     private val savedStateHandle: SavedStateHandle,
     private val clock: WallClock,
+    private val telemetry: Telemetry,
 ) : ViewModel() {
 
     private data class LocalState(
@@ -222,6 +227,7 @@ class DailyTabViewModel @Inject constructor(
             DailyTabAction.RetryStreakClicked -> refreshProgress()
             DailyTabAction.DismissMessage -> dismissMessage()
             DailyTabAction.BoxesAnimated -> local.update { it.copy(animateBoxes = false) }
+            DailyTabAction.WeekRowShown -> logWeekViewed()
             is DailyTabAction.Reminder -> reminders.onAction(action.action)
         }
     }
@@ -418,6 +424,22 @@ class DailyTabViewModel @Inject constructor(
         }
     }
 
+    /**
+     * progression.md §5: `streak_week_viewed` {active_days, fallback} once per Baku day (server
+     * clock of the progress) when the week row with content is first visible. `fallback` is true
+     * only when the row was built without the server's `week`. The logged day survives process
+     * death through [savedStateHandle] (per tab back stack entry, not per install).
+     */
+    private fun logWeekViewed() {
+        val streak = uiState.value.streak as? StreakSectionUi.Content ?: return
+        if (savedStateHandle.get<Long>(WEEK_VIEWED_DAY_KEY) == streak.todayEpochDay) return
+        savedStateHandle[WEEK_VIEWED_DAY_KEY] = streak.todayEpochDay
+        telemetry.logEvent(
+            EVENT_STREAK_WEEK_VIEWED,
+            mapOf(PARAM_ACTIVE_DAYS to streak.activeDays, PARAM_FALLBACK to streak.weekFallback),
+        )
+    }
+
     /** When the connection returns, refresh once automatically. */
     private fun observeConnection() {
         viewModelScope.launch {
@@ -439,6 +461,11 @@ class DailyTabViewModel @Inject constructor(
         /** daily-tab.md States: tab entry refreshes when the last refresh is older than 1 minute. */
         const val REENTRY_REFRESH_MS = 60_000L
         private const val ONE_SECOND_MS = 1_000L
+
+        const val EVENT_STREAK_WEEK_VIEWED = "streak_week_viewed"
+        const val PARAM_ACTIVE_DAYS = "active_days"
+        const val PARAM_FALLBACK = "fallback"
+        private const val WEEK_VIEWED_DAY_KEY = "daily_tab_week_viewed_day"
         private const val STOP_TIMEOUT_MS = 5_000L
     }
 }

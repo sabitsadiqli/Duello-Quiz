@@ -2,6 +2,8 @@ package com.sabit.duelloquiz.feature.home
 
 import com.sabit.duelloquiz.core.designsystem.component.WeekDayUi
 import com.sabit.duelloquiz.core.designsystem.component.WeekDotState
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -45,8 +47,40 @@ data class BakuDay(val epochDay: Long, val dayOfMonth: Int, val monthIndex: Int,
 
         /**
          * The week row (daily-tab.md B, components.md §38a) for the Baku week (Monday → Sunday) of
-         * [todayEpochDay], derived from the streak alone. **Documented fallback until OQ-D35**
-         * (`GET /v1/me/progress` has no per-day history yet):
+         * [todayEpochDay] from the server's `week` states (OQ-D35, PROG-11). The server decides
+         * every past state; the client only places them on the current week:
+         * - days after today are [WeekDotState.Unknown];
+         * - today is [WeekDotState.Active] only when the server said `active` for it, else
+         *   [WeekDotState.TodayPending] (also when the cache is from an earlier Baku day: today
+         *   is never claimed from it, PROG-06);
+         * - a past day shows the server's `active` / `freeze` / `missed`; `none`, unknown states, a
+         *   stale `today_pending` (yesterday's cache) and days the server did not send (a cached
+         *   previous week) stay [WeekDotState.Unknown] (neutral, never claimed).
+         * [serverWeek] entries with a malformed `dayKey` are ignored.
+         */
+        fun serverWeek(todayEpochDay: Long, serverWeek: List<WeekDay>): List<WeekDayUi> {
+            val monday = todayEpochDay - weekdayIndex(todayEpochDay)
+            val states: Map<Long, WeekDayState> = serverWeek
+                .mapNotNull { day -> parse(day.dayKey)?.let { it.epochDay to day.state } }
+                .toMap()
+            return (0 until DAYS_PER_WEEK).map { index ->
+                val day = monday + index
+                val server = states[day]
+                val state = when {
+                    day > todayEpochDay -> WeekDotState.Unknown
+                    day == todayEpochDay -> if (server == WeekDayState.ACTIVE) WeekDotState.Active else WeekDotState.TodayPending
+                    server == WeekDayState.ACTIVE -> WeekDotState.Active
+                    server == WeekDayState.FREEZE -> WeekDotState.Freeze
+                    server == WeekDayState.MISSED -> WeekDotState.Missed
+                    else -> WeekDotState.Unknown
+                }
+                WeekDayUi(weekdayIndex = index, state = state, isToday = day == todayEpochDay)
+            }
+        }
+
+        /**
+         * The week row derived from the streak alone. **Only for a cached response without
+         * `week`** (before API 0.4.0, OQ-D35 fallback); replaced by [serverWeek] on the next refresh:
          * - the streak ends on [progressEpochDay] when [todayActive] (the day the server answered
          *   already counts), else the day before; the [streakCurrent] days up to that end are
          *   [WeekDotState.Active];

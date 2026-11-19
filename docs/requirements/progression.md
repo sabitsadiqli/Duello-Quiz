@@ -48,7 +48,7 @@ OQ-095).
 | PROG-08 | As a player whose streak ended, I want a clear, kind message and a fresh start, so that I am motivated rather than punished. | OQ-086; (v3, 2026-11-17) |
 | PROG-09 | As the product owner, I want XP, levels and streaks computed and capped on the server, so that a modified client, a wrong clock or farming cannot inflate them. | OQ-082, OQ-085 |
 | PROG-10 | As a player, I want my progress to be the same on every device, after a reinstall and offline (last known), and to be deleted with my account, so that it is reliable and private. | — ; (v3, 2026-11-17) |
-| PROG-11 | As a player, I want to see this week's days marked as played, saved by a freeze or missed, so that I see my habit at a glance and know that today still counts. | New (v3, 2026-11-17); per-day data blocked by OQ-D35 (fallback allowed) |
+| PROG-11 | As a player, I want to see this week's days marked as played, saved by a freeze or missed, so that I see my habit at a glance and know that today still counts. | New (v3, 2026-11-17); per-day data from `week` (OQ-D35, shipped 2026-11-19) |
 
 API (proposal for `backend-dev`, who owns `docs/api/openapi.yaml`):
 `GET /v1/me/progress` → `{xpTotal, level, xpIntoLevel, xpForNextLevel,
@@ -305,10 +305,11 @@ Blocked by OQ-082 (caps) and OQ-085.
 ### PROG-11 Week row on the Gündəlik tab (v3, 2026-11-17)
 
 New. Layout and dot styles: `design/screens/daily-tab.md` B ("week row"),
-`design/screens/components.md` §38a. Per-day data: **blocked by OQ-D35**
-(backend-dev; proposal: `GET /v1/me/progress` gains `week: [{dayKey, state}]`,
-`state` = `active` | `freeze` | `missed` | `none`, for the current Baku week, days up
-to today). The fallback below may ship first so the tab is not blocked.
+`design/screens/components.md` §38a. Per-day data: **OQ-D35, decided and built
+2026-11-19** — `GET /v1/me/progress` returns `week: [{dayKey, state}]`, always 7
+entries Monday→Sunday of the current Baku week, `state` = `active` | `freeze` |
+`missed` | `today_pending` | `none` (`docs/api/openapi.yaml` 0.4.0). The fallback
+below remains only for cached responses from before 0.4.0.
 
 - Given the Gündəlik tab, When the streak section is shown, Then a row of 7 cells
   shows the current Baku week from Monday to Sunday, each with a dot and the day
@@ -319,7 +320,8 @@ to today). The fallback below may ship first so the tab is not blocked.
   - today not yet active → dashed ring, no fill;
   - saved by a freeze (PROG-07) → freeze dot with a shield;
   - missed (no activity, no freeze) → thin ring with a dash;
-  - days after today, and days before the account existed → empty neutral ring.
+  - days after today, and days before the user's first active day → empty neutral
+    ring (server state `none`).
   The states differ in fill, ring style and glyph, never by colour alone.
 - Given today becomes active (any quiz, daily or duel per PROG-05), When the user
   returns to the Gündəlik tab, Then today's dot is filled; the fill animates once per
@@ -328,15 +330,14 @@ to today). The fallback below may ship first so the tab is not blocked.
   active days and freeze usage as the streak (PROG-05, PROG-07); the client never
   decides that a day was played, missed or frozen, and the device clock or time zone
   changes nothing (Baku day, `dayKey`).
-- Given `week` is missing (OQ-D35 not shipped yet), When the row is built, Then the
+- Given `week` is missing (a cached response from before API 0.4.0), When the row is built, Then the
   client marks the last `streakCurrent` days up to yesterday (and today if
   `todayActive`) as played, all other past days as neutral (not "missed"), and never
   shows a freeze dot; no text claims a missed or frozen day.
 - Given the fallback and a freeze was used inside the current streak, When the row is
   built, Then the derived played days can be shifted by one day against reality
-  (the frozen day does not add 1 to the streak, PROG-07). Accepted only until OQ-D35
-  ships; recommendation: ship OQ-D35 before the closed test so testers never see a
-  wrong day.
+  (the frozen day does not add 1 to the streak, PROG-07). Accepted only for old
+  cached responses; the first refresh replaces it with server states.
 - Given a new user (streak 0), When the row is shown, Then today is dashed and the
   earlier days are neutral.
 - Given it is Monday, When the row is shown, Then only Monday can carry a state;
@@ -392,7 +393,7 @@ week row of PROG-11 is in scope since v3, 2026-11-17).
 
 `streak_broken` and `streak_freeze_used` are logged when the message is shown on the
 Gündəlik tab (v3); `streak_week_viewed` {`active_days` (0–7), `fallback` (bool, true
-while OQ-D35 is missing)} once per Baku day when the week row is first visible.
+when the row was built without `week`)} once per Baku day when the week row is first visible.
 
 User properties: `level_bucket` (1–4, 5–9, 10–19, 20+), `streak_bucket` (0, 1–2,
 3–6, 7–13, 14+), updated when home loads. The backend logs awards and freezes
