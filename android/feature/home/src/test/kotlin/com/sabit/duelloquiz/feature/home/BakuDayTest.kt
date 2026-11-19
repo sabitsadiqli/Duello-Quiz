@@ -9,6 +9,7 @@ import com.sabit.duelloquiz.core.designsystem.component.WeekDotState.Unknown
 import com.sabit.duelloquiz.core.model.WeekDay
 import com.sabit.duelloquiz.core.model.WeekDayState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -24,9 +25,7 @@ class BakuDayTest {
         progressDay: Long? = today,
         streak: Int,
         todayActive: Boolean,
-        freeze: Long? = null,
-        missed: Long? = null,
-    ): List<WeekDotState> = BakuDay.fallbackWeek(today, progressDay, streak, todayActive, freeze, missed).map { it.state }
+    ): List<WeekDotState> = BakuDay.fallbackWeek(today, progressDay, streak, todayActive).map { it.state }
 
     @Test
     fun parsesDayKeysAndWeekdays() {
@@ -107,17 +106,18 @@ class BakuDayTest {
     }
 
     @Test
-    fun freezeAndMissedDotsOnlyFromServerEvents() {
-        assertEquals(
-            listOf(Active, Freeze, Active, Unknown, Unknown, Unknown, Unknown),
-            states(streak = 3, todayActive = true, freeze = monday + 1),
-        )
-        assertEquals(
-            listOf(Missed, Unknown, Active, Unknown, Unknown, Unknown, Unknown),
-            states(streak = 1, todayActive = true, missed = monday),
-        )
-        // An event day outside this week changes nothing.
-        assertEquals(states(streak = 1, todayActive = true), states(streak = 1, todayActive = true, missed = monday - 3))
+    fun theFallbackNeverShowsFreezeOrMissedDots() {
+        // OQ-D35 (decided 2026-11-19): only active, today pending and neutral without `week`.
+        for (today in monday..monday + 6) {
+            for (streak in 0..8) {
+                for (todayActive in listOf(true, false)) {
+                    for (progressDay in listOf(today, today - 1, null)) {
+                        val week = states(today = today, progressDay = progressDay, streak = streak, todayActive = todayActive)
+                        assertFalse(week.any { it == Freeze || it == Missed })
+                    }
+                }
+            }
+        }
     }
 
     // Server week states (OQ-D35)

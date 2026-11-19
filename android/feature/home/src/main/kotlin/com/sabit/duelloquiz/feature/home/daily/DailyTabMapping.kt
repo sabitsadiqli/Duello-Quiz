@@ -165,14 +165,12 @@ internal fun streakSectionUi(progress: ProgressSummary?, loading: Boolean, attem
     val week = if (serverWeek != null) {
         BakuDay.serverWeek(today, serverWeek)
     } else {
-        val event = progress.streakEvent
+        // Fallback: active / today pending / neutral only; the streak event never places a dot.
         BakuDay.fallbackWeek(
             todayEpochDay = today,
             progressEpochDay = BakuDay.parse(progress.dayKey)?.epochDay,
             streakCurrent = progress.streakCurrent,
             todayActive = progress.todayActive,
-            freezeEpochDay = event?.takeIf { it.type == StreakEventType.FREEZE_USED }?.let { BakuDay.parse(it.dayKey)?.epochDay },
-            missedEpochDay = event?.takeIf { it.type == StreakEventType.STREAK_LOST }?.let { BakuDay.parse(it.dayKey)?.epochDay },
         )
     }
     return StreakSectionUi.Content(

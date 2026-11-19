@@ -85,10 +85,10 @@ data class BakuDay(val epochDay: Long, val dayOfMonth: Int, val monthIndex: Int,
          *   already counts), else the day before; the [streakCurrent] days up to that end are
          *   [WeekDotState.Active];
          * - today, when not active, is [WeekDotState.TodayPending];
-         * - [freezeEpochDay] (a `freeze_used` event) is [WeekDotState.Freeze] and [missedEpochDay]
-         *   (the first missed day of a `streak_lost` event) [WeekDotState.Missed]: both are known
-         *   from the server; nothing else is ever shown as freeze or missed;
          * - every other past day and every future day is [WeekDotState.Unknown] (never claimed).
+         * The fallback never shows [WeekDotState.Freeze] or [WeekDotState.Missed], not even from a
+         * `freeze_used` / `streak_lost` event (daily-tab.md OQ-D35, PROG-11: the client never
+         * decides that a day was frozen or missed).
          * [progressEpochDay] may be older than today (cache after Baku midnight, PROG-06): then
          * today is never active from the cache. [streakCurrent] 0 = no active day.
          */
@@ -97,8 +97,6 @@ data class BakuDay(val epochDay: Long, val dayOfMonth: Int, val monthIndex: Int,
             progressEpochDay: Long?,
             streakCurrent: Int,
             todayActive: Boolean,
-            freezeEpochDay: Long? = null,
-            missedEpochDay: Long? = null,
         ): List<WeekDayUi> {
             val monday = todayEpochDay - weekdayIndex(todayEpochDay)
             val activeRange: LongRange = if (progressEpochDay == null || streakCurrent <= 0) {
@@ -111,10 +109,8 @@ data class BakuDay(val epochDay: Long, val dayOfMonth: Int, val monthIndex: Int,
                 val day = monday + index
                 val state = when {
                     day > todayEpochDay -> WeekDotState.Unknown
-                    day == freezeEpochDay -> WeekDotState.Freeze
                     day in activeRange -> WeekDotState.Active
                     day == todayEpochDay -> WeekDotState.TodayPending
-                    day == missedEpochDay -> WeekDotState.Missed
                     else -> WeekDotState.Unknown
                 }
                 WeekDayUi(weekdayIndex = index, state = state, isToday = day == todayEpochDay)
