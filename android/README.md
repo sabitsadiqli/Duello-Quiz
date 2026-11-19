@@ -68,9 +68,19 @@ one back stack in `DuelloNavHost`:
   shown for `available` / `in_progress` of today, hidden otherwise and after Baku midnight. Home
   refreshes the status with its own refresh; the Gündəlik tab on return from the daily flow.
 - Settings is reached from the Profil tab only.
+- Screen transitions (`motion.game.screenTransition`) are set once on the `NavHost`; feature
+  graphs declare none. `screenTransition(from, to)` (`ScreenTransitions.kt`) picks one from the
+  areas of the two entries (tab, flow, auth): tab ↔ tab is a 200 ms fade-through; crossing the
+  auth boundary (sign-in success, sign-out) a 300 ms fade-through; everything else (tab → flow,
+  inside a flow or the auth graph, flow → tab) shared axis X, forward on navigate and backward on
+  pop and predictive back, mirrored in RTL. The specs live in
+  `:core:designsystem` `motion/NavTransitions.kt`; with "Remove animations" on every transition is
+  a plain 150 ms cross-fade. The duel's search → intro → match → retry are states of one
+  destination and keep their in-screen motion.
 
 The pure rules (tab selection, reminder taps, return refresh, badge) are unit-tested in
-`app/src/test/.../navigation/TabNavigationTest.kt`.
+`app/src/test/.../navigation/TabNavigationTest.kt`, the transition choice in
+`ScreenTransitionsTest.kt` and the motion specs in `core/designsystem/.../motion/NavTransitionsTest.kt`.
 
 ## Theme and fonts (v3)
 
