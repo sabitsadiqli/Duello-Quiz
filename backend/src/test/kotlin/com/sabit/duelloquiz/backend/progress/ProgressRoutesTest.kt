@@ -164,6 +164,83 @@ class ProgressRoutesTest : DbTest() {
         }
     }
 
+    private val day = 24 * 3_600_000L
+
+    private fun weekOf(p: ProgressResponse) = p.week.map { it.state }
+
+    @Test
+    fun `week row has 7 days from Monday with today pending for a new user`() {
+        val env = TestEnv(db)
+        runBlocking { seedAllCategories(env) }
+        val token = env.verifier.tokenFor("u1")
+        withTestApp(env) { client ->
+            // Fixture clock: Friday 2026-10-16, 14:00 Baku.
+            val p = client.progress(token)
+            assertEquals(
+                listOf("2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"),
+                p.week.map { it.dayKey },
+            )
+            assertEquals(listOf("none", "none", "none", "none", "today_pending", "none", "none"), weekOf(p))
+        }
+    }
+
+    @Test
+    fun `after playing today is active and earlier days stay none`() {
+        val env = TestEnv(db)
+        runBlocking { seedAllCategories(env) }
+        val token = env.verifier.tokenFor("u1")
+        withTestApp(env) { client ->
+            client.playQuiz(token, correct = 1)
+            assertEquals(listOf("none", "none", "none", "none", "active", "none", "none"), weekOf(client.progress(token)))
+            // Saturday: Friday active, Saturday pending; Sunday after a missed Saturday: missed.
+            env.clock.advanceMs(day)
+            assertEquals(listOf("none", "none", "none", "none", "active", "today_pending", "none"), weekOf(client.progress(token)))
+            env.clock.advanceMs(day)
+            assertEquals(listOf("none", "none", "none", "none", "active", "missed", "today_pending"), weekOf(client.progress(token)))
+            // Next Monday: a new week; everything before Monday is outside the row.
+            env.clock.advanceMs(day)
+            val monday = client.progress(token)
+            assertEquals("2026-10-19", monday.week.first().dayKey)
+            assertEquals(listOf("today_pending", "none", "none", "none", "none", "none", "none"), weekOf(monday))
+        }
+    }
+
+    @Test
+    fun `an earned and used freeze shows as freeze and is stored`() {
+        val env = TestEnv(db)
+        runBlocking { seedAllCategories(env) }
+        val token = env.verifier.tokenFor("u1")
+        withTestApp(env) { client ->
+            // Friday 2026-10-16 … Thursday 2026-10-22: 7 days earn a freeze.
+            repeat(7) { i ->
+                if (i > 0) env.clock.advanceMs(day)
+                client.playQuiz(token, correct = 1)
+            }
+            assertTrue(client.progress(token).freezeAvailable)
+            // Friday 2026-10-23 missed; Saturday before playing the held freeze covers it.
+            env.clock.advanceMs(2 * day)
+            val pending = client.progress(token)
+            assertEquals("2026-10-19", pending.week.first().dayKey)
+            assertEquals(listOf("active", "active", "active", "active", "freeze", "today_pending", "none"), weekOf(pending))
+            assertEquals(0, runBlocking { db.tx { count("user_freeze_days") } }, "not consumed before playing")
+            // Playing on Saturday consumes it and stores the covered day.
+            client.playQuiz(token, correct = 1)
+            val used = client.progress(token)
+            assertEquals(listOf("active", "active", "active", "active", "freeze", "active", "none"), weekOf(used))
+            assertEquals(8, used.streakCurrent)
+            assertEquals(
+                listOf("2026-10-23"),
+                runBlocking { db.tx { exec("SELECT day::text FROM user_freeze_days") { rs -> buildList { while (rs.next()) add(rs.getString(1)) } } } },
+            )
+            // The stored day still shows as freeze on later days.
+            env.clock.advanceMs(day)
+            assertEquals(listOf("active", "active", "active", "active", "freeze", "active", "today_pending"), weekOf(client.progress(token)))
+            // Account deletion removes the freeze rows.
+            assertEquals(HttpStatusCode.NoContent, client.delete("/v1/me") { auth(token) }.status)
+            assertEquals(0, runBlocking { db.tx { count("user_freeze_days") } })
+        }
+    }
+
     @Test
     fun `account deletion removes every retention row of the user`() {
         val env = TestEnv(db)
@@ -185,8 +262,9 @@ class ProgressRoutesTest : DbTest() {
                 setBody(NotificationSettingsDto(dailyReminder = false, streakReminder = true))
             }
             runBlocking { db.tx { exec("INSERT INTO notification_log (user_id, type, day, outcome) SELECT id, 'daily_reminder', DATE '2026-10-16', 'sent' FROM users") } }
+            runBlocking { db.tx { exec("INSERT INTO user_freeze_days (user_id, day) SELECT id, DATE '2026-10-15' FROM users") } }
             val tables = listOf(
-                "daily_attempts", "user_progress", "user_category_xp", "user_active_days", "progress_awards", "xp_events",
+                "daily_attempts", "user_progress", "user_category_xp", "user_active_days", "user_freeze_days", "progress_awards", "xp_events",
                 "push_tokens", "notification_settings", "notification_log",
             )
             tables.forEach { assertTrue(runBlocking { db.tx { count(it) } } > 0, "$it has rows before deletion") }
