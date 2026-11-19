@@ -54,7 +54,16 @@ data class ProgressResponse(
     val nextResetEpochMs: Long,
     val serverNowEpochMs: Long,
     val categories: List<CategoryProgressDto>,
+    /**
+     * Week row (PROG-11, OQ-D35): exactly 7 days, Monday → Sunday of the current Baku
+     * week. Added in API 0.4.0; older clients ignore it.
+     */
+    val week: List<WeekDayDto> = emptyList(),
 )
+
+/** One week-row day: `dayKey` = Baku date; `state` = `WeekDayState.api`. */
+@Serializable
+data class WeekDayDto(val dayKey: String, val state: String)
 
 /**
  * `freeze_used`: a freeze covers the missed day `dayKey` (yesterday); `previousStreak` is

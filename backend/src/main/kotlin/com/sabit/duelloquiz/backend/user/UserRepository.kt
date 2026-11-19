@@ -210,10 +210,11 @@ class UserRepository(private val db: Db) {
         const val OPPONENT_HUMAN = "human"
         const val OPPONENT_BOT = "bot"
 
-        /** Tables with `user_id ... ON DELETE CASCADE` (V1, V5); children of these go with them. */
+        /** Tables with `user_id ... ON DELETE CASCADE` (V1, V5, V7); children of these go with them. */
         val CASCADE_TABLES = listOf(
             "quiz_sessions", "daily_attempts", "user_progress", "user_category_xp", "user_active_days",
-            "progress_awards", "xp_events", "push_tokens", "notification_settings", "notification_log",
+            "user_freeze_days", "progress_awards", "xp_events", "push_tokens", "notification_settings",
+            "notification_log",
         )
         const val REGULAR_ROUNDS: Short = 7
     }

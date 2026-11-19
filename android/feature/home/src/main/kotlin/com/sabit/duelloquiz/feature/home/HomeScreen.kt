@@ -333,11 +333,11 @@ private fun LazyListScope.categoryItems(
     animateEnter: Boolean,
     onAction: (HomeAction) -> Unit,
 ) {
-    val overlineTop = if (uiState.duelEnabled) Spacing.homeSectionGap else Spacing.homeSectionGap
+    val overlineTop = Spacing.homeSectionGap
     when (val categories = uiState.categories) {
         CategoriesUi.Loading -> {
             item(key = "categories_overline") { CategoriesOverline(uiState, Modifier.padding(top = overlineTop)) }
-            items(SKELETON_ROWS) { index ->
+            items(count = SKELETON_ROWS, key = { index -> "skeleton_$index" }) { index ->
                 val alpha = rememberSkeletonAlpha()
                 Column {
                     if (index > 0) HorizontalDivider(color = MaterialTheme.gameColors.cardBorder)
@@ -392,10 +392,6 @@ private fun LazyListScope.categoryItems(
         }
         CategoriesUi.Offline -> Unit // full screen, see HomeScreen
     }
-}
-
-private fun LazyListScope.items(count: Int, content: @Composable (Int) -> Unit) {
-    repeat(count) { index -> item(key = "skeleton_$index") { content(index) } }
 }
 
 @Composable
