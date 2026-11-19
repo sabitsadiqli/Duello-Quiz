@@ -14,6 +14,8 @@ import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
 import com.sabit.duelloquiz.core.model.StreakEvent
 import com.sabit.duelloquiz.core.model.StreakEventType
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import com.sabit.duelloquiz.core.model.XpBreakdownItem
 
 internal fun NetworkProgress.asExternalModel() = ProgressGain(
@@ -51,6 +53,7 @@ internal fun NetworkProgressSummary.asExternalModel(clockOffsetMs: Long = 0) = P
         CategoryProgress(it.categoryId, it.slug, it.name, it.iconKey, it.xp, it.level, it.xpIntoLevel, it.xpForNextLevel)
     },
     clockOffsetMs = clockOffsetMs,
+    week = week?.map { WeekDay(it.dayKey, WeekDayState.fromWire(it.state)) },
 )
 
 /** Unknown event types are ignored (a newer server may add some). */

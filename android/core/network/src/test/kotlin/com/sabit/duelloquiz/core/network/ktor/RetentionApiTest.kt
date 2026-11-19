@@ -9,6 +9,8 @@ import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.QuizSessionStatus
 import com.sabit.duelloquiz.core.model.StreakEventType
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import com.sabit.duelloquiz.core.network.auth.IdTokenProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -229,6 +231,62 @@ class RetentionApiTest {
         assertEquals(12, progress.streakEvent?.previousStreak)
         assertEquals("Coğrafiya", progress.categories.single().name)
         assertEquals("http://test/v1/me/progress", requests.single().url.toString())
+    }
+
+    private fun summaryJson(week: String?) = buildString {
+        append(
+            """{"xpTotal": 0, "level": 1, "xpIntoLevel": 0, "xpForNextLevel": 100, "streakCurrent": 1,
+                "streakBest": 1, "todayActive": false, "freezeAvailable": false,
+                "dayKey": "2026-11-19", "nextResetEpochMs": 1, "serverNowEpochMs": 1, "categories": []""",
+        )
+        if (week != null) append(", \"week\": ").append(week)
+        append("}")
+    }
+
+    @Test
+    fun progressSummaryWithTheWeekStates() = runTest {
+        // OQ-D35 example of docs/api/openapi.yaml 0.4.0.
+        val week = """[{"dayKey":"2026-11-16","state":"active"},{"dayKey":"2026-11-17","state":"freeze"},
+            {"dayKey":"2026-11-18","state":"missed"},{"dayKey":"2026-11-19","state":"today_pending"},
+            {"dayKey":"2026-11-20","state":"none"},{"dayKey":"2026-11-21","state":"none"},
+            {"dayKey":"2026-11-22","state":"none"}]"""
+        val source = dataSource { json(summaryJson(week)) }
+
+        val progress = (source.getProgress() as DataResult.Success).value
+
+        assertEquals(
+            listOf(
+                WeekDay("2026-11-16", WeekDayState.ACTIVE),
+                WeekDay("2026-11-17", WeekDayState.FREEZE),
+                WeekDay("2026-11-18", WeekDayState.MISSED),
+                WeekDay("2026-11-19", WeekDayState.TODAY_PENDING),
+                WeekDay("2026-11-20", WeekDayState.NONE),
+                WeekDay("2026-11-21", WeekDayState.NONE),
+                WeekDay("2026-11-22", WeekDayState.NONE),
+            ),
+            progress.week,
+        )
+    }
+
+    @Test
+    fun anOlderServerWithoutWeekParses() = runTest {
+        val source = dataSource { json(summaryJson(week = null)) }
+
+        val progress = (source.getProgress() as DataResult.Success).value
+
+        assertNull(progress.week)
+        assertEquals(1, progress.streakCurrent)
+    }
+
+    @Test
+    fun unknownOrMissingWeekStatesAreNeutral() = runTest {
+        val week = """[{"dayKey":"2026-11-16","state":"golden"},{"dayKey":"2026-11-17"},
+            {"dayKey":"2026-11-18","state":"active","extra":1}]"""
+        val source = dataSource { json(summaryJson(week)) }
+
+        val progress = (source.getProgress() as DataResult.Success).value
+
+        assertEquals(listOf(WeekDayState.NONE, WeekDayState.NONE, WeekDayState.ACTIVE), progress.week?.map { it.state })
     }
 
     @Test

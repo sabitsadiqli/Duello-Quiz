@@ -8,6 +8,8 @@ import com.sabit.duelloquiz.core.model.ProgressGain
 import com.sabit.duelloquiz.core.model.ProgressSummary
 import com.sabit.duelloquiz.core.model.StreakEvent
 import com.sabit.duelloquiz.core.model.StreakEventType
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import com.sabit.duelloquiz.core.model.XpBreakdownItem
 
 /**
@@ -64,7 +66,26 @@ internal object FakeProgressLedger {
                 val (catLevel, catInto, catNext) = levelOf(xp)
                 CategoryProgress(category.id, category.slug, category.name, category.iconKey, xp, catLevel, catInto, catNext)
             },
+            week = weekOf(player, today),
         )
+    }
+
+    /** OQ-D35 `week`: Monday → Sunday of the Baku week of [today]; the fake has no freezes. */
+    private fun weekOf(player: Player, today: Long): List<WeekDay> {
+        // 1970-01-01 was a Thursday (index 3 with Monday = 0).
+        val monday = today - (today + 3).mod(7L)
+        val firstActive = player.activeDays.minOrNull()
+        return (0 until 7).map { index ->
+            val day = monday + index
+            val state = when {
+                day > today -> WeekDayState.NONE
+                day in player.activeDays -> WeekDayState.ACTIVE
+                day == today -> WeekDayState.TODAY_PENDING
+                firstActive != null && day > firstActive -> WeekDayState.MISSED
+                else -> WeekDayState.NONE
+            }
+            WeekDay(dayKey(day), state)
+        }
     }
 
     /**
