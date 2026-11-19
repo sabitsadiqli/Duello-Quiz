@@ -41,6 +41,10 @@ object AwardCalculator {
         val categoryXpAfter: Map<Int, Long>,
         val items: List<XpItem>,
         val snapshot: ProgressDto,
+        /** The missed day a freeze covered with this award (in-order path), else null. */
+        val freezeDayAdded: LocalDate? = null,
+        /** All freeze days after a replay of every active day (out-of-order path), else null. */
+        val freezeDaysRebuilt: List<LocalDate>? = null,
     )
 
     /**
@@ -75,12 +79,17 @@ object AwardCalculator {
         }.sortedBy { it.categoryId }
 
         var streak = stored.streak
+        var freezeDayAdded: LocalDate? = null
+        var freezeDaysRebuilt: List<LocalDate>? = null
         if (eligible && newlyActive) {
             val last = streak.lastActiveDay
-            streak = if (last == null || day.isAfter(last)) {
-                Streaks.apply(streak, day, freezeEveryDays)
+            if (last == null || day.isAfter(last)) {
+                streak = Streaks.apply(streak, day, freezeEveryDays)
+                freezeDayAdded = streak.freezeUsedDay?.takeIf { it != stored.streak.freezeUsedDay }
             } else {
-                Streaks.simulate(allActiveDays(), freezeEveryDays)
+                val replay = Streaks.replay(allActiveDays(), freezeEveryDays)
+                streak = replay.state
+                freezeDaysRebuilt = replay.freezeDays
             }
         }
         val view = Streaks.view(streak, maxOf(today, day))
@@ -104,7 +113,7 @@ object AwardCalculator {
             streakExtendedToday = eligible && newlyActive,
             freezeAvailable = streak.freezeHeld,
         )
-        return Result(StoredProgress(totalAfter, streak), categoryAfter, items, snapshot)
+        return Result(StoredProgress(totalAfter, streak), categoryAfter, items, snapshot, freezeDayAdded, freezeDaysRebuilt)
     }
 }
 
@@ -156,6 +165,8 @@ class ProgressService(
         result.items.forEach { insertXpEvent(request.userId, request.sourceType, request.sourceId, it, day, now) }
         result.categoryXpAfter.forEach { (categoryId, xp) -> setCategoryXp(request.userId, categoryId, xp) }
         saveProgress(request.userId, result.progress, now)
+        result.freezeDayAdded?.let { addFreezeDay(request.userId, it) }
+        result.freezeDaysRebuilt?.let { replaceFreezeDays(request.userId, it) }
         insertAward(
             request.userId, request.sourceType, request.sourceId, day, request.eligible, capped, request.opponentId,
             result.snapshot, now, bot = request.bot,
@@ -182,13 +193,19 @@ class ProgressService(
     fun JdbcTransaction.streakStates(userIds: Collection<UUID>): Map<UUID, StreakState> =
         with(repository) { findProgress(userIds) }.mapValues { it.value.streak }
 
-    /** `GET /v1/me/progress`: totals, levels, streak as of the current Baku day. */
+    /** `GET /v1/me/progress`: totals, levels, streak and week row as of the current Baku day. */
     suspend fun progressOf(userId: UUID, categories: List<CategoryRecord>, language: String): ProgressResponse {
-        val (stored, categoryXp) = db.tx {
-            with(repository) { (findProgress(userId) ?: StoredProgress(0, StreakState())) to categoryXp(userId) }
-        }
         val now = clock.instant()
         val today = BakuTime.day(now)
+        val (stored, categoryXp, week) = db.tx {
+            with(repository) {
+                Triple(
+                    findProgress(userId) ?: StoredProgress(0, StreakState()),
+                    categoryXp(userId),
+                    weekHistory(userId, WeekRow.monday(today), WeekRow.sunday(today)),
+                )
+            }
+        }
         val view = Streaks.view(stored.streak, today)
         val level = Levels.of(stored.xpTotal)
         return ProgressResponse(
@@ -209,6 +226,7 @@ class ProgressService(
                 val info = Levels.of(xp)
                 CategoryProgressDto(c.id, c.slug, c.name.resolve(language), c.iconKey, xp, info.level, info.xpIntoLevel, info.xpForNextLevel)
             },
+            week = WeekRow.build(today, week, stored.streak).map { (day, state) -> WeekDayDto(BakuTime.key(day), state.api) },
         )
     }
 }
