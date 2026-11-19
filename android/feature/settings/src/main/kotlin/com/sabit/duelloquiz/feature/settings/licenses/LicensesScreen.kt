@@ -92,12 +92,12 @@ private fun LicensesList(uiState: LicensesUiState, onAction: (LicensesAction) ->
                 modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.sm, bottom = Spacing.md),
             )
         }
-        item(key = "assets_header") { SectionHeader(stringResource(R.string.settings_licenses_section_assets), overline = false) }
+        item(key = "assets_header") { SectionHeader(stringResource(R.string.settings_licenses_section_assets)) }
         items(uiState.assets, key = { "asset_${it.id}" }) { row ->
             LicenseRow(row, onClick = { onAction(LicensesAction.RowClicked(row.id)) })
         }
         if (uiState.librariesError || uiState.libraries.isNotEmpty()) {
-            item(key = "libraries_header") { SectionHeader(stringResource(R.string.settings_licenses_section_libraries), overline = false) }
+            item(key = "libraries_header") { SectionHeader(stringResource(R.string.settings_licenses_section_libraries)) }
         }
         if (uiState.librariesError) {
             item(key = "libraries_error") {

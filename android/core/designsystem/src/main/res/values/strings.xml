@@ -183,8 +183,8 @@
     <string name="settings_licenses">Açıq mənbə lisenziyaları</string>
     <string name="settings_licenses_title">Lisenziyalar</string>
     <string name="settings_licenses_intro">Duello Quiz açıq mənbə layihələrdən istifadə edir. Onların müəlliflərinə təşəkkür edirik!</string>
-    <string name="settings_licenses_section_assets">Şriftlər və ikonlar</string>
-    <string name="settings_licenses_section_libraries">Kitabxanalar</string>
+    <string name="settings_licenses_section_assets">ŞRİFTLƏR VƏ İKONLAR</string>
+    <string name="settings_licenses_section_libraries">KİTABXANALAR</string>
     <string name="settings_licenses_item_supporting">%1$s · %2$s</string>
     <string name="settings_licenses_version">Versiya %1$s</string>
     <string name="settings_licenses_unknown">Lisenziya göstərilməyib</string>

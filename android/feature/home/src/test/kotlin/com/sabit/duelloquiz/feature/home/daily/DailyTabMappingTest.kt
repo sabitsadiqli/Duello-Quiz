@@ -252,6 +252,33 @@ class DailyTabMappingTest {
     }
 
     @Test
+    fun withoutWeekStreakEventsNeverPlaceADotButTheMessageStays() {
+        // OQ-D35 / PROG-11: the event says something happened, not reliably on which day.
+        val freeze = StreakEvent(StreakEventType.FREEZE_USED, "2026-11-17", 3)
+        val frozen = streakSectionUi(thursdayProgress(streak = 3, week = null, event = freeze), false, true, thursdayNoon)
+            as StreakSectionUi.Content
+        assertTrue(frozen.weekFallback)
+        assertEquals(
+            listOf(WeekDotState.Active, WeekDotState.Active, WeekDotState.Active, WeekDotState.TodayPending) +
+                List(3) { WeekDotState.Unknown },
+            frozen.week.map { it.state },
+        )
+
+        val lost = StreakEvent(StreakEventType.STREAK_LOST, "2026-11-16", 4)
+        val progress = thursdayProgress(streak = 0, week = null, event = lost)
+        val afterLoss = streakSectionUi(progress, false, true, thursdayNoon) as StreakSectionUi.Content
+        assertEquals(
+            listOf(WeekDotState.Unknown, WeekDotState.Unknown, WeekDotState.Unknown, WeekDotState.TodayPending) +
+                List(3) { WeekDotState.Unknown },
+            afterLoss.week.map { it.state },
+        )
+
+        // The streak messages are unchanged.
+        assertEquals(StreakMessageUi(StreakMessageVariant.FreezeUsed), streakMessageUi(freeze, progress, null, thursdayNoon))
+        assertEquals(StreakMessageVariant.StreakLost, streakMessageUi(lost, progress, null, thursdayNoon)?.variant)
+    }
+
+    @Test
     fun aStaleServerWeekAfterMidnightNeverClaimsToday() {
         val fridayNoon = thursdayNoon + 24 * hour
         val content = streakSectionUi(thursdayProgress(week = serverWeek), false, true, fridayNoon) as StreakSectionUi.Content

@@ -20,10 +20,17 @@ and the reminder row.
   `GET /v1/me/progress` returns `week: [{dayKey, state: "active" | "freeze" |
   "missed" | "today_pending" | "none"}]`, 7 entries Monday–Sunday of the current Baku
   week; `missed` only after the user's first active day (`docs/api/openapi.yaml`
-  0.4.0). Fallback only for a cached response without `week`: mark
-  the last `streakCurrent` days up to yesterday (today too if `todayActive`) as
-  active, all other past days as "none", never show a freeze dot (it cannot be
-  inferred), and say nothing in text that the fallback cannot know.
+  0.4.0). The dot of every day is the server state 1:1: `freeze` → freeze dot,
+  `missed` → missed dot (PROG-11).
+  **Fallback (decided 2026-11-19), only for an old cached response without `week`:**
+  mark the last `streakCurrent` days up to yesterday (today too if `todayActive`)
+  as active, today dashed if not active, every other day neutral ("none" style).
+  The fallback **never** shows a freeze dot or a missed dot — not from streak
+  numbers and not from the `freeze_used` / `streak_lost` events either (the events
+  say that something happened, not reliably on which day; PROG-11: the client
+  never decides that a day was missed or frozen). The streak messages
+  (`home_streak_freeze_used`, `home_streak_lost`) still show once as usual; no text
+  names a frozen or missed day. The first refresh replaces the derived row.
 - **OQ-D36 — decided by Sabit (2026-11-17): "Səhər" without a clock time, no picker.** The brief asks for the
   switch "with time", but the reminder is sent by the server at a fixed 10:00
   Baku (OQ-088) and `notifications.md` decided never to print clock times
@@ -189,13 +196,13 @@ wall-clock time, never negative, clamped to 23:59:59.
 | Success, today active | Filled flame, "Seriya: 7 gün", today's dot filled; no hint |
 | Success, not yet today | Outlined flame, today's dot dashed; streak hint message if `streakCurrent ≥ 1` and not dismissed today |
 | New user (0 / 0) | Outlined flame, `profile_streak_empty` instead of the title + best line; week row shows today dashed, earlier days "future/none" style |
-| Streak lost event (previous ≥ 2) | "Seriya: 0 gün" (or 1 after playing), `home_streak_lost` message once; no red |
-| Freeze used event | Freeze dot on the protected day; `home_streak_freeze_used` once |
+| Streak lost event (previous ≥ 2) | "Seriya: 0 gün" (or 1 after playing), `home_streak_lost` message once; no red; missed dots only where the server sends `missed` |
+| Freeze used event | `home_streak_freeze_used` once; the protected day shows the freeze dot because the server sends `freeze` for it (with `week`; the event itself never places a dot) |
 | Freeze held | Freeze line under the best line |
 | Error, cache | Cached values (after Baku midnight: today shown as "not yet", PROG-06) |
 | Error, no cache | Section shows `profile_section_error` + text button `common_retry`, height kept |
 | Offline, cache older Baku day | Today dashed; no hint message (cannot know) |
-| Cached response without `week` (before API 0.4.0) | Derived dots as described; no freeze dots; replaced on the next refresh |
+| Cached response without `week` (before API 0.4.0) | Derived dots as in OQ-D35 above: active / today dashed / neutral only; no freeze and no missed dots, also not from `freeze_used` / `streak_lost` events; messages unchanged; replaced on the next refresh |
 | Large numbers ("Seriya: 365 gün", "ən uzun: 1000 gün") | Wrap, never truncate |
 
 ### C. Reminder row

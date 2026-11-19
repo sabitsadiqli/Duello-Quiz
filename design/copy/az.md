@@ -307,8 +307,8 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | `settings_licenses` | Açıq mənbə lisenziyaları | `row` (fits at 1.3, 24 chars). |
 | `settings_licenses_title` | Lisenziyalar | `bar` title of the licences screen (short form). |
 | `settings_licenses_intro` | Duello Quiz açıq mənbə layihələrdən istifadə edir. Onların müəlliflərinə təşəkkür edirik! | `wrap`. Intro on the licences list (`licenses.md`). |
-| `settings_licenses_section_assets` | Şriftlər və ikonlar | Section header (Nunito, Material Symbols). |
-| `settings_licenses_section_libraries` | Kitabxanalar | Section header. |
+| `settings_licenses_section_assets` | ŞRİFTLƏR VƏ İKONLAR | **v3**: overline (§35a), authored in capitals (was "Şriftlər və ikonlar"). Fraunces, Plus Jakarta Sans, Material Symbols. ~175 / 230dp. |
+| `settings_licenses_section_libraries` | KİTABXANALAR | **v3**: overline (§35a), authored in capitals (was "Kitabxanalar"). ~110 / 145dp. |
 | `settings_licenses_item_supporting` | %1$s · %2$s | Row supporting text: `settings_licenses_version` · licence name(s). |
 | `settings_licenses_version` | Versiya %1$s | Version of a library ("Versiya 3.6.0"). |
 | `settings_licenses_unknown` | Lisenziya göstərilməyib | Row supporting text when the metadata has no licence. |
@@ -820,7 +820,8 @@ and `home_daily_*` (now on the Gündəlik tab; prefix kept to avoid churn),
 `home_duel_hint`, `home_duel_cta`, `settings_section_theme`,
 `settings_section_language`, `settings_section_notifications`,
 `settings_section_account`, `settings_section_about`, `profile_matches_title`,
-`profile_categories_title` (see their rows above, marked **v3**).
+`profile_categories_title`, `settings_licenses_section_assets`,
+`settings_licenses_section_libraries` (see their rows above, marked **v3**).
 
 ## Truncation risks
 

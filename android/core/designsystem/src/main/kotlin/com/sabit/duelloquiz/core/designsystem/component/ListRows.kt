@@ -32,14 +32,14 @@ import com.sabit.duelloquiz.core.designsystem.theme.overline
 
 /**
  * Section header for lists (components.md §14 v3): the overline (§35a, strings authored in
- * capitals) in onSurfaceVariant. [overline] false keeps a sentence-case titleSmall header for
- * strings that are not authored in capitals (licences screen).
+ * capitals, never uppercased at runtime) in onSurfaceVariant, with list padding and heading
+ * semantics. Used by settings and the licences screen.
  */
 @Composable
-fun SectionHeader(text: String, modifier: Modifier = Modifier, overline: Boolean = true) {
+fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = if (overline) MaterialTheme.typography.overline else MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.overline,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
             .fillMaxWidth()
