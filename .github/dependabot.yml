@@ -23,6 +23,16 @@ updates:
         patterns: ["androidx.*"]
       kotlin:
         patterns: ["org.jetbrains.kotlin*"]
+    ignore:
+      # AGP must not be newer than what Sabit's Android Studio supports (2026-11-19:
+      # Studio supports up to AGP 9.4.x). Only patch bumps until Studio is updated;
+      # remove this block after updating Android Studio.
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "com.android.library"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "com.android.tools.build:*"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: gradle
     directory: /backend
