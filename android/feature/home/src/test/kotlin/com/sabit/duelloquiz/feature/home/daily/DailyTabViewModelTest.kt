@@ -4,10 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
+import com.sabit.duelloquiz.core.common.Telemetry
 import com.sabit.duelloquiz.core.common.WallClock
 import com.sabit.duelloquiz.core.designsystem.component.AnswerBoxState
 import com.sabit.duelloquiz.core.designsystem.component.DailyCardUi
 import com.sabit.duelloquiz.core.designsystem.component.StreakMessageVariant
+import com.sabit.duelloquiz.core.designsystem.component.WeekDotState
 import com.sabit.duelloquiz.core.model.AnswerResult
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.DailyResultSummary
@@ -21,6 +23,8 @@ import com.sabit.duelloquiz.core.model.NotificationSettings
 import com.sabit.duelloquiz.core.model.ReminderType
 import com.sabit.duelloquiz.core.model.StreakEvent
 import com.sabit.duelloquiz.core.model.StreakEventType
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import com.sabit.duelloquiz.core.notifications.NotificationSettingsAction
 import com.sabit.duelloquiz.core.notifications.NotificationSettingsEvent
 import com.sabit.duelloquiz.core.notifications.NotificationSettingsMessage
@@ -89,9 +93,20 @@ class DailyTabViewModelTest {
     private val network = TestNetworkMonitor(online = true)
     private val savedStateHandle = SavedStateHandle()
 
+    private class RecordingTelemetry : Telemetry {
+        val events = mutableListOf<Pair<String, Map<String, Any>>>()
+        override fun setUserId(userId: String?) = Unit
+        override fun recordNonFatal(throwable: Throwable) = Unit
+        override fun logEvent(name: String, params: Map<String, Any>) {
+            events += name to params
+        }
+    }
+
+    private val telemetry = RecordingTelemetry()
+
     private fun TestScope.viewModel(): DailyTabViewModel {
         val vm = DailyTabViewModel(
-            daily, progress, settings, system, prompts, network, savedStateHandle, WallClock { testScheduler.currentTime },
+            daily, progress, settings, system, prompts, network, savedStateHandle, WallClock { testScheduler.currentTime }, telemetry,
         )
         backgroundScope.launch { vm.uiState.collect {} }
         return vm
@@ -373,6 +388,91 @@ class DailyTabViewModelTest {
         runCurrent()
         assertTrue(vm.uiState.value.streak is StreakSectionUi.Content)
         assertEquals(1, daily.statusCount)
+    }
+
+    // Week row (PROG-11, OQ-D35)
+
+    /** 2026-11-19 12:00 Baku (Thursday) as server clock − test clock, and the next Baku midnight. */
+    private val thursdayNoon = 1_795_075_200_000L
+    private val thursdayReset = 1_795_118_400_000L
+
+    private val serverWeek = listOf(
+        WeekDay("2026-11-16", WeekDayState.ACTIVE),
+        WeekDay("2026-11-17", WeekDayState.FREEZE),
+        WeekDay("2026-11-18", WeekDayState.MISSED),
+        WeekDay("2026-11-19", WeekDayState.ACTIVE),
+        WeekDay("2026-11-20", WeekDayState.NONE),
+        WeekDay("2026-11-21", WeekDayState.NONE),
+        WeekDay("2026-11-22", WeekDayState.NONE),
+    )
+
+    private fun thursdayProgress(week: List<WeekDay>?) =
+        testProgressSummary(streak = 2, todayActive = true, nextResetEpochMs = thursdayReset)
+            .copy(dayKey = "2026-11-19", clockOffsetMs = thursdayNoon, week = week)
+
+    @Test
+    fun theWeekRowShowsTheServerStates() = runTest {
+        progress.nextRefresh = DataResult.Success(thursdayProgress(serverWeek))
+        val vm = viewModel()
+        runCurrent()
+
+        val streak = vm.uiState.value.streak as StreakSectionUi.Content
+        assertEquals(
+            listOf(WeekDotState.Active, WeekDotState.Freeze, WeekDotState.Missed, WeekDotState.Active) +
+                List(3) { WeekDotState.Unknown },
+            streak.week.map { it.state },
+        )
+        assertTrue(streak.week[3].isToday)
+        assertFalse(streak.weekFallback)
+    }
+
+    @Test
+    fun weekViewedIsLoggedOncePerBakuDayWithServerStates() = runTest {
+        progress.nextRefresh = DataResult.Success(thursdayProgress(serverWeek))
+        val vm = viewModel()
+        runCurrent()
+
+        vm.onAction(DailyTabAction.WeekRowShown)
+        vm.onAction(DailyTabAction.WeekRowShown)
+        runCurrent()
+
+        assertEquals(
+            listOf(
+                DailyTabViewModel.EVENT_STREAK_WEEK_VIEWED to
+                    mapOf(DailyTabViewModel.PARAM_ACTIVE_DAYS to 2, DailyTabViewModel.PARAM_FALLBACK to false),
+            ),
+            telemetry.events,
+        )
+
+        // A recreated ViewModel (same back stack entry) does not log the same day again.
+        val again = viewModel()
+        runCurrent()
+        again.onAction(DailyTabAction.WeekRowShown)
+        assertEquals(1, telemetry.events.size)
+    }
+
+    @Test
+    fun weekViewedReportsTheFallbackWhenTheWeekIsMissing() = runTest {
+        progress.nextRefresh = DataResult.Success(thursdayProgress(week = null))
+        val vm = viewModel()
+        runCurrent()
+
+        vm.onAction(DailyTabAction.WeekRowShown)
+
+        val (_, params) = telemetry.events.single()
+        assertEquals(true, params[DailyTabViewModel.PARAM_FALLBACK])
+        // Fallback: Wednesday and Thursday derived from streak 2 with today active.
+        assertEquals(2, params[DailyTabViewModel.PARAM_ACTIVE_DAYS])
+    }
+
+    @Test
+    fun weekViewedIsNotLoggedWithoutContent() = runTest {
+        val vm = viewModel()
+        runCurrent()
+
+        vm.onAction(DailyTabAction.WeekRowShown)
+
+        assertTrue(telemetry.events.isEmpty())
     }
 
     // Reminder mirror (daily-tab.md C, NOTIF-06)

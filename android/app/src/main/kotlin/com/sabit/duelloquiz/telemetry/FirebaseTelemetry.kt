@@ -1,6 +1,7 @@
 package com.sabit.duelloquiz.telemetry
 
 import android.content.Context
+import android.os.Bundle
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -23,6 +24,21 @@ internal class FirebaseTelemetry(context: Context) : Telemetry {
 
     override fun recordNonFatal(throwable: Throwable) {
         crashlytics.recordException(throwable)
+    }
+
+    override fun logEvent(name: String, params: Map<String, Any>) {
+        val bundle = Bundle()
+        params.forEach { (key, value) ->
+            when (value) {
+                is String -> bundle.putString(key, value)
+                is Int -> bundle.putLong(key, value.toLong())
+                is Long -> bundle.putLong(key, value)
+                is Double -> bundle.putDouble(key, value)
+                // Analytics has no boolean parameter type: Boolean is sent as "true" / "false".
+                else -> bundle.putString(key, value.toString())
+            }
+        }
+        analytics.logEvent(name, bundle)
     }
 
     companion object {

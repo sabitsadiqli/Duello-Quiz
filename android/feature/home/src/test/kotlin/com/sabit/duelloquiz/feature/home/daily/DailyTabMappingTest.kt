@@ -13,6 +13,8 @@ import com.sabit.duelloquiz.core.model.DailyStatus
 import com.sabit.duelloquiz.core.model.DailyStatusType
 import com.sabit.duelloquiz.core.model.StreakEvent
 import com.sabit.duelloquiz.core.model.StreakEventType
+import com.sabit.duelloquiz.core.model.WeekDay
+import com.sabit.duelloquiz.core.model.WeekDayState
 import com.sabit.duelloquiz.core.testing.testDailyAttempt
 import com.sabit.duelloquiz.core.testing.testProgressSummary
 import org.junit.Assert.assertEquals
@@ -190,6 +192,88 @@ class DailyTabMappingTest {
     fun aNewUserHasTheEmptyFace() {
         val content = streakSectionUi(testProgressSummary(streak = 0, best = 0), false, true, 0) as StreakSectionUi.Content
         assertTrue(content.isNew)
+    }
+
+    // Week row (PROG-11, OQ-D35)
+
+    /** 2026-11-19 12:00 Baku (Thursday) and the next Baku midnight. */
+    private val thursdayNoon = 1_795_075_200_000L
+    private val thursdayReset = 1_795_118_400_000L
+
+    private val serverWeek = listOf(
+        WeekDay("2026-11-16", WeekDayState.ACTIVE),
+        WeekDay("2026-11-17", WeekDayState.FREEZE),
+        WeekDay("2026-11-18", WeekDayState.MISSED),
+        WeekDay("2026-11-19", WeekDayState.TODAY_PENDING),
+        WeekDay("2026-11-20", WeekDayState.NONE),
+        WeekDay("2026-11-21", WeekDayState.NONE),
+        WeekDay("2026-11-22", WeekDayState.NONE),
+    )
+
+    private fun thursdayProgress(streak: Int = 1, week: List<WeekDay>?, event: StreakEvent? = null) =
+        testProgressSummary(streak = streak, todayActive = false, nextResetEpochMs = thursdayReset, event = event)
+            .copy(dayKey = "2026-11-19", week = week)
+
+    @Test
+    fun theWeekRowRendersTheServerStates() {
+        val content = streakSectionUi(thursdayProgress(week = serverWeek), false, true, thursdayNoon) as StreakSectionUi.Content
+        assertEquals(
+            listOf(WeekDotState.Active, WeekDotState.Freeze, WeekDotState.Missed, WeekDotState.TodayPending) +
+                List(3) { WeekDotState.Unknown },
+            content.week.map { it.state },
+        )
+        assertFalse(content.weekFallback)
+        assertEquals(1, content.activeDays)
+    }
+
+    @Test
+    fun serverStatesWinOverTheStreakAndItsEvents() {
+        // The streak and a lost-streak event would derive other dots; the server week decides.
+        val event = StreakEvent(StreakEventType.STREAK_LOST, "2026-11-16", 4)
+        val content = streakSectionUi(thursdayProgress(streak = 3, week = serverWeek, event = event), false, true, thursdayNoon)
+            as StreakSectionUi.Content
+        assertEquals(WeekDotState.Active, content.week[0].state)
+        assertEquals(WeekDotState.Missed, content.week[2].state)
+    }
+
+    @Test
+    fun withoutWeekTheRowIsTheFallback() {
+        val content = streakSectionUi(thursdayProgress(streak = 2, week = null), false, true, thursdayNoon) as StreakSectionUi.Content
+        assertTrue(content.weekFallback)
+        // Tuesday and Wednesday derived as played, no freeze or missed claims.
+        assertEquals(
+            listOf(WeekDotState.Unknown, WeekDotState.Active, WeekDotState.Active, WeekDotState.TodayPending) +
+                List(3) { WeekDotState.Unknown },
+            content.week.map { it.state },
+        )
+        assertEquals(2, content.activeDays)
+        // An empty list is treated like an absent week.
+        assertTrue((streakSectionUi(thursdayProgress(week = emptyList()), false, true, thursdayNoon) as StreakSectionUi.Content).weekFallback)
+    }
+
+    @Test
+    fun aStaleServerWeekAfterMidnightNeverClaimsToday() {
+        val fridayNoon = thursdayNoon + 24 * hour
+        val content = streakSectionUi(thursdayProgress(week = serverWeek), false, true, fridayNoon) as StreakSectionUi.Content
+        assertEquals(
+            listOf(WeekDotState.Active, WeekDotState.Freeze, WeekDotState.Missed, WeekDotState.Unknown, WeekDotState.TodayPending) +
+                List(2) { WeekDotState.Unknown },
+            content.week.map { it.state },
+        )
+        assertTrue(content.week[4].isToday)
+        assertFalse(content.todayActive)
+        assertFalse(content.weekFallback)
+    }
+
+    @Test
+    fun aServerWeekOfAPreviousWeekShowsTheCurrentWeekNeutral() {
+        val nextWednesdayNoon = thursdayNoon + 6 * 24 * hour
+        val content = streakSectionUi(thursdayProgress(week = serverWeek), false, true, nextWednesdayNoon) as StreakSectionUi.Content
+        assertEquals(
+            listOf(WeekDotState.Unknown, WeekDotState.Unknown, WeekDotState.TodayPending) + List(4) { WeekDotState.Unknown },
+            content.week.map { it.state },
+        )
+        assertEquals(0, content.activeDays)
     }
 
     // Message (PROG-06 … PROG-08)

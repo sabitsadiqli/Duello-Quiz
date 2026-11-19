@@ -14,6 +14,12 @@ interface Telemetry {
 
     /** Records a caught, non-fatal error (e.g. unreadable bundled licence metadata). */
     fun recordNonFatal(throwable: Throwable)
+
+    /**
+     * Logs an Analytics event (names and properties from the analytics sections of
+     * `docs/requirements/`). [params] values are String, Int, Long, Double or Boolean; never PII.
+     */
+    fun logEvent(name: String, params: Map<String, Any> = emptyMap()) = Unit
 }
 
 /** Telemetry that drops everything: builds without google-services.json and tests. */

@@ -47,7 +47,14 @@ sealed interface StreakSectionUi {
         val week: List<WeekDayUi>,
         /** Baku day of the progress; the dot fill and flame ignite run once per day. */
         val dayKey: String,
-    ) : StreakSectionUi
+        /** [week] was derived without the server's `week` (OQ-D35 fallback, analytics `fallback`). */
+        val weekFallback: Boolean = false,
+        /** The Baku day (epoch day, server clock) the row was built for; analytics dedupe. */
+        val todayEpochDay: Long = 0,
+    ) : StreakSectionUi {
+        /** Days shown as played (analytics `streak_week_viewed.active_days`, 0–7). */
+        val activeDays: Int get() = week.count { it.state == WeekDotState.Active }
+    }
 }
 
 /** The one streak message (components.md §29 v3). [days] = best streak for "streak ended". */
@@ -139,9 +146,10 @@ internal fun inProgressBoxes(progress: DailyProgress?): List<AnswerBoxState>? {
 }
 
 /**
- * The streak section (daily-tab.md B, PROG-06). [localNowMs] is the wall clock; the Baku "today"
- * follows the server clock of the progress. The week row is the OQ-D35 fallback of
- * [BakuDay.fallbackWeek]. Pure, unit-tested.
+ * The streak section (daily-tab.md B, PROG-06, PROG-11). [localNowMs] is the wall clock; the Baku
+ * "today" follows the server clock of the progress. The week row renders the server's `week`
+ * ([BakuDay.serverWeek]); only a cached response without it uses [BakuDay.fallbackWeek].
+ * Pure, unit-tested.
  */
 internal fun streakSectionUi(progress: ProgressSummary?, loading: Boolean, attempted: Boolean, localNowMs: Long): StreakSectionUi {
     if (progress == null) {
@@ -153,16 +161,20 @@ internal fun streakSectionUi(progress: ProgressSummary?, loading: Boolean, attem
     }
     val stale = progress.isFromEarlierDay(localNowMs)
     val today = BakuDay.of(localNowMs + progress.clockOffsetMs).epochDay
-    val progressDay = BakuDay.parse(progress.dayKey)?.epochDay
-    val event = progress.streakEvent
-    val week = BakuDay.fallbackWeek(
-        todayEpochDay = today,
-        progressEpochDay = progressDay,
-        streakCurrent = progress.streakCurrent,
-        todayActive = progress.todayActive,
-        freezeEpochDay = event?.takeIf { it.type == StreakEventType.FREEZE_USED }?.let { BakuDay.parse(it.dayKey)?.epochDay },
-        missedEpochDay = event?.takeIf { it.type == StreakEventType.STREAK_LOST }?.let { BakuDay.parse(it.dayKey)?.epochDay },
-    )
+    val serverWeek = progress.week?.takeIf { it.isNotEmpty() }
+    val week = if (serverWeek != null) {
+        BakuDay.serverWeek(today, serverWeek)
+    } else {
+        val event = progress.streakEvent
+        BakuDay.fallbackWeek(
+            todayEpochDay = today,
+            progressEpochDay = BakuDay.parse(progress.dayKey)?.epochDay,
+            streakCurrent = progress.streakCurrent,
+            todayActive = progress.todayActive,
+            freezeEpochDay = event?.takeIf { it.type == StreakEventType.FREEZE_USED }?.let { BakuDay.parse(it.dayKey)?.epochDay },
+            missedEpochDay = event?.takeIf { it.type == StreakEventType.STREAK_LOST }?.let { BakuDay.parse(it.dayKey)?.epochDay },
+        )
+    }
     return StreakSectionUi.Content(
         current = progress.streakCurrent,
         best = progress.streakBest,
@@ -171,6 +183,8 @@ internal fun streakSectionUi(progress: ProgressSummary?, loading: Boolean, attem
         isNew = progress.streakCurrent == 0 && progress.streakBest == 0,
         week = week,
         dayKey = progress.dayKey,
+        weekFallback = serverWeek == null,
+        todayEpochDay = today,
     )
 }
 
