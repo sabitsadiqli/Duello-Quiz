@@ -8,9 +8,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * The reminder the app was opened from (NOTIF-05), handed from the activity to home: a daily
- * reminder scrolls the daily card into view once; nothing starts by itself. Only the type is
- * used; the payload's day is never trusted (home shows the current server state).
+ * The reminder the app was opened from (NOTIF-05), handed from the activity to the tab scaffold
+ * in :app: both reminder types open the Gündəlik tab scrolled to the top (ignored while a
+ * full-screen flow is open); nothing starts by itself. Only the type is used; the payload's day
+ * is never trusted (the tab shows the current server state).
  */
 @Singleton
 class ReminderOpens @Inject constructor() {

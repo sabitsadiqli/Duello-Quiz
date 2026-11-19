@@ -105,7 +105,7 @@ Dəyişikliklər, Əlaqə. English summary section at the end (`lang="en"`, top 
 ### account-deletion.html
 `h1` "Duello Quiz hesabının silinməsi" (names the app, a Play requirement), date,
 intro placeholder; "Tətbiqdə hesabı sil" with four numbered steps whose bold UI
-labels match `copy/az.md` (`home_settings_cd`, `settings_section_account`,
+labels match `copy/az.md` (`nav_profile`, `profile_settings_cd`, `settings_section_account`,
 `settings_delete_account`, `settings_delete_confirm_button`,
 `settings_delete_dialog_confirm`); "Tətbiq olmadan silmə sorğusu", "Nələr
 silinir", "Nələr qalır və nə qədər" placeholders; a "Diqqət" callout

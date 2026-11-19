@@ -94,7 +94,6 @@
 
     <!-- home_ (the duel entry keys come with the duel, OQ-020) -->
     <string name="home_rating">Reytinq: %1$d</string>
-    <string name="home_settings_cd">Parametrlər</string>
     <plurals name="home_category_question_count">
         <item quantity="one">%1$d sual</item>
         <item quantity="other">%1$d sual</item>
@@ -531,7 +530,6 @@
 
     <!-- progress_ / home_streak_ (retention, 2026-10-22) -->
     <string name="progress_level">Səviyyə %1$d</string>
-    <string name="progress_level_cd">səviyyə %1$d</string>
     <string name="progress_xp_gained">+%1$s XP</string>
     <string name="progress_xp_into_level">%1$s / %2$s XP</string>
     <string name="progress_level_up">Yeni səviyyə: %1$d!</string>
@@ -573,14 +571,7 @@
         <item quantity="one">Seriya: %1$d gün</item>
         <item quantity="other">Seriya: %1$d gün</item>
     </plurals>
-    <plurals name="profile_streak_best">
-        <item quantity="one">Ən uzun seriya: %1$d gün</item>
-        <item quantity="other">Ən uzun seriya: %1$d gün</item>
-    </plurals>
-    <string name="profile_streak_today_done">Bu gün oynamısan</string>
-    <string name="profile_streak_today_pending">Bu gün hələ oynamamısan</string>
     <string name="profile_streak_freeze_available">Seriya qoruyucusu: var</string>
-    <string name="profile_streak_freeze_earn">Seriya qoruyucusu %1$d günlük seriyada qazanılır</string>
     <string name="profile_streak_empty">Hələ seriyan yoxdur. Bu gün bir oyun oyna və başla.</string>
     <string name="profile_streak_cd">Seriya %1$d gün, ən uzun seriya %2$d gün</string>
     <string name="profile_categories_title">KATEQORİYALAR</string>

@@ -242,6 +242,13 @@ object UserActiveDaysTable : Table("user_active_days") {
     override val primaryKey = PrimaryKey(userId, day)
 }
 
+/** Missed days a consumed streak freeze covered (V7, OQ-D35 week row). */
+object UserFreezeDaysTable : Table("user_freeze_days") {
+    val userId = javaUUID("user_id")
+    val day = date("day")
+    override val primaryKey = PrimaryKey(userId, day)
+}
+
 object ProgressAwardsTable : Table("progress_awards") {
     val userId = javaUUID("user_id")
     val sourceType = varchar("source_type", 8)
