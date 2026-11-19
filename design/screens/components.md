@@ -986,6 +986,11 @@ Not interactive. TalkBack: part of the card node, or `daily_squares_cd`.
 (`common_weekdays_short`, `type.labelSmall`). Dot states and glyphs:
 `daily-tab.md` B (active = saffron fill + ring + check, today pending = dashed
 saffron ring, freeze = blue-ink fill + ring + shield, missed = outline ring +
-dash, future = hairline ring). One TalkBack element (`daily_tab_week_cd`). Not
-interactive.
+dash, future = hairline ring). Data: each dot is the server `week[].state`
+(`GET /v1/me/progress`, API 0.4.0) 1:1 — `active`, `today_pending`, `freeze`,
+`missed`, `none`; the client never infers a state. Fallback for an old cached
+response without `week` only: active / today pending / none derived from
+`streakCurrent` + `todayActive`, never `freeze` or `missed` (not from the
+`freeze_used` / `streak_lost` events either; `daily-tab.md` OQ-D35, PROG-11). One
+TalkBack element (`daily_tab_week_cd`). Not interactive.
 

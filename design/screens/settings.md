@@ -47,7 +47,7 @@ delete), app information.
    4. Row `settings_language_value`, leading `language` icon, **not clickable**, no
       chevron (SET-02). Trailing check icon in `scheme.primary` to show it is the
       selected language.
-   4a. Section header `settings_section_notifications` ("Bildirişlər").
+   4a. Section header `settings_section_notifications` ("BİLDİRİŞLƏR").
    4b. Optional blocked banner `settings_notif_blocked` + action
        `settings_notif_open_system` (only when the phone blocks the app's
        notifications), inset `space.lg`.

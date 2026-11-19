@@ -9,7 +9,7 @@
 
 Stories: SET-03 ("Açıq mənbə lisenziyaları" shows the list of third-party licences).
 Entry from `settings.md`. Tokens: `design/tokens.json`. Components: `components.md`
-§11, §12, §14. Copy: `copy/az.md` (`settings_licenses_*`).
+§11, §12, §14, §35a. Copy: `copy/az.md` (`settings_licenses_*`).
 
 ## Questions and decisions
 
@@ -27,6 +27,14 @@ Entry from `settings.md`. Tokens: `design/tokens.json`. Components: `components.
   and **Material Symbols** (icons copied as vector drawables, Apache License 2.0).
   The OFL requires the licence to travel with the font; showing the full text here
   satisfies that.
+- **Decided (2026-11-19, v3): section headers are the v3 section overline
+  (`components.md` §35a)**, the same as every settings section header
+  (`settings.md`: `settings_section_*` = "TEMA", "HAQQINDA", ...). No sentence-case
+  variant of the section header exists in v3. `settings_licenses_section_assets`
+  = "ŞRİFTLƏR VƏ İKONLAR", `settings_licenses_section_libraries` = "KİTABXANALAR",
+  authored in capitals in `az.md` (Azerbaijani capitals İ / Ə / Ş, never
+  uppercased at runtime). Width: ~19 characters ≈ 175dp at 1.0, ≈ 230dp at 1.3,
+  fits 328dp on one line.
 - Decided: the Google "G" logo on the sign-in button is a trademark used under
   Google's branding guidelines, not an open-source asset; it is not listed.
 - Decided: library names, authors and licence names come from the metadata in
@@ -52,9 +60,10 @@ offline.
 2. `LazyColumn`, full width (rows carry their own `space.lg` padding):
    1. Intro, padding `space.lg` horizontal, `space.sm` top, `space.md` bottom:
       `settings_licenses_intro` `type.bodyMedium` `scheme.onSurfaceVariant`, wraps.
-   2. Section header (`components.md` §14) `settings_licenses_section_assets`.
-   3. Manual rows in this order: Nunito, Material Symbols.
-   4. Section header `settings_licenses_section_libraries`.
+   2. Section overline (`components.md` §35a, as in settings)
+      `settings_licenses_section_assets`.
+   3. Manual rows in this order (v3): Fraunces, Plus Jakarta Sans, Material Symbols.
+   4. Section overline (§35a) `settings_licenses_section_libraries`.
    5. Generated rows, sorted by name (case-insensitive, Azerbaijani collation not
       needed: names are Latin/English). One row per library as delivered by the
       generator; no grouping.
@@ -136,7 +145,8 @@ selectable text, full-screen state views, snackbar.
 
 - List rows: one element each, `settings_licenses_item_cd` ("Coil, versiya 3.6.3,
   lisenziya Apache License 2.0"), role button.
-- Section headers and the detail name have heading semantics.
+- Section overlines and the detail name have heading semantics (TalkBack reads
+  the capitals as normal words).
 - Licence text is reachable paragraph by paragraph with TalkBack.
 - Contrast: only existing pairs (`onSurface` / `onSurfaceVariant` on `surface` and
   `surfaceContainerLow`, `primary` text buttons on `surface`), both themes.
