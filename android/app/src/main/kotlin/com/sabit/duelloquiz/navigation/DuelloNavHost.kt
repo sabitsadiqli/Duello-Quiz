@@ -1,5 +1,6 @@
 package com.sabit.duelloquiz.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -16,9 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -29,6 +28,9 @@ import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.DuelloNavigationBar
 import com.sabit.duelloquiz.core.designsystem.component.NavigationItemUi
 import com.sabit.duelloquiz.core.designsystem.icon.DuelloIcons
+import com.sabit.duelloquiz.core.designsystem.motion.NavTransitions
+import com.sabit.duelloquiz.core.designsystem.motion.ScreenTransition
+import com.sabit.duelloquiz.core.designsystem.motion.rememberNavTransitions
 import com.sabit.duelloquiz.feature.auth.navigation.AuthGraph
 import com.sabit.duelloquiz.feature.auth.navigation.authGraph
 import com.sabit.duelloquiz.feature.auth.navigation.navigateToAuth
@@ -75,6 +77,7 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
     val scrollRequests = remember { TabScrollRequests() }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentTab = backStackEntry?.destination.topLevelTab()
+    val transitions: NavTransitions = rememberNavTransitions()
 
     fun selectTab(tab: TopLevelTab) {
         when (val selection = tabSelection(navController.currentBackStackEntry?.destination.topLevelTab(), tab)) {
@@ -104,6 +107,13 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .background(MaterialTheme.colorScheme.surface),
+            // Screen transitions (screenTransition rules); predictive back follows the pop ones.
+            enterTransition = { transitions.enter(moveTransition(), forward = true) },
+            exitTransition = { transitions.exit(moveTransition(), forward = true) },
+            popEnterTransition = { transitions.enter(moveTransition(), forward = false) },
+            popExitTransition = { transitions.exit(moveTransition(), forward = false) },
+            predictivePopEnterTransition = { transitions.enter(moveTransition(), forward = false) },
+            predictivePopExitTransition = { transitions.exit(moveTransition(), forward = false) },
         ) {
             authGraph(navController)
             playScreen(
@@ -238,5 +248,6 @@ private fun NavController.popBackToDailyTab(notice: HomeNotice?) {
     popBackStack<DailyTabDestination>(inclusive = false)
 }
 
-private fun NavDestination?.isInAuthGraph(): Boolean =
-    this?.hierarchy?.any { it.hasRoute<AuthGraph>() } == true
+/** The transition for the move this scope animates (initial → target back-stack entry). */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.moveTransition(): ScreenTransition =
+    screenTransition(initialState.destination.navArea(), targetState.destination.navArea())
