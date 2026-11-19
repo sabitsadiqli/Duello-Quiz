@@ -8,17 +8,17 @@ SVGs by hand); review PNGs by `design/tools/brand_previews.py` into
 
 ## Questions and decisions
 
-- **OQ-D37 — decided by design 2026-11-19, pending Sabit's approval of the look.**
+- **OQ-D37 — decided: look approved by Sabit 2026-11-19.**
   The brand moves from the v2 violet/pink palette to v3 "dəftər": ink mark on
   paper, one nar accent, Fraunces wordmark. Covers the mark, the adaptive icon
   (all three layers), the splash icon, the notification icon and accent, the Play
   feature graphic, the screenshot caption frames and the web legal pages. Until
   Sabit approves, android-dev may build it behind nothing (it is only resources)
   but should not upload a release with it. Review: `design/brand/previews/*.png`.
-- **OQ-D38 — open (Sabit): launcher background paper or ink.** Proposal: paper
+- **OQ-D38 — decided by Sabit 2026-11-19: paper launcher background.** Proposal: paper
   (reasons under "App icon"). Alternative: ink background with a paper bubble and
   the nar bubble (`#EC7B6F`), the dark-theme mark on a dark tile. Decides: Sabit.
-- **OQ-D39 — open (Sabit): web fonts on the legal pages.** Proposal: keep "no
+- **OQ-D39 — decided by Sabit 2026-11-19: local/system fonts only, no web font download.** Proposal: keep "no
   external requests" (system serif and sans, Fraunces / Plus Jakarta Sans only if
   installed). Google Fonts is rejected: it would send every visitor's IP address
   to Google, which the privacy policy says does not happen ("no other third
