@@ -9,6 +9,7 @@ import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
 import com.sabit.duelloquiz.core.common.WallClock
+import com.sabit.duelloquiz.core.designsystem.component.StreakDayState
 import com.sabit.duelloquiz.core.duel.ActiveDuel
 import com.sabit.duelloquiz.core.model.ApiErrorCode
 import com.sabit.duelloquiz.core.model.AuthProvider
@@ -17,7 +18,6 @@ import com.sabit.duelloquiz.core.model.Category
 import com.sabit.duelloquiz.core.model.DataError
 import com.sabit.duelloquiz.core.model.DataResult
 import com.sabit.duelloquiz.core.model.Profile
-import com.sabit.duelloquiz.core.notifications.ReminderOpens
 import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestCategoryRepository
@@ -27,6 +27,7 @@ import com.sabit.duelloquiz.core.testing.TestProfileRepository
 import com.sabit.duelloquiz.core.testing.TestProgressRepository
 import com.sabit.duelloquiz.core.testing.TestQuizRepository
 import com.sabit.duelloquiz.core.testing.TestVerificationBannerRepository
+import com.sabit.duelloquiz.core.testing.testProgressSummary
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -42,6 +43,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -82,7 +84,6 @@ class HomeViewModelTest {
     private val profile = Profile(id = "p1", displayName = "Aysel", avatarUrl = null, rating = 1000)
     private val progressRepository = TestProgressRepository()
     private val dailyRepository = TestDailyRepository()
-    private val reminderOpens = ReminderOpens()
 
     private fun TestScope.viewModel(): HomeViewModel {
         val vm = HomeViewModel(
@@ -97,7 +98,6 @@ class HomeViewModelTest {
             activeDuels,
             progressRepository,
             dailyRepository,
-            reminderOpens,
             WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
@@ -121,23 +121,11 @@ class HomeViewModelTest {
 
         val content = vm.uiState.value.categories as CategoriesUi.Content
         assertEquals(listOf("Coğrafiya", "Tarix"), content.items.map { it.name })
-        // No progress and no cache after the (failed) load: level and streak are hidden, never "0" (HOME-08).
-        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000, progress = HeaderProgressUi.Hidden), vm.uiState.value.header)
+        assertEquals(ProfileHeaderUi(displayName = "Aysel", rating = 1000, loaded = true), vm.uiState.value.header)
+        assertEquals("Aysel", vm.uiState.value.header.firstName)
+        // No progress and no cache after the (failed) load: the streak chip is hidden, never "0" (HOME-08).
+        assertEquals(StreakChipUi.Hidden, vm.uiState.value.streak)
         assertFalse(vm.uiState.value.showOfflineBanner)
-    }
-
-    @Test
-    fun tileAccentsFollowTheServerOrderAndWrapAfterEight() = runTest {
-        val many = (1..10).map { Category(id = it, slug = "c$it", name = "Kateqoriya $it", iconKey = "unknown") }
-        categoryRepository.nextRefresh = DataResult.Success(many)
-        val vm = viewModel()
-        runCurrent()
-
-        val content = vm.uiState.value.categories as CategoriesUi.Content
-        assertEquals(
-            listOf("violet", "blue", "teal", "green", "orange", "rose", "pink", "ocean", "violet", "blue"),
-            content.items.map { it.accent },
-        )
     }
 
     @Test
@@ -186,7 +174,7 @@ class HomeViewModelTest {
         val vm = HomeViewModel(
             authRepository, bannerRepository, TestProfileRepository(initial = profile), cached,
             quizRepository, networkMonitor, savedStateHandle, appConfig, activeDuels,
-            progressRepository, dailyRepository, reminderOpens, WallClock { testScheduler.currentTime },
+            progressRepository, dailyRepository, WallClock { testScheduler.currentTime },
         )
         backgroundScope.launch { vm.uiState.collect {} }
         runCurrent()
@@ -197,18 +185,19 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun profileFailureWithoutCacheOffersAnInlineRetry() = runTest {
+    fun profileFailureWithoutCacheStopsTheAvatarSkeleton() = runTest {
         profileRepository.nextRefresh = DataResult.Failure(DataError.Server)
         categoryRepository.nextRefresh = DataResult.Success(categories)
+        val gate = CompletableDeferred<Unit>()
+        categoryRepository.refreshGate = gate
         val vm = viewModel()
+        assertFalse(vm.uiState.value.header.loaded)
         runCurrent()
-        assertTrue(vm.uiState.value.header.showRetry)
 
-        profileRepository.nextRefresh = DataResult.Success(profile)
-        vm.onAction(HomeAction.RetryProfileClicked)
-        runCurrent()
-        assertEquals(1000, vm.uiState.value.header.rating)
-        assertFalse(vm.uiState.value.header.showRetry)
+        // The avatar falls back to the person icon and still opens Profil; no rating is guessed.
+        assertEquals(ProfileHeaderUi(loaded = true), vm.uiState.value.header)
+        assertNull(vm.uiState.value.header.firstName)
+        gate.complete(Unit)
     }
 
     @Test
@@ -409,14 +398,72 @@ class HomeViewModelTest {
         assertNull(vm.uiState.value.verificationBanner)
     }
 
-    @Test
-    fun settingsIconNavigates() = runTest {
-        val vm = viewModel()
+    // Tabs, refresh rules and the Gündəlik badge (HOME-07, HOME-08, HOME-09, PROF-01)
 
+    @Test
+    fun theStreakChipOpensTheDailyTabAndTheAvatarTheProfileTab() = runTest {
+        val vm = viewModel()
         vm.events.test {
-            vm.onAction(HomeAction.SettingsClicked)
-            assertEquals(HomeEvent.NavigateToSettings, awaitItem())
+            vm.onAction(HomeAction.StreakClicked)
+            assertEquals(HomeEvent.NavigateToDailyTab, awaitItem())
+            vm.onAction(HomeAction.AvatarClicked)
+            assertEquals(HomeEvent.NavigateToProfileTab, awaitItem())
         }
+    }
+
+    @Test
+    fun theRefreshAlsoLoadsTheDailyStatusForTheBadge() = runTest {
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals(1, dailyRepository.statusCount)
+        assertEquals(1, progressRepository.refreshCount)
+        assertEquals(1, profileRepository.refreshCount)
+        // A failed daily status shows nothing on home (HOME-07): no message, categories unaffected.
+        vm.events.test { expectNoEvents() }
+    }
+
+    @Test
+    fun tabReentryRefreshesOnlyAfterFiveMinutes() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        assertEquals(1, categoryRepository.refreshCount)
+
+        advanceTimeBy(HomeViewModel.REENTRY_REFRESH_MS - 1_000)
+        vm.onAction(HomeAction.Resumed)
+        runCurrent()
+        assertEquals(1, categoryRepository.refreshCount)
+
+        advanceTimeBy(2_000)
+        vm.onAction(HomeAction.Resumed)
+        runCurrent()
+        assertEquals(2, categoryRepository.refreshCount)
+        assertEquals(2, dailyRepository.statusCount)
+    }
+
+    @Test
+    fun returningFromAGameRefreshesOnceAndClearsTheFlag() = runTest {
+        val vm = viewModel()
+        runCurrent()
+
+        savedStateHandle[NavResults.TAB_REFRESH] = true
+        runCurrent()
+
+        assertEquals(2, categoryRepository.refreshCount)
+        assertEquals(2, progressRepository.refreshCount)
+        assertEquals(false, savedStateHandle.get<Boolean>(NavResults.TAB_REFRESH))
+        assertNotNull(vm.uiState.value.today)
+    }
+
+    @Test
+    fun theStreakChipShowsTheServerStreak() = runTest {
+        progressRepository.nextRefresh = DataResult.Success(testProgressSummary(streak = 7, todayActive = true))
+        val vm = viewModel()
+        runCurrent()
+
+        val chip = vm.uiState.value.streak as StreakChipUi.Content
+        assertEquals(7, chip.days)
+        assertEquals(StreakDayState.ActiveToday, chip.state)
     }
 
     // Duel entry and profile (OQ-020, HOME-03, PROF-01, DUEL-16)
@@ -449,11 +496,15 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun theHeaderOpensTheProfile() = runTest {
+    fun theDuelCardIgnoresTapsWhileAQuizStarts() = runTest {
+        quizRepository.startGate = CompletableDeferred()
         val vm = viewModel()
+        runCurrent()
         vm.events.test {
-            vm.onAction(HomeAction.ProfileClicked)
-            assertEquals(HomeEvent.NavigateToProfile, awaitItem())
+            vm.onAction(HomeAction.CategoryClicked(CategoryUi(1, "Coğrafiya", "geography")))
+            runCurrent()
+            vm.onAction(HomeAction.DuelClicked)
+            expectNoEvents()
         }
     }
 

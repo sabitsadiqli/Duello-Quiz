@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
         systemNotifications.refresh()
     }
 
-    /** Only the reminder type is read; home shows the current server state (NOTIF-05). */
+    /** Only the reminder type is read; the Gündəlik tab shows the current server state (NOTIF-05). */
     private fun handleReminderIntent(intent: Intent?) {
         val type = ReminderType.fromWire(intent?.getStringExtra(NotificationIntents.EXTRA_TYPE)) ?: return
         intent?.removeExtra(NotificationIntents.EXTRA_TYPE)

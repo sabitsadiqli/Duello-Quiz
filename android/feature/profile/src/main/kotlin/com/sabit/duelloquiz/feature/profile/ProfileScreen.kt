@@ -475,28 +475,10 @@ private fun RecordCard(record: DuelRecord, botRecord: DuelRecord) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                // v3 (profile.md): level chip + mini XP bar under the header, max 240dp, centred.
-                (progress as? SectionUi.Content)?.value?.let { level ->
-                    Spacer(Modifier.height(Spacing.md))
-                    LevelChipRow(level = level.level, fraction = level.fraction, modifier = Modifier.widthIn(max = HeaderLevelMaxWidth))
-                    Spacer(Modifier.height(Spacing.xs))
-                    Text(
-                        text = stringResource(
-                            R.string.progress_xp_into_level,
-                            RetentionFormat.xp(level.xpIntoLevel),
-                            RetentionFormat.xp(level.xpForNextLevel),
-                        ),
-                        style = MaterialTheme.typography.bodySmall.tabularFigures(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }
 }
-
-/** profile.md v3: the level chip + XP bar in the header is at most 240dp wide. */
-private val HeaderLevelMaxWidth = Sizes.skeletonLineWidth * 2
 
 @Composable
 private fun RecordRow(icon: Int, tint: Color, @StringRes label: Int, count: Int) {

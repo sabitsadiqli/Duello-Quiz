@@ -215,7 +215,7 @@ Every duel error code and close code → what the user sees (`docs/api/duel-prot
 | --- | --- | --- |
 | `home_rating` | Reytinq: %1$d | v3: profile header only (home shows `home_duel_sticker_rating`). |
 | `home_profile_cd` | %1$s, reytinq %2$d | **v3 removed** (no home header). |
-| `home_settings_cd` | Parametrlər | **v3 removed** from home; the settings icon moved to Profil (`profile_settings_cd`). Keep the key until `docs/legal/account-deletion.html` is updated. |
+| `home_settings_cd` | — | **v3 deleted** (2026-11-18, after `docs/legal/account-deletion.html` moved to `nav_profile` + `profile_settings_cd`). |
 | `home_duel_title` | Duel | Duel card title. Hidden until the duel ships (OQ-020). |
 | `home_duel_hint` | %1$d sual · nə qədər əminsən? | **v3 changed** (was "Əminliyini sına, reytinq qazan"). `plurals`; value 7. Duel card hint, bodyMedium, `wrap`. U+00B7 middle dot. 172 / 224dp (264). |
 | `home_duel_cta` | Rəqib tap | **v3 changed** (was "Duelə başla"). CTA pill on the duel card with a trailing `arrow_forward` icon (the arrow is an icon, not text). 71 / 92dp at 1.0 / 1.3. `profile_empty_cta` keeps "Duelə başla". |
