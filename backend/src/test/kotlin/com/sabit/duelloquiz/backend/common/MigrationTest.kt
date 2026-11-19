@@ -3,6 +3,7 @@ package com.sabit.duelloquiz.backend.common
 import com.sabit.duelloquiz.backend.testsupport.DbTest
 import com.sabit.duelloquiz.backend.testsupport.TestDatabase
 import kotlinx.coroutines.runBlocking
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,7 +35,7 @@ class MigrationTest : DbTest() {
             "users", "categories", "images", "questions", "options", "quiz_sessions", "quiz_session_questions",
             "quiz_answers", "matches", "match_rounds", "match_answers",
             "daily_challenges", "daily_challenge_questions", "daily_attempts", "daily_answers", "user_progress",
-            "user_category_xp", "user_active_days", "progress_awards", "xp_events", "push_tokens",
+            "user_category_xp", "user_active_days", "user_freeze_days", "progress_awards", "xp_events", "push_tokens",
             "notification_settings", "notification_log",
         ).forEach { assertTrue(it in tables, "missing table $it") }
     }
@@ -229,6 +230,39 @@ class MigrationTest : DbTest() {
         }
         listOf("duel_played", "duel_bot_played", "duel_bot_win", "duel_bot_draw").forEach { xp(it) }
         assertFailsWith<Exception> { xp("duel_bot_bonus") }
+        Unit
+    }
+
+    @Test
+    fun `V7 backfills the latest freeze day unless it became active`() = runBlocking {
+        // Rebuild the schema up to V6, add V6-era rows, then apply V7.
+        TestDatabase.flyway().clean()
+        Flyway.configure().configuration(TestDatabase.flyway().configuration).target("6").load().migrate()
+        val a = "00000000-0000-0000-0000-0000000000a1"
+        val b = "00000000-0000-0000-0000-0000000000a2"
+        val c = "00000000-0000-0000-0000-0000000000a3"
+        db.tx {
+            exec("INSERT INTO users (id, firebase_uid, display_name) VALUES ('$a', 'a', 'Aaa'), ('$b', 'b', 'Bbb'), ('$c', 'c', 'Ccc')")
+            exec(
+                """
+                INSERT INTO user_progress (user_id, streak_current, streak_best, last_active_day, freeze_used_day) VALUES
+                  ('$a', 8, 8, DATE '2026-11-12', DATE '2026-11-11'),
+                  ('$b', 3, 3, DATE '2026-11-12', NULL),
+                  ('$c', 5, 5, DATE '2026-11-12', DATE '2026-11-10')
+                """.trimIndent(),
+            )
+            exec("INSERT INTO user_active_days (user_id, day) VALUES ('$a', DATE '2026-11-12'), ('$c', DATE '2026-11-10')")
+        }
+        val result = TestDatabase.flyway().migrate()
+        assertTrue(result.migrationsExecuted >= 1, "V7 and later applied")
+        val rows = db.tx { rows("SELECT user_id::text, day::text FROM user_freeze_days ORDER BY user_id") }
+        assertEquals(listOf(listOf(a, "2026-11-11")), rows)
+        // Personal data: removed with the user row.
+        db.tx { exec("DELETE FROM users WHERE id = '$a'") }
+        assertEquals(emptyList(), db.tx { rows("SELECT user_id FROM user_freeze_days") })
+        // One row per user and day.
+        db.tx { exec("INSERT INTO user_freeze_days (user_id, day) VALUES ('$b', DATE '2026-11-01')") }
+        assertFailsWith<Exception> { db.tx { exec("INSERT INTO user_freeze_days (user_id, day) VALUES ('$b', DATE '2026-11-01')") } }
         Unit
     }
 }
