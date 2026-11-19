@@ -1,5 +1,7 @@
 package com.sabit.duelloquiz.feature.home
 
+import com.sabit.duelloquiz.core.designsystem.component.WeekDayUi
+import com.sabit.duelloquiz.core.designsystem.component.WeekDotState
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -40,6 +42,50 @@ data class BakuDay(val epochDay: Long, val dayOfMonth: Int, val monthIndex: Int,
         }
 
         fun weekdayIndex(epochDay: Long): Int = (epochDay + EPOCH_WEEKDAY).mod(DAYS_PER_WEEK)
+
+        /**
+         * The week row (daily-tab.md B, components.md §38a) for the Baku week (Monday → Sunday) of
+         * [todayEpochDay], derived from the streak alone. **Documented fallback until OQ-D35**
+         * (`GET /v1/me/progress` has no per-day history yet):
+         * - the streak ends on [progressEpochDay] when [todayActive] (the day the server answered
+         *   already counts), else the day before; the [streakCurrent] days up to that end are
+         *   [WeekDotState.Active];
+         * - today, when not active, is [WeekDotState.TodayPending];
+         * - [freezeEpochDay] (a `freeze_used` event) is [WeekDotState.Freeze] and [missedEpochDay]
+         *   (the first missed day of a `streak_lost` event) [WeekDotState.Missed]: both are known
+         *   from the server; nothing else is ever shown as freeze or missed;
+         * - every other past day and every future day is [WeekDotState.Unknown] (never claimed).
+         * [progressEpochDay] may be older than today (cache after Baku midnight, PROG-06): then
+         * today is never active from the cache. [streakCurrent] 0 = no active day.
+         */
+        fun fallbackWeek(
+            todayEpochDay: Long,
+            progressEpochDay: Long?,
+            streakCurrent: Int,
+            todayActive: Boolean,
+            freezeEpochDay: Long? = null,
+            missedEpochDay: Long? = null,
+        ): List<WeekDayUi> {
+            val monday = todayEpochDay - weekdayIndex(todayEpochDay)
+            val activeRange: LongRange = if (progressEpochDay == null || streakCurrent <= 0) {
+                LongRange.EMPTY
+            } else {
+                val end = if (todayActive) progressEpochDay else progressEpochDay - 1
+                (end - streakCurrent + 1)..end
+            }
+            return (0 until DAYS_PER_WEEK).map { index ->
+                val day = monday + index
+                val state = when {
+                    day > todayEpochDay -> WeekDotState.Unknown
+                    day == freezeEpochDay -> WeekDotState.Freeze
+                    day in activeRange -> WeekDotState.Active
+                    day == todayEpochDay -> WeekDotState.TodayPending
+                    day == missedEpochDay -> WeekDotState.Missed
+                    else -> WeekDotState.Unknown
+                }
+                WeekDayUi(weekdayIndex = index, state = state, isToday = day == todayEpochDay)
+            }
+        }
 
         private fun epochDayOf(year: Int, month: Int, day: Int): Long {
             val utc = Calendar.getInstance(UTC).apply {

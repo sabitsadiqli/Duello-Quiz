@@ -160,24 +160,14 @@ private fun NavigationItem(
                     modifier = Modifier.size(Sizes.icon),
                 )
             }
-            AnimatedVisibility(
+            NavBadge(
                 visible = item.badgeDescription != null,
-                enter = fadeIn(tween(Motion.SHORT_3)),
-                exit = fadeOut(tween(Motion.SHORT_3)),
+                ringColor = container,
+                dotColor = scheme.primary,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .offset(x = Sizes.icon / 2 + GameSizes.navBadgeOffset, y = -(Sizes.icon / 2) + GameSizes.navBadgeOffset),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(Sizes.navBadgeDot + GameSizes.navBadgeRing * 2)
-                        .border(GameSizes.navBadgeRing, container, FullShape)
-                        .clip(FullShape)
-                        .background(container, FullShape)
-                        .padding(GameSizes.navBadgeRing)
-                        .background(scheme.primary, FullShape),
-                )
-            }
+            )
         }
         Spacer(Modifier.height(Spacing.xxs))
         Text(
@@ -206,6 +196,36 @@ private fun NavigationBarPreview() {
                 NavigationItemUi(stringResource(R.string.nav_profile), DuelloIcons.NavProfile, DuelloIcons.NavProfileSelected, selected = false),
             ),
             onItemClick = {},
+        )
+    }
+}
+
+/**
+ * Badge dot of a navigation item (components.md §33). A top-level composable so that
+ * [AnimatedVisibility] resolves to the receiver-less overload: inside the item's Column the
+ * ColumnScope overload would be picked and violates the Compose DSL scope.
+ */
+@Composable
+private fun NavBadge(
+    visible: Boolean,
+    ringColor: Color,
+    dotColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(Motion.SHORT_3)),
+        exit = fadeOut(tween(Motion.SHORT_3)),
+        modifier = modifier,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Sizes.navBadgeDot + GameSizes.navBadgeRing * 2)
+                .border(GameSizes.navBadgeRing, ringColor, FullShape)
+                .clip(FullShape)
+                .background(ringColor, FullShape)
+                .padding(GameSizes.navBadgeRing)
+                .background(dotColor, FullShape),
         )
     }
 }
