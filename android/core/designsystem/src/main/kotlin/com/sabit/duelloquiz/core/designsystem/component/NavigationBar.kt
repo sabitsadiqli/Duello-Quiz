@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -126,8 +125,9 @@ private fun NavigationItem(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
+        // No fillMaxHeight here: the Row only has a minimum height, so a filling child would
+        // take every pixel the Scaffold offers and the bar would cover the whole screen.
         modifier = modifier
-            .fillMaxHeight()
             .heightIn(min = Sizes.bottomBarHeight)
             .selectable(
                 selected = item.selected,
