@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Duello Quiz API
-  version: 0.3.0
+  version: 0.4.0
   summary: REST API of the Duello Quiz backend (MVP).
   description: |
     Contract for the Android app and admin tooling. Owner: `backend-dev`.
@@ -41,6 +41,7 @@ info:
     | --- | --- |
     | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
     | 0.3.0 (2026-10-30) | Bot opponent (OQ-106 … OQ-110): `MatchSummary.opponentType`, `MatchSummary.ratingChange` is `null` for bot matches, `Stats.botRecord`; `Stats.record` counts only matches against real players; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`; `DELETE /v1/me` deletes the user's bot matches. Old clients only see bot matches if they announced the `"bot"` duel capability (`duel-protocol.md` §7a), so for them nothing changes. |
+    | 0.4.0 (2026-11-19) | Week row (PROG-11, OQ-D35): `ProgressSummary.week`, exactly 7 days Monday → Sunday of the current Baku week, each with a `state` (`active`, `freeze`, `missed`, `today_pending`, `none`). Additive; older clients ignore it. |
 
     ## Error codes
     | HTTP | code | When |
@@ -608,7 +609,8 @@ paths:
         (the freeze covers yesterday and is consumed when the user plays today).
         `streakEvent` drives the one-time home messages (PROG-07, PROG-08); the client
         remembers the shown `(type, dayKey)` per account. `categories` lists every
-        playable category in `sortOrder` (never-played ones at level 1).
+        playable category in `sortOrder` (never-played ones at level 1). `week` is the
+        Gündəlik week row: the current Baku week Monday → Sunday with a state per day (v0.4.0).
       parameters:
         - $ref: "#/components/parameters/AcceptLanguage"
       responses:
@@ -1407,7 +1409,7 @@ components:
     ProgressSummary:
       type: object
       required: [xpTotal, level, xpIntoLevel, xpForNextLevel, streakCurrent, streakBest, todayActive, freezeAvailable,
-                 streakEvent, dayKey, nextResetEpochMs, serverNowEpochMs, categories]
+                 streakEvent, dayKey, nextResetEpochMs, serverNowEpochMs, categories, week]
       properties:
         xpTotal: { type: integer, format: int64 }
         level: { type: integer, minimum: 1 }
@@ -1451,6 +1453,37 @@ components:
               level: { type: integer, minimum: 1 }
               xpIntoLevel: { type: integer, format: int64 }
               xpForNextLevel: { type: integer, format: int64 }
+        week:
+          description: |
+            v0.4.0 (PROG-11, OQ-D35). Always exactly 7 entries, ascending from Monday to
+            Sunday of the Baku week that contains `dayKey` (ISO week; the week starts at
+            00:00 Asia/Baku on Monday, not at UTC midnight). `state` is decided per day
+            by the first rule that matches:
+            1. a day after today → `none`;
+            2. an active day (counted for the streak) → `active`;
+            3. today, not active yet → `today_pending`;
+            4. a missed day a streak freeze covered, or yesterday while a held freeze
+               covers it right now (consumed when the user plays today) → `freeze`;
+            5. any other past day after the user's first active day → `missed`;
+            6. otherwise (before the first active day, or a new user) → `none`.
+            Clients render the states as sent and never derive them.
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            type: object
+            required: [dayKey, state]
+            properties:
+              dayKey: { type: string, format: date, description: Baku date of the day }
+              state: { type: string, enum: [active, freeze, missed, today_pending, none] }
+          example:
+            - { dayKey: "2026-11-16", state: active }
+            - { dayKey: "2026-11-17", state: freeze }
+            - { dayKey: "2026-11-18", state: active }
+            - { dayKey: "2026-11-19", state: today_pending }
+            - { dayKey: "2026-11-20", state: none }
+            - { dayKey: "2026-11-21", state: none }
+            - { dayKey: "2026-11-22", state: none }
 
     DailyStatus:
       type: object
