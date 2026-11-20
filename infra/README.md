@@ -386,6 +386,10 @@ token carries the claim.
    `sudo -u deploy /opt/duello/scripts/import-questions.sh --pull`.
    It runs `bin/duello-backend import /content` in a one-off container of the deployed
    image (same database and media volume); the server keeps running.
+4. Without SSH access from your network (office proxy, VPN): GitHub → Actions →
+   **Import questions** → Run workflow → `dev` (or `prod`). It connects with the deploy
+   key of that environment and runs the same `import-questions.sh --pull`; steps 1–2
+   must have been done once.
 
 ### 10. Backups
 
