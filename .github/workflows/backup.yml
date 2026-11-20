@@ -1,0 +1,169 @@
+name: Backup
+
+# Off-VM backups to Cloudflare R2 (OQ-103), run from GitHub because the VM is not
+# reachable over SSH from Sabit's network. Manual only:
+#   Actions → Backup → Run workflow → environment + action.
+# Actions:
+#   configure      writes /opt/duello/backup.env on the VM from this environment's
+#                  R2 secrets (owner deploy, mode 0600), then runs one backup and lists
+#                  the bucket — the daily timer (installed by bootstrap) uses the file.
+#   backup-now     runs scripts/backup.sh once and lists the bucket.
+#   restore-drill  restores the newest local dump into a scratch database and drops it
+#                  (scripts/restore.sh --test); production data is untouched.
+# Environment secrets (Settings → Environments → dev/prod): DEPLOY_SSH_KEY, DEPLOY_HOST,
+# DEPLOY_USER, DEPLOY_KNOWN_HOSTS (as deploy-backend.yml), R2_ACCESS_KEY_ID,
+# R2_SECRET_ACCESS_KEY. Variables: R2_ENDPOINT (https://<account-id>.eu.r2.cloudflarestorage.com),
+# R2_BUCKET (dev: duello-backups, prod: duello-backups-prod), optional DEPLOY_PORT, DEPLOY_PATH.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment"
+        type: choice
+        options: [dev, prod]
+        default: dev
+      action:
+        description: "What to do"
+        type: choice
+        options: [configure, backup-now, restore-drill]
+        default: configure
+
+concurrency:
+  group: backup-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: ${{ inputs.action }} (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/duello' }}
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      ACTION: ${{ inputs.action }}
+    steps:
+      - name: Check configuration
+        env:
+          HAS_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+          HAS_R2_ID: ${{ secrets.R2_ACCESS_KEY_ID != '' }}
+          HAS_R2_SECRET: ${{ secrets.R2_SECRET_ACCESS_KEY != '' }}
+        run: |
+          missing=""
+          [ "$HAS_KEY" = "true" ] || missing="$missing DEPLOY_SSH_KEY"
+          [ -n "$DEPLOY_HOST" ] || missing="$missing DEPLOY_HOST"
+          [ -n "$DEPLOY_USER" ] || missing="$missing DEPLOY_USER"
+          if [ "$ACTION" = "configure" ]; then
+            [ "$HAS_R2_ID" = "true" ] || missing="$missing R2_ACCESS_KEY_ID"
+            [ "$HAS_R2_SECRET" = "true" ] || missing="$missing R2_SECRET_ACCESS_KEY"
+            [ -n "$R2_ENDPOINT" ] || missing="$missing R2_ENDPOINT(variable)"
+            [ -n "$R2_BUCKET" ] || missing="$missing R2_BUCKET(variable)"
+            if [ -n "$R2_ENDPOINT" ] && ! [[ "$R2_ENDPOINT" =~ ^https://[a-z0-9]+(\.eu)?\.r2\.cloudflarestorage\.com/?$ ]]; then
+              echo "::error::R2_ENDPOINT must look like https://<account-id>.eu.r2.cloudflarestorage.com (without the bucket name)."
+              exit 1
+            fi
+            if [ -n "$R2_BUCKET" ] && ! [[ "$R2_BUCKET" =~ ^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$ ]]; then
+              echo "::error::R2_BUCKET is not a valid bucket name."
+              exit 1
+            fi
+          fi
+          if [ -n "$missing" ]; then
+            echo "::error::Not configured for this environment:$missing. See infra/README.md §10."
+            exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS is not set; trusting the host key seen now (ssh-keyscan)."
+            ssh-keyscan -p "$DEPLOY_PORT" -T 15 "$DEPLOY_HOST" > ~/.ssh/known_hosts 2> /dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host duello-vm
+            HostName $DEPLOY_HOST
+            Port $DEPLOY_PORT
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 20
+            ServerAliveInterval 15
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Write backup.env on the VM
+        if: inputs.action == 'configure'
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          # The file goes over stdin, so the keys never appear on a command line or in logs.
+          {
+            echo "# Written by .github/workflows/backup.yml ($(date -u +%Y-%m-%dT%H:%M:%SZ)). Do not edit by hand;"
+            echo "# change the GitHub environment secrets/variables and run the workflow again."
+            echo "RETENTION_DAYS=14"
+            echo "BACKUP_RCLONE_REMOTE=r2:${R2_BUCKET}"
+            echo "RCLONE_CONFIG_R2_TYPE=s3"
+            echo "RCLONE_CONFIG_R2_PROVIDER=Cloudflare"
+            echo "RCLONE_CONFIG_R2_ENDPOINT=${R2_ENDPOINT%/}"
+            echo "RCLONE_CONFIG_R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}"
+            echo "RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}"
+            echo "RCLONE_CONFIG_R2_REGION=auto"
+            echo "RCLONE_CONFIG_R2_ACL=private"
+            echo "RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true"
+          } | ssh duello-vm "umask 077 && cat > '$DEPLOY_PATH/backup.env.tmp' && mv '$DEPLOY_PATH/backup.env.tmp' '$DEPLOY_PATH/backup.env' && chmod 600 '$DEPLOY_PATH/backup.env'"
+          ssh duello-vm "ls -l '$DEPLOY_PATH/backup.env'"
+
+      - name: Check the R2 connection
+        if: inputs.action != 'restore-drill'
+        run: |
+          ssh duello-vm "set -a; . '$DEPLOY_PATH/backup.env'; set +a; rclone lsf \"\$BACKUP_RCLONE_REMOTE\" --max-depth 1 > /dev/null && echo 'R2 reachable: '\"\$BACKUP_RCLONE_REMOTE\""
+
+      - name: Run one backup (pg_dump + media + upload to R2)
+        if: inputs.action != 'restore-drill'
+        run: ssh duello-vm "'$DEPLOY_PATH/scripts/backup.sh'"
+
+      - name: List the newest files in R2
+        if: inputs.action != 'restore-drill'
+        run: |
+          ssh duello-vm "set -a; . '$DEPLOY_PATH/backup.env'; set +a; rclone lsl \"\$BACKUP_RCLONE_REMOTE\" | sort -k2,3 | tail -n 6"
+
+      - name: Daily timer status
+        if: inputs.action != 'restore-drill'
+        run: ssh duello-vm "systemctl list-timers duello-backup.timer --no-pager || true"
+
+      - name: Restore drill (scratch database, production untouched)
+        if: inputs.action == 'restore-drill'
+        run: |
+          set -euo pipefail
+          ssh duello-vm "set -euo pipefail
+            dump=\$(ls -1t '$DEPLOY_PATH'/backups/duello-db-*.dump 2>/dev/null | head -n 1)
+            [ -n \"\$dump\" ] || { echo 'no local dump yet: run action backup-now first' >&2; exit 1; }
+            stamp=\$(basename \"\$dump\" .dump); stamp=\${stamp#duello-db-}
+            media='$DEPLOY_PATH'/backups/duello-media-\$stamp.tar
+            echo \"drill with \$dump\"
+            if [ -f \"\$media\" ]; then '$DEPLOY_PATH/scripts/restore.sh' --test \"\$dump\" \"\$media\"
+            else '$DEPLOY_PATH/scripts/restore.sh' --test \"\$dump\"; fi"
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config

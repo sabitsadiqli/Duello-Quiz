@@ -431,6 +431,15 @@ approx. $0.015/GB-month above 10 GB. Alternatives: Hetzner Storage Box BX11
    ```
 5. Put the R2 keys in the password manager (needed to restore on a new VM).
 
+**Without SSH (office network / VPN): GitHub Actions → Backup.** Instead of step 4:
+GitHub → Settings → Environments → `dev` → add secrets `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY` and variables `R2_ENDPOINT` (the S3 endpoint without the
+bucket, e.g. `https://<account-id>.eu.r2.cloudflarestorage.com`) and `R2_BUCKET`
+(`duello-backups`; prod: `duello-backups-prod`). Then Actions → **Backup** → Run
+workflow → `dev`, action `configure`: it writes `/opt/duello/backup.env` (0600, owner
+deploy), checks the R2 connection, runs one backup and lists the bucket. Action
+`backup-now` runs a backup on demand; `restore-drill` does the monthly drill below.
+
 Without `backup.env` every run logs a warning. The upload is verified (`rclone check`)
 and the same 14-day retention is applied in the bucket.
 
