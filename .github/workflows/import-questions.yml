@@ -1,0 +1,95 @@
+name: Import questions
+
+# Imports the private question bank into a running environment, from GitHub instead of
+# Sabit's laptop (no SSH from the office network / VPN needed). Manual only.
+#   Actions → Import questions → Run workflow → environment dev or prod.
+# On the VM it runs infra/prod/scripts/import-questions.sh --pull: fast-forwards the
+# bank clone in /opt/duello/content/bank (read-only deploy key, infra/README.md §9),
+# validates everything and writes nothing if any file is invalid. Idempotent.
+# Uses the same environment secrets as deploy-backend.yml (DEPLOY_SSH_KEY, DEPLOY_HOST,
+# DEPLOY_USER, DEPLOY_KNOWN_HOSTS; variables DEPLOY_PORT, DEPLOY_PATH).
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Where to import"
+        type: choice
+        options: [dev, prod]
+        default: dev
+
+concurrency:
+  group: import-questions-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    name: Import into ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/duello' }}
+    steps:
+      - name: Check configuration
+        env:
+          HAS_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        run: |
+          missing=""
+          [ "$HAS_KEY" = "true" ] || missing="$missing DEPLOY_SSH_KEY"
+          [ -n "$DEPLOY_HOST" ] || missing="$missing DEPLOY_HOST"
+          [ -n "$DEPLOY_USER" ] || missing="$missing DEPLOY_USER"
+          if [ -n "$missing" ]; then
+            echo "::error::Not configured for this environment:$missing. See infra/README.md."
+            exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS is not set; trusting the host key seen now (ssh-keyscan)."
+            ssh-keyscan -p "$DEPLOY_PORT" -T 15 "$DEPLOY_HOST" > ~/.ssh/known_hosts 2> /dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host duello-vm
+            HostName $DEPLOY_HOST
+            Port $DEPLOY_PORT
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 20
+            ServerAliveInterval 15
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Check the question bank clone on the VM
+        run: |
+          if ! ssh duello-vm "test -d '$DEPLOY_PATH/content/bank/.git'"; then
+            echo "::error::No question bank clone at $DEPLOY_PATH/content/bank on the VM. One-time setup: infra/README.md §9 steps 1–2 (deploy key + clone)."
+            exit 1
+          fi
+          ssh duello-vm "git -C '$DEPLOY_PATH/content/bank' log -1 --format='before pull: %h %s'"
+
+      - name: Import (pull, validate, write)
+        run: ssh duello-vm "'$DEPLOY_PATH/scripts/import-questions.sh' --pull"
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config
