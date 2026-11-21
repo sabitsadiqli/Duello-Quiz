@@ -128,7 +128,7 @@ Start request results (idempotency key per tap, EXAM-04):
 | --- | --- |
 | 201 attempt | → `exam-attempt.md`, first task (shared axis X); `exam_start` analytics |
 | Same variant already running (server returns it) | → attempt, resume (no second attempt) |
-| Another variant running (409 `attempt_running`) | Dialog title `exam_start_other_running_title` ("Əvvəlcə davam edən sınağı bitir"), body `exam_start_other_running_body` ("«Sınaq №2» hələ davam edir: 12 dəq qalıb."), actions `common_cancel`, `exam_start_other_running_open` ("Ona keç") — opens that attempt, where the user can finish it. (EXAM-20 mentions "Bitir" here: finishing an exam from a dialog without seeing it is too easy to hit by mistake; the attempt screen has the confirm flow.) |
+| Another variant running (409 `exam_attempt_running`) | Dialog title `exam_start_other_running_title` ("Əvvəlcə davam edən sınağı bitir"), body `exam_start_other_running_body` ("«Sınaq №2» hələ davam edir: 12 dəq qalıb."), actions `common_cancel`, `exam_start_other_running_open` ("Ona keç") — opens that attempt, where the user can finish it. (EXAM-20 mentions "Bitir" here: finishing an exam from a dialog without seeing it is too easy to hit by mistake; the attempt screen has the confirm flow.) |
 | Offline / timeout | Snackbar `exam_start_needs_internet`; nothing started |
 | 429 `rate_limited` | Snackbar `exam_start_rate_limited` ("Bu gün çox sınaq başlatmısan. Sabah yenidən cəhd et.") |
 | 409 `variant_version_mismatch` | Banner `exam_variant_updated`, button → download |
