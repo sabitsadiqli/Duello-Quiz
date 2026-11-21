@@ -31,7 +31,8 @@ info:
     - Day = Baku calendar day: 00:00–24:00 Asia/Baku (UTC+4, no DST) by the server
       clock (OQ-074). `dayKey` is that date as `YYYY-MM-DD`. Device clock and time zone
       are never used; clients show countdowns from `nextResetEpochMs` corrected by
-      `serverNowEpochMs`. An activity counts for the day it started (OQ-087).
+      `serverNowEpochMs`. An activity counts for the day it started (OQ-087); a mock
+      exam counts for the day it was submitted (OQ-132).
     - XP, levels and the streak change only as a side effect of the server finalizing
       a quiz session, a daily attempt or a duel; no endpoint accepts progress from the
       client (`docs/mvp-spec.md` §10).
@@ -42,7 +43,7 @@ info:
     | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
     | 0.3.0 (2026-10-30) | Bot opponent (OQ-106 … OQ-110): `MatchSummary.opponentType`, `MatchSummary.ratingChange` is `null` for bot matches, `Stats.botRecord`; `Stats.record` counts only matches against real players; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`; `DELETE /v1/me` deletes the user's bot matches. Old clients only see bot matches if they announced the `"bot"` duel capability (`duel-protocol.md` §7a), so for them nothing changes. |
     | 0.4.0 (2026-11-19) | Week row (PROG-11, OQ-D35): `ProgressSummary.week`, exactly 7 days Monday → Sunday of the current Baku week, each with a `state` (`active`, `freeze`, `missed`, `today_pending`, `none`). Additive; older clients ignore it. |
-    | 0.5.0 (2026-11-21) | Mock exams "Sınaqlar" Phase 1 (ADR 0002, `docs/requirements/mock-exams.md`, OQ-112 … OQ-131): tag `exams`, `/v1/exams*` (catalogue, variant info, offline package without keys, attempt start/resume, answer batch upsert, listening play counter and resume position (OQ-D43), submit, result, self-assessment, review, history). New error codes `exam_variant_not_found`, `exam_attempt_not_found`, `variant_unavailable`, `variant_version_mismatch`, `exam_attempt_running`, `attempt_closed`, `attempt_not_finished`, `task_not_in_attempt`, `group_not_in_attempt`. `DELETE /v1/me` also deletes exam attempts, answers, written texts, listening plays and self-assessments. Progress source type `exam` (streak only, no XP). Additive. |
+    | 0.5.0 (2026-11-21) | Mock exams "Sınaqlar" Phase 1 (ADR 0002, `docs/requirements/mock-exams.md`, OQ-112 … OQ-131): tag `exams`, `/v1/exams*` (catalogue, variant info, offline package without keys, attempt start/resume, answer batch upsert, listening play counter and resume position (OQ-D43), submit, result, self-assessment, review, history). New error codes `exam_variant_not_found`, `exam_attempt_not_found`, `variant_unavailable`, `variant_version_mismatch`, `exam_attempt_running`, `attempt_closed`, `attempt_not_finished`, `task_not_in_attempt`, `group_not_in_attempt`. `DELETE /v1/me` also deletes exam attempts, answers, written texts, listening plays and self-assessments. Progress source type `exam` (streak only, no XP; the Baku day of the submit counts, OQ-132). Additive. |
 
     ## Error codes
     | HTTP | code | When |
@@ -1266,8 +1267,11 @@ paths:
         `deadline` for any submit after `endsAtEpochMs`. After `deadlineEpochMs` only
         the holding device may submit (until `lateUploadUntilEpochMs`; then the server
         has finalized the attempt and returns the result with trigger `server`). A
-        submitted attempt with at least one answered task makes its start day active for
-        the streak; no XP (OQ-125); never changes Elo.
+        submitted attempt with at least one answered task makes the Baku day of the
+        submit active for the streak (OQ-132: not the start day, so an attempt started
+        at 23:40 and submitted at 00:30 counts for the new day); an attempt the server
+        finalized (never submitted) makes no day active. No XP (OQ-125); never changes
+        Elo.
       parameters:
         - $ref: "#/components/parameters/ExamAttemptId"
         - $ref: "#/components/parameters/AcceptLanguage"
@@ -1909,7 +1913,7 @@ components:
         dayKey:
           type: string
           format: date
-          description: Baku day the activity counted for (the day it started, OQ-087).
+          description: Baku day the activity counted for (the day it started, OQ-087; for a mock exam the day it was submitted, OQ-132).
         xpGained: { type: integer, minimum: 0 }
         xpCapped:
           type: boolean

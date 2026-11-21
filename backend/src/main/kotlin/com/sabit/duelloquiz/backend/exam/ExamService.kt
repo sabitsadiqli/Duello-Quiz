@@ -661,7 +661,11 @@ class ExamService(
         return ExamScoring.score(templateOf(variant), scoredTasks(a, content))
     }
 
-    /** Scores and closes a locked open attempt; a client submit makes the day active (OQ-125). */
+    /**
+     * Scores and closes a locked open attempt. A client submit with an answer makes the
+     * Baku day of the submit active (OQ-125, OQ-132: not the start day); a server
+     * finalization never counts.
+     */
     private fun JdbcTransaction.finalizeLocked(a: ExamAttemptRecord, content: VersionContent, trigger: String, now: Instant): ExamAttemptRecord {
         val score = score(a, content)
         val status = if (trigger == TRIGGER_SERVER) AttemptStatus.FINALIZED else AttemptStatus.SUBMITTED
@@ -669,7 +673,8 @@ class ExamService(
         if (trigger != TRIGGER_SERVER) {
             val answered = with(repository) { answers(a.id) }.values.any { it.optionId != null || !it.text.isNullOrBlank() }
             with(progress) {
-                award(AwardRequest(a.userId, SourceType.EXAM, a.id, a.startedAt, eligible = answered, items = emptyList()))
+                // OQ-132: the activity counts for the day it was submitted.
+                award(AwardRequest(a.userId, SourceType.EXAM, a.id, startedAt = now, eligible = answered, items = emptyList()))
             }
         }
         log.info("exam_attempt_closed attemptId={} trigger={} total={}", a.id, trigger, score.total)

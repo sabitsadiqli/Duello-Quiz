@@ -4,7 +4,9 @@ import com.sabit.duelloquiz.backend.common.ErrorResponse
 import com.sabit.duelloquiz.backend.common.db.ExamAnswersTable
 import com.sabit.duelloquiz.backend.common.db.ExamAttemptsTable
 import com.sabit.duelloquiz.backend.common.db.ExamSelfAssessmentsTable
+import com.sabit.duelloquiz.backend.common.db.UserActiveDaysTable
 import com.sabit.duelloquiz.backend.testsupport.DbTest
+import com.sabit.duelloquiz.backend.testsupport.MutableClock
 import com.sabit.duelloquiz.backend.testsupport.TestEnv
 import com.sabit.duelloquiz.backend.testsupport.TestExams
 import com.sabit.duelloquiz.backend.testsupport.TestExams.mapTasks
@@ -30,6 +32,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -344,6 +348,39 @@ class ExamRoutesTest : DbTest() {
             assertEquals(listOf(ExamListeningStateDto(group, 2, 0, false, duration)), resumed.listening)
         }
     }
+
+    @Test
+    fun `a submitted attempt counts for the Baku day of the submit (OQ-132)`() {
+        // 2026-10-16 23:40 Baku = 19:40 UTC.
+        val env = TestEnv(db, clock = MutableClock(Instant.parse("2026-10-16T19:40:00Z")))
+        seed(env)
+        val token = env.verifier.tokenFor("u1")
+        withTestApp(env) { client ->
+            val variant = client.catalog(token).templates.single().variants.single()
+            val pkg = client.pkg(token, variant.id).body<ExamPackageResponse>()
+            val attempt = client.start(token, variant.id).body<ExamAttemptResponse>()
+            client.answers(token, attempt.id, ExamAnswerWriteDto(pkg.task(1).id, 1, pkg.option(1, l1), savedAtEpochMs = env.clock.millis()))
+            env.clock.advance(Duration.ofMinutes(50)) // 00:30 Baku, 2026-10-17
+            val result = client.submit(token, attempt.id).body<ExamResultResponse>()
+            assertEquals(LocalDate.parse("2026-10-17").toString(), result.progress!!.dayKey)
+            assertTrue(result.progress!!.streakExtendedToday)
+            assertEquals(listOf(LocalDate.parse("2026-10-17")), activeDays())
+            val summary = client.get("/v1/exams/attempts") { auth(token) }.body<ExamAttemptListResponse>().attempts.single()
+            assertEquals("2026-10-16", summary.dayKey, "the history keeps the start day (OQ-124 start limit)")
+
+            // A second attempt the server finalizes (never submitted) marks nothing.
+            val second = client.start(token, variant.id).body<ExamAttemptResponse>()
+            client.answers(token, second.id, ExamAnswerWriteDto(pkg.task(1).id, 1, pkg.option(1, l1), savedAtEpochMs = env.clock.millis()))
+            env.clock.advance(Duration.ofMinutes(62).plusHours(24).plusSeconds(1))
+            val finalized = client.get("/v1/exams/attempts/${second.id}/result") { auth(token) }.body<ExamResultResponse>()
+            assertEquals("finalized", finalized.status)
+            assertNull(finalized.progress)
+            assertEquals(listOf(LocalDate.parse("2026-10-17")), activeDays(), "a finalized attempt makes no day active")
+        }
+    }
+
+    private suspend fun activeDays(): List<LocalDate> =
+        db.tx { UserActiveDaysTable.selectAll().map { it[UserActiveDaysTable.day] }.sorted() }
 
     @Test
     fun `one running attempt, version mismatch, unpublished variant and 10 starts per day`() {
