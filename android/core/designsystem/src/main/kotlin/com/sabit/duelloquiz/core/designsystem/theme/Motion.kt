@@ -6,7 +6,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 
-/** motion from design/tokens.json 3.0.0. Durations in ms. */
+/** motion from design/tokens.json 3.1.0. Durations in ms. */
 object Motion {
     const val SHORT_1 = 50
     const val SHORT_2 = 100
@@ -152,5 +152,23 @@ object Motion {
 
         /** weekDotFill: today's dot changes from dashed ring to filled once per Baku day. */
         const val WEEK_DOT_FILL_MS = 250
+    }
+
+    /**
+     * motion.exam (3.1.0): calm on purpose — a 60-minute attempt must not blink. The server
+     * deadline is the only clock; nothing here delays saving an answer.
+     */
+    object Exam {
+        const val TIMER_WARNING_THRESHOLD_MS = 600_000L
+        val TIME_NOTICES_MIN = listOf(30, 10, 1)
+        const val TASK_TRANSITION_MS = 200
+        const val SEGMENT_SWITCH_MS = 150
+        const val AUDIO_PROGRESS_MS = 250L
+        const val MARK_SELECT_MS = 150
+        const val SCORE_SPLIT_FILL_DELAY_MS = 150
+        const val SCORE_SPLIT_FILL_MS = 600
+        const val SCORE_CHANGE_MS = 150
+        /** Status changes on catalogue cards cross-fade. */
+        const val STATUS_CHANGE_MS = 150
     }
 }
