@@ -1,0 +1,35 @@
+{
+  "_comment": "Exam templates (docs/adr/0002-mock-exams-data-and-audio.md §1, docs/requirements/mock-exams.md §2). DİM structure facts: Source A (2024). optionCount 5 is OQ-113's assumption until the content-writer confirms it from DİM's public samples. sample-ingilis is the public format sample (content/samples/exams), never published.",
+  "templates": [
+    {
+      "id": "buraxilis-ingilis",
+      "title": { "az": "Buraxılış — İngilis dili" },
+      "stage": 1,
+      "mode": "subject",
+      "language": "en",
+      "scoring": { "rule": "stage1", "writtenWeight": 2, "maxScore": 100 },
+      "optionCount": 5,
+      "sortOrder": 1,
+      "sections": [
+        { "id": "listening", "title": { "az": "Dinləmə" }, "closed": 3, "written": 3, "group": "listening" },
+        { "id": "language", "title": { "az": "Qrammatika və leksika" }, "closed": 16, "written": 0, "group": null },
+        { "id": "reading", "title": { "az": "Oxu" }, "closed": 4, "written": 4, "group": "reading" }
+      ]
+    },
+    {
+      "id": "sample-ingilis",
+      "title": { "az": "Nümunə — İngilis dili" },
+      "stage": 1,
+      "mode": "subject",
+      "language": "en",
+      "scoring": { "rule": "stage1", "writtenWeight": 2, "maxScore": 100 },
+      "optionCount": 5,
+      "sortOrder": 99,
+      "sections": [
+        { "id": "listening", "title": { "az": "Dinləmə" }, "closed": 1, "written": 0, "group": "listening" },
+        { "id": "language", "title": { "az": "Qrammatika və leksika" }, "closed": 1, "written": 0, "group": null },
+        { "id": "reading", "title": { "az": "Oxu" }, "closed": 1, "written": 1, "group": "reading" }
+      ]
+    }
+  ]
+}

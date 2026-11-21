@@ -1,0 +1,115 @@
+{
+  "id": "sample-ingilis-001",
+  "template": "sample-ingilis",
+  "number": 1,
+  "language": "en",
+  "status": "draft",
+  "author": "content-writer",
+  "publishApprovedBy": null,
+  "groups": [
+    {
+      "id": "listening-1",
+      "kind": "listening",
+      "section": "listening",
+      "title": "At the town library",
+      "instructions": { "az": "Dialoqu dinlə və tapşırığı yerinə yetir. Audio iki dəfə səslənə bilər." },
+      "speakers": [
+        { "role": "A", "name": "Leyla", "voice": "en_GB-alba-medium" },
+        { "role": "B", "name": "Tom", "voice": "en_US-libritts_r-medium", "speakerId": 452 }
+      ],
+      "script": [
+        { "speaker": "A", "text": "Hi Tom. Is the library open on Sunday this week?" },
+        { "speaker": "B", "text": "Not this Sunday, I'm afraid. It's closed for painting until Monday." },
+        { "speaker": "A", "text": "Oh no. I need to return two books before the weekend." },
+        { "speaker": "B", "text": "You can use the return box next to the front door. It's open all day." },
+        { "speaker": "A", "text": "Great, I'll drop them there on Saturday morning, then." }
+      ],
+      "audio": { "file": "audio/listening-1.m4a" },
+      "licence": "original",
+      "author": "content-writer"
+    },
+    {
+      "id": "reading-1",
+      "kind": "reading",
+      "section": "reading",
+      "title": "A garden on the roof",
+      "instructions": { "az": "Mətni oxu və tapşırıqları yerinə yetir." },
+      "passage": "Three years ago the roof of our school was empty and grey. Today it is a small garden with tomatoes, beans and herbs.\n\nThe idea came from a group of students in the tenth grade. They wanted a place to learn about plants **without leaving the school**. The head teacher agreed, but only if the students looked after the garden *every week*, including the summer holidays.\n\nNow younger pupils water the plants in the morning, and older ones keep a diary of the harvest. Last autumn the school canteen used __forty kilograms__ of tomatoes from the roof.",
+      "licence": "original",
+      "author": "content-writer"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "l1",
+      "section": "listening",
+      "group": "listening-1",
+      "type": "closed_single",
+      "prompt": "What will Leyla do with the books?",
+      "options": [
+        { "text": "Return them on Sunday.", "correct": false },
+        { "text": "Put them in the return box on Saturday.", "correct": true },
+        { "text": "Keep them until next month.", "correct": false },
+        { "text": "Give them to Tom.", "correct": false },
+        { "text": "Return them on Monday morning.", "correct": false }
+      ],
+      "explanation": { "az": "Leyla deyir: \"I'll drop them there on Saturday morning\" — yəni kitabları şənbə səhəri qapının yanındakı qaytarma qutusuna qoyacaq." },
+      "status": "draft",
+      "author": "content-writer",
+      "reviewedBy": null
+    },
+    {
+      "id": "g1",
+      "section": "language",
+      "type": "closed_single",
+      "prompt": "Choose the correct option: \"If it ___ tomorrow, we will stay at home.\"",
+      "options": [
+        { "text": "rains", "correct": true },
+        { "text": "will rain", "correct": false },
+        { "text": "rained", "correct": false },
+        { "text": "is raining", "correct": false },
+        { "text": "would rain", "correct": false }
+      ],
+      "explanation": { "az": "Birinci şərt cümləsində (first conditional) \"if\" hissəsində Present Simple işlənir: \"If it rains, we will stay\"." },
+      "status": "draft",
+      "author": "content-writer",
+      "reviewedBy": null
+    },
+    {
+      "id": "r1",
+      "section": "reading",
+      "group": "reading-1",
+      "type": "closed_single",
+      "prompt": "Whose idea was the roof garden?",
+      "options": [
+        { "text": "The head teacher's.", "correct": false },
+        { "text": "The canteen staff's.", "correct": false },
+        { "text": "A group of tenth-grade students'.", "correct": true },
+        { "text": "The younger pupils'.", "correct": false },
+        { "text": "The parents'.", "correct": false }
+      ],
+      "explanation": { "az": "İkinci abzasda deyilir: \"The idea came from a group of students in the tenth grade\"." },
+      "status": "draft",
+      "author": "content-writer",
+      "reviewedBy": null
+    },
+    {
+      "id": "r2",
+      "section": "reading",
+      "group": "reading-1",
+      "type": "written",
+      "answerFormat": "short_text",
+      "prompt": "Why did the head teacher agree to the garden only with a condition? Answer in one or two sentences.",
+      "modelAnswer": "Because the students had to look after the garden every week, also during the summer holidays, so the plants would not die.",
+      "criteria": [
+        { "mark": "1", "description": { "az": "Şərt (hər həftə, yay tətilində də qulluq) düzgün və tam göstərilib, cümlə qrammatik cəhətdən başa düşüləndir." } },
+        { "mark": "1/2", "description": { "az": "Şərt qismən göstərilib (məsələn, yay tətili qeyd olunmayıb) və ya ciddi qrammatik səhvlər var." } },
+        { "mark": "0", "description": { "az": "Cavab yoxdur, mətnə uyğun deyil və ya şərt göstərilməyib." } }
+      ],
+      "explanation": { "az": "Cavab ikinci abzasdadır: \"only if the students looked after the garden every week, including the summer holidays\"." },
+      "status": "draft",
+      "author": "content-writer",
+      "reviewedBy": null
+    }
+  ]
+}

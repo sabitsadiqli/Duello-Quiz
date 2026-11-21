@@ -3,10 +3,17 @@ package com.sabit.duelloquiz.backend.content
 import com.sabit.duelloquiz.backend.ApiJson
 import com.sabit.duelloquiz.backend.common.AppConfig
 import com.sabit.duelloquiz.backend.common.Db
+import com.sabit.duelloquiz.backend.exam.ExamFiles
+import com.sabit.duelloquiz.backend.exam.ExamImportReport
+import com.sabit.duelloquiz.backend.exam.ExamImporter
+import com.sabit.duelloquiz.backend.exam.ExamRepository
+import com.sabit.duelloquiz.backend.exam.ExamTemplates
+import com.sabit.duelloquiz.backend.exam.ExamViews
 import com.sabit.duelloquiz.backend.image.ImageProcessor
 import com.sabit.duelloquiz.backend.image.ImageRepository
 import com.sabit.duelloquiz.backend.image.ImageService
 import com.sabit.duelloquiz.backend.image.LocalDiskImageStorage
+import com.sabit.duelloquiz.backend.image.MediaUrls
 import io.ktor.server.config.ApplicationConfig
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
@@ -24,8 +31,11 @@ import kotlin.io.path.readText
  * `duello-backend import <dir>`: imports a content directory with the same importer as
  * `POST /v1/admin/questions/import`. Database settings come from application.conf /
  * environment variables (DB_URL, DB_USER, DB_PASSWORD, MEDIA_DIR). Question images
- * (`image.file`) are read relative to <dir>, processed and written to MEDIA_DIR. Exit codes: 0 ok,
- * 1 validation failed (nothing written), 2 usage or runtime error.
+ * (`image.file`) are read relative to <dir>, processed and written to MEDIA_DIR. If
+ * `<dir>/exams/` exists, its mock-exam variants are validated first (ADR 0002 §2) and
+ * imported after the questions; an invalid variant rejects the whole run before anything
+ * is written. Exit codes: 0 ok, 1 validation failed (nothing written), 2 usage or runtime
+ * error.
  */
 fun runImportCli(args: List<String>): Int {
     if (args.size != 1) {
@@ -48,8 +58,14 @@ fun runImportCli(args: List<String>): Int {
         val images = ImageService(
             db, imageRepository, LocalDiskImageStorage(Path.of(config.media.dir)), ImageProcessor(config.images), config.images, clock,
         )
+        val storage = LocalDiskImageStorage(Path.of(config.media.dir))
+        val exams = ExamImporter(
+            db, ExamRepository(), storage, ExamTemplates.load(), ExamViews(MediaUrls(config.media.baseUrl), config.exams), config.exams, clock,
+        )
+        val preparedExams = if (ExamFiles.exists(dir)) runBlocking { exams.validate(ExamFiles.read(dir)) } else null
         val report = runBlocking { ContentImporter(db, ContentRepository(), clock, images, imageRepository).import(input) }
         println(ApiJson.encodeToString(ImportReport.serializer(), report))
+        preparedExams?.let { println(ApiJson.encodeToString(ExamImportReport.serializer(), runBlocking { exams.write(it) })) }
         0
     } catch (e: ImportValidationException) {
         System.err.println("Import rejected, nothing was written:")
@@ -68,10 +84,12 @@ fun runImportCli(args: List<String>): Int {
  * Reads a content directory:
  * - `<dir>/categories.json` (optional): JSON array of category entries;
  * - question files: every `*.json` below `<dir>/questions/` if it exists, otherwise below
- *   `<dir>` (excluding `categories.json`), in path order.
+ *   `<dir>` (excluding `categories.json` and the mock-exam folder `<dir>/exams/`, which
+ *   [com.sabit.duelloquiz.backend.exam.ExamFiles] reads), in path order.
  */
 object ContentFiles {
     const val CATEGORIES_FILE = "categories.json"
+    const val EXAMS_DIR = "exams"
 
     fun read(dir: Path): ImportInput {
         val preIssues = mutableListOf<ImportIssue>()
@@ -91,6 +109,7 @@ object ContentFiles {
         val files = Files.walk(questionRoot).use { paths ->
             paths.filter { it.isRegularFile() && it.extension == "json" }
                 .filter { !(it.parent == dir && it.name == CATEGORIES_FILE) }
+                .filter { !it.startsWith(dir.resolve(EXAMS_DIR)) }
                 .sorted()
                 .toList()
         }
