@@ -6,7 +6,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| — | No open questions. | | |
+| OQ-132 | Mock exams (post-MVP): which Baku day does a submitted sınaq make active (OQ-125 B) when the attempt crosses 00:00 Baku, and does a server-finalized attempt (never submitted) count? Options: A. the Baku day of the submit (as the quiz: the day it finishes; `exam-result.md` shows the streak row when "this submit made today active"); B. the Baku day of the start (current `docs/api/openapi.yaml` draft: "makes its start day active"); finalized: count / not count. Trade-off: A matches the result screen and the quiz rule, but a 23:30 start can save tomorrow, not today; B saves the day the user actually began but the result shown after midnight cannot say "today". Added 2026-11-21 by business-analyst. Blocks EXAM-17 streak row tests only. | A (day of the user or deadline submit, ≥ 1 answered task); a server-finalized attempt does **not** count, because the user never saw it end and gets no streak feedback | Sabit |
 
 ## Decided by Sabit (2026-11-21) — mock exams "Sınaqlar" (post-MVP)
 

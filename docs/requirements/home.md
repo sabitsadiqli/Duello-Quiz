@@ -25,7 +25,9 @@ phone and without scrolling on a common 360 × 740 dp screen, what can be played
 is (avatar, greeting) and whether their streak is alive. It must stay usable on a
 weak or missing connection by explaining what is not available instead of showing a
 blank screen. The bottom navigation (HOME-09) connects it to the Gündəlik and Profil
-tabs.
+tabs. Post-MVP, with the exams flag on, Oyna also carries the "Sınaqlar" entry below
+the categories and may then scroll (HOME-10, the only exception to the no-scroll
+rule, OQ-D40).
 
 ## 2. User stories
 
@@ -39,7 +41,8 @@ tabs.
 | HOME-06 | As a player, I want an entry to settings, so that I can change theme, reminders or sign out. | (v3, 2026-11-17): entry moved to the Profil tab |
 | HOME-07 | As a player, I want a Gündəlik tab that shows today's challenge, with a dot on the tab while I still have to play it, so that I see at once whether I still have to play today without crowding home. | OQ-074, OQ-079 (decided); (v3, 2026-11-17) |
 | HOME-08 | As a player, I want my streak on home (tap → Gündəlik) and my level on Profil, so that I see whether my streak is alive every time I open the app. | OQ-083, OQ-085 (decided); (v3, 2026-11-17) |
-| HOME-09 | As a player, I want a bottom navigation with the tabs "Oyna", "Gündəlik" and "Profil", so that I reach play, my daily habit and my profile in one tap. | New (v3, 2026-11-17) |
+| HOME-09 | As a player, I want a bottom navigation with the tabs "Oyna", "Gündəlik" and "Profil", so that I reach play, my daily habit and my profile in one tap. | New (v3, 2026-11-17); (design, 2026-11-21) exam flows |
+| HOME-10 | As a student, I want the "Sınaqlar" entry on Oyna and a banner for my running sınaq, so that I find mock exams and never lose track of a running attempt. | New (design, 2026-11-21); OQ-D40; post-MVP, exams flag only (`mock-exams.md`) |
 
 ### HOME-01 Category list
 
@@ -196,6 +199,17 @@ badge and the home layout order (replaces the v2 order decision).
   `design/screens/home.md`). Given a larger font scale, a 3-button system bar, more
   than 5 categories or a visible banner, Then the list may scroll, and nothing
   truncates.
+- **Exception (design, 2026-11-21, OQ-D40, decided by Sabit):** Given the exams flag
+  is on and ≥ 1 sınaq variant is published, When home is shown, Then the "Sınaqlar"
+  section (HOME-10) is appended **after** the category list and Oyna scrolls by about
+  96 dp at 360 × 740 dp, font scale 1.0 (728 + 108 = 836 dp); the top row, greeting,
+  duel card and all five categories must still fit without scrolling, only the
+  Sınaqlar section may be below the fold. With the flag off the no-scroll rule above
+  applies unchanged.
+- (design, 2026-11-21) Given a sınaq is running, When home is shown, Then the order
+  of banners under the top row is: offline, then the running-sınaq banner (HOME-10);
+  the email verification banner is hidden while a sınaq runs, so at most two banners
+  are shown.
 - Given today's daily status is `available` or `in_progress`, When the bottom
   navigation is shown, Then the "Gündəlik" item shows a badge dot and its accessible
   label gains "bugünkü çağırış hələ oynanmayıb".
@@ -259,11 +273,15 @@ New. Component: `design/screens/components.md` §33; navigation notes:
 - Given the Gündəlik or Profil tab, When the user presses system back, Then the Oyna
   tab is shown; given the Oyna tab, Then system back exits the app.
 - Given a full-screen flow (category quiz, daily challenge loading/play/result, every
-  duel screen, settings, licences, delete account, auth), When it is open, Then the
-  bottom navigation is hidden; when it ends, the user lands on the tab it was started
-  from: quiz and duel → Oyna, daily → Gündəlik, settings and its sub-screens → Profil.
+  duel screen, settings, licences, delete account, auth; since 2026-11-21 every
+  sınaq screen: catalogue, history, info, attempt, self-assessment, result, review),
+  When it is open, Then the bottom navigation is hidden; when it ends, the user lands
+  on the tab it was started from: quiz, duel and sınaqlar → Oyna, daily → Gündəlik,
+  settings and its sub-screens → Profil.
 - Given a push notification tap (NOTIF-05), When the app opens, Then the Gündəlik tab
-  is selected.
+  is selected. Exception (design, 2026-11-21): the local "10 dəqiqə qalıb" exam
+  notification opens the running attempt instead (EXAM-27, NOTIF-09); back from it
+  follows the attempt's leave dialog and ends on Oyna.
 - Given the user taps items rapidly or double-taps one, When the navigation runs,
   Then no duplicate destinations are stacked (back from Profil after many switches
   still goes to Oyna, then exits).
@@ -277,6 +295,44 @@ New. Component: `design/screens/components.md` §33; navigation notes:
   one line without truncation (measured in `design/copy/az.md`).
 - Given TalkBack, When an item is focused, Then it is read as a tab with its label,
   its selected state and, for Gündəlik, the badge text (HOME-07).
+
+### HOME-10 Sınaqlar entry and running-attempt banner (new, design, 2026-11-21)
+
+Post-MVP, behind the exams flag. Decided: OQ-D40 (A: section below the categories,
+no fourth tab). Screen: `design/screens/home.md` item 7 and
+`design/screens/exam-catalogue.md` "Oyna additions". Stories: EXAM-01, EXAM-13.
+
+- Given the exams flag is on and the cached catalogue has ≥ 1 published variant, When
+  Oyna is shown, Then after the last category row a gap, the overline "İMTAHANA
+  HAZIRLIQ" and one row "Sınaqlar" / "DİM formatında məşq sınaqları" with a chevron
+  are shown; tapping the row opens the catalogue (full-screen flow, bottom navigation
+  hidden, HOME-09).
+- Given the flag is off, or the cached catalogue has 0 published variants, or no
+  catalogue was ever loaded, When Oyna is shown, Then no overline, row or gap is
+  shown (Oyna keeps its no-scroll budget, HOME-07).
+- Given a sınaq attempt is running (from the local Room attempt), When Oyna is shown,
+  Then a compact banner "Davam edən sınaq: 42 dəq qalıb" with a timer icon and a
+  chevron is shown directly under the top row (below the offline banner); the whole
+  banner is one button that resumes the attempt; the "Sınaqlar" row's supporting
+  text becomes "Davam edir — 42 dəq qalıb".
+- Given the minutes left, When the banner or row is visible, Then they are computed
+  from `endsAtEpochMs` with the server-offset clock and refreshed each minute.
+- Given offline or a cold start after an app kill, When Oyna is shown, Then the
+  banner is still shown (it reads Room, not the network); the app does not jump into
+  the attempt by itself (EXAM-13).
+- Given the attempt ends (submit, time up, finalized on another device), When Oyna is
+  shown next, Then the banner disappears and the row returns to its normal text; an
+  attempt whose time ended while the app was dead opens the time-up state when the
+  banner is tapped (EXAM-14).
+- Given the user taps the banner twice quickly, When the first tap opened the
+  attempt, Then only one attempt screen is on the back stack.
+- Given 360 dp at font scale 1.3, When the banner and row are shown, Then the banner
+  text wraps (2 lines allowed) and the row text wraps; nothing truncates.
+- Given TalkBack, When the row or banner is focused, Then the row reads its title and
+  supporting text, and the banner is a button whose label is its text plus the
+  resume action.
+- Given sign-out or account switch, When the next account sees Oyna, Then no banner
+  or row state of the previous account is shown (EXAM-23).
 
 ## 3. Business rules
 
@@ -311,6 +367,7 @@ Gündəlik tab (NOTIF-06).
 | `categories_load_failed` | `error_type`: `offline` \| `timeout` \| `server` | Category request failed |
 | `home_progress_tapped` | `target`: `streak` | Streak chip tapped (HOME-08; v3 dropped `level`) |
 | `tab_selected` | `tab`: `play` \| `daily` \| `profile`, `source`: `bar` \| `streak_chip` \| `avatar` \| `push` \| `profile_row`, `badge_shown` (bool) | A tab becomes selected (HOME-09) |
+| `home_exams_tapped` | `target`: `row` \| `banner`, `running` (bool), `scrolled` (bool: the row was below the fold) | Sınaqlar row or running banner tapped (HOME-10; banner taps also log `exam_resume`, `mock-exams.md` §10) |
 
 `home_viewed` also gets `streak` (bucketed as `streak_bucket`) and `daily_status`.
 `settings_opened` moved to `settings.md` §5 (source Profil); `daily_card_viewed` is
@@ -330,3 +387,7 @@ v3 (2026-11-17): layout and navigation follow the direction approved by Sabit on
 2026-11-16/17 (`design/screens/v3-migration.md`). OQ-D34 (UI sans font) was decided
 by Sabit on 2026-11-17 (Plus Jakarta Sans); it affects the width checks, not the
 stories.
+
+Mock exams (2026-11-21, post-MVP): OQ-D40 decided by Sabit — Sınaqlar section below
+the categories plus a running-attempt banner; the Oyna scroll trade-off is accepted
+(HOME-07 exception, HOME-10). Owned in `design/screens/exam-catalogue.md`.

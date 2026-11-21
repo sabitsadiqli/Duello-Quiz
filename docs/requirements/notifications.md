@@ -35,6 +35,7 @@ user's choice per type, never fire at night, and stop for users who left.
 | NOTIF-06 | As a player, I want to turn each reminder type on or off in settings, turn the daily reminder on or off right on the Gündəlik tab, and see when notifications are blocked by the phone, so that I stay in control. | OQ-091; (v3, 2026-11-17); OQ-D36 (decided: no clock time) |
 | NOTIF-07 | As a player, I want few, well-timed notifications that stop if I stop playing, so that the app never feels like spam. | OQ-088, OQ-089, OQ-092 |
 | NOTIF-08 | As the product owner, I want tokens cleaned up on account deletion, sign-out, reinstall and invalid tokens, so that no one gets someone else's notifications and data is deleted as promised. | — |
+| NOTIF-09 | As a student in a running sınaq, I want the local "10 dəqiqə qalıb" reminder to follow the app's notification rules without ever asking me for permission during the exam, so that it helps without surprising me. | New (design, 2026-11-21); OQ-D45; post-MVP, exams flag only; behaviour in EXAM-27 (`mock-exams.md`) |
 
 API (proposal for `backend-dev`, who owns `docs/api/openapi.yaml`):
 `PUT /v1/me/push-tokens {token, locale}` (upsert, idempotent),
@@ -183,6 +184,8 @@ tab (`design/screens/daily-tab.md` C); the streak switch stays in settings only.
 - Given Android notification channels, When the app creates them, Then there is one
   channel per type with Azerbaijani names from resources ("Gündəlik çağırış",
   "Seriya"), default importance (sound per system, no full-screen intent).
+  (design, 2026-11-21) With the exams flag on, a third channel "Sınaqlar" is created
+  the first time a sınaq attempt starts (NOTIF-09); it has no switch in settings.
 - Given TalkBack, When a switch is focused, Then its name and state are read.
 
 Gündəlik tab mirror (v3):
@@ -248,6 +251,36 @@ Blocked by OQ-088 (max per day), OQ-089 (quiet hours), OQ-092 (inactivity).
 - Given the send log, When it is stored, Then it keeps only user ID, type, day and
   outcome; it is deleted with the account.
 
+### NOTIF-09 Exam time reminder (local) (new, design, 2026-11-21)
+
+Post-MVP, exams flag only. Decided: OQ-D45. Full behaviour (scheduling, text, tap):
+EXAM-27 in `mock-exams.md`; screen `design/screens/exam-attempt.md` I. This story
+records how it fits the rules of this file.
+
+- Given the reminder, When it is produced, Then it is a **local** notification
+  (AlarmManager, inexact) posted by the app; no FCM message, no server send record,
+  no `type` in the FCM payload list of NOTIF-05.
+- Given Android 13+ without `POST_NOTIFICATIONS`, When a sınaq starts or runs, Then
+  the app never shows the system permission dialog; the permission is still requested
+  only by the NOTIF-01 card (and SET-07 / the Gündəlik mirror). Without permission the
+  reminder is silently not posted.
+- Given the "Sınaqlar" channel or the app's notifications are off, When the alarm
+  fires, Then nothing is posted (silent no-op, like the other channels).
+- Given the 2-per-Baku-day limit and the quiet hours of NOTIF-07, When the reminder is
+  posted, Then neither applies: it is not a server push, fires at most once per
+  attempt, and only during an exam the user started themselves (also at night).
+- Given the content rules of NOTIF-07, When the text is written, Then they apply: no
+  exclamation mark, no emoji, no false urgency ("10 dəqiqə qalıb" / "«Sınaq №1» davam
+  edir. Cavablarını yoxlamağa qayıt.").
+- Given the user taps it, When the app opens, Then the running attempt opens (not the
+  Gündəlik tab, HOME-09 exception); if the attempt has ended, its result or the
+  time-up state.
+- Given sign-out, account switch or account deletion, When the local cleanup runs,
+  Then the alarm and any shown exam notification are cancelled (NOTIF-08, EXAM-23).
+- Given the settings screen, When "Bildirişlər" is shown, Then there is no exam
+  reminder switch in Phase 1; the system "Sınaqlar" channel is the only control
+  (SET-07).
+
 ## 3. Business rules
 
 - Types, send times, max per day, quiet hours, inactivity stop: `docs/mvp-spec.md`
@@ -264,10 +297,13 @@ Blocked by OQ-088 (max per day), OQ-089 (quiet hours), OQ-092 (inactivity).
 - Opt-in: Android 13+ runtime permission; in-app explanation first (OQ-090);
   per-type switches stored on the server (OQ-091).
 - Account deletion deletes tokens, preferences and the send log.
+- Exception (post-MVP, exams flag, OQ-D45): the local exam reminder of NOTIF-09 is
+  outside the server limits and quiet hours; at most one per sınaq attempt.
 
 ## 4. Out of scope
 
-Duel notifications ("someone is searching", "your opponent is waiting"), marketing or
+Duel notifications ("someone is searching", "your opponent is waiting"), server push
+for sınaqlar and an in-app switch for the exam reminder (NOTIF-09), marketing or
 re-engagement campaigns, Firebase In-App Messaging, notification images, a
 user-chosen reminder time, per-user time zones, e-mail or SMS reminders, iOS.
 
@@ -294,3 +330,8 @@ OQ-085 (active day), OQ-086 (freeze), OQ-088 (types, times, max per day), OQ-089
 Design decision (owned in `design/`): OQ-D36, decided by Sabit 2026-11-17 — the
 reminder rows say "Səhər" without a clock time and offer no time picker (a picker
 stays out of scope, §4).
+
+Design decision OQ-D45 (decided by Sabit 2026-11-21, owned in
+`design/screens/exam-attempt.md`): the local "10 dəqiqə qalıb" exam reminder is in
+Phase 1 of mock exams (NOTIF-09, EXAM-27). Its analytics event
+`exam_time_left_notification` is listed in `mock-exams.md` §10.
