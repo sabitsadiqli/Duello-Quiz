@@ -2,6 +2,8 @@ package com.sabit.duelloquiz.core.model.exam
 
 import androidx.compose.runtime.Immutable
 import com.sabit.duelloquiz.core.model.ProgressGain
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /*
  * Mock exams "Sınaqlar" (ADR 0002, docs/api/openapi.yaml tag `exams`, API 0.5.0). Every score,
@@ -104,6 +106,7 @@ enum class ExamOutcome(val wire: String) {
 
 /** `GET /v1/exams`. Empty [templates] = hide the "Sınaqlar" entry (EXAM-01). */
 @Immutable
+@Serializable
 data class ExamCatalog(
     val templates: List<ExamTemplateSummary>,
     /** server clock − local wall clock, measured around the request. */
@@ -113,6 +116,7 @@ data class ExamCatalog(
 }
 
 @Immutable
+@Serializable
 data class ExamTemplateSummary(
     val id: String,
     /** Server i18n, e.g. "Buraxılış — İngilis dili"; the client adds "(DİM formatında)". */
@@ -126,6 +130,7 @@ data class ExamTemplateSummary(
 )
 
 @Immutable
+@Serializable
 data class ExamVariantSummary(
     val id: String,
     /** Shown as "Sınaq №N" (OQ-D49). */
@@ -137,6 +142,7 @@ data class ExamVariantSummary(
 )
 
 @Immutable
+@Serializable
 data class ExamAttemptSummary(
     val id: String,
     val variantId: String,
@@ -159,9 +165,11 @@ data class ExamAttemptSummary(
 )
 
 @Immutable
+@Serializable
 data class ExamScoringRule(val rule: String, val writtenWeight: Int, val rawMax: Int, val maxScore: Double)
 
 @Immutable
+@Serializable
 data class ExamSectionInfo(
     val id: String,
     val title: String,
@@ -173,6 +181,7 @@ data class ExamSectionInfo(
 
 /** `GET /v1/exams/variants/{id}` (EXAM-02). */
 @Immutable
+@Serializable
 data class ExamVariantInfo(
     val id: String,
     val number: Int,
@@ -198,6 +207,7 @@ data class ExamVariantInfo(
 )
 
 @Immutable
+@Serializable
 data class ExamMedia(
     val url: String,
     val bytes: Long,
@@ -208,9 +218,11 @@ data class ExamMedia(
 )
 
 @Immutable
+@Serializable
 data class ExamSection(val id: String, val title: String, val position: Int)
 
 @Immutable
+@Serializable
 data class ExamGroup(
     val id: String,
     val kind: ExamGroupKind,
@@ -225,10 +237,12 @@ data class ExamGroup(
 )
 
 @Immutable
+@Serializable
 data class ExamOption(val id: String, val letter: String, val text: String)
 
 /** A task of the package: no correctness data at all (EXAM-21). */
 @Immutable
+@Serializable
 data class ExamTask(
     val id: String,
     /** 1-based number in the exam ("14 / 30"). */
@@ -242,6 +256,7 @@ data class ExamTask(
 
 /** `GET /v1/exams/variants/{id}/package` (EXAM-03): everything needed offline, no keys. */
 @Immutable
+@Serializable
 data class ExamPackage(
     val variantId: String,
     val version: Int,
@@ -262,6 +277,7 @@ data class ExamPackage(
 
 /** One task's synced state: the latest revision wins (EXAM-13). */
 @Immutable
+@Serializable
 data class ExamAnswer(
     val taskId: String,
     val revision: Int,
@@ -272,6 +288,7 @@ data class ExamAnswer(
 )
 
 @Immutable
+@Serializable
 data class ExamListeningState(
     val groupId: String,
     val playsUsed: Int,
@@ -281,6 +298,7 @@ data class ExamListeningState(
 
 /** `POST /v1/exams/attempts`, `GET …/attempts/{id}`, `…/current` (EXAM-04, EXAM-13). */
 @Immutable
+@Serializable
 data class ExamAttempt(
     val id: String,
     val variantId: String,
@@ -306,6 +324,7 @@ data class ExamAttempt(
 
 /** One entry of `PUT …/answers`: the full state of a task at a client revision. */
 @Immutable
+@Serializable
 data class ExamAnswerWrite(
     val taskId: String,
     val revision: Int,
@@ -334,6 +353,7 @@ data class ExamAnswerBatchResult(
 )
 
 @Immutable
+@Serializable
 data class ExamEstimate(
     val total: Double,
     val autoScore: Double,
@@ -346,14 +366,17 @@ data class ExamEstimate(
 )
 
 @Immutable
+@Serializable
 data class ExamClosedCounts(val correct: Int, val wrong: Int, val blank: Int, val total: Int)
 
 @Immutable
+@Serializable
 data class ExamWrittenCounts(val assessed: Int, val total: Int, val marks: Double, val maxMarks: Int) {
     val unassessed: Int get() = (total - assessed).coerceAtLeast(0)
 }
 
 @Immutable
+@Serializable
 data class ExamSectionResult(
     val id: String,
     val title: String,
@@ -369,6 +392,7 @@ data class ExamSectionResult(
 
 /** `…/submit`, `…/result`, `…/self-assessment` (EXAM-15 … EXAM-17). */
 @Immutable
+@Serializable
 data class ExamResult(
     val attemptId: String,
     val variantId: String,
@@ -385,17 +409,23 @@ data class ExamResult(
     val sections: List<ExamSectionResult>,
     val answeredCount: Int,
     val flaggedCount: Int,
-    /** Streak change of this submit (no XP, OQ-125); null for a server finalization. */
-    val progress: ProgressGain?,
+    /**
+     * Streak change of this submit (no XP, OQ-125); null for a server finalization. Shown from a
+     * fresh response only, never cached.
+     */
+    @Transient val progress: ProgressGain? = null,
 )
 
 @Immutable
+@Serializable
 data class ExamTranscriptLine(val speaker: String, val speakerName: String, val text: String)
 
 @Immutable
+@Serializable
 data class ExamVoiceCredit(val role: String, val voice: String, val speakerId: Int?, val licence: String)
 
 @Immutable
+@Serializable
 data class ExamReviewGroup(
     val id: String,
     val kind: ExamGroupKind,
@@ -410,12 +440,15 @@ data class ExamReviewGroup(
 )
 
 @Immutable
+@Serializable
 data class ExamReviewOption(val id: String, val letter: String, val text: String, val correct: Boolean)
 
 @Immutable
+@Serializable
 data class ExamCriterion(val mark: ExamMark, val description: String)
 
 @Immutable
+@Serializable
 data class ExamReviewTask(
     val id: String,
     val position: Int,
@@ -437,6 +470,7 @@ data class ExamReviewTask(
 
 /** `GET …/review` (EXAM-18): keys, explanations, model answers and transcripts after submit only. */
 @Immutable
+@Serializable
 data class ExamReview(
     val attemptId: String,
     val variantId: String,
