@@ -6,7 +6,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| OQ-132 | Mock exams (post-MVP): which Baku day does a submitted sınaq make active (OQ-125 B) when the attempt crosses 00:00 Baku, and does a server-finalized attempt (never submitted) count? Options: A. the Baku day of the submit (as the quiz: the day it finishes; `exam-result.md` shows the streak row when "this submit made today active"); B. the Baku day of the start (current `docs/api/openapi.yaml` draft: "makes its start day active"); finalized: count / not count. Trade-off: A matches the result screen and the quiz rule, but a 23:30 start can save tomorrow, not today; B saves the day the user actually began but the result shown after midnight cannot say "today". Added 2026-11-21 by business-analyst. Blocks EXAM-17 streak row tests only. | A (day of the user or deadline submit, ≥ 1 answered task); a server-finalized attempt does **not** count, because the user never saw it end and gets no streak feedback | Sabit |
+| — | No open questions. | | |
 
 ## Decided by Sabit (2026-11-21) — mock exams "Sınaqlar" (post-MVP)
 
@@ -31,6 +31,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-129 | re-verify stage 2 (2022 source), rounding, 9th grade | Recommendation accepted: re-verify each item before the phase that needs it; 9th grade and state-language exam later (details below) | Sabit 2026-11-21 |
 | OQ-130 | naming, disclaimer and Play listing wording | Recommendation accepted: the proposal; Sabit may ask for legal advice (details below) | Sabit 2026-11-21 |
 | OQ-131 | reuse stage 2 subject blocks across groups | Recommendation accepted: A (details below) | Sabit 2026-11-21 |
+| OQ-132 | Streak day of a sınaq that crosses 00:00 Baku | A: the Baku day of the submit makes the day active; a server-finalized (never submitted) attempt does not count | Sabit 2026-11-21 |
 
 ## Details (OQ-112 … OQ-131) — mock exams "Sınaqlar" (background, all decided above)
 

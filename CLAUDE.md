@@ -34,6 +34,9 @@ In scope:
    push reminders via FCM (free). Rules: `docs/mvp-spec.md` §9–§11, decisions
    OQ-074…OQ-096. Day boundary is 00:00 Asia/Baku by the server clock.
 
+Post-MVP, in progress (added 2026-11-21): mock exams "Sınaqlar" in DİM format,
+Phase 1 = English buraxılış subject sınaq (`docs/mvp-spec.md` §12, OQ-112 … OQ-132).
+
 Out of scope for MVP (do not build, do not block): in-app purchases, ads, ghost
 duels (replaying real players; the bot opponent is in scope), friends/invites, extra languages, leaderboards beyond a basic Elo rating
 (including any daily-challenge leaderboard).

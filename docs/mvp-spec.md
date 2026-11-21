@@ -145,6 +145,10 @@ state).
   preferences, the notification send log and every FCM push token of the user. The
   per-day daily question sets are not personal data and stay. The privacy policy
   and the deletion page in `docs/legal/` must list these data too.
+- Mock exams (§12, post-MVP): exam attempts, answers incl. written answer texts,
+  listening play counters and self-assessed marks are deleted too (EXAM-23); exam
+  content (variants, audio) is not personal data and stays. The legal pages must list
+  these data in the release that ships Sınaqlar.
 
 ## 4. Theme and language
 
@@ -383,3 +387,22 @@ below were decided by Sabit on 2026-10-22 (OQ-074 … OQ-096 in
 - Tokens: one per device, removed on sign-out, invalid (`UNREGISTERED`) or stale
   (60 days), and on account deletion (§3a).
 - Stories: `docs/requirements/notifications.md` (NOTIF-01 …).
+
+## 12. Mock exams "Sınaqlar" (post-MVP, Phase 1 in progress since 2026-11-21)
+
+Full-length practice exams in DİM format, written by our own team (never real DİM
+tasks; disclaimer "Bu, rəsmi DİM nəticəsi deyil."). Phase 1: "Buraxılış — İngilis
+dili" subject sınaq, 30 tasks (listening 6, grammar/vocabulary 16, reading 8), 60 min,
+no pause, 3 variants, free (IAP planned later, OQ-126).
+- Scoring: DİM foreign-language formula 100/37 · (2·n_written + n_closed); written
+  tasks by self-assessment (0, ⅓, ½, ⅔, 1), shown apart from the auto-graded part;
+  listening skipped or failed → score out of the reduced maximum (OQ-112, OQ-D42).
+- Listening: Piper TTS audio (OQ-120), 2 plays, no seeking during the attempt;
+  free replay with seeking in the review after submit (OQ-119, OQ-D44).
+- Timer: server-authoritative `endsAtEpochMs` + hidden 2 min grace; offline answering
+  after an online start; resume; 24 h late upload (OQ-117, OQ-118).
+- Streak: a submitted sınaq makes its submit day active; no XP (OQ-125, OQ-132).
+- Reviewers: named subject reviewers mark tasks reviewed; Sabit approves each
+  variant (OQ-122). Entry on the Oyna tab (OQ-D40).
+- Rules and stories: `docs/requirements/mock-exams.md`; data, audio, API:
+  `docs/adr/0002-mock-exams-data-and-audio.md`, `docs/api/openapi.yaml` (tag `exams`).
