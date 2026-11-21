@@ -314,7 +314,9 @@ class ExamService(
 
     private fun listeningDto(groupId: UUID, state: StoredListening?): ExamListeningStateDto {
         val used = state?.playsUsed ?: 0
-        return ExamListeningStateDto(groupId.toString(), used, maxOf(0, config.listeningMaxPlays - used), state?.audioFailed ?: false)
+        return ExamListeningStateDto(
+            groupId.toString(), used, maxOf(0, config.listeningMaxPlays - used), state?.audioFailed ?: false, state?.positionMs ?: 0,
+        )
     }
 
     // -------------------------------------------------------------------- writes
@@ -435,6 +437,7 @@ class ExamService(
             ?: throw badRequest("Group is not part of this attempt", ExamErrorCodes.GROUP_NOT_IN_ATTEMPT)
         if (request.playsUsed !in 0..config.listeningMaxPlays) throw validationFailed("playsUsed must be 0..${config.listeningMaxPlays}")
         if (request.savedAtEpochMs <= 0) throw validationFailed("savedAtEpochMs must be positive")
+        if (request.positionMs < 0) throw validationFailed("positionMs must not be negative")
         return write(user, attemptId, request.deviceId) { attempt, content, late, now ->
             val group = content.groupsById[groupId]?.takeIf { it.kind == GroupKind.LISTENING }
                 ?: throw badRequest("Group is not part of this attempt", ExamErrorCodes.GROUP_NOT_IN_ATTEMPT)
@@ -443,15 +446,33 @@ class ExamService(
                 if (late && Instant.ofEpochMilli(request.savedAtEpochMs).isAfter(attempt.deadlineAt)) {
                     return@write listeningDto(group.id, stored)
                 }
-                val merged = StoredListening(
-                    group.id,
-                    maxOf(stored?.playsUsed ?: 0, request.playsUsed),
-                    (stored?.audioFailed ?: false) || request.audioFailed,
-                )
+                val duration = group.audio?.durationMs
+                if (duration != null && request.positionMs > duration) throw validationFailed("positionMs must be 0..$duration")
+                val merged = mergeListening(group.id, stored, request)
                 if (merged != stored) writeListening(attempt.id, merged, exists = stored != null, now)
                 listeningDto(group.id, merged)
             }
         }
+    }
+
+    /**
+     * OQ-119 / OQ-D43: plays used keep their maximum, an audio failure stays reported. The
+     * position follows the newest play: a higher play count always takes the position;
+     * with the same count the later `savedAtEpochMs` wins (last write); an older count
+     * never moves it.
+     */
+    private fun mergeListening(groupId: UUID, stored: StoredListening?, request: ExamListeningUpdateRequest): StoredListening {
+        val savedAt = Instant.ofEpochMilli(request.savedAtEpochMs)
+        val storedPlays = stored?.playsUsed ?: 0
+        val takePosition = stored == null || request.playsUsed > storedPlays ||
+            (request.playsUsed == storedPlays && (stored.positionSavedAt == null || !savedAt.isBefore(stored.positionSavedAt)))
+        return StoredListening(
+            groupId = groupId,
+            playsUsed = maxOf(storedPlays, request.playsUsed),
+            audioFailed = (stored?.audioFailed ?: false) || request.audioFailed,
+            positionMs = if (takePosition) request.positionMs else stored.positionMs,
+            positionSavedAt = if (takePosition) savedAt else stored.positionSavedAt,
+        )
     }
 
     // -------------------------------------------------------------------- submit, result

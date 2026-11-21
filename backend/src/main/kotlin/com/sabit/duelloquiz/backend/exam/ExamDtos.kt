@@ -173,7 +173,14 @@ data class ExamAnswerDto(
 )
 
 @Serializable
-data class ExamListeningStateDto(val groupId: String, val playsUsed: Int, val playsLeft: Int, val audioFailed: Boolean)
+data class ExamListeningStateDto(
+    val groupId: String,
+    val playsUsed: Int,
+    val playsLeft: Int,
+    val audioFailed: Boolean,
+    /** OQ-D43: resume playback paused at this position. */
+    val positionMs: Int = 0,
+)
 
 @Serializable
 data class ExamAttemptResponse(
@@ -242,6 +249,8 @@ data class ExamListeningUpdateRequest(
     val playsUsed: Int,
     val audioFailed: Boolean = false,
     val savedAtEpochMs: Long,
+    /** OQ-D43: current playback position, 0 ≤ positionMs ≤ audio duration. */
+    val positionMs: Int = 0,
 )
 
 @Serializable

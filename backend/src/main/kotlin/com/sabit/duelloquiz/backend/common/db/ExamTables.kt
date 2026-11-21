@@ -158,6 +158,9 @@ object ExamListeningPlaysTable : Table("exam_listening_plays") {
     val groupId = javaUUID("group_id")
     val playsUsed = short("plays_used")
     val audioFailed = bool("audio_failed")
+    /** V9, OQ-D43: playback position to resume at (paused). */
+    val positionMs = integer("position_ms")
+    val positionSavedAt = timestampWithTimeZone("position_saved_at").nullable()
     val updatedAt = timestampWithTimeZone("updated_at")
     override val primaryKey = PrimaryKey(attemptId, groupId)
 }

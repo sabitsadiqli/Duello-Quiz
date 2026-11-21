@@ -174,7 +174,14 @@ data class StoredAnswer(
     val savedAt: Instant,
 )
 
-data class StoredListening(val groupId: UUID, val playsUsed: Int, val audioFailed: Boolean)
+data class StoredListening(
+    val groupId: UUID,
+    val playsUsed: Int,
+    val audioFailed: Boolean,
+    /** OQ-D43: resume position; [positionSavedAt] = client save time of the update that set it. */
+    val positionMs: Int = 0,
+    val positionSavedAt: Instant? = null,
+)
 
 /** Exam persistence; every function runs in the caller's transaction. */
 class ExamRepository {
@@ -644,6 +651,7 @@ class ExamRepository {
         ExamListeningPlaysTable.selectAll().where { ExamListeningPlaysTable.attemptId eq attemptId }.associate {
             it[ExamListeningPlaysTable.groupId] to StoredListening(
                 it[ExamListeningPlaysTable.groupId], it[ExamListeningPlaysTable.playsUsed].toInt(), it[ExamListeningPlaysTable.audioFailed],
+                it[ExamListeningPlaysTable.positionMs], it[ExamListeningPlaysTable.positionSavedAt]?.toInstant(),
             )
         }
 
@@ -652,6 +660,8 @@ class ExamRepository {
             ExamListeningPlaysTable.update({ (ExamListeningPlaysTable.attemptId eq attemptId) and (ExamListeningPlaysTable.groupId eq state.groupId) }) {
                 it[playsUsed] = state.playsUsed.toShort()
                 it[audioFailed] = state.audioFailed
+                it[positionMs] = state.positionMs
+                it[positionSavedAt] = state.positionSavedAt?.toDb()
                 it[updatedAt] = now.toDb()
             }
         } else {
@@ -660,6 +670,8 @@ class ExamRepository {
                 it[groupId] = state.groupId
                 it[playsUsed] = state.playsUsed.toShort()
                 it[audioFailed] = state.audioFailed
+                it[positionMs] = state.positionMs
+                it[positionSavedAt] = state.positionSavedAt?.toDb()
                 it[updatedAt] = now.toDb()
             }
         }

@@ -42,7 +42,7 @@ info:
     | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
     | 0.3.0 (2026-10-30) | Bot opponent (OQ-106 … OQ-110): `MatchSummary.opponentType`, `MatchSummary.ratingChange` is `null` for bot matches, `Stats.botRecord`; `Stats.record` counts only matches against real players; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`; `DELETE /v1/me` deletes the user's bot matches. Old clients only see bot matches if they announced the `"bot"` duel capability (`duel-protocol.md` §7a), so for them nothing changes. |
     | 0.4.0 (2026-11-19) | Week row (PROG-11, OQ-D35): `ProgressSummary.week`, exactly 7 days Monday → Sunday of the current Baku week, each with a `state` (`active`, `freeze`, `missed`, `today_pending`, `none`). Additive; older clients ignore it. |
-    | 0.5.0 (2026-11-21) | Mock exams "Sınaqlar" Phase 1 (ADR 0002, `docs/requirements/mock-exams.md`, OQ-112 … OQ-131): tag `exams`, `/v1/exams*` (catalogue, variant info, offline package without keys, attempt start/resume, answer batch upsert, listening play counter, submit, result, self-assessment, review, history). New error codes `exam_variant_not_found`, `exam_attempt_not_found`, `variant_unavailable`, `variant_version_mismatch`, `exam_attempt_running`, `attempt_closed`, `attempt_not_finished`, `task_not_in_attempt`, `group_not_in_attempt`. `DELETE /v1/me` also deletes exam attempts, answers, written texts, listening plays and self-assessments. Progress source type `exam` (streak only, no XP). Additive. |
+    | 0.5.0 (2026-11-21) | Mock exams "Sınaqlar" Phase 1 (ADR 0002, `docs/requirements/mock-exams.md`, OQ-112 … OQ-131): tag `exams`, `/v1/exams*` (catalogue, variant info, offline package without keys, attempt start/resume, answer batch upsert, listening play counter and resume position (OQ-D43), submit, result, self-assessment, review, history). New error codes `exam_variant_not_found`, `exam_attempt_not_found`, `variant_unavailable`, `variant_version_mismatch`, `exam_attempt_running`, `attempt_closed`, `attempt_not_finished`, `task_not_in_attempt`, `group_not_in_attempt`. `DELETE /v1/me` also deletes exam attempts, answers, written texts, listening plays and self-assessments. Progress source type `exam` (streak only, no XP). Additive. |
 
     ## Error codes
     | HTTP | code | When |
@@ -1200,13 +1200,19 @@ paths:
     put:
       tags: [exams]
       operationId: updateExamListening
-      summary: Sync the listening play counter of a group (EXAM-10, OQ-119)
+      summary: Sync the listening play counter and position of a group (EXAM-10, OQ-119, OQ-D43)
       description: |
         At most 2 plays; the client counts a play as used once 10 s of it were played
         (pause allowed, no seeking, no speed change) and sends the total. The server
         keeps the maximum of `playsUsed` (above 2 → 400 `validation_failed`) and
         `audioFailed` once true stays true (the group is then excluded from the
-        estimate). Same timing and device rules as the answers; an entry saved after the
+        estimate). `positionMs` is the current playback position (OQ-D43); after an
+        app kill the client resumes the play paused there (returned in
+        `ExamAttemptResponse.listening`). It follows the newest play: an update with a
+        higher `playsUsed` than stored always sets it; with the same `playsUsed` the
+        later `savedAtEpochMs` wins (last write); an update with a lower `playsUsed`
+        never changes it. Negative or above the audio duration → 400
+        `validation_failed`. Same timing and device rules as the answers; an entry saved after the
         deadline is ignored (the response shows the stored state). Unknown group → 400
         `group_not_in_attempt`.
       parameters:
@@ -2912,10 +2918,15 @@ components:
         savedAtEpochMs:
           type: integer
           format: int64
+        positionMs:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current playback position, at most the audio `durationMs` (OQ-D43).
 
     ExamListeningState:
       type: object
-      required: [groupId, playsUsed, playsLeft, audioFailed]
+      required: [groupId, playsUsed, playsLeft, audioFailed, positionMs]
       properties:
         groupId:
           type: string
@@ -2926,6 +2937,10 @@ components:
           type: integer
         audioFailed:
           type: boolean
+        positionMs:
+          type: integer
+          minimum: 0
+          description: Stored playback position; resume the play paused here after an app kill (OQ-D43). 0 if never reported.
 
     SubmitExamRequest:
       type: object

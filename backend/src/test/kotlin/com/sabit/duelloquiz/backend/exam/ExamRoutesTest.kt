@@ -310,6 +310,42 @@ class ExamRoutesTest : DbTest() {
     }
 
     @Test
+    fun `listening position resumes with the newest play (OQ-D43)`() {
+        val env = TestEnv(db)
+        seed(env)
+        val token = env.verifier.tokenFor("u1")
+        withTestApp(env) { client ->
+            val variant = client.catalog(token).templates.single().variants.single()
+            val pkg = client.pkg(token, variant.id).body<ExamPackageResponse>()
+            val listeningGroup = pkg.groups.single { it.kind == "listening" }
+            val group = listeningGroup.id
+            val duration = listeningGroup.audio!!.durationMs!!
+            val attempt = client.start(token, variant.id).body<ExamAttemptResponse>()
+            val path = "/v1/exams/attempts/${attempt.id}/listening/$group"
+            val t0 = env.clock.millis()
+            suspend fun put(plays: Int, position: Int, savedAt: Long) =
+                client.putJson(path, token, ExamListeningUpdateRequest(deviceA, plays, savedAtEpochMs = savedAt, positionMs = position))
+
+            assertEquals(12_000, put(1, 12_000, t0 + 1_000).body<ExamListeningStateDto>().positionMs)
+            assertEquals(20_000, put(1, 20_000, t0 + 2_000).body<ExamListeningStateDto>().positionMs, "last write wins")
+            assertEquals(20_000, put(1, 5_000, t0 + 1_500).body<ExamListeningStateDto>().positionMs, "an older write is ignored")
+            // Second play started, not counted yet (same count, later write), then counted.
+            assertEquals(3_000, put(1, 3_000, t0 + 3_000).body<ExamListeningStateDto>().positionMs)
+            assertEquals(11_000, put(2, 11_000, t0 + 4_000).body<ExamListeningStateDto>().positionMs)
+            val stale = put(1, 30_000, t0 + 5_000).body<ExamListeningStateDto>()
+            assertEquals(ExamListeningStateDto(group, 2, 0, false, 11_000), stale, "a lower play count never moves the position")
+
+            assertEquals("validation_failed", put(2, -1, t0 + 6_000).code())
+            assertEquals("validation_failed", put(2, duration + 1, t0 + 6_000).code())
+            assertEquals(duration, put(2, duration, t0 + 6_000).body<ExamListeningStateDto>().positionMs, "the end is allowed")
+
+            // Resume after an app kill.
+            val resumed = client.get("/v1/exams/attempts/${attempt.id}") { auth(token) }.body<ExamAttemptResponse>()
+            assertEquals(listOf(ExamListeningStateDto(group, 2, 0, false, duration)), resumed.listening)
+        }
+    }
+
+    @Test
     fun `one running attempt, version mismatch, unpublished variant and 10 starts per day`() {
         val env = TestEnv(db)
         seed(env, TestExams.published(), second())
