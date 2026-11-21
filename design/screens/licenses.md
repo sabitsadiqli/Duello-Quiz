@@ -11,6 +11,17 @@ Stories: SET-03 ("Açıq mənbə lisenziyaları" shows the list of third-party l
 Entry from `settings.md`. Tokens: `design/tokens.json`. Components: `components.md`
 §11, §12, §14, §35a. Copy: `copy/az.md` (`settings_licenses_*`).
 
+> **Mock exams (2026-11-21, flag on only):** OQ-120 credits the Piper TTS voices
+> used for the listening audio. A third manual section `settings_licenses_section_voices`
+> ("DİNLƏMƏ SƏSLƏRİ", §35a overline, after the fonts section) lists, as list rows
+> without a detail screen: `en_GB-alba-medium` (CC BY 4.0), `en_US-libritts_r-medium`,
+> speaker 452 (CC BY 4.0) — supporting `settings_licenses_voice_supporting`
+> ("Piper TTS səsi · CC BY 4.0"), trailing `open_in_new` to the voice's model card;
+> `en_GB-cori-high` is public domain (listed for transparency, supporting
+> "Piper TTS səsi · ictimai mülkiyyət"). The section is hidden while the exams flag
+> is off. Exact attribution text per voice (author, dataset) comes from the
+> model cards (content-writer / backend-dev record it per audio file).
+
 ## Questions and decisions
 
 - Assumption (android-dev may choose otherwise): the library list is **generated at

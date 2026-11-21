@@ -171,6 +171,28 @@ GAME = [
     ("onSurfaceVariant", "surfaceContainerHighest", TEXT, "dash glyph in the no-answer square, notification card supporting text"),
     ("onSurfaceVariant", "surfaceContainerHigh", UI, "outlined flame (not yet today)"),
     ("streak", "surfaceContainerLowest", TEXT, "streak flame + number on the lightest card"),
+    # Mock exams 'Sınaqlar' (tokens 3.1.0, design/screens/exam-*.md, components.md §39-§45)
+    ("timerWarning", "surfaceContainerLow", TEXT, "exam: timer pill digits (<= 10 min) in the navigator sheet header"),
+    ("timerNormal", "surfaceContainerLow", TEXT, "exam: timer pill digits in the navigator sheet header"),
+    ("inverseOnSurface", "inverseSurface", TEXT, "exam: number in an answered task cell, selected mark tile label"),
+    ("inverseSurface", "surfaceContainerLow", UI, "exam: answered task cell vs navigator sheet"),
+    ("outline", "surfaceContainerLow", UI, "exam: unanswered task cell border vs navigator sheet"),
+    ("onSurface", "surfaceContainerLow", TEXT, "exam: number in an unanswered task cell"),
+    ("primary", "surfaceContainerLow", UI, "exam: current-task ring and flag badge glyph on the sheet"),
+    ("primary", "surface", UI, "exam: flag glyph on the task flag toggle (unflagged state outline icon is onSurface)"),
+    ("onPrimaryContainer", "primaryContainer", TEXT, "exam: flagged toggle label + filled flag icon"),
+    ("onSurface", "navIndicator", TEXT, "exam: selected segment 'Tapşırıq' / 'Mətn'"),
+    ("onSurfaceVariant", "surface", TEXT, "exam: paragraph numbers, plays-left text, meta lines"),
+    ("onSurface", "timerTrack", UI, "exam: audio progress line and auto-graded split segment vs track"),
+    ("secondary", "timerTrack", UI, "exam: self-assessed split segment vs track"),
+    ("secondary", "surface", UI, "exam: self-assessed legend square vs page"),
+    ("inverseSurface", "surface", UI, "exam: selected mark tile and answered legend square vs page"),
+    ("onSecondaryContainer", "secondaryContainer", TEXT, "exam: model answer box (self-assessment, review)"),
+    ("onSurface", "surfaceContainerHighest", TEXT, "exam: 'Sənin cavabın' box text"),
+    ("onSurfaceVariant", "surfaceContainerLow", TEXT, "exam: disclaimer note text on its box"),
+    ("onBannerInfoContainer", "bannerInfoContainer", TEXT, "exam: running-attempt banner on Oyna, 'task corrected' note"),
+    ("onBannerWarningContainer", "bannerWarningContainer", TEXT, "exam: offline / audio-failed / volume hint banners"),
+    ("onPrimary", "primary", TEXT, "exam: play / pause icon on the round player button"),
 ]
 
 

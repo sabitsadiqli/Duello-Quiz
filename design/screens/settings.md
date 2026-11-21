@@ -69,6 +69,11 @@ delete), app information.
    11. Row `settings_privacy_policy`, leading `policy` icon, trailing
        `open_in_new` icon.
    12. Row `settings_licenses`, leading `description` icon, trailing chevron.
+   12a. **Mock exams flag on only** (EXAM-25, added 2026-11-21): row
+       `settings_exams_about` ("Sınaqlar haqqında"), leading `assignment` icon,
+       not clickable, supporting text = `exam_disclaimer` (full text, wraps,
+       `type.bodyMedium` `scheme.onSurfaceVariant`, never truncated; no
+       ellipsis rule of other supporting lines applies here).
    13. Bottom `space.xl` + navigation bar inset.
 
 Section order follows `settings.md` §3: Tema, Dil, Bildirişlər, Hesab, Haqqında.
