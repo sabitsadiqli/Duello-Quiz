@@ -439,6 +439,8 @@ bucket, e.g. `https://<account-id>.eu.r2.cloudflarestorage.com`) and `R2_BUCKET`
 workflow → `dev`, action `configure`: it writes `/opt/duello/backup.env` (0600, owner
 deploy), checks the R2 connection, runs one backup and lists the bucket. Action
 `backup-now` runs a backup on demand; `restore-drill` does the monthly drill below.
+The drill also runs by itself on dev on the 1st of every month (05:00 UTC); a failed run
+sends GitHub's usual failure e-mail.
 
 Without `backup.env` every run logs a warning. The upload is verified (`rclone check`)
 and the same 14-day retention is applied in the bucket.
