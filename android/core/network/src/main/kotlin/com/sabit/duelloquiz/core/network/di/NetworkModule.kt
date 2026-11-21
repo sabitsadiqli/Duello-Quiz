@@ -10,12 +10,15 @@ import com.sabit.duelloquiz.core.network.AcceptLanguageProvider
 import com.sabit.duelloquiz.core.network.AppLocaleAcceptLanguageProvider
 import com.sabit.duelloquiz.core.network.BuildConfig
 import com.sabit.duelloquiz.core.network.DuelloNetworkDataSource
+import com.sabit.duelloquiz.core.network.ExamNetworkDataSource
 import com.sabit.duelloquiz.core.network.auth.AuthRepositoryIdTokenProvider
 import com.sabit.duelloquiz.core.network.auth.IdTokenProvider
 import com.sabit.duelloquiz.core.network.duel.DuelSocketFactory
 import com.sabit.duelloquiz.core.network.duel.KtorDuelSocketFactory
 import com.sabit.duelloquiz.core.network.fake.DebugNetworkFakes
+import com.sabit.duelloquiz.core.network.ktor.ApiCaller
 import com.sabit.duelloquiz.core.network.ktor.KtorDuelloNetworkDataSource
+import com.sabit.duelloquiz.core.network.ktor.KtorExamNetworkDataSource
 import com.sabit.duelloquiz.core.network.ktor.createDuelloHttpClient
 import dagger.Binds
 import dagger.Module
@@ -83,6 +86,37 @@ internal object NetworkModule {
         clock = clock,
         connectivity = connectivity,
     )
+
+    /**
+     * Mock exams (`exams` tag, ADR 0002). Like the REST source, a debug build without Firebase
+     * uses an in-process fake ([DebugNetworkFakes]); release builds never contain it.
+     */
+    @Provides
+    @Singleton
+    fun provideExamNetworkDataSource(
+        authBackend: AuthBackend,
+        clock: WallClock,
+        tokenProvider: IdTokenProvider,
+        languageProvider: AcceptLanguageProvider,
+        connectivity: DeviceConnectivity,
+    ): ExamNetworkDataSource {
+        if (authBackend == AuthBackend.InMemoryFake) {
+            val fake = DebugNetworkFakes.createExams(clock)
+            if (fake != null) return fake
+        }
+        return KtorExamNetworkDataSource(
+            ApiCaller(
+                client = createDuelloHttpClient(
+                    engine = OkHttp.create(),
+                    baseUrl = BuildConfig.API_BASE_URL,
+                    tokenProvider = tokenProvider,
+                    languageProvider = languageProvider,
+                ),
+                connectivity = connectivity,
+                clock = clock,
+            ),
+        )
+    }
 
     /**
      * The duel WebSocket (docs/api/duel-protocol.md). Like the REST source, a debug build without
