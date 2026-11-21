@@ -6,27 +6,33 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 
 | ID | Question | Recommendation | Decides |
 | --- | --- | --- | --- |
-| OQ-112 | Mock exams: how are written open tasks scored without paid grading? | B: self-assessment against model answer and the official 0/⅓/½/⅔/1 marks, shown separately from the auto-graded part | Sabit |
-| OQ-113 | Mock exams: do DİM closed tasks have 5 options (A–E)? | Verify from a current DİM sample; model supports 2–5 options per exam template | Sabit (verify) |
-| OQ-114 | Mock exams: coded answer input format and normalisation | Digits, decimal comma (dot accepted), leading minus, fraction only if the task allows; exact rational comparison; max length per template | Sabit |
-| OQ-115 | Mock exams: scoring of selection and matching tasks | Verify; until then all-or-nothing, 1 point | Sabit (verify) |
-| OQ-116 | Mock exams: formulas and rich text rendering | LaTeX in the bank, rendered at import into tintable images with spoken text; restricted markup for passages; ADR | Sabit |
-| OQ-117 | Mock exams: durations, grace and pause | Full 180 min, subject block 60 min, 2 min grace, wall-clock, no pause | Sabit |
-| OQ-118 | Mock exams: offline, resume, late upload | Package downloaded before start; online start; offline answering; resume after app kill; 24 h late-upload window | Sabit |
-| OQ-119 | Mock exams: listening play rules | Verify DİM; proposal 2 plays, no seek or speed change, pause allowed; transcript after submit | Sabit (verify) |
-| OQ-121 | Mock exams: audio format and Android player | AAC-LC mono 64 kbps `.m4a`; Media3 ExoPlayer via ADR | Sabit |
-| OQ-122 | Mock exams: who may mark exam tasks `reviewed`? | Named subject reviewers (author ≠ reviewer); Sabit approves each variant for publishing | Sabit |
-| OQ-123 | Mock exams: copyright of reading passages | Own texts, or public-domain / CC BY texts with the licence recorded; no copyrighted excerpts | Sabit |
-| OQ-124 | Mock exams: retakes, running attempts, start limit | Unlimited retakes labelled "Təkrar cəhd"; 1 running attempt per user; 10 starts per day | Sabit |
-| OQ-125 | Mock exams: XP, streak and active day | Finished attempt = active day; no XP in Phase 1 | Sabit |
-| OQ-126 | Mock exams: free or paid? | Free until a separate monetisation decision (IAP is out of MVP scope) | Sabit |
-| OQ-127 | Mock exams: separate data model; reuse in category quizzes? | Separate tables and bank folder; no reuse in Phase 1 | Sabit |
-| OQ-128 | Mock exams: Phase 1 slice | "Buraxılış — İngilis dili" subject sınaq, 3 variants, with self-assessed written tasks | Sabit |
-| OQ-129 | Mock exams: re-verify stage 2 (2022 source), rounding, 9th grade | Re-verify with the current DİM document before Phase 3; half-up rounding; 9th grade later | Sabit (verify) |
-| OQ-130 | Mock exams: naming, disclaimer and Play listing wording | "… sınağı (DİM formatında)", no year/"rəsmi"/logo; disclaimer text in `mock-exams.md` EXAM-25 | Sabit |
-| OQ-131 | Mock exams: reuse stage 2 subject blocks across groups | Yes: 8 subject blocks (240 tasks) serve groups I–IV per round instead of 450 tasks | Sabit |
+| — | No open questions. | | |
 
-## Details (OQ-112 … OQ-131) — mock exams "Sınaqlar" (post-MVP, open)
+## Decided by Sabit (2026-11-21) — mock exams "Sınaqlar" (post-MVP)
+
+| ID | Question | Decision | Decided |
+| --- | --- | --- | --- |
+| OQ-112 | how are written open tasks scored without paid grading? | B: self-assessment against the model answer and official criteria (0, ⅓, ½, ⅔, 1); the result always shows "Avtomatik yoxlanılıb" and "Özün qiymətləndirdin" separately (A2 split visible) | Sabit 2026-11-21 |
+| OQ-113 | do DİM closed tasks have 5 options (A–E)? | Recommendation accepted: the content-writer confirms the option count per exam type from DİM's public sample materials (structure only, no task copied); the data model allows 2–5 options per template (details below) | Sabit 2026-11-21 |
+| OQ-114 | coded answer input format and normalisation | Recommendation accepted: A, and verify DİM's coding rules (sign, fractions, length) before Phase 2 (details below) | Sabit 2026-11-21 |
+| OQ-115 | scoring of selection and matching tasks | Recommendation accepted: verify; build A unless DİM states otherwise (details below) | Sabit 2026-11-21 |
+| OQ-116 | formulas and rich text rendering | Recommendation accepted: B + restricted markup; an ADR (new rendering approach, Android and backend) (details below) | Sabit 2026-11-21 |
+| OQ-117 | durations, grace and pause | Full sınaq 180 min, subject sınaq 60 min, 2 min grace for late requests; no pause (wall clock like the real exam); an untimed practice mode only later | Sabit 2026-11-21 |
+| OQ-118 | offline, resume, late upload | Recommendation accepted: all of the above (details below) | Sabit 2026-11-21 |
+| OQ-119 | listening play rules | 2 plays, no seeking or speed change, pause allowed, a play counts after 10 s, transcript only after submit; "skip listening" for deaf or hard-of-hearing users (removed from the estimate with a note); practice player outside attempts in Phase 2 | Sabit 2026-11-21 |
+| OQ-121 | audio format and Android player | Recommendation accepted: A + Media3 via ADR (details below) | Sabit 2026-11-21 |
+| OQ-122 | who may mark exam tasks `reviewed`? | B: Sabit names subject reviewers (teachers) recorded in `reviewedBy`, author ≠ reviewer, Sabit approves publishing of a whole variant. Applies to exam content only; category/duel questions keep "only Sabit" (CLAUDE.md updated) | Sabit 2026-11-21 |
+| OQ-123 | copyright of reading passages | Recommendation accepted: A + B; the importer rejects a passage without a licence (details below) | Sabit 2026-11-21 |
+| OQ-124 | retakes, running attempts, start limit | Recommendation accepted: the proposal (details below) | Sabit 2026-11-21 |
+| OQ-125 | XP, streak and active day | Recommendation accepted: B for Phase 1; revisit XP with numbers later (details below) | Sabit 2026-11-21 |
+| OQ-126 | free or paid? | Free for now; Sabit plans in-app purchases for sınaqlar later (separate monetisation decision and work; IAP stays out of the MVP). Nothing is built for paywalls now, but the data model must not block a later paid tier | Sabit 2026-11-21 |
+| OQ-127 | separate data model; reuse in category quizzes? | Recommendation accepted: A, no reuse in Phase 1 (details below) | Sabit 2026-11-21 |
+| OQ-128 | Phase 1 slice | A: "Buraxılış — İngilis dili" subject sınaq, 30 tasks, 3 variants (listening, reading, written self-assessment) | Sabit 2026-11-21 |
+| OQ-129 | re-verify stage 2 (2022 source), rounding, 9th grade | Recommendation accepted: re-verify each item before the phase that needs it; 9th grade and state-language exam later (details below) | Sabit 2026-11-21 |
+| OQ-130 | naming, disclaimer and Play listing wording | Recommendation accepted: the proposal; Sabit may ask for legal advice (details below) | Sabit 2026-11-21 |
+| OQ-131 | reuse stage 2 subject blocks across groups | Recommendation accepted: A (details below) | Sabit 2026-11-21 |
+
+## Details (OQ-112 … OQ-131) — mock exams "Sınaqlar" (background, all decided above)
 
 Added by `business-analyst` on 2026-11-16 with `docs/requirements/mock-exams.md`
 (EXAM-01 … EXAM-25). The feature is outside the MVP scope of `CLAUDE.md`; none of

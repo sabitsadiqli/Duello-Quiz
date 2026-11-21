@@ -174,4 +174,6 @@ theme, Azerbaijani strings do not truncate on a 360dp screen.
 6. devops: first internal-track release, then closed test with 15–20 testers.
 
 content-writer works in parallel from day one: at least 60 reviewed questions per
-category before the closed test. Only Sabit marks a question `reviewed`.
+category before the closed test. Only Sabit marks a category/duel question `reviewed`.
+Mock-exam (Sınaqlar) tasks: subject reviewers named by Sabit may mark them `reviewed`
+(author ≠ reviewer); Sabit approves publishing each variant (OQ-122).
