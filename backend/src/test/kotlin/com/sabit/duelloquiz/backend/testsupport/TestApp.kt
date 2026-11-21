@@ -18,6 +18,11 @@ import com.sabit.duelloquiz.backend.content.ImportItem
 import com.sabit.duelloquiz.backend.content.ImportReport
 import com.sabit.duelloquiz.backend.duel.DuelClock
 import com.sabit.duelloquiz.backend.duel.DuelConfig
+import com.sabit.duelloquiz.backend.exam.ExamConfig
+import com.sabit.duelloquiz.backend.exam.ExamImporter
+import com.sabit.duelloquiz.backend.exam.ExamRepository
+import com.sabit.duelloquiz.backend.exam.ExamTemplates
+import com.sabit.duelloquiz.backend.exam.ExamViews
 import com.sabit.duelloquiz.backend.featureModule
 import com.sabit.duelloquiz.backend.image.ImageProcessor
 import com.sabit.duelloquiz.backend.image.ImageRepository
@@ -66,6 +71,7 @@ fun testConfig(
     // Day #1 before the test clock's default date (2026-10-16).
     daily: DailyConfig = DailyConfig(firstDay = LocalDate.of(2026, 10, 1)),
     progress: ProgressConfig = ProgressConfig(),
+    exams: ExamConfig = ExamConfig(finalizeSweepIntervalMs = 0),
 ) = AppConfig(
     db = DbConfig("unused", "unused", "", 1),
     firebase = FirebaseConfig(null, null),
@@ -79,6 +85,7 @@ fun testConfig(
     progress = progress,
     // The scheduler is driven explicitly in tests.
     notifications = NotificationConfig(enabled = false, tickIntervalMs = 0),
+    exams = exams,
 )
 
 /** Everything a route test can control. */
@@ -101,6 +108,10 @@ class TestEnv(
     val imageRepository = ImageRepository()
     val images = ImageService(db, imageRepository, storage, ImageProcessor(config.images), config.images, clock)
     val importer = ContentImporter(db, ContentRepository(), clock, images, imageRepository)
+    val examTemplates = ExamTemplates.load()
+    val examImporter = ExamImporter(
+        db, ExamRepository(), storage, examTemplates, ExamViews(MediaUrls(config.media.baseUrl), config.exams), config.exams, clock,
+    )
 }
 
 /** Runs [block] against the real routes and services with fake auth and a virtual clock. */

@@ -25,6 +25,7 @@ Package by feature under `src/main/kotlin/com/sabit/duelloquiz/backend/`
 | `daily` | Daily challenge (`/v1/daily*`): `DailySelector` (server-random set per Baku day), `DailyService` (attempts, answers, finish, expiry) |
 | `progress` | XP, levels, streak (`GET /v1/me/progress`): pure rules (`XpRules`, `Levels`, `Streaks`, `AwardCalculator`) and `ProgressService.award`, called inside the quiz/daily/duel finalize transaction |
 | `notification` | Push tokens and switches (`/v1/me/push-tokens`, `/v1/me/notification-settings`), `ReminderRules`, `NotificationService` jobs, `PushSender` (`FcmPushSender` via Firebase Admin SDK); texts in `src/main/resources/i18n/notifications.json` |
+| `exam` | Mock exams "Sınaqlar" (`/v1/exams*`, ADR `docs/adr/0002-mock-exams-data-and-audio.md`): templates (`src/main/resources/exams/templates.json`), `ExamValidator` + `ExamImporter` (bank `exams/`), `Mp4Audio` (AAC check + metadata strip, pure JVM), `ExamScoring` (DİM stage 1), `ExamService` (attempts, timer, late upload, self-assessment), finalize job |
 | `admin` | CLI tasks `delete-user` and `prune-orphans` (`AccountAdmin`, `AdminCli.kt`); every deletion goes through `UserService.deleteAccount` |
 | `common` | Config, errors, i18n, Baku day (`BakuTime`), database, Exposed table mappings, access log (`CallLog.kt`), `BuildInfo` |
 
@@ -68,6 +69,7 @@ The server applies the Flyway migrations at startup. Without
 | `LOG_LEVEL` | `INFO` | Root log level (logs are JSON on stdout) |
 | `DAILY_FIRST_DAY` | `2026-10-22` | Baku date of daily challenge #1 |
 | `NOTIFICATIONS_ENABLED` | `true` | Push reminder scheduler; without a Firebase service account nothing is sent anyway |
+| `EXAMS_ENABLED` | `true` | Mock exams `/v1/exams*` (404 when off); nothing is listed until a variant is published |
 
 Image numbers (10 MB upload limit, 1024/400 px, quality 75/70 down to 50, targets
 80 000/20 000 bytes, 1 image processed at a time) live in the `duello.images` block.
@@ -107,7 +109,17 @@ A content directory is read like this:
   `{"slug", "name": {"az": "..."}, "iconKey", "sortOrder", "active"}`; names ≤ 20
   characters per language (OQ-045).
 - Question files: every `*.json` under `<dir>/questions/` if it exists, else under
-  `<dir>`.
+  `<dir>` (never below `<dir>/exams/`).
+- Mock-exam variants (ADR 0002 §2, `content/schema/exam.schema.json`):
+  `<dir>/exams/<template>/<variant-id>/variant.json` with its audio files in
+  `audio/*.m4a` next to it. Validated against the template (task counts, groups, 5
+  options, one correct, model answer + criteria, licences, Piper voices, reviewer ≠
+  author, `publishApprovedBy` in `duello.exams.publishApprovers`) **before** the
+  questions are imported; any problem rejects the whole run. Audio must be AAC-LC mono
+  ≤ 80 kbps, ≤ 6 min, ≤ 5 MB; metadata boxes are stripped and the file is stored as
+  `audio/{uuid}.m4a` in `MEDIA_DIR`. A content change creates a new variant version;
+  the CLI prints a second JSON line with the exam report. There is no admin HTTP import
+  for exams.
 
 CLI (same database and `MEDIA_DIR` variables as the server; `image.file` is read
 relative to the content directory; exit code 0 = imported, 1 = invalid, 2 =
@@ -260,4 +272,10 @@ bundles libwebp for Linux x86_64/aarch64, macOS and Windows. No system package o
   deletion by email/uid, active-match refusal, orphan batches of 100, `--max`) with a
   fake `AuthDirectory`; `CallLogTest` checks the masked access log.
 - `ContentValidatorTest` checks that the importer and
-  `content/schema/question.schema.json` agree on the public samples and fixtures.
+  `content/schema/question.schema.json` agree on the public samples and fixtures;
+  `ExamValidatorTest` does the same for `content/schema/exam.schema.json`.
+- Mock exams: `ExamScoringTest` (DİM formula, rounding, reduced maximum), `Mp4AudioTest`
+  (probe and metadata strip on the public sample audio, rejections), `ExamImporterTest`
+  (versions, idempotency, all-or-nothing) and `ExamRoutesTest` (no keys before submit,
+  timer/grace/late upload by device, auto- and server finalization, play counter, limits,
+  self-assessment, review, account deletion, feature flag).

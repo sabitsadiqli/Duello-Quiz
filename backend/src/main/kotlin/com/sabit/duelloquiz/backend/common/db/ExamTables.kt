@@ -145,7 +145,8 @@ object ExamAnswersTable : Table("exam_answers") {
     val taskId = javaUUID("task_id")
     val revision = integer("revision")
     val optionId = javaUUID("option_id").nullable()
-    val answerText = varchar("answer_text", 1000).nullable()
+    // VARCHAR(1000) in SQL (characters); mapped as text so the 1 000-character check stays in the service.
+    val answerText = text("answer_text").nullable()
     val flagged = bool("flagged")
     val savedAt = timestampWithTimeZone("saved_at")
     val receivedAt = timestampWithTimeZone("received_at")

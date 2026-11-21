@@ -974,7 +974,8 @@ paths:
       operationId: startExamAttempt
       summary: Start (or resume) an attempt; the server sets the timer (EXAM-04, EXAM-19, EXAM-20)
       description: |
-        The only request of an attempt that must be online (OQ-118). Order of checks:
+        The only request of an attempt that must be online — always, also with a
+        downloaded package, which only makes the start faster (OQ-118, OQ-D48). Order of checks:
         unknown variant → 404 `exam_variant_not_found`; an attempt with the same
         `idempotencyKey` → that attempt (200, `resumed = true`); a `running` attempt of
         the same variant → that attempt (200, `resumed = true`, unchanged times); a
@@ -988,7 +989,8 @@ paths:
         and `lateUploadUntilEpochMs = deadline + 24 h` (OQ-117, OQ-118). No pause.
         `isRetake` is true when the caller already finished this variant. Phase 1 only
         supports `mode = subject`. `skipListening = true` (OQ-119, deaf or
-        hard-of-hearing users) removes the listening tasks from the estimate.
+        hard-of-hearing users) removes the listening tasks from the estimate; it can only
+        be chosen here, before the start (OQ-D42).
       parameters:
         - $ref: "#/components/parameters/AcceptLanguage"
       requestBody:
@@ -1318,7 +1320,7 @@ paths:
       summary: Self-assessed marks of written tasks (EXAM-16, OQ-112)
       description: |
         Only after submit or finalization (else 409 `attempt_not_finished`), any time
-        later too. Each entry sets (`mark` one of `0`, `1/3`, `1/2`, `2/3`, `1`) or clears
+        later too; marks can be changed or cleared again at any time (OQ-D47). Each entry sets (`mark` one of `0`, `1/3`, `1/2`, `2/3`, `1`) or clears
         (`null`) the mark of one written task; any other value, a closed task or a
         duplicate → 400 `validation_failed`, a task outside the attempt → 400
         `task_not_in_attempt`; nothing is stored then. Returns the recomputed result.
@@ -1361,7 +1363,8 @@ paths:
         Only after submit or finalization (else 409 `attempt_not_finished`). All tasks
         in exam order with the user's answer, `outcome`, the correct option, the
         explanation; written tasks with model answer, criteria and the self-assessed
-        mark; listening groups with the transcript and the voice credits. Filters
+        mark; listening groups with the transcript, the voice credits and the audio
+        file, which the client may now replay freely with seeking (OQ-D44). Filters
         ("Səhvlər", "Cavabsızlar", "İşarələnmişlər") are applied by the client on
         `outcome` and `flagged`.
       parameters:
@@ -2402,6 +2405,7 @@ components:
           description: Rounded to 0.1; `null` until submitted or finalized.
         maxScore:
           type: number
+          description: Reachable maximum of this attempt (OQ-D42; 100 unless listening is excluded).
         writtenAssessed:
           type: integer
         writtenTotal:
@@ -2739,11 +2743,11 @@ components:
         endsAtEpochMs:
           type: integer
           format: int64
-          description: Countdown target; the client disables input and auto-submits here.
+          description: Countdown target shown to the user (OQ-D41); the client disables input and auto-submits here.
         deadlineEpochMs:
           type: integer
           format: int64
-          description: endsAt + grace; last moment for normal online writes.
+          description: endsAt + 2 min grace (server side, never shown as the countdown); last moment for normal online writes.
         lateUploadUntilEpochMs:
           type: integer
           format: int64
@@ -3010,7 +3014,9 @@ components:
         "Təxmini bal" — never an official DİM result. `autoScore` is "Avtomatik
         yoxlanılıb", `writtenScore` "Özün qiymətləndirdin"; both are rounded on their
         own, so their sum may differ from `total` by 0.1. Show numbers with a decimal
-        comma.
+        comma. OQ-D42: when listening is excluded (skipped or audio failed) the score is
+        **not** rescaled: `total` keeps the template denominator and `maxScore` is the
+        reduced reachable maximum, shown as "58,4 / 75,7" (otherwise `maxScore` = 100).
       required: [total, autoScore, writtenScore, maxScore, rawMax, listeningExcluded, listeningExclusionReason]
       properties:
         total:
@@ -3022,9 +3028,10 @@ components:
           type: number
         maxScore:
           type: number
+          description: Reachable maximum, 100 unless listening is excluded (English then 75.7).
         rawMax:
           type: integer
-          description: 37 for English; smaller when listening is excluded.
+          description: Counted raw maximum, 37 for English; 28 when listening is excluded.
         listeningExcluded:
           type: boolean
         listeningExclusionReason:
