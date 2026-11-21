@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
 /**
  * A mock-exam attempt held on this device (EXAM-13: survives app kill and works offline). Times
  * are the server's (`…EpochMs`); [clockOffsetMs] converts them for the local wall clock.
- * [phase] is the local lifecycle ([com.sabit.duelloquiz.core.database.ExamAttemptPhase] names).
+ * [phase] is the local lifecycle by name: RUNNING, SUBMIT_PENDING, SUBMITTED, CLOSED (`:core:data`
+ * `LocalAttemptPhase`; the DAO queries use the same literals).
  */
 @Entity(tableName = "exam_attempts", indices = [Index("accountUid")])
 data class ExamAttemptEntity(
@@ -37,21 +38,6 @@ data class ExamAttemptEntity(
     /** EXAM-27: the "10 dəqiqə qalıb" notification was posted (at most once per attempt). */
     val reminderPosted: Boolean,
 )
-
-/** Local lifecycle of [ExamAttemptEntity.phase]. */
-enum class ExamAttemptPhase {
-    /** Answers allowed until `endsAt`. */
-    RUNNING,
-
-    /** Submit requested (user or time up); sync + submit pending, the attempt is read-only. */
-    SUBMIT_PENDING,
-
-    /** The server accepted the submit (or finalized it); result available from the server. */
-    SUBMITTED,
-
-    /** 409 `attempt_closed`: submitted on another device or finalized after the late window. */
-    CLOSED,
-}
 
 /**
  * Latest local state of one task. [revision] increases with every change; the row is in the

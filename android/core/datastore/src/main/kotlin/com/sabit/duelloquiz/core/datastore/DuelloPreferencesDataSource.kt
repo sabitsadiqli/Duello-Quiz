@@ -31,9 +31,22 @@ class DuelloPreferencesDataSource @Inject constructor(
         dataStore.edit { prefs -> prefs[THEME_MODE] = mode.name }
     }
 
+    /**
+     * Random per-install id for mock-exam writes (`deviceId`, OQ-118: the device that holds an
+     * attempt), created on first use. Not a hardware id; survives sign-out, not a reinstall.
+     */
+    suspend fun examDeviceId(generate: () -> String): String {
+        var id = ""
+        dataStore.edit { prefs ->
+            id = prefs[EXAM_DEVICE_ID] ?: generate().also { prefs[EXAM_DEVICE_ID] = it }
+        }
+        return id
+    }
+
     private fun String.toThemeModeOrNull(): ThemeMode? = ThemeMode.entries.firstOrNull { it.name == this }
 
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val EXAM_DEVICE_ID = stringPreferencesKey("exam_device_id")
     }
 }
