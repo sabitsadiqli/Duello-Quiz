@@ -327,17 +327,20 @@ class ExamRoutesTest : DbTest() {
             val attempt = client.start(token, variant.id).body<ExamAttemptResponse>()
             val path = "/v1/exams/attempts/${attempt.id}/listening/$group"
             val t0 = env.clock.millis()
+            // Positions as percentages of the (short) fixture audio, so every value is valid.
+            fun p(percent: Int): Int = (duration.toLong() * percent / 100).toInt()
+            assertTrue(duration >= 100, "fixture audio too short for distinct positions")
             suspend fun put(plays: Int, position: Int, savedAt: Long) =
                 client.putJson(path, token, ExamListeningUpdateRequest(deviceA, plays, savedAtEpochMs = savedAt, positionMs = position))
 
-            assertEquals(12_000, put(1, 12_000, t0 + 1_000).body<ExamListeningStateDto>().positionMs)
-            assertEquals(20_000, put(1, 20_000, t0 + 2_000).body<ExamListeningStateDto>().positionMs, "last write wins")
-            assertEquals(20_000, put(1, 5_000, t0 + 1_500).body<ExamListeningStateDto>().positionMs, "an older write is ignored")
+            assertEquals(p(12), put(1, p(12), t0 + 1_000).body<ExamListeningStateDto>().positionMs)
+            assertEquals(p(20), put(1, p(20), t0 + 2_000).body<ExamListeningStateDto>().positionMs, "last write wins")
+            assertEquals(p(20), put(1, p(5), t0 + 1_500).body<ExamListeningStateDto>().positionMs, "an older write is ignored")
             // Second play started, not counted yet (same count, later write), then counted.
-            assertEquals(3_000, put(1, 3_000, t0 + 3_000).body<ExamListeningStateDto>().positionMs)
-            assertEquals(11_000, put(2, 11_000, t0 + 4_000).body<ExamListeningStateDto>().positionMs)
-            val stale = put(1, 30_000, t0 + 5_000).body<ExamListeningStateDto>()
-            assertEquals(ExamListeningStateDto(group, 2, 0, false, 11_000), stale, "a lower play count never moves the position")
+            assertEquals(p(3), put(1, p(3), t0 + 3_000).body<ExamListeningStateDto>().positionMs)
+            assertEquals(p(11), put(2, p(11), t0 + 4_000).body<ExamListeningStateDto>().positionMs)
+            val stale = put(1, p(30), t0 + 5_000).body<ExamListeningStateDto>()
+            assertEquals(ExamListeningStateDto(group, 2, 0, false, p(11)), stale, "a lower play count never moves the position")
 
             assertEquals("validation_failed", put(2, -1, t0 + 6_000).code())
             assertEquals("validation_failed", put(2, duration + 1, t0 + 6_000).code())
