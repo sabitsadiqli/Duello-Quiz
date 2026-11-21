@@ -10,11 +10,15 @@ name: Backup
 #   backup-now     runs scripts/backup.sh once and lists the bucket.
 #   restore-drill  restores the newest local dump into a scratch database and drops it
 #                  (scripts/restore.sh --test); production data is untouched.
+# Schedule: on the 1st of every month at 05:00 UTC the restore drill runs on dev by
+# itself (no inputs: environment dev, action restore-drill). A failed run e-mails Sabit.
 # Environment secrets (Settings → Environments → dev/prod): DEPLOY_SSH_KEY, DEPLOY_HOST,
 # DEPLOY_USER, DEPLOY_KNOWN_HOSTS (as deploy-backend.yml), R2_ACCESS_KEY_ID,
 # R2_SECRET_ACCESS_KEY. Variables: R2_ENDPOINT (https://<account-id>.eu.r2.cloudflarestorage.com),
 # R2_BUCKET (dev: duello-backups, prod: duello-backups-prod), optional DEPLOY_PORT, DEPLOY_PATH.
 on:
+  schedule:
+    - cron: "0 5 1 * *"
   workflow_dispatch:
     inputs:
       environment:
@@ -29,7 +33,7 @@ on:
         default: configure
 
 concurrency:
-  group: backup-${{ inputs.environment }}
+  group: backup-${{ inputs.environment || 'dev' }}
   cancel-in-progress: false
 
 permissions:
@@ -37,10 +41,10 @@ permissions:
 
 jobs:
   backup:
-    name: ${{ inputs.action }} (${{ inputs.environment }})
+    name: ${{ inputs.action || 'restore-drill' }} (${{ inputs.environment || 'dev' }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'dev' }}
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -48,7 +52,7 @@ jobs:
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/duello' }}
       R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
       R2_BUCKET: ${{ vars.R2_BUCKET }}
-      ACTION: ${{ inputs.action }}
+      ACTION: ${{ inputs.action || 'restore-drill' }}
     steps:
       - name: Check configuration
         env:
@@ -110,7 +114,7 @@ jobs:
           chmod 600 ~/.ssh/config
 
       - name: Write backup.env on the VM
-        if: inputs.action == 'configure'
+        if: env.ACTION == 'configure'
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -134,25 +138,25 @@ jobs:
           ssh duello-vm "ls -l '$DEPLOY_PATH/backup.env'"
 
       - name: Check the R2 connection
-        if: inputs.action != 'restore-drill'
+        if: env.ACTION != 'restore-drill'
         run: |
           ssh duello-vm "set -a; . '$DEPLOY_PATH/backup.env'; set +a; rclone lsf \"\$BACKUP_RCLONE_REMOTE\" --max-depth 1 > /dev/null && echo 'R2 reachable: '\"\$BACKUP_RCLONE_REMOTE\""
 
       - name: Run one backup (pg_dump + media + upload to R2)
-        if: inputs.action != 'restore-drill'
+        if: env.ACTION != 'restore-drill'
         run: ssh duello-vm "'$DEPLOY_PATH/scripts/backup.sh'"
 
       - name: List the newest files in R2
-        if: inputs.action != 'restore-drill'
+        if: env.ACTION != 'restore-drill'
         run: |
           ssh duello-vm "set -a; . '$DEPLOY_PATH/backup.env'; set +a; rclone lsl \"\$BACKUP_RCLONE_REMOTE\" | sort -k2,3 | tail -n 6"
 
       - name: Daily timer status
-        if: inputs.action != 'restore-drill'
+        if: env.ACTION != 'restore-drill'
         run: ssh duello-vm "systemctl list-timers duello-backup.timer --no-pager || true"
 
       - name: Restore drill (scratch database, production untouched)
-        if: inputs.action == 'restore-drill'
+        if: env.ACTION == 'restore-drill'
         run: |
           set -euo pipefail
           ssh duello-vm "set -euo pipefail
