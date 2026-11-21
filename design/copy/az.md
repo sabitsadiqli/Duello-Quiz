@@ -30,7 +30,7 @@ against the requirement proposals" at the end).
 
 - **OQ-D49 — exam variant names** (`exam-catalogue.md`): the app builds "Sınaq №1"
   from `variantNumber`; the type title is server i18n. Needs U+2116 in the font
-  subsets (tokens 3.1.0). Decides: backend-dev / Sabit.
+  subsets (tokens 3.1.0). **Decided by Sabit 2026-11-21: proposal accepted.**
 
 ## Tone: "sən"
 
@@ -948,6 +948,7 @@ Durations and sizes are built in code from numbers; decimal comma, one place.
 | `exam_download_done_cd` | Sınaq yükləndi. Başlamağa hazırdır. | Polite announcement. |
 | `exam_download_notif` | Sınaq yüklənir | Worker notification title, only if Android requires one. |
 | `exam_info_ready_hint` | Hazırsan? Başlayanda vaxt işləməyə başlayacaq. | `wrap`. |
+| `exam_info_notif_off_hint` | Bildirişlər söndürülüb: tətbiq arxa planda olanda vaxt xatırlatması gəlməyəcək. | OQ-D45. Shown above "Başla" when POST_NOTIFICATIONS, app notifications or the `exam` channel are off. `wrap` (bodySmall 458 / 595dp: 2 lines at 1.0 and 1.3). |
 | `exam_info_start` | Başla | `btn` primary. labelLarge 40 / 52dp (280): fits |
 | `exam_info_running_hint` | Vaxt gedir: %1$s qalıb. | bodySmall 144 / 187dp (328): fits — measured "Vaxt gedir: 42 dəq qalıb." |
 | `exam_info_resume` | Davam et | `btn`. labelLarge 70 / 91dp (280): fits |
@@ -1018,6 +1019,11 @@ Durations and sizes are built in code from numbers; decimal comma, one place.
 | `exam_audio_restored` | Tətbiq bağlanmışdı. Dinləmə dayandığı yerdən davam edəcək. | OQ-D43. |
 | `exam_audio_volume_hint` | Səsi artır və ya qulaqcıq tax. | EXAM-10 wording. |
 | `exam_audio_skipped` | Dinləmə hissəsini keçmisən. Bu tapşırıqlar təxmini bala daxil edilmir. | Exam note. |
+| `exam_audio_play_review_cd` | Dinlə | Review player (§42a) play button. |
+| `exam_audio_replay_cd` | Yenidən dinlə | Review player button at the end of the file. labelLarge 100 / 129dp (cd + tooltip). |
+| `exam_audio_seek_cd` | Audio mövqeyi | Review player slider. |
+| `exam_audio_back10_cd` | 10 saniyə geri | Icon button `replay_10`. |
+| `exam_audio_forward10_cd` | 10 saniyə irəli | Icon button `forward_10`. |
 | `exam_grid_title` | Tapşırıqlar | Sheet title. titleLarge 100 / 130dp (180): fits |
 | `exam_grid_summary` | Cavablanıb: %1$d · Cavabsız: %2$d · İşarələnib: %3$d | `wrap` (2 lines at 1.3). bodyMedium 301 / 391dp (328): wraps at 1.3 — measured "Cavablanıb: 30 · Cavabsız: 30 · İşarələnib: 30" |
 | `exam_grid_legend_answered` | Cavablanıb | Legend (bodySmall). |
@@ -1168,6 +1174,18 @@ Durations and sizes are built in code from numbers; decimal comma, one place.
 | `settings_licenses_voice_supporting` | Piper TTS səsi · %1$s | `%1$s` = licence ("CC BY 4.0") or `settings_licenses_public_domain`. bodyMedium 215 / 279dp (264): wraps at 1.3 — measured "Piper TTS səsi · ictimai mülkiyyət" |
 | `settings_licenses_public_domain` | ictimai mülkiyyət |  |
 
+
+#### Local notification (OQ-D45, decided 2026-11-21; `exam-attempt.md` I)
+
+Android strings (the notification is local, not a server push). Text rules of
+`notifications.md` C: no exclamation marks, no emoji, no false urgency.
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `notif_exam_time_left_title` | %1$d dəqiqə qalıb | `plurals`; value = whole minutes left when posted (normally 10, never below 5). 15 chars. |
+| `notif_exam_time_left_body` | «%1$s» davam edir. Cavablarını yoxlamağa qayıt. | `%1$s` = `exam_variant_title`; 46 chars (≤ 90). |
+| `notif_channel_exam_name` | Sınaqlar | Android channel name. |
+| `notif_channel_exam_description` | Sınaq zamanı tətbiq arxa planda olanda vaxtın azaldığını xatırladırıq. | Android channel description. |
 
 #### Backend i18n — exam content (server `{"az": …}`, not `strings.xml`)
 

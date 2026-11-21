@@ -9,13 +9,13 @@ auto part = 100/37 · C (max 62,2), written part = 100/37 · 2·W (max 37,8).
 Tokens 3.1.0. Components: `components.md` §1, §8, §11, §12, §26 (streak row
 only), §35a, §45, §46. Copy: `copy/az.md` "exam_result_", "exam_split_".
 
-## Open questions
+## Decided questions
 
 - **OQ-D42** (`exam-info.md`): with skipped or failed listening the score is
-  shown out of the reduced maximum ("58,4 / 83,8"). Needs the server to return
-  `maxScore` with the estimate.
-- **OQ-D47** (`exam-self-assessment.md`): "Qiymətləri dəyiş" is shown only if
-  re-editing is accepted.
+  shown out of the reduced maximum ("58,4 / 83,8"); the server returns
+  `maxScore` with the estimate. **Decided by Sabit 2026-11-21: as proposed.**
+- **OQ-D47** (`exam-self-assessment.md`): **Decided by Sabit 2026-11-21: yes** — "Qiymətləri dəyiş"
+  is shown once every written task is assessed.
 - Assumption: the server returns all numbers already rounded to 0.1 (OQ-129
   rounding); the client only formats them with a decimal comma and never
   recomputes (server authoritative).
@@ -72,7 +72,7 @@ next step (assess the written tasks, then learn from the review).
       `exam_result_assess_body` ("Qiymətləndirməsən, 7 yazılı tapşırıq 0
       sayılır.") `type.bodyMedium`, `space.md`, primary pill
       `exam_result_assess_cta` ("Qiymətləndir (7)"), full card width.
-      When everything is assessed (and OQ-D47 accepted): instead a text button
+      When everything is assessed (OQ-D47): instead a text button
       `exam_result_edit_marks` ("Qiymətləri dəyiş") under the legend.
    7. `space.xl`, overline `exam_result_sections_overline` ("BÖLMƏLƏR"); one
       row per section, hairlines between (not clickable): title = section name

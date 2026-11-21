@@ -9,24 +9,25 @@ Tokens: `design/tokens.json` 3.1.0. Components: `components.md` §1, §8, §11,
 home). Flow: catalogue → `exam-info.md` → `exam-attempt.md` →
 `exam-result.md` / `exam-self-assessment.md` / `exam-review.md`.
 
-## Open questions (Sabit / business-analyst)
+## Decided questions (Sabit, 2026-11-21)
 
-- **OQ-D40 — where do Sınaqlar live in the 3-tab navigation?** Design
-  decision below (A); Sabit confirms. Alternatives B and C listed with their
-  cost.
+- **OQ-D40 — where do Sınaqlar live in the 3-tab navigation?** **Decided by Sabit 2026-11-21: A as
+  proposed** (section below the categories + running-attempt banner; the Oyna
+  scroll trade-off is accepted). B and C stay below for the record.
 - **OQ-D48 — EXAM-01 says downloaded variants "stay startable" offline;
   EXAM-04 / OQ-118 say a start needs one online request.** The design follows
   the decided OQ-118: offline, a downloaded variant shows "Başlamaq üçün
-  internet lazımdır"; a *running* attempt continues offline. business-analyst
-  aligns EXAM-01.
+  internet lazımdır"; a *running* attempt continues offline. **Decided by Sabit 2026-11-21: proposal
+  accepted**; business-analyst aligns EXAM-01.
 - **OQ-D49 — variant names.** Proposal: the app builds "Sınaq №1" from
   `variantNumber` (`exam_variant_title`), the exam type title comes from the
   server i18n (`copy/az.md` "Backend i18n — exams", EXAM-25 rules). Fonts:
   "№" needs U+2116 in the subsets (`tokens.json` 3.1.0, android-dev).
+  **Decided by Sabit 2026-11-21: proposal accepted.**
 
-## Entry-point decision (OQ-D40)
+## Entry-point decision (OQ-D40 — decided by Sabit 2026-11-21: A)
 
-**A (chosen): a "Sınaqlar" section on the Oyna tab, below the category list.**
+**A (decided): a "Sınaqlar" section on the Oyna tab, below the category list.**
 Overline `home_exams_overline` ("İMTAHANA HAZIRLIQ") + one exam row
 (`home_exams_row_title` "Sınaqlar", supporting `home_exams_row_supporting`
 "DİM formatında məşq sınaqları", 24dp `assignment` icon, chevron).
@@ -51,7 +52,7 @@ them. What is lost: the Sınaqlar row is below the fold. Mitigation:
   move; the analytics `exam_catalog_view` source tells whether discovery is a
   problem.
 
-Alternatives for Sabit:
+Alternatives considered (not chosen):
 - **B. 4th tab "Sınaqlar"** (`nav_exams`): no vertical cost; items become 90dp
   wide ("Gündəlik" 74dp at 1.3 still fits); costs the bar change described
   above. Choose B if exams become a main product line.
@@ -83,7 +84,9 @@ past attempts went; read the honest disclaimer before anything else.
 - Oyna → "Sınaqlar" row.
 - Back from `exam-info.md`, from a result / review (`exam_result_back`
   "Sınaqlara qayıt").
-- Not from push (no exam pushes in Phase 1, OQ-D45). Deep links: none.
+- Not from server push. The local "10 dəqiqə qalıb" notification (OQ-D45,
+  `exam-attempt.md` I) opens the running attempt, not the catalogue. Deep
+  links: none.
 
 ## Layout — catalogue (top to bottom, 360dp)
 
@@ -243,28 +246,28 @@ place), `unassessedCount`, `isRetake`, `attemptCount`. History: attempts with
 
 ## Impact on requirements (for business-analyst) — all exam specs
 
-Not decided product changes until business-analyst updates
-`docs/requirements/mock-exams.md` and Sabit confirms; the design follows them
-meanwhile.
+Sabit decided OQ-D40 … OQ-D49 on 2026-11-21 (all as proposed, except OQ-D44
+and OQ-D45, which are **in** Phase 1). business-analyst mirrors these rows in
+`docs/requirements/mock-exams.md`.
 
 | Story | Requirement says | Design does | Suggested change |
 | --- | --- | --- | --- |
-| EXAM-01 | "opens Sınaqlar from home" | Section below the categories on Oyna; Oyna scrolls ~96dp when the feature is on (OQ-D40) | Accept the placement and the home budget trade-off (HOME no-scroll rule gets an exception) |
-| EXAM-01 | Offline: "downloaded variants stay startable" | Start needs internet (OQ-118 / EXAM-04); running attempts continue offline | Reword to "downloaded variants stay openable; a running attempt continues" (OQ-D48) |
-| EXAM-04 | `deadlineEpochMs` = start + duration + grace drives the countdown | Countdown to `endsAtEpochMs` (no grace shown) (OQ-D41) | Add `endsAtEpochMs` to the AC (backend draft already has it) |
+| EXAM-01 | "opens Sınaqlar from home" | Section below the categories on Oyna; Oyna scrolls ~96dp when the feature is on (OQ-D40) | **Decided 2026-11-21**: placement and trade-off accepted; HOME no-scroll rule gets this exception |
+| EXAM-01 | Offline: "downloaded variants stay startable" | Start needs internet (OQ-118 / EXAM-04); running attempts continue offline | **Decided 2026-11-21** (OQ-D48): reword to "downloaded variants stay openable; a running attempt continues" |
+| EXAM-04 | `deadlineEpochMs` = start + duration + grace drives the countdown | Countdown to `endsAtEpochMs` (no grace shown) (OQ-D41) | **Decided 2026-11-21** (OQ-D41): add `endsAtEpochMs` to the AC (backend draft already has it) |
 | EXAM-04 | Notices at 30 / 10 / 1 min | Same, plus warning colour from 10 min, no pulse | Note only |
 | EXAM-05 | Header "Riyaziyyat · 14 / 25" | "14 / 30" + section name on a second header line (height fixed per attempt) | Note only |
 | EXAM-09 | "split view or Mətn tab" | Toggle "Tapşırıq / Mətn" on phones (first visit of a group opens Mətn), split view ≥ 600dp | Fix the choice in the AC |
 | EXAM-10 | TalkBack "Dinlə, 2 dəfədən 1-i istifadə olunub" | "Dinlə. İstifadə olunub: 1 / 2" (no number-dependent suffix) | Update the indicative copy |
-| EXAM-10 | App kill: play counted if > 10 s | Counted **and** resumed paused at the saved position (OQ-D43) | Add the resume position to the AC (backend stores `positionMs`) |
-| EXAM-10 / OQ-119 | Skip listening "with a note" | Chosen on the info screen before start only; score shown out of the reduced maximum (OQ-D42) | Decide timing and the estimate rule |
+| EXAM-10 | App kill: play counted if > 10 s | Counted **and** resumed paused at the saved position (OQ-D43) | **Decided 2026-11-21** (OQ-D43): add the resume position to the AC (backend stores `positionMs`) |
+| EXAM-10 / OQ-119 | Skip listening "with a note" | Chosen on the info screen before start only; score shown out of the reduced maximum (OQ-D42) | **Decided 2026-11-21** (OQ-D42): before start only; score out of the reduced maximum |
 | EXAM-12 / EXAM-14 | "Cavabsız: 7, İşarələnmiş: 3. Sınağı bitirmək istəyirsən?" | Title + counts line + consequence line; empty written tasks count as cavabsız here | Update copy; state the empty-written rule |
 | EXAM-13 | Home shows "Davam edən sınaq" | Compact banner at the top of Oyna + Sınaqlar row text; verification banner hidden while it shows | Accept |
-| EXAM-16 | "Yazılı tapşırıqları qiymətləndir (7)" | Card title without the count + button "Qiymətləndir (7)"; marks editable later (OQ-D47) | Decide re-editing |
-| EXAM-18 | Transcript in the review | Transcript + optional free replay with seek (OQ-D44) | Decide Phase 1 or 2 |
+| EXAM-16 | "Yazılı tapşırıqları qiymətləndir (7)" | Card title without the count + button "Qiymətləndir (7)"; marks editable later (OQ-D47) | **Decided 2026-11-21** (OQ-D47): marks can be changed later from the result screen (and the review) |
+| EXAM-18 / EXAM-10 | Transcript in the review; practice player in Phase 2 | Transcript **plus** review player with free replay and seeking, after submit only (`components.md` §42a) | **Decided 2026-11-21** (OQ-D44): in Phase 1 |
 | EXAM-20 | "Əvvəlcə davam edən sınağı bitir" with "Davam et" / "Bitir" | "Ləğv et" / "Ona keç" (finishing only inside the attempt, with its confirmation) | Update the AC |
 | EXAM-20 | "Sınaqlarım" | A row at the bottom of the catalogue (not on Profil) | Note only |
 | EXAM-25 | Disclaimer on catalogue, info, result, "Haqqında" | All four; settings gets a "Sınaqlar haqqında" info row (flag on only) | Note only |
 | OQ-120 | CC BY voices credited on the licences screen | Section "DİNLƏMƏ SƏSLƏRİ" (flag on only) | Note only |
 | OQ-125 | Active day, no XP | Result shows the streak row only, no XP row | Note only |
-| (new) | — | Local notification at 10 min while backgrounded (OQ-D45) | Decide (proposal: none in Phase 1) |
+| (new) / EXAM-04 | Notices in the app only | Plus a local notification "10 dəqiqə qalıb" while the app is in the background (`exam-attempt.md` I) | **Decided 2026-11-21** (OQ-D45): in Phase 1; new story needed |

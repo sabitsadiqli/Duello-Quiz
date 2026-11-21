@@ -11,21 +11,21 @@ Tokens 3.1.0 (`motion.exam`, `size.exam*`). Components: `components.md` §1,
 §3 + §3a, §4, §8, §9, §10, §11, §39 … §43, §46. Copy: `copy/az.md` "exam_"
 (attempt, player, navigator, submit).
 
-## Open questions
+## Decided questions
 
 - **OQ-D41 — display deadline** (`exam-info.md`): the timer counts to
   `endsAtEpochMs` (start + 60 min), never to the deadline with grace.
+  **Decided by Sabit 2026-11-21: accepted.**
 - **OQ-D43 — app killed during a counted play.** EXAM-10 says the play is
   "used" if > 10 s were played. Proposal: it stays used **and** resumes paused
   at the saved position (position saved every 1 s), exactly like a pause — the
   student did not choose to lose the rest of the recording. Without this an app
-  kill at 2:50 of 3:05 costs a whole play. Decides: Sabit / business-analyst;
-  backend stores `positionMs` per play.
-- **OQ-D45 — background reminder.** The timer runs in the background (no
-  pause). Proposal for Phase 1: **no** local notification (needs the
-  notification permission, which the app asks for the daily reminder only).
-  Alternative: one local notification at 10 min left while the app is in the
-  background ("Sınaqda 10 dəqiqə qaldı"). Decides: Sabit.
+  kill at 2:50 of 3:05 costs a whole play. Backend stores `positionMs` per play.
+  **Decided by Sabit 2026-11-21: accepted.**
+- **OQ-D45 — background reminder.** **Decided by Sabit 2026-11-21: IN Phase 1** — one local
+  notification "10 dəqiqə qalıb" while the app is in the background during an
+  attempt, respecting the notification permission and the existing
+  notification rules (section I below).
 - Assumption: task instructions and stems of the English exam are in English
   (content); all UI chrome stays Azerbaijani.
 - Assumption: the gap in a stem is the token `{gap}` of the restricted markup
@@ -217,6 +217,48 @@ removed from the back stack). Offline → same offline view as G4 but with title
 `exam_submit_offline_title` ("Nəticə internet olanda hesablanacaq"). The attempt
 is read-only from the moment of confirm (EXAM-14).
 
+### I. Background notification "10 dəqiqə qalıb" (OQ-D45)
+
+A **local** notification (no server push), so it works offline.
+
+- **When:** scheduled at start and on every resume for `endsAtEpochMs` − 10 min
+  (`AlarmManager.setAndAllowWhileIdle`, inexact — no exact-alarm permission;
+  Doze may delay it by a minute or two). At fire time it is posted only if:
+  the attempt is still running, the app is **not** in the foreground (in the
+  foreground the in-app 10-min snackbar does the job), and ≥ 5 min remain
+  (a later delivery would be misleading — then nothing is posted). Never more
+  than one per attempt.
+- **Text** (Android strings, not backend i18n): title
+  `notif_exam_time_left_title` ("10 dəqiqə qalıb", `plurals`, value = whole
+  minutes left at posting, normally 10), body `notif_exam_time_left_body`
+  ("«Sınaq №1» davam edir. Cavablarını yoxlamağa qayıt."). Same text rules as
+  `notifications.md` C: no exclamation mark, no emoji, no false urgency.
+- **Channel:** new `exam` channel `notif_channel_exam_name` ("Sınaqlar") /
+  `notif_channel_exam_description`, created the first time an attempt starts;
+  importance default (no full-screen intent, no heads-up forcing), sound per
+  system; small icon `ic_stat_duello`, accent `notification_accent`
+  (`brand.md`); tag `exam_time_left`; `setTimeoutAfter` until `endsAtEpochMs`
+  (it disappears when the time is over).
+- **Permission:** Android 13+ needs POST_NOTIFICATIONS. The exam flow **never
+  asks** for it (no system dialog before or during an attempt — the permission
+  is still asked only by the permission card, `notifications.md` A). If it is
+  not granted, or the app's notifications or the `exam` channel are off, nothing
+  is posted and nothing breaks; the info screen shows the hint
+  `exam_info_notif_off_hint` above the button (`exam-info.md`). Android 8–12:
+  allowed by default.
+- **Rules from `notifications.md` that apply:** channel off → silent no-op;
+  signed out / account switch → cancelled. The server quiet hours do not apply
+  (this is a local reminder of an exam the student started; it fires at most
+  once). There is no in-app switch in Phase 1; the system channel setting is
+  the control.
+- **Cancelled** when: the app comes to the foreground, the attempt is submitted
+  or times out, the user signs out. Rescheduled after a reboot
+  (`RECEIVE_BOOT_COMPLETED`) or app update while an attempt runs.
+- **Tap:** opens the app straight into the running attempt (resume, same rules
+  as the Oyna banner); if it has ended meanwhile → its result or the time-up
+  state.
+- Accessibility: standard notification; the title carries the meaning.
+
 ## States
 
 | State | What the user sees |
@@ -230,6 +272,7 @@ is read-only from the moment of confirm (EXAM-14).
 | Back online | Banner collapses; queue syncs in order (no UI unless it fails) |
 | Sync rejected (400 for a malformed answer — client bug) | Answer kept locally; logged non-fatal; no user message (the student cannot fix it); the review later shows the server's view |
 | Answers merged from another device (EXAM-13) | Snackbar `exam_merged_other_device` ("Başqa cihazdakı cavablar əlavə olundu."); the open task re-renders if it changed |
+| App in the background at 10 min left | Local notification (I) if allowed; nothing otherwise |
 | App backgrounded → foreground | Remaining time recomputed from the deadline; if past `endsAt` → G at once; audio keeps playing in the background (§42) |
 | App killed → reopened | Oyna running banner → resume at the last task, same segment, passage scroll, written text, flags; audio paused at the saved position (OQ-D43) with `exam_audio_restored` |
 | Deadline passed while the app was dead | Opening the attempt goes straight to G |
@@ -298,7 +341,9 @@ is read-only from the moment of confirm (EXAM-14).
 `exam_back_to_catalogue`, `exam_submitting`, `exam_attempt_loading`,
 `exam_merged_other_device`, `exam_package_missing_title`,
 `exam_package_missing_body`, `exam_info_download`, `exam_attempt_closed_title`,
-`exam_attempt_closed_body`, `exam_open_result`, `quiz_image_failed`,
+`exam_attempt_closed_body`, `exam_open_result`, `notif_exam_time_left_title`,
+`notif_exam_time_left_body`, `notif_channel_exam_name`,
+`notif_channel_exam_description`, `quiz_image_failed`,
 `quiz_image_cd_fallback`.
 
 ## Data needed (for backend-dev)

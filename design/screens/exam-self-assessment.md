@@ -8,12 +8,12 @@ from self-assessed marks).
 Tokens 3.1.0. Components: `components.md` §1, §8, §11, §12, §41, §42 (review
 form), §44, §46. Copy: `copy/az.md` "exam_assess_", "exam_mark_".
 
-## Open questions
+## Decided questions
 
 - **OQ-D47 — can marks be changed after saving?** Proposal: yes, any time from
   the result or the history (no ranking, OQ-125 keeps XP off them; the estimate
-  is recomputed each time). EXAM-16 only says "assessment stays possible later".
-  Decides: business-analyst / Sabit.
+  is recomputed each time). **Decided by Sabit 2026-11-21: yes** — marks can be changed later from
+  the result screen ("Qiymətləri dəyiş") and from the review.
 - Assumption: criteria come from the bank per task as an ordered list of
   `{mark, description}` (e.g. "1 — fikir tam və düzgün ifadə olunub"); the
   description language follows the content (Azerbaijani for criteria, English
@@ -55,7 +55,7 @@ Full-screen flow.
       full-height bottom sheet with the passage (§41, text selection on) or
       the transcript (speaker label `type.labelLarge` + line `type.bodyLarge`,
       `space.sm` between turns); the listening sheet also has the review player
-      (§42 review form) if OQ-D44 is accepted.
+      (§42a, OQ-D44 decided: in Phase 1).
    5. `space.lg`, label `exam_assess_your_answer` ("Sənin cavabın")
       `type.labelMedium` `scheme.onSurfaceVariant`; box `shape.medium`, face
       `scheme.surfaceContainerHighest`, padding `space.md`, text

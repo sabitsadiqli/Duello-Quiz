@@ -1173,7 +1173,7 @@ answers).
 | Volume 0 / muted media stream on tap | plays normally | — | inline hint `exam_audio_volume_hint` (non-blocking, hides when volume > 0) |
 | Listening skipped (OQ-119 choice) | player replaced by a note (§46) `exam_audio_skipped` | | |
 | Attempt read-only (deadline) | disabled | unchanged | — |
-| Review (after submit, OQ-D44) | free play **with** a seekable slider (M3 `Slider`) and transcript below | no counter | — |
+| Review (after submit, OQ-D44) | → review player §42a | | |
 
 Behaviour: only one player plays at a time; leaving the listening group does
 not stop playback (the audio is the exam, the user may read tasks of the group
@@ -1186,6 +1186,44 @@ Accessibility: the button is one node: label `exam_audio_play_cd` ("Dinlə.
 İstifadə olunub: 1 / 2") / `exam_audio_pause_cd`; the progress line is not
 focusable; elapsed time and plays text form one node read on focus. State
 changes (counted, ended, failed) are polite announcements.
+
+## 42a. Review player — `ExamAudioPlayer(mode = Review)` (OQ-D44, decided 2026-11-21: Phase 1)
+
+The same card, button and colours as §42, used **only after submit**: review
+listening card (`exam-review.md`) and the transcript sheet of the
+self-assessment. The attempt player never gets these controls (the review
+data, and with it this mode, exists only after the server has the submit).
+
+```
+[ ▶ ]  Dinləmə mətni
+56dp   ━━━━━━━━━●───────────────────────────
+       1:12 / 3:05          [⟲10]  [10⟳]
+```
+
+- **No play counter, no play dots**, no "counts after 10 s" caption.
+- The progress line is replaced by an M3 **`Slider`** (seek): active track
+  `scheme.onSurface`, inactive `game.timerTrack`, thumb 16dp `scheme.onSurface`
+  with a 48dp touch area, full column width; dragging seeks on release,
+  tapping the track seeks there. Updated every 250ms while playing.
+- Row under it: elapsed / total `exam_audio_elapsed` (tabular) at the start;
+  at the end two 48dp icon buttons `replay_10` (`exam_audio_back10_cd`) and
+  `forward_10` (`exam_audio_forward10_cd`), `scheme.onSurfaceVariant`.
+- At the end of the file the main button becomes `replay`
+  (`exam_audio_replay_cd`, "Yenidən dinlə") and restarts from 0:00. Unlimited
+  replays. No speed control (kept simple; not requested).
+- Media session: seek commands **allowed** in this mode (notification shows
+  the seek bar); background playback as in §42.
+- States: ready, playing, paused, ended (as above); file missing (EXAM-03
+  cleanup) → tap downloads it first (`exam_audio_redownloading` in the caption
+  line, progress in the button); failed / offline → warning banner
+  `exam_audio_failed_offline` with `common_retry`. Audio that failed during the
+  attempt is retried the same way here.
+- Accessibility: button labels `exam_audio_play_review_cd` ("Dinlə") /
+  `exam_audio_pause_cd` / `exam_audio_replay_cd`; the slider is one node with
+  `exam_audio_seek_cd` ("Audio mövqeyi") and a state text from
+  `exam_audio_elapsed`, stepping 5 s with volume-key / swipe adjustments.
+- Contrast: existing pairs (`onSurface`/`timerTrack`, `onSurface`/`surface`,
+  `onSurfaceVariant`/`surface`).
 
 ## 43. Written answer field — `ExamWrittenField`
 

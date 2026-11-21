@@ -9,7 +9,7 @@ Tokens 3.1.0. Components: `components.md` §1, §8, §9, §10, §12, §14, §31,
 §35a, §46, "Exam rows". Copy: `copy/az.md` "exam_info_", "exam_download_",
 "exam_start_".
 
-## Open questions
+## Decided questions
 
 - **OQ-D42 — skip listening (OQ-119): when can it be chosen, and how is the
   estimate shown?** Proposal: only **before the start**, as a switch on this
@@ -18,11 +18,12 @@ Tokens 3.1.0. Components: `components.md` §1, §8, §9, §10, §12, §14, §31,
   shows the score **out of the reduced maximum** ("58,4 / 83,8"), not rescaled to
   100, with the note `exam_result_listening_skipped` — honest and simple.
   Alternative: rescale to 100 (looks comparable, but it is an extrapolation).
-  Decides: Sabit, business-analyst (EXAM-15 formula), backend-dev.
+  **Decided by Sabit 2026-11-21: as proposed** (skip only before the start; score out of the
+  reduced maximum).
 - **OQ-D41 — displayed deadline.** EXAM-04 returns `deadlineEpochMs` = start
   + duration + 2-min grace. The timer must show 60:00, not 62:00. Proposal: the
   start response also returns `endsAtEpochMs` (start + duration) for display;
-  the client never displays the grace. Decides: backend-dev (contract). Status
+  the client never displays the grace. **Decided by Sabit 2026-11-21: proposal accepted.** Status
   2026-11-21: the backend draft on `feat/exams-phase1` (`ExamDtos.kt`) already
   returns `endsAtEpochMs` and `deadlineEpochMs` and takes `skipListening` in the
   start request — consistent with this spec; confirm in `docs/api/`.
@@ -102,7 +103,7 @@ package onto the phone, and start the clock only when they are ready.
 | Download paused offline | warning banner (§8 full) `exam_download_paused_offline`; bar frozen | Secondary `common_cancel`; resumes automatically when the network returns |
 | Download failed (5xx, timeout, hash mismatch after 1 automatic retry) | warning banner `exam_download_failed` (hash: `exam_download_verify_failed`) | Primary `common_retry` (resumes, no re-download of verified files) |
 | Not enough storage (checked before the first byte: needed = package size × 1.1) | warning banner `exam_download_storage` ("… 3,4 MB lazımdır.") | Primary `common_retry` (re-checks) |
-| Downloaded, verified | `exam_info_ready_hint` ("Hazırsan? Başlayanda vaxt işləməyə başlayır.") | Primary `exam_info_start` ("Başla") |
+| Downloaded, verified | `exam_info_ready_hint` ("Hazırsan? Başlayanda vaxt işləməyə başlayacaq."); if notifications are not allowed (permission, app or `exam` channel off) also `exam_info_notif_off_hint` (OQ-D45) | Primary `exam_info_start` ("Başla") |
 | Start request running | — | Primary in loading state; back and switch disabled |
 | Running attempt of this variant, package here | `exam_info_running_hint` ("Vaxt gedir: 42 dəq qalıb.") in `scheme.onSurface` Bold | Primary `exam_info_resume` ("Davam et") |
 | Running attempt, package missing (other device / reinstall / cleared storage) | `exam_info_resume_download` ("Davam etmək üçün sınağı bu telefona yüklə. Vaxt gedir: 42 dəq qalıb.") | Primary `exam_info_download`; when done it becomes "Davam et" automatically |
@@ -169,7 +170,7 @@ Start request results (idempotency key per tap, EXAM-04):
 `exam_info_rule_listening`, `exam_info_rule_written`, `exam_info_rule_scoring`,
 `exam_info_rule_online`, `exam_info_skip_listening`,
 `exam_info_skip_listening_supporting`, `exam_disclaimer`, `exam_estimate_note`,
-`exam_info_download_hint`, `exam_info_download`, `exam_info_downloading`,
+`exam_info_download_hint`, `exam_info_notif_off_hint`, `exam_info_download`, `exam_info_downloading`,
 `exam_download_paused_offline`, `exam_download_failed`,
 `exam_download_verify_failed`, `exam_download_storage`,
 `exam_download_needs_internet`, `exam_download_done_cd`,

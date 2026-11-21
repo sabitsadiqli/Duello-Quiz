@@ -8,14 +8,15 @@ Tokens 3.1.0. Components: `components.md` §3 (compact review rows as in
 `quiz-result.md`), §11, §12, §41, §42 (review form), §46, M3 filter chips.
 Copy: `copy/az.md` "exam_review_", "exam_filter_".
 
-## Open questions
+## Decided questions
 
 - **OQ-D44 — replay the listening audio in the review?** Proposal: yes, with
   free play and seeking (the review player form of §42), because the attempt is
   over and the file is already on the phone; this is a small part of the Phase 2
   "Məşq rejimi" and costs no server work. If the package media was deleted
-  (EXAM-03 cleanup), the player re-downloads the audio on tap. Alternative:
-  transcript only in Phase 1. Decides: Sabit.
+  (EXAM-03 cleanup), the player re-downloads the audio on tap. **Decided by Sabit 2026-11-21: IN
+  Phase 1** — free replay with seeking, after submit only, plus the
+  transcript. Player: `components.md` §42a.
 
 ## Purpose
 
@@ -50,7 +51,7 @@ see during the attempt.
        `exam_review_hide` ("Gizlət"); expanded = the full passage (§41, text
        selection on);
      - listening: title `exam_transcript_title` ("Transkript"), the review
-       player (§42 review form, OQ-D44), text button
+       review player (§42a, OQ-D44), text button
        `exam_review_show_transcript` ("Transkripti göstər") / `exam_review_hide`;
        expanded = speaker turns (speaker `type.labelLarge`, text
        `type.bodyLarge`); excluded listening adds the note
@@ -139,5 +140,8 @@ see during the attempt.
 `exam_assess_model_answer`, `exam_review_show_criteria`, `exam_review_assess`,
 `exam_review_change_mark`, `exam_review_explanation`, `exam_review_corrected`,
 `exam_review_excluded`, `exam_review_filter_empty`, `exam_review_error`,
-`exam_review_offline`, `exam_audio_failed_offline`, `error_generic`,
+`exam_review_offline`, `exam_audio_failed_offline`, `exam_audio_play_review_cd`,
+`exam_audio_pause_cd`, `exam_audio_replay_cd`, `exam_audio_seek_cd`,
+`exam_audio_back10_cd`, `exam_audio_forward10_cd`, `exam_audio_elapsed`,
+`exam_audio_redownloading`, `error_generic`,
 `common_retry`, `common_back`.
