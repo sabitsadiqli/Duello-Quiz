@@ -1,8 +1,9 @@
 # Mock exams ("Sınaqlar") — requirements
 
-- Status: **Draft — post-MVP, analysis.** Not in the MVP scope of `CLAUDE.md`; nothing
-  here blocks the MVP or the closed test. Nothing is built until Sabit decides
-  OQ-112 … OQ-131 and schedules a phase.
+- Status: **Decided — post-MVP.** Not in the MVP scope of `CLAUDE.md`; nothing here
+  blocks the MVP or the closed test. OQ-112 … OQ-131 decided by Sabit 2026-11-21
+  (open-questions.md); Phase 1 = "Buraxılış — İngilis dili" (OQ-128). Build starts
+  when Sabit schedules it (design → backend/Android → content).
 - Owner: `business-analyst`. Created 2026-11-16 on Sabit's request.
 - Decisions so far (Sabit, 2026-11-16): own original questions only, never real DİM
   tasks; DİM structure, task types and scoring are followed; naming never claims to be
@@ -591,7 +592,7 @@ Proposal, blocked by OQ-124:
 
 ## 8. Suggested phasing
 
-**Phase 1 (recommended, OQ-128): "Buraxılış — İngilis dili" subject sınaq**, 30 tasks
+**Phase 1 (decided, OQ-128): "Buraxılış — İngilis dili" subject sınaq**, 30 tasks
 in the stage 1 format, 3 variants, including the 7 written tasks with
 self-assessment. Justification:
 - Covers Sabit's explicit wish (listening audio) and the riskiest new building
@@ -643,9 +644,10 @@ No task text, answer text or written answers in events.
 
 ## 11. Open questions
 
-All open, added 2026-11-16, decided by Sabit; details in `open-questions.md`.
+All decided by Sabit on 2026-11-21 (OQ-120 on 2026-11-16); full text in `open-questions.md`.
+OQ-126 note: free now, in-app purchases planned later (separate decision).
 
-| ID | Topic | Recommendation (short) |
+| ID | Topic | Decision (short) |
 | --- | --- | --- |
 | OQ-112 | Written tasks: how to score | B: self-assessment against model answer + official marks, shown separately |
 | OQ-113 | Closed tasks: 5 options (A–E)? | Verify; model supports 2–5 per template |
@@ -654,14 +656,14 @@ All open, added 2026-11-16, decided by Sabit; details in `open-questions.md`.
 | OQ-116 | Formulas and rich text | LaTeX in the bank → tintable images at import + spoken text; restricted markup; ADR |
 | OQ-117 | Durations, grace, pause | 180 min full, 60 min subject, 2 min grace, no pause |
 | OQ-118 | Offline, resume, late upload | Download before start, online start, offline answering, resume, 24 h late upload |
-| OQ-119 | Listening play rules | Verify DİM; proposal 2 plays, no seek, pause allowed |
+| OQ-119 | Listening play rules | 2 plays, no seek, pause allowed, skip-listening option |
 | OQ-120 | Audio production | Decided 2026-11-16: Piper TTS with CC BY / public-domain voices, credited on the licences screen |
 | OQ-121 | Audio format and player | AAC-LC mono 64 kbps `.m4a`, Media3 ExoPlayer (ADR) |
 | OQ-122 | Who marks exam tasks `reviewed` | Named subject reviewers; Sabit approves publishing |
 | OQ-123 | Passage copyright | Own texts or public domain / CC BY only, licence recorded |
 | OQ-124 | Retakes and attempt limits | Unlimited, "Təkrar cəhd" label, 1 running attempt, 10 starts/day |
 | OQ-125 | XP, streak, active day | Active day yes; no XP in Phase 1 |
-| OQ-126 | Free or paid | Free until a monetisation decision |
+| OQ-126 | Free or paid | Free now; IAP planned later (no paywall built now) |
 | OQ-127 | Separate tables; reuse in quizzes | Separate tables and bank folder; no reuse in Phase 1 |
 | OQ-128 | Phase 1 slice | English subject sınaq (buraxılış format) |
 | OQ-129 | Verification of stage 2, rounding, 9th grade | Re-verify before Phase 3; 9th grade later |
