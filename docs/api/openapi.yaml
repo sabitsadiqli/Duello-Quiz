@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Duello Quiz API
-  version: 0.4.0
+  version: 0.5.0
   summary: REST API of the Duello Quiz backend (MVP).
   description: |
     Contract for the Android app and admin tooling. Owner: `backend-dev`.
@@ -14,7 +14,7 @@ info:
       The backend verifies the token with the Firebase Admin SDK and never accepts a
       user id from the request body. The user row is created on the first
       authenticated call to any `/v1/me*`, `/v1/categories`, `/v1/quiz/*` or
-      `/v1/daily*` endpoint (AUTH-06); concurrent first calls create exactly one row.
+      `/v1/daily*` or `/v1/exams*` endpoint (AUTH-06); concurrent first calls create exactly one row.
     - Localized content (category names, question and option texts, explanations,
       image alt texts) is resolved from `Accept-Language` (first supported language
       wins); missing translations fall back to `az`. The MVP only stores `az`.
@@ -42,6 +42,7 @@ info:
     | 0.2.0 (2026-10-22) | Daily challenge (`/v1/daily*`), `GET /v1/me/progress`, push tokens and notification settings; `QuizResult.progress`; `DELETE /v1/me` also deletes retention data. Additive only. |
     | 0.3.0 (2026-10-30) | Bot opponent (OQ-106 … OQ-110): `MatchSummary.opponentType`, `MatchSummary.ratingChange` is `null` for bot matches, `Stats.botRecord`; `Stats.record` counts only matches against real players; new XP reasons `duel_bot_played`, `duel_bot_win`, `duel_bot_draw`; `DELETE /v1/me` deletes the user's bot matches. Old clients only see bot matches if they announced the `"bot"` duel capability (`duel-protocol.md` §7a), so for them nothing changes. |
     | 0.4.0 (2026-11-19) | Week row (PROG-11, OQ-D35): `ProgressSummary.week`, exactly 7 days Monday → Sunday of the current Baku week, each with a `state` (`active`, `freeze`, `missed`, `today_pending`, `none`). Additive; older clients ignore it. |
+    | 0.5.0 (2026-11-21) | Mock exams "Sınaqlar" Phase 1 (ADR 0002, `docs/requirements/mock-exams.md`, OQ-112 … OQ-131): tag `exams`, `/v1/exams*` (catalogue, variant info, offline package without keys, attempt start/resume, answer batch upsert, listening play counter, submit, result, self-assessment, review, history). New error codes `exam_variant_not_found`, `exam_attempt_not_found`, `variant_unavailable`, `variant_version_mismatch`, `exam_attempt_running`, `attempt_closed`, `attempt_not_finished`, `task_not_in_attempt`, `group_not_in_attempt`. `DELETE /v1/me` also deletes exam attempts, answers, written texts, listening plays and self-assessments. Progress source type `exam` (streak only, no XP). Additive. |
 
     ## Error codes
     | HTTP | code | When |
@@ -52,12 +53,21 @@ info:
     | 400 | `display_name_not_allowed` | Display name on the blocklist (OQ-030) |
     | 400 | `question_not_in_session` | Answer for a question outside the session |
     | 400 | `invalid_option` | `optionId` does not belong to the question |
+    | 400 | `task_not_in_attempt` | Exam answer or self-assessment for a task outside the attempt's version |
+    | 400 | `group_not_in_attempt` | Listening update for a group outside the attempt's version |
     | 400 | `invalid_push_token` | Push token empty, longer than 1024 characters or containing whitespace |
     | 401 | `unauthorized` | Missing, invalid, expired or revoked token |
     | 403 | `forbidden` | Admin endpoint without the `admin=true` claim |
     | 404 | `not_found` | Unknown route |
     | 404 | `category_not_found` | Category missing or inactive |
     | 404 | `session_not_found` | Session missing or owned by another user |
+    | 404 | `exam_variant_not_found` | Exam variant unknown or not published (package: version not available to the caller) |
+    | 404 | `exam_attempt_not_found` | Exam attempt missing or owned by another user |
+    | 409 | `variant_unavailable` | Exam start for a variant that is no longer published |
+    | 409 | `variant_version_mismatch` | Exam start with an outdated package version |
+    | 409 | `exam_attempt_running` | Exam start while an attempt of another variant runs (OQ-124) |
+    | 409 | `attempt_closed` | Exam write after submit, after the late-upload window, or from another device after the deadline |
+    | 409 | `attempt_not_finished` | Exam result, review or self-assessment before submit or finalization |
     | 409 | `category_not_playable` | Category has fewer than 10 active questions |
     | 409 | `already_answered` | A different answer for this question is stored |
     | 409 | `session_expired` | Answer after the session deadline (server clock) |
@@ -69,7 +79,7 @@ info:
     | 422 | `import_invalid` | Import payload failed validation; nothing was written |
     | 422 | `image_unreadable` | Uploaded image has PNG/JPEG magic bytes but cannot be decoded |
     | 422 | `image_dimensions_too_large` | Uploaded image has more than 100 million pixels |
-    | 429 | `rate_limited` | More than 30 quiz sessions started in the last hour (OQ-022) |
+    | 429 | `rate_limited` | More than 30 quiz sessions started in the last hour (OQ-022); more than 10 exam attempts started on one Baku day (OQ-124) |
     | 500 | `internal_error` | Unexpected server error |
     | 502 | `auth_provider_error` | Firebase could not be reached while deleting the account |
     | 503 | `service_unavailable` | Health check failed (database unreachable) |
@@ -96,6 +106,8 @@ tags:
     description: XP, levels and streak (docs/mvp-spec.md §10).
   - name: notifications
     description: Push tokens and reminder switches (docs/mvp-spec.md §11).
+  - name: exams
+    description: Mock exams "Sınaqlar" in DİM format (post-MVP Phase 1, ADR 0002). Never an official DİM exam.
   - name: admin
     description: Content administration (custom claim `admin=true`).
 
@@ -196,8 +208,10 @@ paths:
         Deletes the user row, all quiz sessions, session questions and quiz answers,
         daily challenge attempts and answers, XP awards and the XP ledger, XP totals,
         category XP, active days, streak and freeze, notification settings, the
-        notification send log and every push token of the user (all in the same
-        transaction; the per-day daily question sets are not personal data and stay),
+        notification send log, every push token of the user, and all mock-exam
+        attempts with their answers, written answer texts, flags, listening plays and
+        self-assessments (EXAM-23) (all in the same transaction; the per-day daily
+        question sets and the exam content are not personal data and stay),
         anonymizes the user in matches (`player_a`/`player_b`/`winner`/
         `forfeited_by`/`match_answers.user_id` set to NULL, shown to opponents as
         "Silinmiş oyunçu") and then deletes the Firebase user with the Admin SDK.
@@ -875,6 +889,498 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportError"
 
+  /v1/exams:
+    get:
+      tags: [exams]
+      operationId: getExamCatalog
+      summary: Catalogue of exam types and their published variants (EXAM-01)
+      description: |
+        Only templates with at least one `published` variant are listed (an empty list
+        means: hide the "Sınaqlar" entry). `lastAttempt` is the caller's newest attempt
+        of that variant. `accessTier` is reserved for a later paid tier (OQ-126); it is
+        `null` (free) for every template and clients must not gate anything on it yet.
+        Titles are resolved by `Accept-Language`; the client adds the "(DİM formatında)"
+        suffix and the DİM disclaimer from its own strings (EXAM-25).
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: The catalogue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamCatalog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/exams/variants/{variantId}:
+    get:
+      tags: [exams]
+      operationId: getExamVariant
+      summary: Info screen data of a published variant (EXAM-02)
+      parameters:
+        - $ref: "#/components/parameters/VariantId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Structure, timing, scoring rule and the caller's attempts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamVariantInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamVariantNotFound"
+
+  /v1/exams/variants/{variantId}/package:
+    get:
+      tags: [exams]
+      operationId: getExamPackage
+      summary: Offline package of a variant version, without answer keys (EXAM-03, EXAM-21)
+      description: |
+        Everything the client needs to run the attempt offline: sections, groups
+        (reading passages, listening audio reference), tasks and options in exam order,
+        and a manifest of every media file (URL, bytes, SHA-256) to verify the download.
+        **Never contains** correct options, explanations, model answers, marking
+        criteria, speakers or listening scripts; those come only from the review after
+        submit. Downloading starts no timer. `version` defaults to the current published
+        version; an older version is served only to a user who has an attempt on it
+        (resume on another device). Media files are immutable (`mediaBaseUrl + key`).
+      parameters:
+        - $ref: "#/components/parameters/VariantId"
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: The package.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamPackage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamVariantNotFound"
+
+  /v1/exams/attempts:
+    post:
+      tags: [exams]
+      operationId: startExamAttempt
+      summary: Start (or resume) an attempt; the server sets the timer (EXAM-04, EXAM-19, EXAM-20)
+      description: |
+        The only request of an attempt that must be online (OQ-118). Order of checks:
+        unknown variant → 404 `exam_variant_not_found`; an attempt with the same
+        `idempotencyKey` → that attempt (200, `resumed = true`); a `running` attempt of
+        the same variant → that attempt (200, `resumed = true`, unchanged times); a
+        `running` attempt of another variant → 409 `exam_attempt_running` (OQ-124: at
+        most one; fetch it with `GET /v1/exams/attempts/current`); variant not
+        published → 409 `variant_unavailable`; `version` not the current one → 409
+        `variant_version_mismatch` (download the package again); more than 10 starts on
+        this Baku day → 429 `rate_limited` with `Retry-After` until 00:00 Baku.
+        Otherwise 201 with `endsAtEpochMs = start + 60 min` (the countdown target and
+        the moment the client auto-submits), `deadlineEpochMs = endsAt + 2 min` grace
+        and `lateUploadUntilEpochMs = deadline + 24 h` (OQ-117, OQ-118). No pause.
+        `isRetake` is true when the caller already finished this variant. Phase 1 only
+        supports `mode = subject`. `skipListening = true` (OQ-119, deaf or
+        hard-of-hearing users) removes the listening tasks from the estimate.
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartExamAttemptRequest"
+      responses:
+        "201":
+          description: Attempt created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAttempt"
+        "200":
+          description: Existing attempt (idempotent retry or resume).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAttempt"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamVariantNotFound"
+        "409":
+          description: "`exam_attempt_running`, `variant_unavailable`, `variant_version_mismatch`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "`rate_limited`: 10 starts on this Baku day (OQ-124)."
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until 00:00 Baku.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [exams]
+      operationId: listExamAttempts
+      summary: The caller's attempts, newest first ("Sınaqlarım", EXAM-20)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Attempts (running ones included).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAttemptList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/exams/attempts/current:
+    get:
+      tags: [exams]
+      operationId: getCurrentExamAttempt
+      summary: The caller's running attempt, if any (home "Davam edən sınaq", EXAM-13)
+      description: |
+        `attempt` is the `running` attempt or, when its deadline passed but the late
+        upload window is open, the `awaiting_upload` one; otherwise `null`.
+      responses:
+        "200":
+          description: Current attempt or null.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentExamAttempt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/exams/attempts/{examAttemptId}:
+    get:
+      tags: [exams]
+      operationId: getExamAttempt
+      summary: Attempt state with all synced answers (resume, other device)
+      description: |
+        Stored answers (latest revision per task), flags, written texts and listening
+        plays. Never correctness data. An attempt whose late-upload window has passed is
+        finalized here first. Another user's attempt → 404 `exam_attempt_not_found`.
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+      responses:
+        "200":
+          description: The attempt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAttempt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+
+  /v1/exams/attempts/{examAttemptId}/answers:
+    put:
+      tags: [exams]
+      operationId: upsertExamAnswers
+      summary: Upload answer revisions in a batch (offline sync, EXAM-06, EXAM-11, EXAM-12, EXAM-13)
+      description: |
+        Up to 100 entries. Each entry is the full state of one task at a client
+        revision: `optionId` (closed task, `null` = cleared), `text` (written task, ≤ 1 000
+        characters, stored as typed, `null` = empty) and `flagged`. The server keeps the
+        highest revision per task: an equal revision is a no-op (`accepted`), a lower one
+        is `ignored` with `stale_revision`. Validation is all-or-nothing: a task outside
+        the attempt (400 `task_not_in_attempt`), a foreign option (400 `invalid_option`),
+        `text` on a closed task or `optionId` on a written task, too long text or a
+        duplicate task in one batch (400 `validation_failed`) → nothing is stored.
+        Timing (OQ-118): until `deadlineEpochMs` any device may write and becomes the
+        holding device. Until `lateUploadUntilEpochMs` only the holding device may
+        upload, and only entries with `savedAtEpochMs ≤ deadlineEpochMs`; later entries
+        are `ignored` with `saved_after_deadline`. Other devices, a submitted or
+        finalized attempt, or a request after the window → 409 `attempt_closed`.
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamAnswerBatch"
+      responses:
+        "200":
+          description: Batch applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAnswerBatchResult"
+        "400":
+          description: "`task_not_in_attempt`, `invalid_option`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          description: "`attempt_closed`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/exams/attempts/{examAttemptId}/answers/{taskId}:
+    put:
+      tags: [exams]
+      operationId: upsertExamAnswer
+      summary: Upload one answer revision (same rules as the batch)
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamSingleAnswerWrite"
+      responses:
+        "200":
+          description: Applied (see `accepted` / `ignored`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamAnswerBatchResult"
+        "400":
+          description: "`task_not_in_attempt`, `invalid_option`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          description: "`attempt_closed`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/exams/attempts/{examAttemptId}/listening/{groupId}:
+    put:
+      tags: [exams]
+      operationId: updateExamListening
+      summary: Sync the listening play counter of a group (EXAM-10, OQ-119)
+      description: |
+        At most 2 plays; the client counts a play as used once 10 s of it were played
+        (pause allowed, no seeking, no speed change) and sends the total. The server
+        keeps the maximum of `playsUsed` (above 2 → 400 `validation_failed`) and
+        `audioFailed` once true stays true (the group is then excluded from the
+        estimate). Same timing and device rules as the answers; an entry saved after the
+        deadline is ignored (the response shows the stored state). Unknown group → 400
+        `group_not_in_attempt`.
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamListeningUpdate"
+      responses:
+        "200":
+          description: Stored state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamListeningState"
+        "400":
+          description: "`group_not_in_attempt`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          description: "`attempt_closed`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/exams/attempts/{examAttemptId}/submit:
+    post:
+      tags: [exams]
+      operationId: submitExamAttempt
+      summary: Submit (user or automatic at the deadline); server scoring (EXAM-14, EXAM-15)
+      description: |
+        Sync pending answers first. Scores with the stored answers and the keys of the
+        attempt's version (DİM formula, ADR 0002 §4) and makes the attempt read-only.
+        Idempotent: a repeated submit returns the stored result unchanged. `trigger =
+        deadline` is the client's auto-submit at `endsAtEpochMs`; the server records
+        `deadline` for any submit after `endsAtEpochMs`. After `deadlineEpochMs` only
+        the holding device may submit (until `lateUploadUntilEpochMs`; then the server
+        has finalized the attempt and returns the result with trigger `server`). A
+        submitted attempt with at least one answered task makes its start day active for
+        the streak; no XP (OQ-125); never changes Elo.
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitExamRequest"
+      responses:
+        "200":
+          description: The result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          description: "`attempt_closed`: another device after the deadline."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/exams/attempts/{examAttemptId}/result:
+    get:
+      tags: [exams]
+      operationId: getExamResult
+      summary: Estimated score with the automatic and the self-assessed part (EXAM-17)
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: The result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          $ref: "#/components/responses/AttemptNotFinished"
+
+  /v1/exams/attempts/{examAttemptId}/self-assessment:
+    put:
+      tags: [exams]
+      operationId: putExamSelfAssessment
+      summary: Self-assessed marks of written tasks (EXAM-16, OQ-112)
+      description: |
+        Only after submit or finalization (else 409 `attempt_not_finished`), any time
+        later too. Each entry sets (`mark` one of `0`, `1/3`, `1/2`, `2/3`, `1`) or clears
+        (`null`) the mark of one written task; any other value, a closed task or a
+        duplicate → 400 `validation_failed`, a task outside the attempt → 400
+        `task_not_in_attempt`; nothing is stored then. Returns the recomputed result.
+        Marks never give XP or affect anything else (OQ-125).
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelfAssessmentRequest"
+      responses:
+        "200":
+          description: Recomputed result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+        "400":
+          description: "`task_not_in_attempt`, `validation_failed`, `bad_request`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          $ref: "#/components/responses/AttemptNotFinished"
+
+  /v1/exams/attempts/{examAttemptId}/review:
+    get:
+      tags: [exams]
+      operationId: getExamReview
+      summary: Every task with key, explanation, model answer, criteria and the transcript (EXAM-18)
+      description: |
+        Only after submit or finalization (else 409 `attempt_not_finished`). All tasks
+        in exam order with the user's answer, `outcome`, the correct option, the
+        explanation; written tasks with model answer, criteria and the self-assessed
+        mark; listening groups with the transcript and the voice credits. Filters
+        ("Səhvlər", "Cavabsızlar", "İşarələnmişlər") are applied by the client on
+        `outcome` and `flagged`.
+      parameters:
+        - $ref: "#/components/parameters/ExamAttemptId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: The review.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamReview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ExamAttemptNotFound"
+        "409":
+          $ref: "#/components/responses/AttemptNotFinished"
+
 components:
   securitySchemes:
     firebaseIdToken:
@@ -906,6 +1412,20 @@ components:
       schema:
         type: string
         format: uuid
+    VariantId:
+      name: variantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ExamAttemptId:
+      name: examAttemptId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
 
   responses:
     BadRequest:
@@ -925,6 +1445,24 @@ components:
             message: Missing or invalid bearer token
     SessionNotFound:
       description: "`session_not_found`: unknown session or owned by another user."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ExamVariantNotFound:
+      description: "`exam_variant_not_found`: unknown or unpublished variant."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ExamAttemptNotFound:
+      description: "`exam_attempt_not_found`: unknown attempt or owned by another user."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    AttemptNotFinished:
+      description: "`attempt_not_finished`: the attempt is not submitted or finalized yet (no keys before that)."
       content:
         application/json:
           schema:
@@ -1751,3 +2289,949 @@ components:
                      image_quality_reduced, image_over_target]
         message:
           type: string
+
+    # ---------------------------------------------------------------- exams (ADR 0002)
+
+    ExamCatalog:
+      type: object
+      required: [serverNowEpochMs, templates]
+      properties:
+        serverNowEpochMs:
+          type: integer
+          format: int64
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamTemplateSummary"
+
+    ExamTemplateSummary:
+      type: object
+      required: [id, title, stage, mode, language, durationMs, taskCount, accessTier, variants]
+      properties:
+        id:
+          type: string
+          examples: [buraxilis-ingilis]
+        title:
+          type: string
+          examples: ["Buraxılış — İngilis dili"]
+        stage:
+          type: integer
+          enum: [1, 2]
+        mode:
+          type: string
+          enum: [subject, full]
+        language:
+          type: string
+          description: Language of the exam content (prompts, passages, audio).
+          examples: [en]
+        durationMs:
+          type: integer
+          format: int64
+        taskCount:
+          type: integer
+        accessTier:
+          type: [string, "null"]
+          description: Reserved for a later paid tier (OQ-126). Always `null` (free) now.
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamVariantSummary"
+
+    ExamVariantSummary:
+      type: object
+      required: [id, number, version, taskCount, packageBytes, lastAttempt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: integer
+          description: Shown as "Sınaq №<number>".
+        version:
+          type: integer
+        taskCount:
+          type: integer
+        packageBytes:
+          type: integer
+          format: int64
+          description: Package JSON plus all media files.
+        lastAttempt:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ExamAttemptSummary"
+
+    ExamAttemptSummary:
+      type: object
+      required: [id, variantId, variantNumber, templateId, templateTitle, mode, status, isRetake, dayKey,
+                 startedAtEpochMs, endsAtEpochMs, submittedAtEpochMs, estimateTotal, maxScore, writtenAssessed, writtenTotal]
+      properties:
+        id:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        variantNumber:
+          type: integer
+        templateId:
+          type: string
+        templateTitle:
+          type: string
+        mode:
+          type: string
+          enum: [subject, full]
+        status:
+          $ref: "#/components/schemas/ExamAttemptStatus"
+        isRetake:
+          type: boolean
+          description: Show "Təkrar cəhd" (OQ-124).
+        dayKey:
+          type: string
+          description: Baku day of the start, `YYYY-MM-DD`.
+        startedAtEpochMs:
+          type: integer
+          format: int64
+        endsAtEpochMs:
+          type: integer
+          format: int64
+        submittedAtEpochMs:
+          type: [integer, "null"]
+          format: int64
+        estimateTotal:
+          type: [number, "null"]
+          description: Rounded to 0.1; `null` until submitted or finalized.
+        maxScore:
+          type: number
+        writtenAssessed:
+          type: integer
+        writtenTotal:
+          type: integer
+
+    ExamAttemptStatus:
+      type: string
+      description: |
+        `running` (before `deadlineEpochMs`), `awaiting_upload` (deadline passed, late
+        upload window open, not submitted), `submitted` (by the client), `finalized`
+        (by the server at the end of the late-upload window).
+      enum: [running, awaiting_upload, submitted, finalized]
+
+    ExamAttemptList:
+      type: object
+      required: [attempts]
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamAttemptSummary"
+
+    ExamVariantInfo:
+      type: object
+      required: [id, number, version, template, language, mode, durationMs, graceMs, lateUploadWindowMs,
+                 listeningMaxPlays, listeningPlayCountsAfterMs, scoring, sections, taskCount, hasListening,
+                 hasWritten, packageBytes, attemptCount, lastAttempt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: integer
+        version:
+          type: integer
+        template:
+          type: object
+          required: [id, title, stage, accessTier]
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            stage:
+              type: integer
+            accessTier:
+              type: [string, "null"]
+        language:
+          type: string
+        mode:
+          type: string
+          enum: [subject, full]
+        durationMs:
+          type: integer
+          format: int64
+          description: 60 min for a subject sınaq (OQ-117). No pause.
+        graceMs:
+          type: integer
+          format: int64
+        lateUploadWindowMs:
+          type: integer
+          format: int64
+        listeningMaxPlays:
+          type: integer
+        listeningPlayCountsAfterMs:
+          type: integer
+          format: int64
+        scoring:
+          $ref: "#/components/schemas/ExamScoringRule"
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamSectionInfo"
+        taskCount:
+          type: integer
+        hasListening:
+          type: boolean
+        hasWritten:
+          type: boolean
+          description: Show "Yazılı tapşırıqları sınaqdan sonra özün qiymətləndirəcəksən".
+        packageBytes:
+          type: integer
+          format: int64
+        attemptCount:
+          type: integer
+        lastAttempt:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ExamAttemptSummary"
+
+    ExamScoringRule:
+      type: object
+      description: |
+        Stage 1: score = maxScore · (writtenWeight · W + C) / rawMax, rounded half up to
+        0.1; wrong answers never subtract. English: 100/37 · (2·W + C).
+      required: [rule, writtenWeight, rawMax, maxScore]
+      properties:
+        rule:
+          type: string
+          enum: [stage1]
+        writtenWeight:
+          type: integer
+        rawMax:
+          type: integer
+        maxScore:
+          type: number
+
+    ExamSectionInfo:
+      type: object
+      required: [id, title, position, closedCount, writtenCount, groupKind]
+      properties:
+        id:
+          type: string
+          examples: [listening, language, reading]
+        title:
+          type: string
+        position:
+          type: integer
+        closedCount:
+          type: integer
+        writtenCount:
+          type: integer
+        groupKind:
+          type: [string, "null"]
+          enum: [reading, listening, null]
+
+    ExamPackage:
+      type: object
+      required: [variantId, version, templateId, language, durationMs, graceMs, optionCount, listeningMaxPlays,
+                 listeningPlayCountsAfterMs, maxTextLength, sections, groups, tasks, media, packageBytes]
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        templateId:
+          type: string
+        language:
+          type: string
+        durationMs:
+          type: integer
+          format: int64
+        graceMs:
+          type: integer
+          format: int64
+        optionCount:
+          type: integer
+          minimum: 2
+          maximum: 5
+        listeningMaxPlays:
+          type: integer
+        listeningPlayCountsAfterMs:
+          type: integer
+          format: int64
+        maxTextLength:
+          type: integer
+          description: Max characters of a written answer (1 000).
+        sections:
+          type: array
+          items:
+            type: object
+            required: [id, title, position]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              position:
+                type: integer
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamPackageGroup"
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamPackageTask"
+        media:
+          type: array
+          description: Every file to download before "Başla" is enabled.
+          items:
+            $ref: "#/components/schemas/ExamMedia"
+        packageBytes:
+          type: integer
+          format: int64
+
+    ExamPackageGroup:
+      type: object
+      required: [id, kind, sectionId, position, title, instructions, passage, audio]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [reading, listening]
+        sectionId:
+          type: string
+        position:
+          type: integer
+        title:
+          type: [string, "null"]
+        instructions:
+          type: [string, "null"]
+          description: Localized instruction text.
+        passage:
+          type: [string, "null"]
+          description: |
+            Reading text (reading groups only) in restricted markup: paragraphs separated
+            by a blank line, `**bold**`, `*italic*`, `__underline__` (ADR 0002 §2).
+        audio:
+          description: Listening groups only. Play from the downloaded file, never streamed.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ExamMedia"
+
+    ExamPackageTask:
+      type: object
+      required: [id, position, sectionId, groupId, type, answerFormat, prompt, options]
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          description: 1-based number in the exam ("14 / 30").
+        sectionId:
+          type: string
+        groupId:
+          type: [string, "null"]
+          format: uuid
+        type:
+          type: string
+          enum: [closed_single, written]
+        answerFormat:
+          type: [string, "null"]
+          enum: [short_text, null]
+          description: Written tasks only.
+        prompt:
+          type: string
+        options:
+          type: array
+          description: Closed tasks only (empty for written). No correctness data.
+          items:
+            type: object
+            required: [id, letter, text]
+            properties:
+              id:
+                type: string
+                format: uuid
+              letter:
+                type: string
+                examples: [A]
+              text:
+                type: string
+
+    ExamMedia:
+      type: object
+      required: [url, bytes, sha256, contentType, durationMs]
+      properties:
+        url:
+          type: string
+          format: uri
+        bytes:
+          type: integer
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        contentType:
+          type: string
+          examples: [audio/mp4]
+        durationMs:
+          type: [integer, "null"]
+
+    StartExamAttemptRequest:
+      type: object
+      required: [variantId, version, deviceId, idempotencyKey]
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          description: Version of the downloaded package.
+        deviceId:
+          type: string
+          minLength: 8
+          maxLength: 64
+          pattern: "^[A-Za-z0-9_-]+$"
+          description: Random id per app install (not a hardware id).
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 64
+          pattern: "^[A-Za-z0-9_-]+$"
+        mode:
+          type: string
+          enum: [subject]
+          default: subject
+        skipListening:
+          type: boolean
+          default: false
+
+    ExamAttempt:
+      type: object
+      required: [id, variantId, version, templateId, mode, status, isRetake, skipListening, resumed, startedAtEpochMs,
+                 endsAtEpochMs, deadlineEpochMs, lateUploadUntilEpochMs, serverNowEpochMs, submittedAtEpochMs,
+                 answers, listening]
+      properties:
+        id:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        templateId:
+          type: string
+        mode:
+          type: string
+          enum: [subject, full]
+        status:
+          $ref: "#/components/schemas/ExamAttemptStatus"
+        isRetake:
+          type: boolean
+        skipListening:
+          type: boolean
+        resumed:
+          type: boolean
+        startedAtEpochMs:
+          type: integer
+          format: int64
+        endsAtEpochMs:
+          type: integer
+          format: int64
+          description: Countdown target; the client disables input and auto-submits here.
+        deadlineEpochMs:
+          type: integer
+          format: int64
+          description: endsAt + grace; last moment for normal online writes.
+        lateUploadUntilEpochMs:
+          type: integer
+          format: int64
+        serverNowEpochMs:
+          type: integer
+          format: int64
+        submittedAtEpochMs:
+          type: [integer, "null"]
+          format: int64
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamAnswer"
+        listening:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamListeningState"
+
+    CurrentExamAttempt:
+      type: object
+      required: [attempt]
+      properties:
+        attempt:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ExamAttempt"
+
+    ExamAnswer:
+      type: object
+      required: [taskId, revision, optionId, text, flagged, savedAtEpochMs]
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+        optionId:
+          type: [string, "null"]
+          format: uuid
+        text:
+          type: [string, "null"]
+        flagged:
+          type: boolean
+        savedAtEpochMs:
+          type: integer
+          format: int64
+
+    ExamAnswerWrite:
+      type: object
+      required: [taskId, revision, savedAtEpochMs]
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Per task, increases with every local change.
+        optionId:
+          type: [string, "null"]
+          format: uuid
+          description: Closed tasks; `null` = no answer (cleared).
+        text:
+          type: [string, "null"]
+          maxLength: 1000
+          description: Written tasks; stored as typed.
+        flagged:
+          type: boolean
+          default: false
+        savedAtEpochMs:
+          type: integer
+          format: int64
+          description: When the client saved it locally (client clock corrected by the server offset).
+
+    ExamSingleAnswerWrite:
+      type: object
+      required: [deviceId, revision, savedAtEpochMs]
+      properties:
+        deviceId:
+          type: string
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        optionId:
+          type: [string, "null"]
+          format: uuid
+        text:
+          type: [string, "null"]
+          maxLength: 1000
+        flagged:
+          type: boolean
+          default: false
+        savedAtEpochMs:
+          type: integer
+          format: int64
+
+    ExamAnswerBatch:
+      type: object
+      required: [deviceId, answers]
+      properties:
+        deviceId:
+          type: string
+        answers:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ExamAnswerWrite"
+
+    ExamAnswerBatchResult:
+      type: object
+      required: [status, serverNowEpochMs, accepted, ignored]
+      properties:
+        status:
+          $ref: "#/components/schemas/ExamAttemptStatus"
+        serverNowEpochMs:
+          type: integer
+          format: int64
+        accepted:
+          type: array
+          description: Entries now stored (or already stored with this revision).
+          items:
+            type: object
+            required: [taskId, revision]
+            properties:
+              taskId:
+                type: string
+                format: uuid
+              revision:
+                type: integer
+        ignored:
+          type: array
+          description: Entries not applied; the client can drop them from its queue.
+          items:
+            type: object
+            required: [taskId, revision, reason]
+            properties:
+              taskId:
+                type: string
+                format: uuid
+              revision:
+                type: integer
+              reason:
+                type: string
+                enum: [stale_revision, saved_after_deadline]
+
+    ExamListeningUpdate:
+      type: object
+      required: [deviceId, playsUsed, savedAtEpochMs]
+      properties:
+        deviceId:
+          type: string
+        playsUsed:
+          type: integer
+          minimum: 0
+          maximum: 2
+        audioFailed:
+          type: boolean
+          default: false
+        savedAtEpochMs:
+          type: integer
+          format: int64
+
+    ExamListeningState:
+      type: object
+      required: [groupId, playsUsed, playsLeft, audioFailed]
+      properties:
+        groupId:
+          type: string
+          format: uuid
+        playsUsed:
+          type: integer
+        playsLeft:
+          type: integer
+        audioFailed:
+          type: boolean
+
+    SubmitExamRequest:
+      type: object
+      required: [deviceId]
+      properties:
+        deviceId:
+          type: string
+        trigger:
+          type: string
+          enum: [user, deadline]
+          default: user
+
+    ExamResult:
+      type: object
+      required: [attemptId, variantId, version, templateId, mode, status, isRetake, submitTrigger, submittedAtEpochMs,
+                 estimate, closed, written, sections, answeredCount, flaggedCount, progress]
+      properties:
+        attemptId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        templateId:
+          type: string
+        mode:
+          type: string
+          enum: [subject, full]
+        status:
+          type: string
+          enum: [submitted, finalized]
+        isRetake:
+          type: boolean
+        submitTrigger:
+          type: string
+          enum: [user, deadline, server]
+        submittedAtEpochMs:
+          type: integer
+          format: int64
+        estimate:
+          $ref: "#/components/schemas/ExamEstimate"
+        closed:
+          type: object
+          required: [correct, wrong, blank, total]
+          properties:
+            correct:
+              type: integer
+            wrong:
+              type: integer
+            blank:
+              type: integer
+            total:
+              type: integer
+        written:
+          type: object
+          required: [assessed, total, marks, maxMarks]
+          properties:
+            assessed:
+              type: integer
+            total:
+              type: integer
+            marks:
+              type: number
+              description: Sum of self-assessed marks, 2 decimals (e.g. 4.33).
+            maxMarks:
+              type: integer
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamSectionResult"
+        answeredCount:
+          type: integer
+        flaggedCount:
+          type: integer
+        progress:
+          description: Streak change of this attempt (no XP, OQ-125); `null` for a server finalization.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Progress"
+
+    ExamEstimate:
+      type: object
+      description: |
+        "Təxmini bal" — never an official DİM result. `autoScore` is "Avtomatik
+        yoxlanılıb", `writtenScore` "Özün qiymətləndirdin"; both are rounded on their
+        own, so their sum may differ from `total` by 0.1. Show numbers with a decimal
+        comma.
+      required: [total, autoScore, writtenScore, maxScore, rawMax, listeningExcluded, listeningExclusionReason]
+      properties:
+        total:
+          type: number
+          examples: [67.7]
+        autoScore:
+          type: number
+        writtenScore:
+          type: number
+        maxScore:
+          type: number
+        rawMax:
+          type: integer
+          description: 37 for English; smaller when listening is excluded.
+        listeningExcluded:
+          type: boolean
+        listeningExclusionReason:
+          type: [string, "null"]
+          enum: [skipped, audio_failed, null]
+
+    ExamSectionResult:
+      type: object
+      required: [id, title, closedCorrect, closedWrong, closedBlank, closedTotal, writtenAssessed, writtenTotal,
+                 writtenMarks, excluded]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        closedCorrect:
+          type: integer
+        closedWrong:
+          type: integer
+        closedBlank:
+          type: integer
+        closedTotal:
+          type: integer
+        writtenAssessed:
+          type: integer
+        writtenTotal:
+          type: integer
+        writtenMarks:
+          type: number
+        excluded:
+          type: boolean
+          description: Listening excluded from the estimate.
+
+    SelfAssessmentRequest:
+      type: object
+      required: [marks]
+      properties:
+        marks:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [taskId, mark]
+            properties:
+              taskId:
+                type: string
+                format: uuid
+              mark:
+                type: [string, "null"]
+                enum: ["0", "1/3", "1/2", "2/3", "1", null]
+
+    ExamReview:
+      type: object
+      required: [attemptId, variantId, version, language, sections, groups, tasks]
+      properties:
+        attemptId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        language:
+          type: string
+        sections:
+          type: array
+          items:
+            type: object
+            required: [id, title, position]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              position:
+                type: integer
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamReviewGroup"
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamReviewTask"
+
+    ExamReviewGroup:
+      type: object
+      required: [id, kind, sectionId, position, title, instructions, passage, audio, transcript, voices]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [reading, listening]
+        sectionId:
+          type: string
+        position:
+          type: integer
+        title:
+          type: [string, "null"]
+        instructions:
+          type: [string, "null"]
+        passage:
+          type: [string, "null"]
+        audio:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ExamMedia"
+        transcript:
+          type: array
+          description: Listening script (empty for reading groups). Only after submit.
+          items:
+            type: object
+            required: [speaker, speakerName, text]
+            properties:
+              speaker:
+                type: string
+              speakerName:
+                type: string
+              text:
+                type: string
+        voices:
+          type: array
+          description: TTS credits of the audio (licences screen).
+          items:
+            type: object
+            required: [role, voice, speakerId, licence]
+            properties:
+              role:
+                type: string
+              voice:
+                type: string
+              speakerId:
+                type: [integer, "null"]
+              licence:
+                type: string
+
+    ExamReviewTask:
+      type: object
+      required: [id, position, sectionId, groupId, type, prompt, options, selectedOptionId, correctOptionId, outcome,
+                 text, flagged, explanation, modelAnswer, criteria, selfMark]
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+        sectionId:
+          type: string
+        groupId:
+          type: [string, "null"]
+          format: uuid
+        type:
+          type: string
+          enum: [closed_single, written]
+        prompt:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            required: [id, letter, text, correct]
+            properties:
+              id:
+                type: string
+                format: uuid
+              letter:
+                type: string
+              text:
+                type: string
+              correct:
+                type: boolean
+        selectedOptionId:
+          type: [string, "null"]
+          format: uuid
+        correctOptionId:
+          type: [string, "null"]
+          format: uuid
+        outcome:
+          type: string
+          description: |
+            Closed: `correct`, `wrong`, `blank`. Written: `assessed`, `not_assessed`.
+            Any task of an excluded listening group: `excluded`.
+          enum: [correct, wrong, blank, assessed, not_assessed, excluded]
+        text:
+          type: [string, "null"]
+          description: The user's written answer.
+        flagged:
+          type: boolean
+        explanation:
+          type: [string, "null"]
+        modelAnswer:
+          type: [string, "null"]
+        criteria:
+          type: array
+          items:
+            type: object
+            required: [mark, description]
+            properties:
+              mark:
+                type: string
+                enum: ["0", "1/3", "1/2", "2/3", "1"]
+              description:
+                type: string
+        selfMark:
+          type: [string, "null"]
+          enum: ["0", "1/3", "1/2", "2/3", "1", null]
