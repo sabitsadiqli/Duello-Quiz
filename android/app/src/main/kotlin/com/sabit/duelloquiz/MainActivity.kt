@@ -25,6 +25,7 @@ import com.sabit.duelloquiz.core.model.ThemeMode
 import com.sabit.duelloquiz.core.notifications.NotificationIntents
 import com.sabit.duelloquiz.core.notifications.ReminderOpens
 import com.sabit.duelloquiz.core.notifications.SystemNotifications
+import com.sabit.duelloquiz.core.notifications.exam.ExamOpens
 import com.sabit.duelloquiz.navigation.DuelloNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -43,6 +44,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var systemNotifications: SystemNotifications
+
+    @Inject
+    lateinit var examOpens: ExamOpens
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -79,7 +83,12 @@ class MainActivity : ComponentActivity() {
             }
 
             DuelloTheme(darkTheme = darkTheme) {
-                DuelloNavHost(authState = ready.authState, duelEnabled = BuildConfig.DUEL_ENABLED)
+                DuelloNavHost(
+                    authState = ready.authState,
+                    duelEnabled = BuildConfig.DUEL_ENABLED,
+                    examsEnabled = BuildConfig.EXAMS_ENABLED,
+                    examOpens = examOpens,
+                )
             }
         }
     }
@@ -97,6 +106,12 @@ class MainActivity : ComponentActivity() {
 
     /** Only the reminder type is read; the Gündəlik tab shows the current server state (NOTIF-05). */
     private fun handleReminderIntent(intent: Intent?) {
+        // EXAM-27: the "10 dəqiqə qalıb" notification opens the running attempt.
+        intent?.getStringExtra(ExamOpens.EXTRA_EXAM_ATTEMPT_ID)?.let { attemptId ->
+            intent.removeExtra(ExamOpens.EXTRA_EXAM_ATTEMPT_ID)
+            if (BuildConfig.EXAMS_ENABLED) examOpens.onOpened(attemptId)
+            return
+        }
         val type = ReminderType.fromWire(intent?.getStringExtra(NotificationIntents.EXTRA_TYPE)) ?: return
         intent?.removeExtra(NotificationIntents.EXTRA_TYPE)
         reminderOpens.onOpened(type)
