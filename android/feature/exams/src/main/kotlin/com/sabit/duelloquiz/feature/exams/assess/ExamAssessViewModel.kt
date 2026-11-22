@@ -152,7 +152,6 @@ class ExamAssessViewModel @Inject constructor(
 
     override fun onCleared() {
         players.values.forEach { it.release() }
-        super.onCleared()
     }
 
     private companion object {

@@ -675,7 +675,6 @@ class ExamAttemptViewModel @Inject constructor(
     override fun onCleared() {
         // Leaving the attempt: the running play pauses (it resumes at the same position later).
         if (audio.state.value.isPlaying) audio.pause()
-        super.onCleared()
     }
 
     internal companion object {

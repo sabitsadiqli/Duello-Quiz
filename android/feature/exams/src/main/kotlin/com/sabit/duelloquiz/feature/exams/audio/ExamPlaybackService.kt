@@ -1,7 +1,9 @@
 package com.sabit.duelloquiz.feature.exams.audio
 
 import android.content.Intent
+import androidx.annotation.OptIn
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,6 +20,8 @@ import javax.inject.Inject
  * removed, so the notification and lock screen show no seek bar. In the review, seeking is
  * allowed (OQ-D44).
  */
+// AcceptedResultBuilder, setAvailableCommands and the command constants are UnstableApi in Media3.
+@OptIn(UnstableApi::class)
 @AndroidEntryPoint
 class ExamPlaybackService : MediaSessionService() {
 

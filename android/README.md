@@ -14,11 +14,13 @@ cd android && ./gradlew lint test assembleDebug
      ├─► :feature:home ─────┤
      ├─► :feature:quiz ─────┤
      ├─► :feature:duel ─────┤
+     ├─► :feature:exams ────┤
      ├─► :feature:profile ──┤
      ├─► :feature:settings ─┤
      │                      ▼
      ├─► :core:notifications ─► :core:data (FCM, channels, phone notification state)
      └─► :core:data ─► :core:network ─► :core:auth
+         │            └─► :core:database (Room)
          :core:duel ─┘ └─► :core:datastore
          :core:designsystem  :core:common  :core:model
 :core:testing (test-only: MainDispatcherRule, test repositories, fake duel server, Turbine, MockK)
@@ -31,6 +33,8 @@ cd android && ./gradlew lint test assembleDebug
 | `:feature:home` | The Oyna tab (Baku date, streak chip, avatar, rotating greeting, duel card, category list with loading/empty/error/offline states, quiz start, verification banner) and the Gündəlik tab (`daily/`: challenge card with countdown and share, streak section with the week row and messages, daily reminder switch) |
 | `:feature:quiz` | Quiz loading and question screen, result, wrong-answer review; the daily challenge (play, result with share card, review) on the shared `QuestionRunner`; XP/streak card and notification permission card on results |
 | `:feature:duel` | The whole duel flow as one destination: search, intro, question → Əminlik → answer → reveal, round 7 and sudden death, disconnect overlays, leave dialog, result with the Əminlik kartı, upgrade/unavailable/connection states |
+| `:feature:exams` | Mock exams "Sınaqlar" (behind `EXAMS_ENABLED`): catalogue + history, info and package download, the attempt (timer, pager, Tapşırıq/Mətn and split view, written field, listening player), self-assessment, result, review with the review player; `Media3ExamAudioEngine` + `ExamPlaybackService` (ADR 0003) |
+| `:core:database` | Room `DuelloDatabase` (exam attempts, answers with revisions, listening state, passage offsets, marks, response cache); exported schemas in `core/database/schemas` |
 | `:feature:profile` | The Profil tab: name, avatar, rating, Qoşulub, level and XP, streak row (→ Gündəlik), category levels, duel record, Əminlik statistikası, last 20 matches, name editing, the settings entry |
 | `:feature:settings` | Theme, language, notification reminders, account (sign-out, delete via `DELETE /v1/me`), about, open-source licences (list + detail) |
 | `:core:notifications` | FCM messaging service (token refresh, reminders shown in the foreground), reminder channels `daily_reminder` / `streak_reminder`, phone notification state, push token registration, reminder taps → Gündəlik tab, `ReminderSettingsController` (reminder switches shared by settings and the Gündəlik tab) |
@@ -39,7 +43,7 @@ cd android && ./gradlew lint test assembleDebug
 | `:core:data` | Repositories (profile incl. name editing, categories, quiz sessions and daily attempts with the shared offline answer queue, progress, notification settings, push tokens, duel stats and history, account), per-account cache, `NetworkMonitor`, preferences |
 | `:core:auth` | `AuthRepository` (Firebase or in-memory fake), Credential Manager Google client, validation rules |
 | `:core:datastore` | Preferences DataStore (theme mode, notification card counter, shown streak messages, daily question show times, push registration) and the per-account cache store |
-| `:core:designsystem` | Theme from `design/tokens.json` 3.0.0 (scheme, game colours, typography, shapes, motion), Fraunces + Plus Jakarta Sans, icons, components (navigation bar, buttons, option card, quiz timer, category row, duel card, sticker, streak chip, greeting with squiggle, daily card, answer boxes, week row, Əminlik tiles, state views, `DuelloLogoMark` coloured from the scheme), **all UI strings** |
+| `:core:designsystem` | Theme from `design/tokens.json` 3.1.0 (scheme, game colours, typography, shapes, motion), Fraunces + Plus Jakarta Sans, icons, components (navigation bar, buttons, option card, quiz timer, category row, duel card, sticker, streak chip, greeting with squiggle, daily card, answer boxes, week row, Əminlik tiles, state views, `DuelloLogoMark` coloured from the scheme), **all UI strings** |
 | `:core:common` | `AppConfig`, `WallClock`, application scope, navigation result keys, external links |
 | `:core:model` | Plain models (`AuthUser`, `Profile`, `Category`, quiz types, `DataResult`/`DataError`) |
 
@@ -227,3 +231,24 @@ the screen shows only the manual section.
 `-PprivacyPolicyUrl=...`. It must be the same URL as in Play Console. The account deletion page
 `https://duelloquiz.app/legal/account-deletion.html` is entered only in Play Console (Data safety);
 inside the app, deletion is the in-app flow in settings.
+
+## Mock exams "Sınaqlar"
+
+Behind the build flag `BuildConfig.EXAMS_ENABLED` of `:app` (on in debug, off in release, override
+with `-PexamsEnabled=true|false`); with the flag off no route, Oyna row, banner, settings row,
+licence section or reminder exists (EXAM-01). Rules: `docs/requirements/mock-exams.md`, ADR 0002
+(data, scoring, timer) and ADR 0003 (audio).
+
+- The countdown is `endsAtEpochMs` minus the clock offset from `serverNowEpochMs`; at 0 every input
+  stops and the client submits (`trigger = deadline`). The client never derives correctness.
+- Every change is a new revision in Room (`:core:database`) first, then uploaded in batches of 100
+  in save order (`ExamRepository.sync`); offline, `ExamSyncWorker` (WorkManager, network
+  constraint) uploads answers, listening state, submits and marks later (24 h late window).
+- Packages download with `ExamDownloadWorker`: free-space check (size × 1.1), resumable media with
+  size + SHA-256 verification and one automatic retry, into `filesDir/exams` (kept on sign-out).
+- Listening: `ListeningPlayState` (2 plays, counted after 10 s of played time, resume paused at the
+  saved position after a kill); the media session offers no seek in an attempt.
+- EXAM-27: `ExamReminderController` (`:core:notifications`) arms an inexact alarm for
+  `endsAt − 10 min` while the app is in the background and posts once on the `exam` channel.
+- A debug build without Firebase serves one variant from `FakeExamNetworkDataSource`
+  (`core/network/src/debug`, right option always "A", a generated WAV tone as listening audio).

@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -121,6 +122,7 @@ internal fun ExamResultScreen(
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val scroll = rememberScrollState()
+    val scrolled by remember { derivedStateOf { scroll.value > 0 } }
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(snackbar) },
@@ -132,7 +134,7 @@ internal fun ExamResultScreen(
                         Icon(painterResource(DuelloIcons.Close), contentDescription = stringResource(R.string.common_close))
                     }
                 },
-                showDivider = scroll.value > 0,
+                showDivider = scrolled,
             )
         },
     ) { padding ->

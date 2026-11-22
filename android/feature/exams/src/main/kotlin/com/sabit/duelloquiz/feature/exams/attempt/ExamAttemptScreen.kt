@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -413,6 +414,7 @@ private fun AttemptPager(state: ExamAttemptUiState, onAction: (ExamAttemptAction
 private fun TaskPage(task: ExamTaskUi, state: ExamAttemptUiState, wide: Boolean, segment: TaskSegment, onAction: (ExamAttemptAction) -> Unit) {
     val passage = task.groupId?.let { state.passages[it] }
     val scroll = rememberScrollState()
+    val scrolledFar by remember { derivedStateOf { scroll.value > MINI_PLAYER_SCROLL_PX } }
     val imeVisible = WindowInsets.isImeVisible
     if (passage != null && wide) {
         // ≥ 600dp: passage start pane 55 %, task end pane 45 %, each with its own scroll.
@@ -444,7 +446,7 @@ private fun TaskPage(task: ExamTaskUi, state: ExamAttemptUiState, wide: Boolean,
                 player = player,
                 onPlayPause = { onAction(ExamAttemptAction.PlayPause) },
                 onRetry = { onAction(ExamAttemptAction.RetryAudio) },
-                mini = imeVisible || scroll.value > MINI_PLAYER_SCROLL_PX,
+                mini = imeVisible || scrolledFar,
                 modifier = Modifier.padding(horizontal = Spacing.screenGutter, vertical = Spacing.sm),
             )
         }
