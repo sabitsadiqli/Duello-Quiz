@@ -576,6 +576,10 @@ private fun StreakRow(days: Int, filled: Boolean, extended: Boolean, ignite: Boo
     }
 }
 
+/** The streak row alone (exam result: streak only, no XP row, OQ-125 B). */
+@Composable
+fun ResultStreakRow(days: Int, extended: Boolean) = StreakRow(days = days, filled = true, extended = extended, ignite = true)
+
 /** Variants of the streak message (components.md §29), in priority order. */
 enum class StreakMessageVariant { StreakLost, FreezeUsed, StreakHint }
 
