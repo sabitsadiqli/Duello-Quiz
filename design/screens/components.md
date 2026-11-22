@@ -5,7 +5,8 @@ look — paper/ink, one nar accent, pill buttons, hairline cards, no gradients, 
 depth edges. Sections 0, 1, 3, 4, 5, 6, 8, 12, 24, 25, 28, 29 were rewritten or
 retired; §33 … §38 are new; the rest keep their behaviour and get the v3 look
 through tokens plus the restyle notes under "v3 restyle of the remaining
-components" below. Per-screen impact: `v3-migration.md`. Token names refer to `design/tokens.json`
+components" below. **Mock exams (tokens 3.1.0, 2026-11-21):** §3a, §39 … §46 and
+"Exam rows" at the end of this file. Per-screen impact: `v3-migration.md`. Token names refer to `design/tokens.json`
 (`scheme.*` = `color.<theme>.scheme.*`, a Material 3 `ColorScheme` role;
 `game.*` = `color.<theme>.game.*`, a custom game colour; `type.*` =
 `typography.scale.*`; `space.*` = `spacing.*`; `shape.*`, `size.*`,
@@ -994,3 +995,320 @@ response without `week` only: active / today pending / none derived from
 `freeze_used` / `streak_lost` events either; `daily-tab.md` OQ-D35, PROG-11). One
 TalkBack element (`daily_tab_week_cd`). Not interactive.
 
+
+---
+
+## Mock exams "Sınaqlar" (tokens 3.1.0, 2026-11-21)
+
+Components §39 … §46 serve `exam-catalogue.md`, `exam-info.md`,
+`exam-attempt.md`, `exam-self-assessment.md`, `exam-result.md` and
+`exam-review.md` (EXAM-01 … EXAM-25, Phase 1). They add **no colour roles**;
+every new pair is in `design/tools/contrast.py` (section "Mock exams"). Reused
+as they are: buttons §1, text field §2 (as the base of §43), option card §3
+(with the exam addendum below), timer bar §4, banners §8, dialogs §9,
+snackbars §10, state views §11, top app bar §12, list / switch rows §14 / §31,
+section overline §35a, progress card streak row §26. Copy keys: `copy/az.md`
+"exam_".
+
+### 3a. Option card — exam addendum
+
+- Letters come from the task data: **A–E**, 2–5 options (OQ-113); TalkBack
+  `exam_option_cd` ("A variantı: …"), not the quiz ordinal keys.
+- **Chosen** state (exam only; no server round-trip): exactly the visual of
+  "Selected (pending)" (ink 2dp border, `game.pendingContainer`, ink letter
+  badge) **without** the trailing progress indicator; state description
+  `exam_option_selected_cd`. Tapping another option moves the choice at once
+  (last tap wins, EXAM-06); tapping the chosen option again does nothing (clearing
+  is the explicit `exam_clear_answer` text button, so a stray double tap never
+  blanks an answer).
+- Correct / Wrong / Dimmed states are used only in the review (`exam-review.md`),
+  never during an attempt (EXAM-06: no feedback before submit).
+- Read-only (after the deadline or submit): Chosen / Default look kept, ripple
+  and clicks off, content not dimmed (still readable).
+
+## 39. Exam timer pill — `ExamTimerPill`
+
+Same anatomy as the quiz timer pill (§4): `shape.full`, face `scheme.surface`
+(on the navigator sheet: transparent on `scheme.surfaceContainerLow`), 1dp
+`scheme.outline`, padding `space.md` horizontal, height 32dp inside a 48dp touch
+target, 18dp `timer` icon + `space.xs` + digits `type.titleMedium` **tabular**
+in `game.timerNormal`.
+
+- Format: `m:ss` below 1 hour ("59:59", "4:07"), `h:mm:ss` from 1 hour (Phase 2,
+  180 min). Width reserved for the widest value of the attempt (`59:59` →
+  91dp at 1.0 / 105dp at 1.3) so the header never shifts.
+- Source: `endsAtEpochMs` − server-offset clock (DUEL-12 method), refreshed
+  every second by the wall clock, never by animation frames; the 2-min grace is
+  **not** displayed (OQ-D41).
+- Warning at ≤ `motion.exam.timerWarningThresholdMs` (10 min): border, icon and
+  digits `game.timerWarning`. **No pulse** (a 10-minute pulse is stress, not
+  information). Expired: "0:00" in `game.timerWarning`.
+- Tap: announces `exam_timer_cd` ("Qalan vaxt: 42 dəqiqə") once; visual
+  unchanged. Not a live region (EXAM-22: announced on demand; the 30/10/1-min
+  notices are separate, `exam-attempt.md`).
+- Thin **time line** under the exam header: §4 bar, fraction = remaining /
+  duration, warning colour like the pill.
+
+## 40. Task navigator — `ExamTaskNavigator`
+
+Opened from the header grid button as an M3 **modal bottom sheet** expanded to
+full height (`shape.component.bottomSheet`, container
+`scheme.surfaceContainerLow`, drag handle). Layout:
+
+1. Sheet header row (48dp): title `exam_grid_title` `type.titleLarge`, weight 1;
+   the **timer pill §39** (the timer stays on screen while the sheet covers the
+   header); close icon button `common_close`.
+2. `space.sm`, summary `exam_grid_summary` ("Cavablanıb: 12 · Cavabsız: 15 ·
+   İşarələnib: 3") `type.bodyMedium` `scheme.onSurfaceVariant`, wraps.
+3. `space.md`, legend row (wraps): four 16dp mini cells + `type.bodySmall`
+   labels (`exam_grid_legend_*`). Decorative for TalkBack (each cell says its
+   state).
+4. Per section, in exam order: section name `type.titleSmall` `scheme.onSurface`
+   + `space.xs` + task range ("7–22") `type.bodySmall` `scheme.onSurfaceVariant`
+   (sentence case from the server — never an overline, which would need runtime
+   uppercasing); `space.sm`; a flow grid of cells, `size.examGridColumns` (6)
+   per row, `size.examTaskCell` (48dp) squares, gap `space.sm`; `space.lg`
+   before the next section. A task group (reading / listening) is not a separate
+   heading: its section is the group.
+5. Sticky bottom: primary pill `exam_finish` ("Sınağı bitir"), full width,
+   `space.lg` padding + navigation inset.
+
+Cell (`shape.component.examTaskCell`), number `type.titleSmall` tabular, centred:
+
+| State | Face | Border | Number | Extra glyph |
+| --- | --- | --- | --- | --- |
+| Not answered | `scheme.surface` | 1dp `scheme.outline` | `scheme.onSurface` | — |
+| Answered (closed option chosen) | `scheme.inverseSurface` | — | `scheme.inverseOnSurface` | — |
+| Written, text entered | `scheme.inverseSurface` | — | `scheme.inverseOnSurface` | 12dp `edit` under the number, `scheme.inverseOnSurface` (cell content stacks; still 48dp) |
+| Written, empty | as Not answered | | | — (an empty written task is legal, EXAM-11) |
+| Flagged (any of the above) | unchanged | unchanged | unchanged | **Flag badge** at the top-end corner, centred on the corner: `size.examFlagBadge` circle in the sheet colour with a 12dp filled `flag` in `scheme.primary` |
+| Current task | unchanged | + 2dp `scheme.primary` ring, 2dp outside the cell | Bold | — |
+| Skipped listening (OQ-119) | not rendered: the section shows `exam_grid_skipped` text instead of cells | | | |
+| Read-only (after the deadline) | unchanged | | | taps still open the task read-only |
+
+Never colour alone: answered vs not = filled vs outlined; flag = glyph; current
+= ring + bold + TalkBack "hazırda açıqdır". Tap a cell → sheet closes →
+that task opens (`motion.exam.taskTransition`, fade-through). Accessibility: each
+cell one node, role Button, label `exam_grid_cell_cd` ("Tapşırıq 14, cavabsız,
+işarələnib"); section name is a heading; traversal follows the visual order.
+
+## 41. Passage panel — `ExamPassage`
+
+Page text, no container (`shape.component.passagePanel`), inside the task body
+scroll (reading groups, `exam-attempt.md` B3; review and self-assessment).
+
+- Optional overline `exam_passage_overline` ("OXU MƏTNİ"), then title from the
+  data `type.titleMedium`, then paragraphs `type.bodyLarge` `scheme.onSurface`,
+  `space.md` between paragraphs, max width `space.layout.maxContentWidth`.
+- **Paragraph numbers** (when tasks refer to them): in a start gutter of
+  `size.examPassageGutter`, `type.labelMedium` tabular `scheme.onSurfaceVariant`,
+  top-aligned with the paragraph's first line. Line numbers are not used in
+  Phase 1 (they break with font scaling; tasks refer to paragraphs).
+- **Restricted markup** (OQ-116): bold, italic, underline, sub/superscript.
+  Marked words (a task refers to them) = **underline 1.5dp** in
+  `scheme.onSurface`, 2dp below the baseline **plus** Bold — two cues, readable in
+  both themes, no colour. TalkBack reads them with `exam_marked_word_cd`
+  ("altından xətt çəkilmiş söz: …", via a `TtsSpan`/custom semantics on the span).
+- **Gap** token in a task stem (`{gap}` in the data, e.g. "She ___ to school"):
+  rendered as a 40dp-wide 1.5dp underline in `scheme.onSurface`; TalkBack
+  `exam_gap_cd` ("boşluq").
+- 3 000 characters at font scale 1.3 on 360dp ≈ 95 lines ≈ 2 950dp: scrolls,
+  never truncates; the scroll position is stored per group (survives task
+  changes, rotation and process death — save the first visible character
+  offset, not pixels, so a font-scale change still lands on the same text).
+- Text selection: off (no copy-out during an attempt); on in the review.
+- ≥ 600dp: shown beside the task (split view, `exam-attempt.md` B3).
+
+## 42. Listening player — `ExamAudioPlayer`
+
+Flat card (§0): face `scheme.surface`, 1dp `game.cardBorder`,
+`shape.component.audioPlayer`, padding `space.lg`, full content width. Pinned at
+the top of the body of **every task of a listening group** (one shared player
+state per group). Plays the downloaded local file only (never streams,
+EXAM-10).
+
+Anatomy (360dp):
+
+```
+[ ▶ ]  Dinləmə mətni                      ● ●
+56dp   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       1:12 / 3:05            2 dəfə qalıb
+       (caption line, optional)
+```
+
+1. Row: round button `size.examAudioPlayButton` (56dp, `shape.full`, face
+   `scheme.primary`, 28dp icon `play_arrow` / `pause` in `scheme.onPrimary`) —
+   `space.md` — column (weight 1): title `exam_audio_title` `type.titleSmall`
+   `scheme.onSurface` + at the end the **play dots**: 2 × `size.examPlayDot`
+   (filled `scheme.onSurface` = play still available, 1dp `scheme.outline` ring
+   = used), decorative.
+2. `space.sm`, **progress line** `size.examAudioProgressHeight` (4dp),
+   `shape.full`, track `game.timerTrack`, fill `scheme.onSurface`. **Not
+   interactive**: no thumb, no seek, no drag, no speed control (OQ-119);
+   updated every 250ms (`motion.exam.audioProgress`).
+3. `space.xs`, row: elapsed / total `exam_audio_elapsed` ("1:12 / 3:05")
+   `type.bodyMedium` tabular `scheme.onSurfaceVariant`; end: plays text
+   `type.bodyMedium` `scheme.onSurfaceVariant` (state table).
+4. Optional caption line `type.bodySmall` `scheme.onSurfaceVariant` (state
+   table), or an inline warning banner (§8 full, `bannerWarningContainer`) for
+   failures.
+
+A **play** = from the start to the end of the file; pause / resume inside a play
+is allowed; there is no "restart". A play is **counted** once 10 s of it have
+played (server rule OQ-119; the client reports position and count with the
+answers).
+
+| State | Button | Plays text | Caption / banner |
+| --- | --- | --- | --- |
+| Ready, 2 left | `play_arrow`, label `exam_audio_play` | `exam_audio_plays_left` "2 dəfə qalıb" | — |
+| Playing, first 10 s of a play | `pause` | `exam_audio_play_n` "Dinləmə 1 / 2" | `exam_audio_counts_after` "10 saniyədən sonra sayılacaq" |
+| Playing, counted | `pause` | "Dinləmə 1 / 2" | — |
+| Paused (user, phone call, audio focus loss, headphones unplugged — `ACTION_AUDIO_BECOMING_NOISY`) | `play_arrow`, label `exam_audio_resume` | "Dinləmə 1 / 2" | after an automatic pause: `exam_audio_interrupted` |
+| Play ended, 1 left | `play_arrow` | "1 dəfə qalıb" | — |
+| No plays left | disabled (M3 disabled colours), `play_arrow` | `exam_audio_no_plays` "Dinləmə imkanı bitdi" | — |
+| Preparing (decoder start, > 300ms) | 24dp progress in the button | unchanged | `exam_audio_preparing` |
+| Local file missing / corrupt → automatic re-download once | progress in the button | unchanged | `exam_audio_redownloading` |
+| Re-download failed | `refresh`, label `common_retry` | unchanged (**plays not consumed**) | warning banner `exam_audio_failed` (+ `exam_audio_failed_offline` when offline) |
+| Restored after app kill mid-play | `play_arrow` (paused at the saved position, OQ-D43) | "Dinləmə 1 / 2" | `exam_audio_restored` |
+| Volume 0 / muted media stream on tap | plays normally | — | inline hint `exam_audio_volume_hint` (non-blocking, hides when volume > 0) |
+| Listening skipped (OQ-119 choice) | player replaced by a note (§46) `exam_audio_skipped` | | |
+| Attempt read-only (deadline) | disabled | unchanged | — |
+| Review (after submit, OQ-D44) | → review player §42a | | |
+
+Behaviour: only one player plays at a time; leaving the listening group does
+not stop playback (the audio is the exam, the user may read tasks of the group
+while listening — all six tasks show the same player). Backgrounding the app
+**keeps playing** (Media3 session, media notification with play/pause only, no
+seek bar: `COMMAND_SEEK_*` removed from the session's available commands).
+Lock-screen / notification controls follow the same rules.
+
+Accessibility: the button is one node: label `exam_audio_play_cd` ("Dinlə.
+İstifadə olunub: 1 / 2") / `exam_audio_pause_cd`; the progress line is not
+focusable; elapsed time and plays text form one node read on focus. State
+changes (counted, ended, failed) are polite announcements.
+
+## 42a. Review player — `ExamAudioPlayer(mode = Review)` (OQ-D44, decided 2026-11-21: Phase 1)
+
+The same card, button and colours as §42, used **only after submit**: review
+listening card (`exam-review.md`) and the transcript sheet of the
+self-assessment. The attempt player never gets these controls (the review
+data, and with it this mode, exists only after the server has the submit).
+
+```
+[ ▶ ]  Dinləmə mətni
+56dp   ━━━━━━━━━●───────────────────────────
+       1:12 / 3:05          [⟲10]  [10⟳]
+```
+
+- **No play counter, no play dots**, no "counts after 10 s" caption.
+- The progress line is replaced by an M3 **`Slider`** (seek): active track
+  `scheme.onSurface`, inactive `game.timerTrack`, thumb 16dp `scheme.onSurface`
+  with a 48dp touch area, full column width; dragging seeks on release,
+  tapping the track seeks there. Updated every 250ms while playing.
+- Row under it: elapsed / total `exam_audio_elapsed` (tabular) at the start;
+  at the end two 48dp icon buttons `replay_10` (`exam_audio_back10_cd`) and
+  `forward_10` (`exam_audio_forward10_cd`), `scheme.onSurfaceVariant`.
+- At the end of the file the main button becomes `replay`
+  (`exam_audio_replay_cd`, "Yenidən dinlə") and restarts from 0:00. Unlimited
+  replays. No speed control (kept simple; not requested).
+- Media session: seek commands **allowed** in this mode (notification shows
+  the seek bar); background playback as in §42.
+- States: ready, playing, paused, ended (as above); file missing (EXAM-03
+  cleanup) → tap downloads it first (`exam_audio_redownloading` in the caption
+  line, progress in the button); failed / offline → warning banner
+  `exam_audio_failed_offline` with `common_retry`. Audio that failed during the
+  attempt is retried the same way here.
+- Accessibility: button labels `exam_audio_play_review_cd` ("Dinlə") /
+  `exam_audio_pause_cd` / `exam_audio_replay_cd`; the slider is one node with
+  `exam_audio_seek_cd` ("Audio mövqeyi") and a state text from
+  `exam_audio_elapsed`, stepping 5 s with volume-key / swipe adjustments.
+- Contrast: existing pairs (`onSurface`/`timerTrack`, `onSurface`/`surface`,
+  `onSurfaceVariant`/`surface`).
+
+## 43. Written answer field — `ExamWrittenField`
+
+Based on the text field §2 (v3 look): label above `exam_written_label`
+("Cavabın") `type.labelMedium` `scheme.onSurfaceVariant`; multiline outlined
+field, `shape.component.writtenField`, min height
+`size.examWrittenFieldMinHeight`, **grows with the text** (no inner scroll; the
+page scrolls, IME padding keeps the caret visible), input `type.bodyLarge`,
+placeholder `exam_written_placeholder`; supporting row: start
+`exam_written_supporting` (wraps), end counter `exam_written_counter`
+("0 / 1000") tabular.
+
+- Max 1 000 characters (EXAM-11): input stops at the limit; the counter turns
+  `scheme.error` with `exam_written_limit` as supporting text (icon + text, §2
+  error rules) — the typed text is never cut.
+- Keyboard: `KeyboardType.Text`, `ImeAction.Default` (new line),
+  capitalization Sentences, **autoCorrect off** (exam realism; the keyboard's
+  own suggestions strip may still show — not controllable), `hintLocales =
+  en` when the task language is English (Android 7+ keyboards switch layout).
+  Stored as typed (EXAM-11).
+- Saving: locally on every change (debounced 500ms, Room) and queued for sync;
+  no save button, no "saved" toast.
+- Read-only after the deadline: text kept, field disabled-looking border but
+  text stays `scheme.onSurface` (must stay readable).
+- Phase 2 `solution` tasks: the hint `exam_written_solution_hint` above the
+  field.
+
+## 44. Mark picker — `ExamMarkPicker` (self-assessment)
+
+Row of 5 tiles `0`, `⅓`, `½`, `⅔`, `1` (OQ-112), equal width ((content −
+4 × `space.sm`) / 5 ≈ 59dp on 360dp), min height `size.examMarkTileMinHeight`,
+`shape.component.markTile`, gap `space.sm`. Label `type.titleLarge` (sans — the
+serif has no ⅓ ⅔ glyphs; the sans subset must include U+2153 / U+2154,
+`tokens.json` 3.1.0).
+
+| State | Face | Border | Label |
+| --- | --- | --- | --- |
+| Unselected | `scheme.surface` | 1dp `scheme.outline` | `scheme.onSurface` |
+| Selected | `scheme.inverseSurface` (ink) | — | `scheme.inverseOnSurface` + 16dp `check` above the label |
+| Disabled (saving failed hard, read-only history) | M3 disabled | | |
+
+Single choice, `selectableGroup`; press §0 (ripple + scale + light tick);
+`motion.exam.markSelect`. Under the row: `exam_assess_points`
+("1,33 / 2 xal") `type.bodyMedium` `scheme.onSurfaceVariant` once a mark is
+chosen. TalkBack: role RadioButton, labels `exam_mark_0_cd` … `exam_mark_1_cd`
+("üçdə iki" etc.), group label `exam_assess_pick`.
+
+At font scale 1.3 the tile stays 59dp wide (label ≤ 21dp); at ≥ 1.8 the row
+wraps to 3 + 2 tiles (never shrinks below 48dp).
+
+## 45. Score split bar — `ScoreSplitBar` (exam result)
+
+Shows how the estimate is made (OQ-112, A2 split always visible).
+
+- Bar `size.scoreSplitBarHeight` (12dp), `shape.component.scoreSplitBar`, full
+  content width = the maximum score (100). Track `game.timerTrack`.
+- Segment 1 from the start: **auto-graded** points, `scheme.onSurface` (ink).
+- 2dp gap in the page colour, then segment 2: **self-assessed** points,
+  `scheme.secondary` (blue ink). Only drawn when > 0.
+- The rest is track: written points not assessed (or wrong).
+- Legend under the bar, one row per part (full width, label start, value end,
+  `type.bodyMedium` / `type.titleSmall` tabular), with a 12dp square in the
+  segment colour: `exam_split_auto` "Avtomatik yoxlanılıb — 46,9 / 62,2",
+  `exam_split_self` "Özün qiymətləndirdin — 20,8 / 37,8"; when written tasks are
+  unassessed the second row reads `exam_split_unassessed_count`
+  ("Qiymətləndirilməyib: 7 tapşırıq"). The values carry the meaning, the colours
+  are supporting (and the segments differ in luminance and position).
+- Motion `motion.exam.scoreSplitFill`; reduced motion: final widths.
+- TalkBack: the bar and legend are one node `exam_split_cd`.
+
+## 46. Exam note — `ExamNote`
+
+Small static box for the disclaimer and rule notes: `shape.component.examNote`,
+face `scheme.surfaceContainerLow`, no border, padding `space.md`, 20dp `info`
+icon `scheme.onSurfaceVariant` + `space.sm` + text `type.bodySmall`
+`scheme.onSurfaceVariant` (wraps, never truncated). Not interactive, read as
+text. Used for `exam_disclaimer` (catalogue, info, result, settings
+"Haqqında"), `exam_audio_skipped`, excluded-listening notes. For anything the
+user must act on use a banner (§8), not this note.
+
+### Exam rows (catalogue, history, Oyna)
+
+Two-line rows of `size.examRowMinHeight` (64dp, grows): optional 24dp line icon
+`scheme.onSurfaceVariant`, `space.md`, column (title `type.titleMedium`
+`scheme.onSurface`, supporting `type.bodyMedium` `scheme.onSurfaceVariant`, both
+wrap, never ellipsized), trailing chevron or status. Ripple, no scale.
+Variant cards in the catalogue are flat cards (§0) with the same column inside
+(`exam-catalogue.md`).

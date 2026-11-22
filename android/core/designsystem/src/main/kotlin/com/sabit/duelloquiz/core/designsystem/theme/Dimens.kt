@@ -142,6 +142,19 @@ object Sizes {
     val resultBox = 44.dp
     val resultBoxCompact = 24.dp
 
+    /** tokens 3.1.0: mock exams (components.md §39 … §46, "Exam rows"). */
+    val examTaskCell = 48.dp
+    const val EXAM_GRID_COLUMNS = 6
+    val examFlagBadge = 16.dp
+    val examAudioPlayButton = 56.dp
+    val examAudioProgressHeight = 4.dp
+    val examPlayDot = 8.dp
+    val examWrittenFieldMinHeight = 120.dp
+    val examPassageGutter = 28.dp
+    val examMarkTileMinHeight = 56.dp
+    val examRowMinHeight = 64.dp
+    val scoreSplitBarHeight = 12.dp
+
     /** Skeleton text bars (home header, category card). */
     val skeletonLineHeight = 12.dp
     val skeletonLineWidth = 120.dp
@@ -214,6 +227,25 @@ object GameSizes {
     /** components.md §33: badge dot offset and the ring in the bar colour around it. */
     val navBadgeOffset = 2.dp
     val navBadgeRing = 2.dp
+
+    /** components.md §39 / §40 / §42 / §44: exam glyph sizes, the timer pill and the segmented toggle. */
+    val examTimerPillHeight = 32.dp
+    val examTimerPillWidth = 91.dp
+    val examTimerPillWidthLarge = 105.dp
+    val examFlagGlyph = 12.dp
+    val examCellEditGlyph = 12.dp
+    val examLegendCell = 16.dp
+    val examAudioIcon = 28.dp
+    val examAudioMiniButton = 40.dp
+    val examAudioMiniHeight = 56.dp
+    val examMarkCheck = 16.dp
+    val examCriterionChipMinWidth = 36.dp
+    val examSegmentHeight = 40.dp
+    val examReviewFlag = 16.dp
+    val examSplitLegendSquare = 12.dp
+    val examSplitGap = 2.dp
+    val examMarkedUnderline = 1.5.dp
+    val examGapWidth = 40.dp
 
     /** components.md §36: the squiggle starts and ends this far outside the word; ±crest jitter. */
     val squiggleOverhang = 2.dp

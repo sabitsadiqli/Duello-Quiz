@@ -32,11 +32,11 @@ card.
 
 ## Summary
 
-Pairs checked: 306, failures: 0.
+Pairs checked: 348, failures: 0.
 
 | Theme | Lowest text pair (needs 4.5) | Lowest non-text pair (needs 3.0) |
 | --- | ---: | ---: |
-| light | 4.75 | 3.41 |
+| light | 4.65 | 3.41 |
 | dark | 4.55 | 3.31 |
 
 ## Full tables
@@ -198,6 +198,27 @@ Pairs checked: 306, failures: 0.
 | onSurfaceVariant | surfaceContainerHighest | #5F574C | #E0D6C3 | 4.93 | 4.5 | pass | dash glyph in the no-answer square, notification card supporting text |
 | onSurfaceVariant | surfaceContainerHigh | #5F574C | #E7DECC | 5.32 | 3.0 | pass | outlined flame (not yet today) |
 | streak | surfaceContainerLowest | #8F5F00 | #FCF9F3 | 5.25 | 4.5 | pass | streak flame + number on the lightest card |
+| timerWarning | surfaceContainerLow | #A2530A | #F1EADD | 4.65 | 4.5 | pass | exam: timer pill digits (<= 10 min) in the navigator sheet header |
+| timerNormal | surfaceContainerLow | #1E1B16 | #F1EADD | 14.35 | 4.5 | pass | exam: timer pill digits in the navigator sheet header |
+| inverseOnSurface | inverseSurface | #F5EFE3 | #1E1B16 | 14.99 | 4.5 | pass | exam: number in an answered task cell, selected mark tile label |
+| inverseSurface | surfaceContainerLow | #1E1B16 | #F1EADD | 14.35 | 3.0 | pass | exam: answered task cell vs navigator sheet |
+| outline | surfaceContainerLow | #7A6F60 | #F1EADD | 4.11 | 3.0 | pass | exam: unanswered task cell border vs navigator sheet |
+| onSurface | surfaceContainerLow | #1E1B16 | #F1EADD | 14.35 | 4.5 | pass | exam: number in an unanswered task cell |
+| primary | surfaceContainerLow | #A82D25 | #F1EADD | 5.72 | 3.0 | pass | exam: current-task ring and flag badge glyph on the sheet |
+| primary | surface | #A82D25 | #F5EFE3 | 5.98 | 3.0 | pass | exam: flag glyph on the task flag toggle (unflagged state outline icon is onSurface) |
+| onPrimaryContainer | primaryContainer | #5C140E | #F5DCD3 | 10.29 | 4.5 | pass | exam: flagged toggle label + filled flag icon |
+| onSurface | navIndicator | #1E1B16 | #E0D6C3 | 11.91 | 4.5 | pass | exam: selected segment 'Tapşırıq' / 'Mətn' |
+| onSurfaceVariant | surface | #5F574C | #F5EFE3 | 6.21 | 4.5 | pass | exam: paragraph numbers, plays-left text, meta lines |
+| onSurface | timerTrack | #1E1B16 | #E2D9C8 | 12.25 | 3.0 | pass | exam: audio progress line and auto-graded split segment vs track |
+| secondary | timerTrack | #2E5A78 | #E2D9C8 | 5.26 | 3.0 | pass | exam: self-assessed split segment vs track |
+| secondary | surface | #2E5A78 | #F5EFE3 | 6.43 | 3.0 | pass | exam: self-assessed legend square vs page |
+| inverseSurface | surface | #1E1B16 | #F5EFE3 | 14.99 | 3.0 | pass | exam: selected mark tile and answered legend square vs page |
+| onSecondaryContainer | secondaryContainer | #0F2D42 | #DCE7EE | 11.33 | 4.5 | pass | exam: model answer box (self-assessment, review) |
+| onSurface | surfaceContainerHighest | #1E1B16 | #E0D6C3 | 11.91 | 4.5 | pass | exam: 'Sənin cavabın' box text |
+| onSurfaceVariant | surfaceContainerLow | #5F574C | #F1EADD | 5.94 | 4.5 | pass | exam: disclaimer note text on its box |
+| onBannerInfoContainer | bannerInfoContainer | #0F2D42 | #DCE7EE | 11.33 | 4.5 | pass | exam: running-attempt banner on Oyna, 'task corrected' note |
+| onBannerWarningContainer | bannerWarningContainer | #3D2A00 | #F3E2B8 | 10.71 | 4.5 | pass | exam: offline / audio-failed / volume hint banners |
+| onPrimary | primary | #FFFFFF | #A82D25 | 6.85 | 4.5 | pass | exam: play / pause icon on the round player button |
 
 ### Dark theme
 
@@ -356,3 +377,24 @@ Pairs checked: 306, failures: 0.
 | onSurfaceVariant | surfaceContainerHighest | #B5AB97 | #38332A | 5.51 | 4.5 | pass | dash glyph in the no-answer square, notification card supporting text |
 | onSurfaceVariant | surfaceContainerHigh | #B5AB97 | #2D2921 | 6.37 | 3.0 | pass | outlined flame (not yet today) |
 | streak | surfaceContainerLowest | #E8B85A | #110F0A | 10.43 | 4.5 | pass | streak flame + number on the lightest card |
+| timerWarning | surfaceContainerLow | #F0A65E | #1D1A14 | 8.53 | 4.5 | pass | exam: timer pill digits (<= 10 min) in the navigator sheet header |
+| timerNormal | surfaceContainerLow | #EFE7D6 | #1D1A14 | 14.11 | 4.5 | pass | exam: timer pill digits in the navigator sheet header |
+| inverseOnSurface | inverseSurface | #1E1B16 | #EFE7D6 | 13.95 | 4.5 | pass | exam: number in an answered task cell, selected mark tile label |
+| inverseSurface | surfaceContainerLow | #EFE7D6 | #1D1A14 | 14.11 | 3.0 | pass | exam: answered task cell vs navigator sheet |
+| outline | surfaceContainerLow | #8C8272 | #1D1A14 | 4.59 | 3.0 | pass | exam: unanswered task cell border vs navigator sheet |
+| onSurface | surfaceContainerLow | #EFE7D6 | #1D1A14 | 14.11 | 4.5 | pass | exam: number in an unanswered task cell |
+| primary | surfaceContainerLow | #EC7B6F | #1D1A14 | 6.30 | 3.0 | pass | exam: current-task ring and flag badge glyph on the sheet |
+| primary | surface | #EC7B6F | #17150F | 6.63 | 3.0 | pass | exam: flag glyph on the task flag toggle (unflagged state outline icon is onSurface) |
+| onPrimaryContainer | primaryContainer | #FFDAD3 | #5C1F18 | 9.75 | 4.5 | pass | exam: flagged toggle label + filled flag icon |
+| onSurface | navIndicator | #EFE7D6 | #38332A | 10.19 | 4.5 | pass | exam: selected segment 'Tapşırıq' / 'Mətn' |
+| onSurfaceVariant | surface | #B5AB97 | #17150F | 8.03 | 4.5 | pass | exam: paragraph numbers, plays-left text, meta lines |
+| onSurface | timerTrack | #EFE7D6 | #3A342B | 10.01 | 3.0 | pass | exam: audio progress line and auto-graded split segment vs track |
+| secondary | timerTrack | #9EC3DD | #3A342B | 6.63 | 3.0 | pass | exam: self-assessed split segment vs track |
+| secondary | surface | #9EC3DD | #17150F | 9.82 | 3.0 | pass | exam: self-assessed legend square vs page |
+| inverseSurface | surface | #EFE7D6 | #17150F | 14.84 | 3.0 | pass | exam: selected mark tile and answered legend square vs page |
+| onSecondaryContainer | secondaryContainer | #D6E7F3 | #1F3B50 | 9.21 | 4.5 | pass | exam: model answer box (self-assessment, review) |
+| onSurface | surfaceContainerHighest | #EFE7D6 | #38332A | 10.19 | 4.5 | pass | exam: 'Sənin cavabın' box text |
+| onSurfaceVariant | surfaceContainerLow | #B5AB97 | #1D1A14 | 7.63 | 4.5 | pass | exam: disclaimer note text on its box |
+| onBannerInfoContainer | bannerInfoContainer | #D6E7F3 | #1F3B50 | 9.21 | 4.5 | pass | exam: running-attempt banner on Oyna, 'task corrected' note |
+| onBannerWarningContainer | bannerWarningContainer | #F6E2B5 | #4A3812 | 8.83 | 4.5 | pass | exam: offline / audio-failed / volume hint banners |
+| onPrimary | primary | #2B0A06 | #EC7B6F | 6.64 | 4.5 | pass | exam: play / pause icon on the round player button |

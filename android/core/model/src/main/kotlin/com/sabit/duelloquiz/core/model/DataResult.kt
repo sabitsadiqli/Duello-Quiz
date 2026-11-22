@@ -77,6 +77,17 @@ enum class ApiErrorCode(val wire: String) {
     DailyAlreadyPlayed("daily_already_played"),
     DailyUnavailable("daily_unavailable"),
     InvalidPushToken("invalid_push_token"),
+
+    // Mock exams (API 0.5.0, ADR 0002).
+    TaskNotInAttempt("task_not_in_attempt"),
+    GroupNotInAttempt("group_not_in_attempt"),
+    ExamVariantNotFound("exam_variant_not_found"),
+    ExamAttemptNotFound("exam_attempt_not_found"),
+    VariantUnavailable("variant_unavailable"),
+    VariantVersionMismatch("variant_version_mismatch"),
+    ExamAttemptRunning("exam_attempt_running"),
+    AttemptClosed("attempt_closed"),
+    AttemptNotFinished("attempt_not_finished"),
     Unknown(""),
     ;
 

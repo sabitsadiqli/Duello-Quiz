@@ -102,6 +102,14 @@ Options: "Sistem" (default), "İşıqlı", "Qaranlıq". Stored in DataStore
   list of third-party licences is shown.
 - Given the user long-presses or taps the version, When it happens, Then nothing
   hidden is unlocked (no debug menu in release builds).
+- (design, 2026-11-21; post-MVP, exams flag on only) Given the "Haqqında" section,
+  When shown, Then after "Açıq mənbə lisenziyaları" a non-clickable row "Sınaqlar
+  haqqında" shows the full DİM disclaimer as supporting text, wrapped, never
+  truncated (EXAM-25); with the flag off the row is absent.
+- (design, 2026-11-21; exams flag on only) Given the licences screen, When shown, Then
+  a section "DİNLƏMƏ SƏSLƏRİ" credits the Piper TTS voices of the listening audio
+  (CC BY 4.0 voices with a link to their model card; the public-domain voice listed
+  for transparency, OQ-120); hidden with the flag off.
 
 ### SET-04 Sign-out
 
@@ -145,6 +153,13 @@ Recommended flow (blocked by OQ-014 for data handling details):
   (`docs/mvp-spec.md` §3a, PROG-10, NOTIF-08); the client calls
   `FirebaseMessaging.deleteToken()` and cancels any shown notifications during the
   local cleanup.
+- (design, 2026-11-21; post-MVP, exams flag) Given mock exams, When `DELETE /v1/me`
+  runs, Then all exam attempts, answers, written texts, flags, listening plays and
+  self-assessed marks are deleted too (EXAM-23); the client deletes local attempts and
+  queued answers and cancels the exam reminder alarm (EXAM-27). Proposal: a running
+  attempt does not block deletion (it is deleted with the rest; nothing else depends
+  on it). The explanation text then also names "sınaq nəticələrin"
+  (designer owns the copy).
 - Given a deleted user appears in an opponent's stored match, When the opponent's
   data is read, Then the deleted player is shown as "Silinmiş oyunçu" (per OQ-014).
 
@@ -207,6 +222,10 @@ v3: the daily switch is mirrored on the Gündəlik tab as "Hər gün xatırlat"
   opened, Then "Gündəlik çağırış xatırlatması" shows off (and vice versa, NOTIF-06).
 - Given the supporting texts, When shown, Then they name no clock time ("Səhər" only;
   OQ-D36, decided by Sabit 2026-11-17).
+- (design, 2026-11-21; exams flag) Given the exam reminder "10 dəqiqə qalıb"
+  (EXAM-27, NOTIF-09), When "Bildirişlər" is shown, Then it has **no** switch for it
+  in Phase 1; the system channel "Sınaqlar" is the only control, and the "blocked by
+  the phone" row of NOTIF-06 does not mention it.
 
 ## 3. Business rules
 
@@ -257,3 +276,8 @@ v3 (2026-11-17): entry from Profil per the direction approved by Sabit 2026-11-1
 Design questions that touch this file: OQ-D36 (decided 2026-11-17: "Səhər", no clock
 time), OQ-D37 (legal pages palette, open, separate task; does not block the SET-06
 path update).
+
+Mock exams (post-MVP, 2026-11-21): SET-03 rows "Sınaqlar haqqında" and "DİNLƏMƏ
+SƏSLƏRİ" (EXAM-25, OQ-120, OQ-130), SET-05 exam data deletion (EXAM-23), SET-07 no
+exam reminder switch (OQ-D45). Design: `design/screens/settings.md` 12a,
+`design/screens/licenses.md`.

@@ -3,6 +3,8 @@
 
     <!-- Android 13+: asked only after the in-app explanation on a result screen (OQ-090). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- EXAM-27: re-arm the "10 dəqiqə qalıb" reminder of a running sınaq after a reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application>
         <!-- FCM: token refresh and reminders received while the app is in the foreground. When the
@@ -24,6 +26,20 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="daily_reminder" />
+
+        <!-- EXAM-27 (OQ-D45): the local mock-exam reminder (inexact alarm, never asks for the
+             permission). Inert while the exams flag is off. -->
+        <receiver
+            android:name=".exam.ExamReminderReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".exam.ExamReminderBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

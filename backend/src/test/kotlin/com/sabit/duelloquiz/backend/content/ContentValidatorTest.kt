@@ -28,8 +28,9 @@ class ContentValidatorTest {
     private val schema = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
         .getSchema(repoRoot.resolve("content/schema/question.schema.json").readText())
 
+    // Mock-exam samples (content/samples/exams) have their own schema: ExamValidatorTest.
     private fun sampleFiles(): List<Path> = Files.walk(repoRoot.resolve("content/samples")).use { s ->
-        s.filter { it.extension == "json" }.sorted().toList()
+        s.filter { it.extension == "json" && !it.startsWith(repoRoot.resolve("content/samples/exams")) }.sorted().toList()
     }
 
     private fun validate(element: JsonElement): Pair<ValidQuestion?, List<ImportIssue>> {

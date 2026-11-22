@@ -16,7 +16,10 @@ data class AwardRequest(
     val userId: UUID,
     val sourceType: SourceType,
     val sourceId: UUID,
-    /** Start of the activity: its Baku day is the day it counts for (OQ-087). */
+    /**
+     * Its Baku day is the day the activity counts for: the start for quizzes, dailies and
+     * matches (OQ-087), the submit time for mock exams (OQ-132).
+     */
     val startedAt: Instant,
     /**
      * Real play (OQ-085): quiz or daily with ≥ 1 answer, a `finished` match the user did

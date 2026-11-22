@@ -59,7 +59,10 @@ enum class XpReason(val db: String) {
 }
 
 enum class SourceType(val db: String) {
-    QUIZ("quiz"), DAILY("daily"), DUEL("duel");
+    QUIZ("quiz"), DAILY("daily"), DUEL("duel"),
+
+    /** Mock exam attempt (OQ-125): makes the day active, never gives XP. */
+    EXAM("exam");
 }
 
 /** One XP amount; [categoryId] set when it also counts for that category (OQ-084). */
@@ -116,6 +119,7 @@ class XpRules(private val config: ProgressConfig = ProgressConfig()) {
         SourceType.QUIZ -> eligibleSameDay >= config.quizSessionsPerDay
         SourceType.DUEL -> eligibleSameDay >= config.duelMatchesPerDay || eligibleSameOpponent >= config.duelSameOpponentPerDay
         SourceType.DAILY -> false
+        SourceType.EXAM -> false
     }
 }
 

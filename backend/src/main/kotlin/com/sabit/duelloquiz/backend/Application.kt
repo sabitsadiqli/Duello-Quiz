@@ -33,6 +33,12 @@ import com.sabit.duelloquiz.backend.duel.DuelStore
 import com.sabit.duelloquiz.backend.duel.InMemoryMatchmakingQueue
 import com.sabit.duelloquiz.backend.duel.MatchmakingQueue
 import com.sabit.duelloquiz.backend.duel.duelRoutes
+import com.sabit.duelloquiz.backend.exam.ExamImporter
+import com.sabit.duelloquiz.backend.exam.ExamRepository
+import com.sabit.duelloquiz.backend.exam.ExamService
+import com.sabit.duelloquiz.backend.exam.ExamTemplates
+import com.sabit.duelloquiz.backend.exam.ExamViews
+import com.sabit.duelloquiz.backend.exam.examRoutes
 import com.sabit.duelloquiz.backend.image.ImageProcessor
 import com.sabit.duelloquiz.backend.image.ImageRepository
 import com.sabit.duelloquiz.backend.image.ImageService
@@ -150,6 +156,11 @@ fun featureModule(config: AppConfig) = module {
     single { ImageProcessor(config.images) }
     single { ImageService(get(), get(), get(), get(), config.images, get()) }
     single { ContentImporter(get(), get(), get(), get(), get()) }
+    single { ExamTemplates.load() }
+    single { ExamRepository() }
+    single { ExamViews(get(), config.exams) }
+    single { ExamService(get(), get(), get(), get(), get(), config.exams, get()) }
+    single { ExamImporter(get(), get(), get(), get(), get(), config.exams, get()) }
     single<DuelStore> { DbDuelStore(get(), get(), config.duel.eloK, get()) }
     single<MatchmakingQueue> { InMemoryMatchmakingQueue() }
     single { DuelScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) } withOptions { onClose { it?.scope?.cancel() } }
@@ -191,6 +202,7 @@ fun Application.configureApp() {
                 dailyRoutes(get(), users)
                 progressRoutes(get(), get(), users)
                 notificationRoutes(get(), users)
+                if (config.exams.enabled) examRoutes(get(), users)
             }
         }
         notFoundFallback()
@@ -198,6 +210,7 @@ fun Application.configureApp() {
 
     startSessionExpiryJob(get(), get(), config.quiz.expirySweepIntervalMs)
     startNotificationScheduler(get(), get(), config.notifications)
+    if (config.exams.enabled) startExamFinalizeJob(get(), config.exams.finalizeSweepIntervalMs)
     val duel = get<DuelService>()
     launch {
         try {
@@ -223,6 +236,24 @@ private fun Application.startSessionExpiryJob(service: QuizService, daily: Daily
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 log.error("quiz_session_expiry_failed", e)
+            }
+        }
+    }
+}
+
+/** Finalizes exam attempts whose late-upload window ended (OQ-118, EXAM-14). */
+private fun Application.startExamFinalizeJob(service: ExamService, intervalMs: Long) {
+    if (intervalMs <= 0) return
+    val log = LoggerFactory.getLogger("com.sabit.duelloquiz.backend.exam.ExamFinalizeJob")
+    launch {
+        while (isActive) {
+            delay(intervalMs)
+            try {
+                val done = service.finalizeOverdue()
+                if (done > 0) log.info("exam_attempts_finalized count={}", done)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                log.error("exam_finalize_failed", e)
             }
         }
     }

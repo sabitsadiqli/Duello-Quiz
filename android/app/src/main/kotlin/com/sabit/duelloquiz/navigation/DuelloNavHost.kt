@@ -37,6 +37,10 @@ import com.sabit.duelloquiz.feature.auth.navigation.navigateToAuth
 import com.sabit.duelloquiz.feature.duel.DuelExit
 import com.sabit.duelloquiz.feature.duel.navigation.duelScreen
 import com.sabit.duelloquiz.feature.duel.navigation.navigateToDuel
+import com.sabit.duelloquiz.feature.exams.navigation.examScreens
+import com.sabit.duelloquiz.feature.exams.navigation.navigateToExamAttempt
+import com.sabit.duelloquiz.feature.exams.navigation.navigateToExamCatalog
+import com.sabit.duelloquiz.core.notifications.exam.ExamOpens
 import com.sabit.duelloquiz.feature.home.navigation.DailyTabDestination
 import com.sabit.duelloquiz.feature.home.navigation.PlayDestination
 import com.sabit.duelloquiz.feature.home.navigation.dailyTabScreen
@@ -66,7 +70,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * the tab they start from; the bar is hidden while one is shown and popping it lands on that tab.
  */
 @Composable
-fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
+fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean, examsEnabled: Boolean = false, examOpens: ExamOpens? = null) {
     val navController = rememberNavController()
     val tabsViewModel: MainTabsViewModel = hiltViewModel()
     val dailyBadge by tabsViewModel.dailyBadge.collectAsStateWithLifecycle()
@@ -122,6 +126,8 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
                 onOpenDailyTab = { selectTab(TopLevelTab.DAILY) },
                 onOpenProfileTab = { selectTab(TopLevelTab.PROFILE) },
                 scrollToTop = scrollRequests.flow(TopLevelTab.PLAY),
+                onOpenExams = { if (examsEnabled) navController.navigateToExamCatalog() },
+                onOpenExamAttempt = { attemptId -> if (examsEnabled) navController.navigateToExamAttempt(attemptId) },
             )
             dailyTabScreen(
                 onOpenDaily = navController::navigateToDaily,
@@ -141,6 +147,10 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
                         navController.popBackToPlay(if (exit == DuelExit.LEFT_MATCH) HomeNotice.DuelLeft else null)
                     },
                 )
+            }
+            // EXAM-01: without the flag no exam route exists (no entry, no deep link).
+            if (examsEnabled) {
+                examScreens(navController, onExit = { navController.popBackToPlay(null) })
             }
             quizScreens(
                 navController = navController,
@@ -171,6 +181,15 @@ fun DuelloNavHost(authState: AuthState, duelEnabled: Boolean) {
                 selectTab(TopLevelTab.DAILY)
                 scrollRequests.request(TopLevelTab.DAILY)
             }
+        }
+    }
+
+    // EXAM-27: the reminder tap opens the running attempt (only while signed in).
+    LaunchedEffect(hasBackStack, examsEnabled) {
+        if (!hasBackStack || !examsEnabled || examOpens == null) return@LaunchedEffect
+        examOpens.pending.filterNotNull().collect {
+            val attemptId = examOpens.consume() ?: return@collect
+            if (!navController.currentBackStackEntry?.destination.isInAuthGraph()) navController.navigateToExamAttempt(attemptId)
         }
     }
 

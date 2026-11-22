@@ -15,10 +15,13 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     implementation(project(":core:auth"))
     implementation(project(":core:common"))
+    implementation(project(":core:database"))
     implementation(project(":core:datastore"))
     implementation(project(":core:network"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.serialization.json)
+    // Exam package download and the offline answer sync (EXAM-03, EXAM-13, EXAM-14).
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.androidx.datastore.preferences)
     testImplementation(libs.kotlinx.coroutines.test)

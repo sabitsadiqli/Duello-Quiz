@@ -25,6 +25,7 @@ object AppModule {
         privacyPolicyUrl = BuildConfig.PRIVACY_POLICY_URL,
         duelEnabled = BuildConfig.DUEL_ENABLED,
         applicationId = BuildConfig.APPLICATION_ID,
+        examsEnabled = BuildConfig.EXAMS_ENABLED,
     )
 
     /** OQ-101: Crashlytics + Analytics only when the build has a Firebase project. */

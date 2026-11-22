@@ -152,10 +152,11 @@ the designer adds them to `design/copy/az.md`.
 | Question bank | — | The real questions in the private content repo cloned to `content/bank/`. |
 | Difficulty | — | 1 easy, 2 medium, 3 hard. Not shown in the MVP UI. |
 
-## Mock exams (post-MVP, draft)
+## Mock exams (post-MVP)
 
-Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP; UI
-(az) values are proposals. DİM facts: `mock-exams.md` §2.
+Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP, behind
+the exams flag. UI (az) values follow the Phase 1 design of 2026-11-21 (final copy in
+`design/copy/az.md`). DİM facts: `mock-exams.md` §2.
 
 | Term | UI (az) | Meaning |
 | --- | --- | --- |
@@ -167,12 +168,14 @@ Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP;
 | Stage 2 (admission exam) | Qəbul (II mərhələ) | Specialty-group exam: 3 subjects × 30 tasks, 3 h, max 400; wrong closed answers cost 1/4 (Source B, verify, OQ-129). |
 | Specialty group | İxtisas qrupu | DİM admission group I, II, III (DT/TC), IV, V; decides the stage 2 subjects and weights. |
 | Group weight | — | DİM multiplier of a stage 2 subject score in a group (1.5 or 1). |
-| Sınaq variant | Sınaq №3 | One published, versioned set of tasks of an exam type. Published or unpublished as a whole. |
+| Sınaq variant | Sınaq №3 | One published, versioned set of tasks of an exam type. Published or unpublished as a whole. The app builds the name "Sınaq №N" from `variantNumber` (OQ-D49); the server sends only the exam type title. |
 | Subject block (section) | Fənn | All tasks of one subject inside a variant, e.g. "İngilis dili". A section may contain task groups. |
 | Subject sınaq | Fənn sınağı | Attempt with one subject block only, own duration (OQ-117); its estimate is never shown as a full-exam total. |
 | Exam attempt | — | One user's play-through of a variant (full or subject), from start to submit or server finalization. Resumable (OQ-118). Not a "session". |
-| Exam deadline | — | Server time after which an attempt accepts no live answers: start + duration + grace (OQ-117); only the late-upload window extends it. |
-| Late-upload window | — | Proposed 24 h after the exam deadline in which answers stored on the device before the deadline may still be uploaded (OQ-118). |
+| Exam end time | — (timer "0:00") | `endsAtEpochMs` = start + duration (60 min in Phase 1). The only time the UI counts down to; at this moment the client auto-submits (OQ-D41). |
+| Exam deadline | — | `deadlineEpochMs` = exam end time + 2 min grace (OQ-117). Server time after which an attempt accepts no live answers; never displayed; only the late-upload window extends it. |
+| Late-upload window | — | 24 h after the exam deadline in which answers stored on the device before the deadline may still be uploaded, only from the device that held the attempt (OQ-118). |
+| Running attempt | Davam edən sınaq | An attempt that is started and not yet submitted or finalized; at most one per user (OQ-124). Shown as the Oyna banner "Davam edən sınaq: 42 dəq qalıb" and the status "Davam edir — 42 dəq qalıb" (HOME-10, EXAM-01). |
 | Exam package | — | Everything an attempt needs on the device, downloaded before start: tasks without keys, images, audio, manifest with sizes/hashes. |
 | Task | Tapşırıq | One exam item of a given task type. Not a "question" (a question always has exactly 4 options); exam UI says "tapşırıq". |
 | Closed task | Qapalı tapşırıq | Single-choice task with 2–5 options (OQ-113); 1 point if correct. |
@@ -181,13 +184,21 @@ Added 2026-11-16 with `docs/requirements/mock-exams.md` (EXAM-01 …). Post-MVP;
 | Task group | — | Several tasks sharing one reading text or one listening audio. |
 | Reading text (passage) | Mətn | Long text of a reading task group; licence recorded (OQ-123). |
 | Listening text | Dinləmə mətni | Audio of a listening task group with its transcript; play rules OQ-119. |
-| Transcript | Mətnin yazılı forması | Text of a listening audio; shown only after submit. |
+| Play (listening) | Dinləmə 1 / 2 | One run of the listening audio from start to end inside an attempt; pause allowed, no seek; counted as used once 10 s have played; 2 per group (OQ-119). After an app kill a counted play resumes paused at its saved position (OQ-D43). |
+| Skip listening | Dinləmə hissəsini keç | Choice made on the info screen **before** the start only, for deaf or hard-of-hearing users: listening tasks are hidden and removed from the estimate and its maximum (OQ-119, OQ-D42, EXAM-28). |
+| Reduced maximum | Maksimum bal: 83,8 | The maximum score of an attempt after listening was excluded (skipped or audio failed); the estimate is shown out of it, never rescaled to 100 (OQ-D42). |
+| Review player | — | The listening player in the review and the self-assessment transcript sheet, after submit only: free replay, seek, ±10 s, no play counter (OQ-D44, EXAM-26). Not the "Məşq rejimi" practice player of Phase 2. |
+| Exam time reminder | 10 dəqiqə qalıb | The one local notification per attempt when 10 min are left and the app is in the background; channel "Sınaqlar"; never asks for permission (OQ-D45, EXAM-27, NOTIF-09). Not a push. |
+| Transcript | Transkript | Text of a listening audio; shown only after submit (review, self-assessment). |
 | Answer revision | — | Each change of an answer on a task; the server keeps the highest revision before the deadline. |
-| Flag | İşarələ | User mark on a task to come back to; no effect on the score. |
-| Submit | Sınağı bitir | Ending an attempt by the user or automatically at the deadline; the attempt becomes read-only and is scored. |
+| Flag | İşarələ / İşarələnib | User mark on a task to come back to; no effect on the score. |
+| Submit | Sınağı bitir | Ending an attempt by the user or automatically at the exam end time ("Vaxt bitdi"); the attempt becomes read-only and is scored. |
+| Server finalization | Bitirilməyib — server yekunlaşdırıb | The server ends an attempt that was never submitted once the late-upload window passed, scoring only synced answers. |
+| Unanswered (exam) | Cavabsız | A closed task without a chosen option, or a written task with no text. Empty written tasks count as cavabsız in the submit dialog but can still be self-assessed (EXAM-12, EXAM-14). |
+| Review (exam) | Təhlil | The after-submit screen listing every task with answer, key, explanation, model answer, criteria, transcript and review player (EXAM-18). |
 | Model answer | Nümunəvi cavab | Correct written answer or solution prepared by the content team, shown after submit. |
 | Marking criteria | Qiymətləndirmə meyarları | Rules mapping a written answer to 0, ⅓, ½, ⅔ or 1. |
-| Self-assessment | Özünü qiymətləndirmə | The user's own mark for a written task, chosen after submit against the model answer and criteria; always shown separately from auto-graded points. |
+| Self-assessment | Qiymətləndirmə ("Özün qiymətləndirdin") | The user's own mark for a written task, chosen after submit against the model answer and criteria; always shown separately from auto-graded points; can be changed any time later ("Qiymətləri dəyiş", OQ-D47). |
 | Estimated score | Təxmini bal | Score computed with DİM's public formula from our tasks and the user's self-assessment. Never "DİM balı". |
 | Relative score (NB) | — | DİM stage 2 subject score before weighting: NBq (closed, −1/4 per wrong answer, floor 0) + NBa (coded + 2 × written), each × 100/33. |
 | Retake | Təkrar cəhd | Attempt of a variant the user has already submitted (answers known), labelled in results (OQ-124). |

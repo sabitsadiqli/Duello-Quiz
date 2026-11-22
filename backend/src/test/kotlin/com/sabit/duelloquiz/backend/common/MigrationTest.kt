@@ -37,6 +37,8 @@ class MigrationTest : DbTest() {
             "daily_challenges", "daily_challenge_questions", "daily_attempts", "daily_answers", "user_progress",
             "user_category_xp", "user_active_days", "user_freeze_days", "progress_awards", "xp_events", "push_tokens",
             "notification_settings", "notification_log",
+            "exam_templates", "exam_audio", "exam_variants", "exam_variant_versions", "exam_groups", "exam_tasks",
+            "exam_task_options", "exam_attempts", "exam_answers", "exam_listening_plays", "exam_self_assessments",
         ).forEach { assertTrue(it in tables, "missing table $it") }
     }
 

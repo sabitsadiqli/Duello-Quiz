@@ -91,6 +91,33 @@ object DuelloIcons {
     @DrawableRes val ArrowForward = R.drawable.ic_arrow_forward
     @DrawableRes val Notifications = R.drawable.ic_notifications
 
+    // Mock exams (components.md §39 … §46, exam-*.md).
+    @DrawableRes val Assignment = R.drawable.ic_assignment
+    @DrawableRes val Backspace = R.drawable.ic_backspace
+    @DrawableRes val Calculate = R.drawable.ic_calculate
+    @DrawableRes val ChevronLeft = R.drawable.ic_chevron_left
+    @DrawableRes val DownloadDone = R.drawable.ic_download_done
+    @DrawableRes val EditNote = R.drawable.ic_edit_note
+    @DrawableRes val EditOff = R.drawable.ic_edit_off
+    @DrawableRes val FlagFilled = R.drawable.ic_flag_filled
+    @DrawableRes val FolderOff = R.drawable.ic_folder_off
+    @DrawableRes val Forward10 = R.drawable.ic_forward_10
+    @DrawableRes val Grade = R.drawable.ic_grade
+    @DrawableRes val GridView = R.drawable.ic_grid_view
+    @DrawableRes val Headphones = R.drawable.ic_headphones
+    @DrawableRes val History = R.drawable.ic_history
+    @DrawableRes val MenuBook = R.drawable.ic_menu_book
+    @DrawableRes val Pause = R.drawable.ic_pause
+    @DrawableRes val RadioButtonUnchecked = R.drawable.ic_radio_button_unchecked
+    @DrawableRes val RateReview = R.drawable.ic_rate_review
+    @DrawableRes val Refresh = R.drawable.ic_refresh
+    @DrawableRes val Replay = R.drawable.ic_replay
+    @DrawableRes val Replay10 = R.drawable.ic_replay_10
+    @DrawableRes val Spellcheck = R.drawable.ic_spellcheck
+    @DrawableRes val Subject = R.drawable.ic_subject
+    @DrawableRes val SwapHoriz = R.drawable.ic_swap_horiz
+    @DrawableRes val Update = R.drawable.ic_update
+
     /**
      * Category icon by the server `iconKey` (OQ-044, components.md §5; v3: Material Symbols
      * Outlined, weight 300). Unknown keys get the

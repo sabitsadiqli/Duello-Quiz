@@ -31,6 +31,8 @@ fun NavGraphBuilder.playScreen(
     onOpenDailyTab: () -> Unit,
     onOpenProfileTab: () -> Unit,
     scrollToTop: Flow<Unit>,
+    onOpenExams: () -> Unit = {},
+    onOpenExamAttempt: (attemptId: String) -> Unit = {},
 ) {
     composable<PlayDestination> {
         HomeRoute(
@@ -39,6 +41,8 @@ fun NavGraphBuilder.playScreen(
             onOpenDailyTab = onOpenDailyTab,
             onOpenProfileTab = onOpenProfileTab,
             scrollToTop = scrollToTop,
+            onOpenExams = onOpenExams,
+            onOpenExamAttempt = onOpenExamAttempt,
         )
     }
 }

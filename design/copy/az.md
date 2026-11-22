@@ -2,7 +2,7 @@
 
 Owner: `designer`. Source of truth for every user-facing string of the MVP screens
 (auth, home, category quiz, settings, duel, profile, daily challenge, progression,
-notifications). `android-dev` copies the keys 1:1 into
+notifications) and of the post-MVP mock exams ("Sınaqlar", `exam_`). `android-dev` copies the keys 1:1 into
 `android/app/src/main/res/values/strings.xml`; nothing user-facing is hard-coded.
 Terms follow `docs/requirements/glossary.md`; where this file decides final wording
 that differs from a proposal in the requirements, this file wins (see "Changes
@@ -27,6 +27,10 @@ against the requirement proposals" at the end).
 
 - **OQ-D36 — reminder "time" on the Gündəlik tab** (`daily-tab.md`): "Səhər" without a
   clock time (as decided for settings). Decided by Sabit 2026-11-17.
+
+- **OQ-D49 — exam variant names** (`exam-catalogue.md`): the app builds "Sınaq №1"
+  from `variantNumber`; the type title is server i18n. Needs U+2116 in the font
+  subsets (tokens 3.1.0). **Decided by Sabit 2026-11-21: proposal accepted.**
 
 ## Tone: "sən"
 
@@ -823,6 +827,379 @@ and `home_daily_*` (now on the Gündəlik tab; prefix kept to avoid churn),
 `profile_categories_title`, `settings_licenses_section_assets`,
 `settings_licenses_section_libraries` (see their rows above, marked **v3**).
 
+### exam_ — mock exams "Sınaqlar" (tokens 3.1.0, 2026-11-21)
+
+Phase 1 = "Buraxılış — İngilis dili" subject sınaq (OQ-128). Screens:
+`design/screens/exam-*.md`; components `components.md` §3a, §39 … §46. Copy
+rules for this feature, on top of the "sən" tone:
+- **Never claim to be an official or real DİM exam** (EXAM-25, OQ-130): no
+  "rəsmi", "real", "DİM imtahanı", "DİM balı", no year, no DİM logo. "DİM
+  formatında" and "DİM formatına uyğun" are the only allowed uses of "DİM",
+  plus the disclaimer and "Bu, rəsmi DİM nəticəsi deyil."
+- The score is always "Təxmini bal"; raw points are "xal", the 100-scale score
+  is "bal".
+- Never "mərc", "stavka", no reward or casino wording (nothing to win here).
+- No ordinal suffixes after placeholders ("1-i", "2-si" change with the number):
+  use "%1$d / %2$d", "Abzas %1$d", "A variantı" instead.
+- Fractions ⅓ ⅔ only in the sans face (Fraunces has no such glyphs); "№" and
+  the fractions need the 3.1.0 subset (`tokens.json`), check with
+  `python3 design/tools/text_width.py --glyphs "№⅓½⅔"`.
+- Widths: **measured** with `design/tools/text_width.py` (stdlib; reads the
+  shipped font files; same method as "v3 minimal": hmtx advances, kerning
+  ignored, letter spacing added). Format "role width at 1.0 / 1.3dp (budget)".
+  `wrap` strings are body text that wraps freely. Budgets: `bar` 264, `btn` 280,
+  half pill 110 (84 with an icon), `dbtn` ~100, status line 242, segment 114,
+  mark tile 51, exam header centre 157 / 143.
+
+#### Oyna entry (`home.md`, `exam-catalogue.md`)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `home_exams_overline` | İMTAHANA HAZIRLIQ | Overline above the Sınaqlar row (authored in capitals). overline 137 / 178dp (328): fits |
+| `home_exams_row_title` | Sınaqlar | Exam row title. titleMedium 64 / 83dp (260): fits |
+| `home_exams_row_supporting` | DİM formatında məşq sınaqları | Row supporting; 2 lines at 1.3 (allowed). bodyMedium 203 / 264dp (260): wraps at 1.3 |
+| `home_exams_row_running` | Davam edir — %1$s qalıb | Row supporting while an attempt runs; `%1$s` = `exam_duration_min`. bodyMedium 178 / 232dp (260): fits — measured "Davam edir — 42 dəq qalıb" |
+| `home_exams_row_cd` | Sınaqlar. %1$s | `%1$s` = the visible supporting text. |
+| `home_exam_running_banner` | Davam edən sınaq: %1$s qalıb | Compact info banner, text budget 244dp (icon + chevron); wraps at 1.3 (allowed). bodyMedium 214 / 279dp (244): wraps at 1.3 — measured "Davam edən sınaq: 42 dəq qalıb" |
+| `exam_resume_click_cd` | sınağa davam et | Click label of the running banner / card. |
+
+#### Shared (`exam_`)
+
+Durations and sizes are built in code from numbers; decimal comma, one place.
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_disclaimer` | Sınaqlar Duello Quiz komandasının orijinal tapşırıqlarıdır və DİM formatına uyğun hazırlanıb. Dövlət İmtahan Mərkəzi (DİM) ilə əlaqəsi yoxdur və DİM tərəfindən təsdiqlənməyib. Bal təxminidir. | EXAM-25 / OQ-130 text **unchanged** (decided). `wrap`, exam note §46: 5 lines at 1.0, 7 at 1.3 on 328dp. Catalogue, info, result, settings. |
+| `exam_estimate_note` | Nəticə təxmini baldır, rəsmi DİM nəticəsi deyil. | Second paragraph of the info-screen note. `wrap`. |
+| `exam_variant_title` | Sınaq №%1$d | "Sınaq №1". Needs U+2116 in both font subsets (tokens 3.1.0). Never a year, "rəsmi", "real" (EXAM-25). titleMedium 64 / 83dp (240): fits — measured "Sınaq №1"; glyph № not in the shipped subset (tokens 3.1.0 adds it) |
+| `exam_size_mb` | %1$s MB | "3,4 MB"; below 0,1 → "0,1 MB". |
+| `exam_duration_min` | %1$d dəq | "42 dəq" in status lines; below 1 min → "1 dəq" (never "0 dəq" while running). |
+| `exam_duration_hm` | %1$d saat %2$d dəq | Phase 2 (≥ 60 min left in a 180-min attempt). |
+| `exam_duration_cd` | %1$d dəqiqə | `plurals`. Content descriptions. |
+| `exam_seconds_cd` | %1$d saniyə | `plurals`. Timer content description in the last minute. |
+| `exam_retake_label` | Təkrar cəhd | Chip (EXAM-20). labelMedium 77 / 100dp (200): fits |
+| `exam_mode_subject` | Fənn sınağı | Chip (EXAM-19). labelMedium 72 / 93dp (200): fits |
+| `exam_mode_full` | Tam sınaq | Chip, Phase 2. labelMedium 64 / 84dp (200): fits |
+| `exam_back_to_catalogue` | Sınaqlara qayıt | `btn`. labelLarge 109 / 142dp (280): fits |
+
+#### Catalogue and history (`exam-catalogue.md`)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_catalogue_title` | Sınaqlar | `bar`. titleLarge 79 / 102dp (264): fits |
+| `exam_type_meta` | %1$s · %2$d tapşırıq · %3$s | `%1$s` = `exam_mode_subject`, `%3$s` = `exam_duration_min`. bodyMedium 215 / 280dp (328): fits — measured "Fənn sınağı · 30 tapşırıq · 60 dəq" |
+| `exam_variant_meta` | %1$d tapşırıq · %2$s · %3$s | Variant card line 2. bodyMedium 187 / 243dp (264): fits — measured "30 tapşırıq · 60 dəq · 3,4 MB" |
+| `exam_status_not_started` | Başlanmayıb | Status line (18dp icon + text, budget 242dp). labelMedium 83 / 108dp (242): fits |
+| `exam_status_downloaded` | Yüklənib · başlamağa hazır | labelMedium 170 / 222dp (242): fits |
+| `exam_status_downloading` | Yüklənir… %1$d%% | `%%` = literal percent sign. labelMedium 103 / 134dp (242): fits — measured "Yüklənir… 100%" |
+| `exam_status_running` | Davam edir — %1$s qalıb | labelMedium 171 / 223dp (242): fits — measured "Davam edir — 42 dəq qalıb" |
+| `exam_status_pending` | Nəticə hesablanır | Submitted offline, not yet scored. labelMedium 113 / 147dp (242): fits |
+| `exam_status_needs_assessment` | Yazılılar qiymətləndirilməyib | labelMedium 182 / 237dp (242): fits |
+| `exam_status_score` | Təxmini bal: %1$s | Never "DİM balı" (EXAM-15). labelMedium 119 / 154dp (242): fits — measured "Təxmini bal: 100,0" |
+| `exam_status_update` | Yenilənib — yenidən yüklə | labelMedium 168 / 219dp (242): fits |
+| `exam_variant_card_cd` | %1$s. %2$d tapşırıq, %3$s, %4$s meqabayt. %5$s. | `%3$s` = `exam_duration_cd`, `%5$s` = status text. |
+| `exam_catalogue_empty_title` | Hələ ki sınaq yoxdur | State view title (headlineSmall, wraps). headlineSmall 219 / 284dp (328): fits |
+| `exam_catalogue_empty_body` | Yeni sınaqlar hazırlanır. Bir az sonra yenidən yoxla. | `wrap`. |
+| `exam_catalogue_error` | Sınaqları yükləmək alınmadı. | State view title. headlineSmall 313 / 407dp (328): wraps at 1.3 |
+| `exam_catalogue_offline` | İnternet yoxdur. Başlanmış sınağı oflayn davam etdirə bilərsən, yenisini başlatmaq üçün internet lazımdır. | Full warning banner. `wrap` (3 lines at 1.0). |
+| `exam_catalogue_offline_body` | Sınaqların siyahısını görmək üçün internetə qoşul. | State view body. |
+| `exam_history_title` | Sınaqlarım | Row title and `bar` title. titleLarge 102 / 132dp (264): fits |
+| `exam_history_count` | %1$d cəhd | `plurals`. Row supporting. |
+| `exam_history_none` | Hələ cəhd yoxdur | Row supporting. |
+| `exam_history_row_title` | %1$s · %2$s | `%1$s` = `exam_variant_title`, `%2$s` = subject name (server). titleMedium 147 / 192dp (296): fits — measured "Sınaq №1 · İngilis dili"; glyph № not in the shipped subset (tokens 3.1.0 adds it) |
+| `exam_history_date` | %1$d %2$s | "21 noyabr" (Baku day); `profile_months`. |
+| `exam_history_date_year` | %1$d %2$s %3$d | "21 noyabr 2027" when not the current year. |
+| `exam_history_abandoned` | Bitirilməyib — server yekunlaşdırıb | History supporting (wraps at 1.3). bodyMedium 229 / 298dp (264): wraps at 1.3 |
+| `exam_history_empty_title` | Hələ sınaq verməmisən | State view title. headlineSmall 250 / 325dp (328): fits |
+| `exam_history_empty_body` | İlk sınağını seç — nəticən burada görünəcək. | `wrap`. |
+| `exam_history_empty_cta` | Sınaq seç | `btn` (secondary). labelLarge 70 / 91dp (280): fits |
+| `exam_history_error` | Sınaqlarını yükləmək alınmadı. | State view title; wraps (allowed). headlineSmall 334 / 434dp (328): **2 lines at 1.0** |
+
+#### Info and download (`exam-info.md`)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_info_overline` | FƏNN SINAĞI · DİM FORMATINDA | overline 218 / 284dp (328): fits |
+| `exam_info_fact_duration_cap` | dəqiqə | Facts caption (bodySmall, 104dp item). bodySmall 43 / 56dp (104): fits |
+| `exam_info_fact_tasks_cap` | tapşırıq | bodySmall 45 / 58dp (104): fits |
+| `exam_info_fact_max_cap` | maksimum bal | bodySmall 85 / 110dp (104): wraps at 1.3 |
+| `exam_info_fact_cd` | %1$d %2$s | "60 dəqiqə", "30 tapşırıq", "100 maksimum bal". |
+| `exam_info_structure_overline` | QURULUŞ | overline 64 / 83dp (328): fits |
+| `exam_info_section_counts` | %1$d tapşırıq: %2$d qapalı, %3$d yazılı | Section row supporting. bodyMedium 173 / 225dp (260): fits — measured "8 tapşırıq: 4 qapalı, 4 yazılı" |
+| `exam_info_section_closed_only` | %1$d qapalı tapşırıq | bodyMedium 112 / 145dp (260): fits — measured "16 qapalı tapşırıq" |
+| `exam_info_rules_overline` | QAYDALAR | overline 74 / 96dp (328): fits |
+| `exam_info_rule_time` | Vaxt %1$d dəqiqədir. Fasilə yoxdur, vaxt arxa planda da işləyir. | `wrap`. EXAM-02 wording kept. |
+| `exam_info_rule_navigation` | Tapşırıqları istədiyin ardıcıllıqla həll et. Bitirənə qədər cavablarını dəyişə bilərsən. | `wrap`. |
+| `exam_info_rule_listening` | Dinləmə mətni %1$d dəfə səslənir. Fasilə vermək olar, geri çəkmək olmaz. Qulaqcıq taxmağı tövsiyə edirik. | `wrap`. Value 2 (OQ-119). |
+| `exam_info_rule_written` | Yazılı tapşırıqları sınaqdan sonra özün qiymətləndirəcəksən. | `wrap`. EXAM-02 wording kept. |
+| `exam_info_rule_scoring` | Hər düzgün qapalı cavab 1 xal, hər yazılı tapşırıq 2 xala qədər verir. Cəmi %1$d xal 100 bala çevrilir. Səhv cavab xal azaltmır. | `wrap`. Value 37 (English). "xal" = raw point, "bal" = the 100-scale score, used consistently. |
+| `exam_info_rule_penalty` | Səhv qapalı cavab ¼ xal azaldır, boş buraxılan cavab azaltmır. | Phase 3 only (stage 2). ¼ U+00BC is in the subset. |
+| `exam_info_rule_online` | Başlamaq üçün internet lazımdır. Sonra oflayn da davam edə bilərsən — cavablar telefonda saxlanılır. | `wrap`. |
+| `exam_info_skip_listening` | Dinləmə hissəsini keç | Switch headline (244dp). titleMedium 166 / 216dp (244): fits |
+| `exam_info_skip_listening_supporting` | Eşitməkdə çətinlik çəkirsənsə. Dinləmə tapşırıqları göstərilməyəcək və təxmini bala daxil edilməyəcək. | `wrap`. |
+| `exam_info_download_hint` | Sınaq əvvəlcədən telefona yüklənir ki, zəif internet vaxtını almasın. | `wrap`. |
+| `exam_info_download` | Yüklə · %1$s | `btn` primary. labelLarge 109 / 142dp (280): fits — measured "Yüklə · 12,8 MB" |
+| `exam_info_downloading` | Yüklənir… %1$s / %2$s | Line above the bar. bodySmall 137 / 178dp (328): fits — measured "Yüklənir… 12,8 / 12,8 MB" |
+| `exam_download_paused_offline` | İnternet kəsildi. Qayıdanda yükləmə özü davam edəcək. | Warning banner. |
+| `exam_download_failed` | Yükləmə yarımçıq qaldı. Yenidən cəhd et — yüklənmiş hissə saxlanılıb. | Warning banner. |
+| `exam_download_verify_failed` | Bəzi fayllar zədələnib. Yenidən cəhd et. | Warning banner (hash mismatch). |
+| `exam_download_storage` | Cihazda kifayət qədər yer yoxdur. %1$s lazımdır. | `%1$s` = `exam_size_mb`. |
+| `exam_download_needs_internet` | Yükləmək üçün internet lazımdır. | Banner / snackbar. |
+| `exam_download_done_cd` | Sınaq yükləndi. Başlamağa hazırdır. | Polite announcement. |
+| `exam_download_notif` | Sınaq yüklənir | Worker notification title, only if Android requires one. |
+| `exam_info_ready_hint` | Hazırsan? Başlayanda vaxt işləməyə başlayacaq. | `wrap`. |
+| `exam_info_notif_off_hint` | Bildirişlər söndürülüb: tətbiq arxa planda olanda vaxt xatırlatması gəlməyəcək. | OQ-D45. Shown above "Başla" when POST_NOTIFICATIONS, app notifications or the `exam` channel are off. `wrap` (bodySmall 458 / 595dp: 2 lines at 1.0 and 1.3). |
+| `exam_info_start` | Başla | `btn` primary. labelLarge 40 / 52dp (280): fits |
+| `exam_info_running_hint` | Vaxt gedir: %1$s qalıb. | bodySmall 144 / 187dp (328): fits — measured "Vaxt gedir: 42 dəq qalıb." |
+| `exam_info_resume` | Davam et | `btn`. labelLarge 70 / 91dp (280): fits |
+| `exam_info_resume_download` | Davam etmək üçün sınağı bu telefona yüklə. Vaxt gedir: %1$s qalıb. | `wrap`. |
+| `exam_info_retake_hint` | Bu sınağı artıq vermisən. Yeni nəticə «Təkrar cəhd» kimi qeyd olunacaq. | `wrap`. |
+| `exam_info_retake` | Yenidən başla | `btn`. labelLarge 103 / 134dp (280): fits |
+| `exam_info_last_result` | Son nəticəyə bax | `btn` secondary. labelLarge 127 / 165dp (280): fits |
+| `exam_variant_updated` | Bu sınaq yenilənib. Başlamaq üçün yenidən yüklə. | Warning banner. |
+| `exam_variant_unavailable` | Bu sınaq artıq mövcud deyil | State view title. headlineSmall 296 / 385dp (328): wraps at 1.3 |
+| `exam_start_confirm_title` | Sınağa başlayırsan? | Dialog title. headlineSmall 213 / 277dp (280): fits |
+| `exam_start_confirm_body` | %1$d dəqiqə vaxtın olacaq. Vaxtı dayandırmaq olmur — tətbiqdən çıxsan da sınaq davam edir. | Dialog body. |
+| `exam_start_confirm_skip` | Dinləmə hissəsi keçiləcək. | Appended to the body. |
+| `exam_start_confirm` | Başla | `dbtn`. labelLarge 40 / 52dp (100): fits |
+| `exam_start_other_running_title` | Əvvəlcə davam edən sınağı bitir | Dialog title; 2 lines (allowed). headlineSmall 336 / 437dp (280): **2 lines at 1.0** |
+| `exam_start_other_running_body` | «%1$s» hələ davam edir: %2$s qalıb. |  |
+| `exam_start_other_running_open` | Ona keç | `dbtn`. labelLarge 61 / 79dp (100): fits |
+| `exam_start_needs_internet` | Sınağı başlatmaq üçün internet lazımdır. | Snackbar / banner. EXAM-04 wording kept. |
+| `exam_start_rate_limited` | Bu gün çox sınaq başlatmısan. Sabah yenidən cəhd et. | Snackbar (429, 10 per Baku day). |
+| `exam_start_failed` | Sınağı başlatmaq alınmadı. | Snackbar + `common_retry`. |
+
+#### Attempt (`exam-attempt.md`, `components.md` §39 … §43)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_close_cd` | Sınaqdan çıx | Close icon. |
+| `exam_progress` | %1$d / %2$d | Header, tabular. titleMedium 57 / 74dp (143): fits — measured "30 / 30" |
+| `exam_progress_cd` | Tapşırıq %1$d, cəmi %2$d. %3$s | `%3$s` = section name. |
+| `exam_timer_cd` | Qalan vaxt: %1$s | `%1$s` = `exam_duration_cd` or `exam_seconds_cd`. |
+| `exam_grid_cd` | Bütün tapşırıqlar | Grid icon. |
+| `exam_offline_banner` | Oflayn — cavablar telefonda saxlanılır | Compact banner; EXAM-13 wording. 1 line at 1.0, 2 at 1.3. bodyMedium 251 / 327dp (288): wraps at 1.3 |
+| `exam_task_label` | Tapşırıq %1$d · %2$s | `%2$s` = type word. labelMedium 123 / 160dp (180): fits — measured "Tapşırıq 24 · Qapalı" |
+| `exam_task_type_closed` | Qapalı |  |
+| `exam_task_type_written` | Yazılı |  |
+| `exam_flag` | İşarələ | Flag toggle (EXAM-12). labelLarge 49 / 64dp (120): fits |
+| `exam_flagged` | İşarələnib | labelLarge 72 / 94dp (120): fits |
+| `exam_flag_on_cd` | İşarələndi | Announcement. |
+| `exam_flag_off_cd` | İşarə götürüldü | Announcement. |
+| `exam_option_cd` | %1$s variantı: %2$s | "A variantı: …" (EXAM-22). Letters avoid ordinal suffixes. |
+| `exam_option_selected_cd` | seçilib | State description. |
+| `exam_clear_answer` | Cavabı sil | Text button (EXAM-06). labelLarge 70 / 91dp (304): fits |
+| `exam_tab_task` | Tapşırıq | Segment (label budget 114dp). labelLarge 58 / 75dp (114): fits |
+| `exam_tab_passage` | Mətn | Segment. labelLarge 38 / 49dp (114): fits |
+| `exam_passage_overline` | OXU MƏTNİ | overline 76 / 99dp (328): fits |
+| `exam_paragraph_cd` | Abzas %1$d | Paragraph number (no ordinal suffix). |
+| `exam_marked_word_cd` | altından xətt çəkilmiş söz: %1$s | EXAM-09. |
+| `exam_gap_cd` | boşluq | Gap token. |
+| `exam_written_label` | Cavabın | Label above the field. labelMedium 53 / 69dp (296): fits |
+| `exam_written_placeholder` | Cavabını bura yaz… | bodyLarge 143 / 186dp (296): fits |
+| `exam_written_supporting` | Yazmaq məcburi deyil: sınaqdan sonra nümunəvi cavabla özün müqayisə edəcəksən. | `wrap` (2–3 lines). |
+| `exam_written_counter` | %1$d / %2$d | "0 / 1000", tabular. |
+| `exam_written_limit` | Ən çox %1$d simvol yazmaq olar. | Error supporting at the limit. |
+| `exam_written_solution_hint` | Həlli kağızda yaz; sınaqdan sonra nümunəvi həll ilə müqayisə edəcəksən. | Phase 2 `solution` tasks (EXAM-11 wording). |
+| `exam_audio_title` | Dinləmə mətni | Player title (budget 204dp). titleSmall 99 / 128dp (204): fits |
+| `exam_audio_play` | Dinlə | Button tooltip / label (EXAM-10). |
+| `exam_audio_resume` | Davam et |  |
+| `exam_audio_play_cd` | Dinlə. İstifadə olunub: %1$d / %2$d | Replaces EXAM-10 "2 dəfədən 1-i" (ordinal suffix changes with the number). |
+| `exam_audio_pause_cd` | Fasilə ver |  |
+| `exam_audio_plays_left` | %1$d dəfə qalıb | `plurals`; EXAM-10 "1 dəfə qalıb". bodyMedium 80 / 103dp (114): fits — measured "2 dəfə qalıb" |
+| `exam_audio_play_n` | Dinləmə %1$d / %2$d | bodyMedium 84 / 109dp (114): fits — measured "Dinləmə 1 / 2" |
+| `exam_audio_no_plays` | Dinləmə imkanı bitdi | With the elapsed time the row is 136 + 68dp at 1.0 (fits 228dp); at 1.3 the plays text moves under the time. bodyMedium 136 / 177dp (228): fits |
+| `exam_audio_counts_after` | %1$d saniyədən sonra sayılacaq | Caption during the first 10 s of a play. bodySmall 170 / 222dp (296): fits — measured "10 saniyədən sonra sayılacaq" |
+| `exam_audio_elapsed` | %1$s / %2$s | "1:12 / 3:05", tabular. |
+| `exam_audio_interrupted` | Audio fasiləyə verildi. | Caption after an automatic pause. |
+| `exam_audio_preparing` | Audio hazırlanır… |  |
+| `exam_audio_redownloading` | Audio yenidən yüklənir… |  |
+| `exam_audio_failed` | Audio yüklənmədi. Dinləmələrin sayılmayıb — yenidən cəhd et. | Warning banner in the player (EXAM-10). |
+| `exam_audio_failed_offline` | Audio yüklənmədi. İnternetə qoşul və yenidən cəhd et. |  |
+| `exam_audio_restored` | Tətbiq bağlanmışdı. Dinləmə dayandığı yerdən davam edəcək. | OQ-D43. |
+| `exam_audio_volume_hint` | Səsi artır və ya qulaqcıq tax. | EXAM-10 wording. |
+| `exam_audio_skipped` | Dinləmə hissəsini keçmisən. Bu tapşırıqlar təxmini bala daxil edilmir. | Exam note. |
+| `exam_audio_play_review_cd` | Dinlə | Review player (§42a) play button. |
+| `exam_audio_replay_cd` | Yenidən dinlə | Review player button at the end of the file. labelLarge 100 / 129dp (cd + tooltip). |
+| `exam_audio_seek_cd` | Audio mövqeyi | Review player slider. |
+| `exam_audio_back10_cd` | 10 saniyə geri | Icon button `replay_10`. |
+| `exam_audio_forward10_cd` | 10 saniyə irəli | Icon button `forward_10`. |
+| `exam_grid_title` | Tapşırıqlar | Sheet title. titleLarge 100 / 130dp (180): fits |
+| `exam_grid_summary` | Cavablanıb: %1$d · Cavabsız: %2$d · İşarələnib: %3$d | `wrap` (2 lines at 1.3). bodyMedium 301 / 391dp (328): wraps at 1.3 — measured "Cavablanıb: 30 · Cavabsız: 30 · İşarələnib: 30" |
+| `exam_grid_legend_answered` | Cavablanıb | Legend (bodySmall). |
+| `exam_grid_legend_unanswered` | Cavabsız |  |
+| `exam_grid_legend_flagged` | İşarələnib |  |
+| `exam_grid_legend_current` | Hazırkı |  |
+| `exam_grid_cell_cd` | Tapşırıq %1$d, %2$s | `%2$s` = states joined with ", ". |
+| `exam_grid_state_answered_cd` | cavablanıb |  |
+| `exam_grid_state_written_cd` | mətn yazılıb |  |
+| `exam_grid_state_unanswered_cd` | cavabsız |  |
+| `exam_grid_state_flagged_cd` | işarələnib |  |
+| `exam_grid_state_current_cd` | hazırda açıqdır |  |
+| `exam_grid_skipped` | Keçildi | Instead of the listening cells. |
+| `exam_prev` | Əvvəlki | Half pill with icon (label 84dp). labelLarge 55 / 72dp (84): fits |
+| `exam_next` | Növbəti | Half pill with icon. labelLarge 59 / 77dp (84): fits |
+| `exam_finish` | Sınağı bitir | Half pill without icon (110dp), sheet button, dialog action. labelLarge 77 / 100dp (110): fits |
+| `exam_leave_title` | Sınaqdan çıxırsan? | Dialog title. headlineSmall 204 / 265dp (280): fits |
+| `exam_leave_body` | Vaxt dayanmır: sınaq %1$s sonra avtomatik bitəcək. Cavabların saxlanılır. | `%1$s` = `exam_duration_min`. |
+| `exam_leave_later` | Sonra davam et | Stacked dialog action. labelLarge 115 / 149dp (240): fits |
+| `exam_submit_title` | Sınağı bitirirsən? | Dialog title. headlineSmall 185 / 240dp (280): fits |
+| `exam_submit_counts` | Cavabsız: %1$d · İşarələnib: %2$d | Replaces EXAM-14 "Cavabsız: 7, İşarələnmiş: 3". titleSmall 194 / 252dp (280): fits — measured "Cavabsız: 30 · İşarələnib: 30" |
+| `exam_submit_all_answered` | Bütün tapşırıqlara cavab vermisən. |  |
+| `exam_submit_body` | Bitirəndən sonra cavabları dəyişə bilməyəcəksən. |  |
+| `exam_submit_confirm` | Bitir | `dbtn`. labelLarge 30 / 39dp (100): fits |
+| `exam_time_notice` | %1$d dəqiqə qaldı | `plurals`; snackbar at 30 / 10 / 1 (EXAM-04 wording). |
+| `exam_time_up_title` | Vaxt bitdi | headlineSmall 104 / 135dp (328): fits |
+| `exam_time_up_body` | Sınaq avtomatik bitirildi. Cavabların göndərilir… |  |
+| `exam_submit_offline_title` | Nəticə internet olanda hesablanacaq | State title; 2 lines (allowed). EXAM-14 wording. headlineSmall 387 / 503dp (328): **2 lines at 1.0** |
+| `exam_submit_offline_body` | Cavabların telefonda saxlanılıb. İnternet qayıdanda avtomatik göndərəcəyik. |  |
+| `exam_submit_late_window` | %1$d saat ərzində internetə qoşulmasan, yalnız əvvəl göndərilmiş cavablar sayılacaq. | Value 24 (OQ-118). |
+| `exam_submitting` | Cavablar göndərilir… |  |
+| `exam_attempt_loading` | Sınaq açılır… |  |
+| `exam_merged_other_device` | Başqa cihazdakı cavablar əlavə olundu. | Snackbar. |
+| `exam_package_missing_title` | Sınağın faylları tapılmadı | headlineSmall 270 / 351dp (328): wraps at 1.3 |
+| `exam_package_missing_body` | Davam etmək üçün yenidən yüklə. Vaxt gedir: %1$s qalıb. |  |
+| `exam_attempt_closed_title` | Bu sınaq artıq bitib | headlineSmall 203 / 264dp (280): fits |
+| `exam_attempt_closed_body` | Sınaq başqa cihazda bitirilib və ya vaxtı keçib. |  |
+| `exam_open_result` | Nəticəyə bax | `dbtn`. labelLarge 98 / 127dp (140): fits |
+
+#### Self-assessment (`exam-self-assessment.md`, `components.md` §44)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_assess_title` | Qiymətləndirmə | `bar` (progress is in the content, not the bar). titleLarge 159 / 207dp (264): fits |
+| `exam_assess_close_cd` | Qiymətləndirməni bağla |  |
+| `exam_assess_progress` | %1$d / %2$d | End of the task line, titleSmall tabular. |
+| `exam_assess_progress_cd` | Yazılı tapşırıq %1$d, cəmi %2$d |  |
+| `exam_assess_intro` | Cavabını nümunə ilə müqayisə et və meyarlara görə qiymət seç. Özünə dürüst qiymət ver — bu bal yalnız sənin üçündür. | Exam note, first page. |
+| `exam_assess_task_label` | Tapşırıq %1$d · %2$s | `%2$s` = section name. labelMedium 216 / 281dp (328): fits — measured "Tapşırıq 24 · Qrammatika və lüğət" |
+| `exam_assess_show_passage` | Mətnə bax | Text button. labelLarge 78 / 101dp (280): fits |
+| `exam_assess_show_transcript` | Transkriptə bax | Text button. labelLarge 114 / 148dp (280): fits |
+| `exam_assess_your_answer` | Sənin cavabın |  |
+| `exam_assess_no_answer` | Cavab yazılmayıb — kağızda həll etmisənsə, onunla müqayisə et. | EXAM-16 wording. |
+| `exam_assess_model_answer` | Nümunəvi cavab |  |
+| `exam_assess_model_answer_n` | Nümunə %1$d | Second and further model answers. |
+| `exam_assess_criteria` | Meyarlar |  |
+| `exam_assess_pick` | Qiymətin | Picker label / group label. |
+| `exam_assess_pick_mark_cd` | bu qiyməti seç | Click label of a criterion row. |
+| `exam_assess_points` | %1$s / %2$d xal | "1,33 / 2 xal" (2 · mark, two decimals only for thirds). |
+| `exam_mark_0` | 0 | Tile label (titleLarge sans). titleLarge 14 / 18dp (51): fits |
+| `exam_mark_1_3` | ⅓ | U+2153 — sans subset must include it (tokens 3.1.0). Fallback if the glyph is missing: "1/3". titleLarge 13 / 17dp (51): fits; glyph ⅓ not in the shipped subset (tokens 3.1.0 adds it) |
+| `exam_mark_1_2` | ½ | U+00BD. titleLarge 16 / 21dp (51): fits |
+| `exam_mark_2_3` | ⅔ | U+2154 — as ⅓. titleLarge 13 / 17dp (51): fits; glyph ⅔ not in the shipped subset (tokens 3.1.0 adds it) |
+| `exam_mark_1` | 1 | titleLarge 8 / 10dp (51): fits |
+| `exam_mark_0_cd` | sıfır |  |
+| `exam_mark_1_3_cd` | üçdə bir |  |
+| `exam_mark_1_2_cd` | yarım |  |
+| `exam_mark_2_3_cd` | üçdə iki |  |
+| `exam_mark_1_cd` | bir, tam qiymət |  |
+| `exam_assess_finish` | Qiymətləndirməni bitir | `btn` (full width on the last page). labelLarge 166 / 216dp (280): fits |
+| `exam_assess_saved_offline` | Qiymətlər telefonda saxlanıldı, internet olanda göndəriləcək. | Banner. |
+| `exam_transcript_title` | Transkript | Sheet / card title. titleMedium 79 / 103dp (260): fits |
+
+#### Result (`exam-result.md`, `components.md` §45)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_result_title` | Nəticə | `bar`. titleLarge 65 / 84dp (264): fits |
+| `exam_result_overline` | TƏXMİNİ BAL | EXAM-15 label, authored in capitals. overline 86 / 112dp (328): fits |
+| `exam_result_max` |  / %1$s | After the serif score; leading space (`\u0020/ %1$s`). "100" or a reduced maximum "83,8" (OQ-D42). headlineSmall 67 / 87dp (197): fits — measured " / 83,8" |
+| `exam_result_not_official` | Bu, rəsmi DİM nəticəsi deyil. | EXAM-15 wording, always under the score. bodyMedium 187 / 243dp (306): fits |
+| `exam_result_score_cd` | Təxmini bal: %1$s, %2$s baldan. Bu, rəsmi DİM nəticəsi deyil. |  |
+| `exam_result_finalized` | Sınağı bitirmədin, ona görə server onu yalnız göndərilmiş cavablarla yekunlaşdırdı. | Exam note. |
+| `exam_result_auto_submitted` | Vaxt bitdi — sınaq avtomatik bitirildi. | Exam note. |
+| `exam_result_listening_failed` | Audio işləmədi, ona görə dinləmə tapşırıqları bala daxil edilməyib. Maksimum bal: %1$s. | EXAM-10: never a silent 0. |
+| `exam_result_listening_skipped` | Dinləmə hissəsini keçdin, ona görə bu tapşırıqlar bala daxil edilməyib. Maksimum bal: %1$s. | OQ-119 / OQ-D42. |
+| `exam_split_auto` | Avtomatik yoxlanılıb | Legend label (OQ-112 wording). bodyMedium 136 / 176dp (200): fits |
+| `exam_split_self` | Özün qiymətləndirdin | Legend label (OQ-112 wording). bodyMedium 145 / 189dp (200): fits |
+| `exam_split_unassessed_count` | Qiymətləndirilməyib: %1$d tapşırıq | Legend row when written tasks are open. bodyMedium 207 / 269dp (300): fits — measured "Qiymətləndirilməyib: 7 tapşırıq" |
+| `exam_split_value` | %1$s / %2$s | "46,9 / 62,2" titleSmall tabular, legend end (≤ 98dp at 1.3). |
+| `exam_split_cd` | Avtomatik yoxlanılıb: %2$s baldan %1$s. Özün qiymətləndirdin: %4$s baldan %3$s. |  |
+| `exam_result_assess_title` | Yazılı tapşırıqları qiymətləndir | Card title; wraps at 1.3 (allowed). EXAM-16 wording without the count (count is on the button). titleMedium 229 / 298dp (264): wraps at 1.3 |
+| `exam_result_assess_body` | Qiymətləndirməsən, %1$d yazılı tapşırıq 0 sayılır. | `wrap`. |
+| `exam_result_assess_cta` | Qiymətləndir (%1$d) | `btn` primary. labelLarge 120 / 156dp (248): fits — measured "Qiymətləndir (7)" |
+| `exam_result_edit_marks` | Qiymətləri dəyiş | Text button (OQ-D47). labelLarge 121 / 157dp (304): fits |
+| `exam_result_sections_overline` | BÖLMƏLƏR | overline 76 / 98dp (328): fits |
+| `exam_result_closed` | Qapalı: %1$d / %2$d düzgün | Section supporting. bodyMedium 144 / 187dp (296): fits — measured "Qapalı: 16 / 16 düzgün" |
+| `exam_result_written` | Yazılı: %1$s / %2$d | "Yazılı: 1,7 / 3" (sum of marks). bodyMedium 81 / 106dp (296): fits — measured "Yazılı: 2,7 / 4" |
+| `exam_result_written_unassessed` | Yazılı: qiymətləndirilməyib | bodyMedium 176 / 228dp (296): fits |
+| `exam_result_section_excluded` | Bala daxil edilməyib | bodyMedium 134 / 174dp (296): fits |
+| `exam_result_closed_summary` | Qapalı tapşırıqlar: %1$d düzgün · %2$d səhv · %3$d cavabsız | `wrap` (2 lines at 1.3). bodyMedium 318 / 413dp (328): wraps at 1.3 — measured "Qapalı tapşırıqlar: 18 düzgün · 4 səhv · 1 cavabsız" |
+| `exam_result_review` | Təhlilə bax | `btn`. labelLarge 78 / 101dp (280): fits |
+| `exam_result_back` | Sınaqlara qayıt | `btn` secondary (same text as `exam_back_to_catalogue`, separate key per screen). labelLarge 109 / 142dp (280): fits |
+| `exam_result_updated` | Təxmini bal yeniləndi | Snackbar. |
+| `exam_result_error` | Nəticəni yükləmək alınmadı. | State view title. headlineSmall 305 / 397dp (328): wraps at 1.3 |
+
+#### Review (`exam-review.md`)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `exam_review_title` | Təhlil | `bar` (EXAM-18 "Təhlil"). titleLarge 50 / 65dp (264): fits |
+| `exam_filter_all` | Hamısı | Filter chip. labelLarge 49 / 63dp (200): fits |
+| `exam_filter_wrong` | Səhvlər | labelLarge 56 / 72dp (200): fits |
+| `exam_filter_unanswered` | Cavabsızlar | labelLarge 85 / 111dp (200): fits |
+| `exam_filter_flagged` | İşarələnmişlər | labelLarge 103 / 133dp (200): fits |
+| `exam_filter_written` | Yazılılar | labelLarge 55 / 72dp (200): fits |
+| `exam_filter_count_cd` | %1$s, %2$d tapşırıq |  |
+| `exam_review_passage` | Oxu mətni | Card title. titleMedium 81 / 105dp (264): fits |
+| `exam_review_show_passage` | Mətni göstər | Text button. labelLarge 94 / 122dp (264): fits |
+| `exam_review_show_transcript` | Transkripti göstər | Text button. labelLarge 130 / 169dp (264): fits |
+| `exam_review_hide` | Gizlət | Text button. labelLarge 43 / 56dp (264): fits |
+| `exam_review_excluded_note` | Bu dinləmə tapşırıqları bala daxil edilməyib. |  |
+| `exam_review_task_label` | Tapşırıq %1$d · %2$s | `%2$s` = type word; outcome word at the end of the row. labelMedium 123 / 160dp (200): fits — measured "Tapşırıq 24 · Qapalı" |
+| `exam_review_flagged_cd` | işarələmişdin |  |
+| `exam_review_outcome_blank` | Cavabsız | Outcome word. labelMedium 59 / 76dp (120): fits |
+| `exam_review_self_mark` | Qiymətin: %1$s | labelMedium 76 / 99dp (140): fits — measured "Qiymətin: ⅔"; glyph ⅔ not in the shipped subset (tokens 3.1.0 adds it) |
+| `exam_review_unassessed` | Qiymətləndirilməyib | Outcome word for written tasks; the task line wraps first. labelMedium 133 / 173dp (140): wraps at 1.3 |
+| `exam_review_your_answer` | Sənin cavabın |  |
+| `exam_review_your_answer_correct` | Sənin cavabın — düzgün |  |
+| `exam_review_correct_answer` | Düzgün cavab |  |
+| `exam_review_not_answered` | Cavab verilməyib |  |
+| `exam_review_show_criteria` | Meyarları göstər | Text button. labelLarge 120 / 156dp (264): fits |
+| `exam_review_assess` | Qiymətləndir | Text button. labelLarge 97 / 127dp (264): fits |
+| `exam_review_change_mark` | Qiyməti dəyiş | Text button (OQ-D47). labelLarge 102 / 133dp (264): fits |
+| `exam_review_explanation` | İzah |  |
+| `exam_review_corrected` | Bu tapşırıq sonradan düzəldilib. Balın dəyişməyib. | EXAM-15. |
+| `exam_review_excluded` | Bala daxil edilməyib |  |
+| `exam_review_filter_empty` | Bu filtrdə tapşırıq yoxdur. |  |
+| `exam_review_error` | Təhlili yükləmək alınmadı. | State view title. headlineSmall 285 / 371dp (328): wraps at 1.3 |
+| `exam_review_offline` | Təhlil üçün internet lazımdır. | State view title. headlineSmall 312 / 405dp (328): wraps at 1.3 |
+
+#### Settings and licences (`settings.md`, `licenses.md`)
+
+| Key | Azerbaijani | Notes / width at 1.0 / 1.3 (budget) |
+| --- | --- | --- |
+| `settings_exams_about` | Sınaqlar haqqında | Info row headline (exams flag only); supporting = `exam_disclaimer`. titleMedium 141 / 183dp (264): fits |
+| `settings_licenses_section_voices` | DİNLƏMƏ SƏSLƏRİ | Overline (§35a). overline 125 / 162dp (328): fits |
+| `settings_licenses_voice_supporting` | Piper TTS səsi · %1$s | `%1$s` = licence ("CC BY 4.0") or `settings_licenses_public_domain`. bodyMedium 215 / 279dp (264): wraps at 1.3 — measured "Piper TTS səsi · ictimai mülkiyyət" |
+| `settings_licenses_public_domain` | ictimai mülkiyyət |  |
+
+
+#### Local notification (OQ-D45, decided 2026-11-21; `exam-attempt.md` I)
+
+Android strings (the notification is local, not a server push). Text rules of
+`notifications.md` C: no exclamation marks, no emoji, no false urgency.
+
+| Key | Azerbaijani | Notes |
+| --- | --- | --- |
+| `notif_exam_time_left_title` | %1$d dəqiqə qalıb | `plurals`; value = whole minutes left when posted (normally 10, never below 5). 15 chars. |
+| `notif_exam_time_left_body` | «%1$s» davam edir. Cavablarını yoxlamağa qayıt. | `%1$s` = `exam_variant_title`; 46 chars (≤ 90). |
+| `notif_channel_exam_name` | Sınaqlar | Android channel name. |
+| `notif_channel_exam_description` | Sınaq zamanı tətbiq arxa planda olanda vaxtın azaldığını xatırladırıq. | Android channel description. |
+
+#### Backend i18n — exam content (server `{"az": …}`, not `strings.xml`)
+
+Names below follow EXAM-25; content-writer / backend-dev store them with the
+exam template. Overlines are authored in capitals in the bank.
+
+| Field | Azerbaijani | Notes |
+| --- | --- | --- |
+| Exam type title | Buraxılış — İngilis dili (DİM formatında) | headlineSmall 428dp → 2 lines at 1.0 and 1.3 (allowed); catalogue, Play listing wording per OQ-130 |
+| Exam type overline | BURAXILIŞ · İNGİLİS DİLİ | overline 162 / 211dp (328): fits |
+| Subject name | İngilis dili | history row, result line |
+| Section names | Dinləmə · Qrammatika və lüğət · Oxu | header line 2 (157 / 143dp): "Qrammatika və lüğət" 136 / 176dp → 2 lines at 1.3, header reserves 2 lines for the whole attempt (`exam-attempt.md` A) |
+| Phase 2 (indicative) | Buraxılış sınağı №3 (DİM formatında) | EXAM-25 example; the app shows "Sınaq №3" separately, so the server title never repeats the number |
+
 ## Truncation risks
 
 Estimated with the method above. "Used" = which form the specs use.
@@ -858,6 +1235,15 @@ Estimated with the method above. "Used" = which form the specs use.
 | `home_daily_next_countdown` "Növbəti çağırış: 05:12:33" | finished daily card, titleSmall + 18dp icon | ~207 / ~268dp | 274dp | Fits on 1 line at 1.3 because the white card uses `space.lg` padding (with `space.xl` it would wrap). |
 | "Gündəlik çağırış #123" | daily card title | ~250 / ~325dp as one headline | 2 lines | Split by design: overline `daily_title` + `daily_number` on its own line, so it is always ≤ 2 lines. |
 | `home_rating` in the v2 home header | — | — | — | **Obsolete in v3** (no home header; the sticker shows the rating). |
+| `exam_assess_title` "Qiymətləndirmə" next to a "2 / 7" counter in the app bar | `bar` | 159 / 207dp | ~206dp with the counter | **Would truncate at 1.3**; the counter moved into the content (`exam-self-assessment.md`) |
+| Section name "Qrammatika və lüğət" in the exam header | header centre, labelMedium | 136 / 176dp | 157 / 143dp | 2 lines at 1.3; header height fixed per attempt by the longest section name (no jumping) |
+| "Qiymətləndirməni bitir" as a half-width pill | half pill | 166 / 216dp | 110dp | **Would truncate**; the last self-assessment page stacks two full-width pills |
+| "Sınağı bitir" as a half-width pill | half pill, no icon | 77 / 100dp | 110dp | Fits; no icon on purpose |
+| "Təxmini bal: 67,7 · Təkrar cəhd" on one status line | status line | 195 / 253dp | 242dp | **Would truncate at 1.3**; "Təkrar cəhd" is a separate chip |
+| Review outcome "Qiymətləndirilməyib" at the end of the task line | labelMedium | 133 / 173dp | ~140dp | Moves under the task label at 1.3 |
+| `exam_audio_no_plays` + elapsed time on one row | player row | 136 + 68 / 177 + 88dp | 228dp | Plays text moves under the time at 1.3 |
+| "maksimum bal" facts caption | bodySmall, 104dp item | 85 / 110dp | 104dp | 2 lines at 1.3 (allowed) |
+| "Sınaq №1" / "⅓" "⅔" with the shipped (pre-3.1.0) font files | — | — | — | **Glyph fallback** (Roboto) until android-dev re-subsets with U+2116, U+2153, U+2154 (`tokens.json` 3.1.0) |
 | `progress_level` "Səviyyə 12" chip + mini bar | home header line 3 | ~95 / ~120dp | ~176dp | Fits; the mini bar moves under the chip when < 48dp is left. |
 | `settings_notif_daily` "Gündəlik çağırış xatırlatması" | switch row | ~255 / ~330dp | ~232dp | **Wraps to 2 lines** at 1.0 and 1.3 (allowed by `row`, SET-07); switch stays centred. |
 | `notif_prompt_allow` "İcazə ver" + `notif_prompt_later` "Sonra" | two buttons in one row of the card | ~140 / ~185dp together | ~296dp | Fit side by side; stack at font scale ≥ 2.0. |
@@ -920,6 +1306,12 @@ requirement files when convenient. Examples:
 | 15 saniyəyə oyunçu tapılmasa, Duello Bot ilə oynayacaqsan. (OQ-111) | "15 saniyə ərzində oyunçu tapılmasa, Duello Bot ilə oynayacaqsan. İstəmirsənsə, ləğv et." — "ərzində" reads unambiguously as "within"; the second sentence names the opt-out OQ-111 decided (cancel before 0). The seconds are a placeholder from the server. |
 | Reytinq dəyişmədi · Bot oyunu (DUEL-26 result line) | Two lines: "Reytinq dəyişmədi" + "Bot oyunu reytinqə təsir etmir." (the one-liner does not fit 360dp, see risks) |
 | Bu, məğlubiyyət sayılacaq. Bot oyunu reytinqə təsir etmir. (DUEL-26 leave dialog) | Same + "Vaxt bu arada dayanmır." (as in the real-match dialog) |
+| Dinlə, 2 dəfədən 1-i istifadə olunub (EXAM-10) | "Dinlə. İstifadə olunub: 1 / 2" (no number-dependent suffix) |
+| Cavabsız: 7, İşarələnmiş: 3. Sınağı bitirmək istəyirsən? (EXAM-14) | Title "Sınağı bitirirsən?" + "Cavabsız: 7 · İşarələnib: 3" + "Bitirəndən sonra cavabları dəyişə bilməyəcəksən." |
+| Yazılı tapşırıqları qiymətləndir (7) (EXAM-16) | Card title "Yazılı tapşırıqları qiymətləndir" + button "Qiymətləndir (7)" |
+| Əvvəlcə davam edən sınağı bitir — "Davam et" / "Bitir" (EXAM-20) | Same title; actions "Ləğv et" / "Ona keç" (finishing happens in the attempt with its confirmation) |
+| Davam edir — 1 saat 12 dəq qalıb (EXAM-01) | Same pattern; Phase 1 shows minutes only ("Davam edir — 42 dəq qalıb") |
+| "Mətn" tab (EXAM-09) | Segments "Tapşırıq" / "Mətn" |
 
 ### Tone audit (2026-10-17)
 

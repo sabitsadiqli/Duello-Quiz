@@ -10,6 +10,7 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `tokens.json` | Colours (light + dark), typography, spacing, sizes, shapes, elevation, motion |
 | `contrast-report.md` | WCAG contrast of every colour pair used, both themes (generated) |
 | `tools/contrast.py` | Generates the report; `--check` fails on any pair below its minimum |
+| `tools/text_width.py` | Measures strings with the shipped font files (stdlib only); `--glyphs` checks subset coverage |
 | `copy/az.md` | Every UI string in Azerbaijani with its `strings.xml` key, tone rules, width check |
 | `screens/components.md` | Shared components and their states (buttons, option card, timer, …) |
 | `screens/splash-welcome.md` | Splash and welcome (AUTH-01, AUTH-05) |
@@ -39,6 +40,12 @@ Figma file is authoritative; if one exists later, it mirrors these files.
 | `brand.md`, `brand/*.svg` | v3 logo mark, adaptive icon layers, splash and notification icons (OQ-D37), `brand/squiggle-underline.svg` (v3 greeting underline); review PNGs in `brand/previews/` |
 | `tools/brand_assets.py`, `tools/brand_previews.py` | Generate the brand / store / favicon SVGs and the inline web marks from one geometry (fontTools); render the review PNGs (macOS) |
 | `screens/web-legal.md` | Public GitHub Pages: app intro, privacy policy, account deletion (`docs/legal/`, SET-06) |
+| `screens/exam-catalogue.md` | Mock exams (post-MVP): Oyna entry decision (OQ-D40), catalogue "Sınaqlar", history "Sınaqlarım" (EXAM-01, -13, -19, -20, -25) |
+| `screens/exam-info.md` | Sınaq info, download package, start confirm, skip listening (EXAM-02 … -04, -19, -20) |
+| `screens/exam-attempt.md` | Attempt: header timer, pager, reading / listening groups, written field, navigator, leave / submit / time-up (EXAM-04 … -14) |
+| `screens/exam-self-assessment.md` | Self-assessment of written tasks with model answer, criteria, 0 / ⅓ / ½ / ⅔ / 1 (EXAM-16) |
+| `screens/exam-result.md` | "Təxmini bal", auto vs self-assessed split, sections (EXAM-15, -17) |
+| `screens/exam-review.md` | Review of every task, transcript after submit, filters (EXAM-18) |
 | `store/` | Google Play listing text, screenshot plan, feature graphic |
 
 Duel colours reuse existing roles (`game.confidence*`, `game.correct/wrong`,

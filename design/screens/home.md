@@ -113,7 +113,14 @@ navigation inset.
    `size.categoryNumeralWidth`) — 24dp line icon `scheme.onSurfaceVariant` —
    `space.md` — name `type.titleMedium` `scheme.onSurface`, weight 1, max 2 lines,
    wraps, never ellipsized — 24dp `chevron_right` `scheme.onSurfaceVariant`.
-7. `space.sm` bottom padding.
+7. **Sınaqlar section** (mock exams, behind the exams flag; added 2026-11-21,
+   OQ-D40, `exam-catalogue.md`): only when the flag is on and the cached
+   catalogue has ≥ 1 published variant. `space.layout.homeSectionGap`, overline
+   `home_exams_overline` ("İMTAHANA HAZIRLIQ"), `space.sm`, one exam row
+   (`components.md` "Exam rows", `size.examRowMinHeight`): `assignment` icon,
+   `home_exams_row_title` ("Sınaqlar"), supporting `home_exams_row_supporting`
+   or, while an attempt runs, `home_exams_row_running`; chevron → catalogue.
+8. `space.sm` bottom padding.
 
 At ≥ 600dp: content centred, max width `space.layout.maxContentWidth`; the
 bottom bar stays full width.
@@ -135,7 +142,12 @@ bottom bar stays full width.
 | Gesture navigation inset | 24 |
 | **Total** | **728** |
 
-12dp spare. With a 3-button system bar (48dp inset) the list scrolls by ~12dp;
+12dp spare. **With the Sınaqlar section** (exams flag on, ≥ 1 published
+variant): + 20 + 24 + 64 = 108dp → 836dp, the tab scrolls by ~96dp. Accepted
+trade-off (OQ-D40, `exam-catalogue.md`): greeting, duel card and all five
+category rows stay fully above the fold; only the new section is below it; a
+running sınaq is surfaced at the top by its banner. With the flag off the
+budget above is unchanged. With a 3-button system bar (48dp inset) the list scrolls by ~12dp;
 the fifth row is still more than half visible, so scrolling is discoverable. A
 visible offline or verification banner (§8 compact, 40 + 8dp) also makes the list
 scroll — accepted (brief: banners stay compact, no truncation).
@@ -192,13 +204,16 @@ state; one failing does not block the others.
 | Start: rate limited (429) | — | — | Snackbar `error_rate_limited_retry` (minutes from `Retry-After`) or `error_rate_limited` |
 | Start: offline / timeout / 5xx (fast failure) | — | — | Snackbar `error_offline` / `error_generic`; slow starts (> 1 s) move to the quiz loading screen (`quiz-question.md`) |
 | Connection returns | Offline banner collapses; one automatic refresh | Same | Same |
+| Sınaq running (local Room attempt; works offline and after an app kill) | Compact info banner `home_exam_running_banner` with `timer` icon and chevron under the top row (below the offline banner); tap → attempt (resume) | Normal | Sınaqlar row shows `home_exams_row_running` |
+| Exams flag off, or 0 published variants | — | — | No Sınaqlar section (no gap) |
 | Email not verified | Compact verification banner (`email-verification-banner.md`, v3 compact form) under the top row | Normal | Normal |
 | Duel flag off | Greeting pool without duel lines | Not rendered | Moves up |
 | Signed out / account switch | Previous account's cache never shown (AUTH-07); first-load state | | |
 | Opened from a push reminder | Not applicable: reminders open the Gündəlik tab | | |
 | Day changes while visible (Baku midnight) | Date line and greeting line update on the next resume / refresh (not live) | — | — |
 
-Banner order when both apply: offline above verification; at most these two.
+Banner order: offline, then the running-sınaq banner, then verification; at
+most two are shown (verification hides while a sınaq runs).
 The streak message banners of v2 are **not** on home any more (`daily-tab.md` C).
 
 Start-request flow (unchanged): the row shows its loading state at once; a
@@ -252,5 +267,7 @@ quiz loading screen (`quiz-question.md`, QUIZ-01).
 `error_category_not_playable`, `error_rate_limited`, `error_rate_limited_retry`,
 `error_offline`, `error_generic`, `progress_streak_cd_active`,
 `progress_streak_cd_inactive`, `progress_streak_freeze_cd`, `nav_daily_open_cd`,
-`nav_profile_open_cd`; bottom bar keys in `components.md` §33; banner keys in
+`nav_profile_open_cd`, `home_exams_overline`, `home_exams_row_title`,
+`home_exams_row_supporting`, `home_exams_row_running`, `home_exams_row_cd`,
+`home_exam_running_banner`, `exam_resume_click_cd`; bottom bar keys in `components.md` §33; banner keys in
 `email-verification-banner.md`.

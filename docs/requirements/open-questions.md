@@ -31,6 +31,7 @@ Owner: `business-analyst`. Each item: ID, question, options, recommendation, who
 | OQ-129 | re-verify stage 2 (2022 source), rounding, 9th grade | Recommendation accepted: re-verify each item before the phase that needs it; 9th grade and state-language exam later (details below) | Sabit 2026-11-21 |
 | OQ-130 | naming, disclaimer and Play listing wording | Recommendation accepted: the proposal; Sabit may ask for legal advice (details below) | Sabit 2026-11-21 |
 | OQ-131 | reuse stage 2 subject blocks across groups | Recommendation accepted: A (details below) | Sabit 2026-11-21 |
+| OQ-132 | Streak day of a sınaq that crosses 00:00 Baku | A: the Baku day of the submit makes the day active; a server-finalized (never submitted) attempt does not count | Sabit 2026-11-21 |
 
 ## Details (OQ-112 … OQ-131) — mock exams "Sınaqlar" (background, all decided above)
 

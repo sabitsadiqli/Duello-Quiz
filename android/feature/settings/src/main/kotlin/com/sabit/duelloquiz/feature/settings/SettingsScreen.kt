@@ -1,6 +1,13 @@
 package com.sabit.duelloquiz.feature.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -230,6 +237,30 @@ private fun AboutSection(uiState: SettingsUiState, onAction: (SettingsAction) ->
             trailingIcon = DuelloIcons.ChevronRight,
             onClick = { onAction(SettingsAction.LicensesClicked) },
         )
+        if (uiState.examsEnabled) ExamsAboutRow()
+    }
+}
+
+/** EXAM-25 / settings.md 12a: not clickable; the full disclaimer, never truncated. */
+@Composable
+private fun ExamsAboutRow() {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+    ) {
+        Icon(
+            painter = painterResource(DuelloIcons.Assignment),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(Spacing.lg))
+        Column {
+            Text(text = stringResource(R.string.settings_exams_about), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = stringResource(R.string.exam_disclaimer), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

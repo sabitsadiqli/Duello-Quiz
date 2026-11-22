@@ -12,4 +12,9 @@ data class AppConfig(
     val duelEnabled: Boolean = false,
     /** Play Store listing for "Yenilə" on the upgrade-required screen (duel-availability.md). */
     val applicationId: String = "",
+    /**
+     * Mock exams "Sınaqlar" (docs/requirements/mock-exams.md): with the flag off no entry, row,
+     * banner, settings row, licence section, notification channel or route exists (EXAM-01).
+     */
+    val examsEnabled: Boolean = false,
 )

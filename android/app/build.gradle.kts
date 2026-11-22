@@ -34,6 +34,11 @@ val privacyPolicyUrl: String = providers.gradleProperty("privacyPolicyUrl")
 val duelEnabledOverride: String? = providers.gradleProperty("duelEnabled").orNull
 fun duelEnabled(default: Boolean): String = (duelEnabledOverride?.toBooleanStrict() ?: default).toString()
 
+// Mock exams "Sınaqlar" flag (docs/requirements/mock-exams.md, post-MVP): on in debug, off in
+// release until Sabit schedules the feature. Override with -PexamsEnabled=true|false.
+val examsEnabledOverride: String? = providers.gradleProperty("examsEnabled").orNull
+fun examsEnabled(default: Boolean): String = (examsEnabledOverride?.toBooleanStrict() ?: default).toString()
+
 android {
     namespace = "com.sabit.duelloquiz"
 
@@ -60,11 +65,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = true))
+            buildConfigField("boolean", "EXAMS_ENABLED", examsEnabled(default = true))
             // OQ-101: no crash reports from debug builds (manifest firebase_crashlytics_collection_enabled).
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "false"
         }
         release {
             buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = true))
+            buildConfigField("boolean", "EXAMS_ENABLED", examsEnabled(default = false))
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "true"
             if (releaseStoreFile != null) {
                 signingConfig = signingConfigs.getByName("release")
@@ -93,6 +100,7 @@ dependencies {
     implementation(project(":core:notifications"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:duel"))
+    implementation(project(":feature:exams"))
     implementation(project(":feature:home"))
     implementation(project(":feature:profile"))
     implementation(project(":feature:quiz"))

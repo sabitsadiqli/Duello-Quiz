@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ProgressDto(
-    /** Baku day the activity counted for (the day it started, OQ-087). */
+    /** Baku day the activity counted for (the day it started, OQ-087; mock exam: the submit day, OQ-132). */
     val dayKey: String,
     val xpGained: Int,
     /** True when XP was withheld by a daily cap (OQ-082); the activity still counts as played. */

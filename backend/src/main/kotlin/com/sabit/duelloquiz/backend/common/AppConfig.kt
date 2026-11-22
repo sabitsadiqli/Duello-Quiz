@@ -3,6 +3,8 @@ package com.sabit.duelloquiz.backend.common
 import com.sabit.duelloquiz.backend.daily.DailyConfig
 import com.sabit.duelloquiz.backend.duel.BotConfig
 import com.sabit.duelloquiz.backend.duel.DuelConfig
+import com.sabit.duelloquiz.backend.exam.ExamAudioConfig
+import com.sabit.duelloquiz.backend.exam.ExamConfig
 import com.sabit.duelloquiz.backend.notification.NotificationConfig
 import com.sabit.duelloquiz.backend.progress.ProgressConfig
 import io.ktor.server.config.ApplicationConfig
@@ -23,6 +25,7 @@ data class AppConfig(
     val daily: DailyConfig = DailyConfig(),
     val progress: ProgressConfig = ProgressConfig(),
     val notifications: NotificationConfig = NotificationConfig(),
+    val exams: ExamConfig = ExamConfig(),
 ) {
     companion object {
         fun from(config: ApplicationConfig): AppConfig {
@@ -34,6 +37,7 @@ data class AppConfig(
             fun time(path: String) = LocalTime.parse(str(path))
             fun double(path: String) = str(path).toDouble()
             fun doubles(path: String) = config.property(path).getList().map { it.toDouble() }
+            fun strings(path: String) = config.property(path).getList()
             return AppConfig(
                 db = DbConfig(
                     url = str("duello.db.url"),
@@ -146,6 +150,26 @@ data class AppConfig(
                     tokenStaleDays = long("duello.notifications.tokenStaleDays"),
                     logRetentionDays = long("duello.notifications.logRetentionDays"),
                     maxTokensPerUser = int("duello.notifications.maxTokensPerUser"),
+                ),
+                exams = ExamConfig(
+                    enabled = bool("duello.exams.enabled"),
+                    subjectDurationMs = long("duello.exams.subjectDurationMs"),
+                    fullDurationMs = long("duello.exams.fullDurationMs"),
+                    graceMs = long("duello.exams.graceMs"),
+                    lateUploadWindowMs = long("duello.exams.lateUploadWindowMs"),
+                    startsPerDay = int("duello.exams.startsPerDay"),
+                    listeningMaxPlays = int("duello.exams.listeningMaxPlays"),
+                    listeningPlayCountsAfterMs = long("duello.exams.listeningPlayCountsAfterMs"),
+                    maxBatchSize = int("duello.exams.maxBatchSize"),
+                    maxTextLength = int("duello.exams.maxTextLength"),
+                    finalizeSweepIntervalMs = long("duello.exams.finalizeSweepIntervalMs"),
+                    publishApprovers = strings("duello.exams.publishApprovers"),
+                    audio = ExamAudioConfig(
+                        maxBytes = int("duello.exams.audio.maxBytes"),
+                        maxBitrateKbps = int("duello.exams.audio.maxBitrateKbps"),
+                        minDurationMs = long("duello.exams.audio.minDurationMs"),
+                        maxDurationMs = long("duello.exams.audio.maxDurationMs"),
+                    ),
                 ),
             )
         }

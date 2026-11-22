@@ -62,7 +62,12 @@ import com.sabit.duelloquiz.core.designsystem.util.rememberReducedMotion
  * Visual states of a quiz / duel option (components.md §3). [Dimmed] = after a tap or timeout,
  * for options that are neither correct nor the user's wrong pick (v1 "Disabled").
  */
-enum class OptionCardState { Default, Selected, Correct, Wrong, Dimmed, Queued }
+enum class OptionCardState {
+    Default, Selected, Correct, Wrong, Dimmed, Queued,
+
+    /** Exam addendum (components.md §3a): the look of [Selected] without the progress indicator. */
+    Chosen,
+}
 
 /** What the letter badge shows: the letter, or a check / cross glyph after the reveal. */
 enum class OptionBadgeGlyph { Letter, Check, Cross }
@@ -118,6 +123,11 @@ fun optionCardStyle(state: OptionCardState, scheme: ColorScheme, game: GameColor
     OptionCardState.Dimmed -> OptionCardStyle(
         face = scheme.surface, border = game.cardBorder, borderWidth = Borders.hairline, dashed = false,
         text = scheme.onSurfaceVariant, badge = scheme.surfaceContainerHigh, onBadge = scheme.onSurfaceVariant,
+        glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.None,
+    )
+    OptionCardState.Chosen -> OptionCardStyle(
+        face = game.pendingContainer, border = scheme.onSurface, borderWidth = Borders.emphasis, dashed = false,
+        text = game.onPendingContainer, badge = scheme.inverseSurface, onBadge = scheme.inverseOnSurface,
         glyph = OptionBadgeGlyph.Letter, outcome = null, trailing = OptionTrailing.None,
     )
     OptionCardState.Queued -> OptionCardStyle(
@@ -330,7 +340,7 @@ private fun OptionCardPreview() {
                 val text = stringResource(R.string.duel_search_tip_1)
                 OptionCardState.entries.forEachIndexed { index, state ->
                     OptionCard(
-                        letter = "ABCDEF"[index].toString(),
+                        letter = "ABCDEFG"[index].toString(),
                         text = text,
                         state = state,
                         contentDescription = "",

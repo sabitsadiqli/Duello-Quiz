@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sabit.duelloquiz.core.common.openExternalUrl
 import com.sabit.duelloquiz.core.designsystem.R
 import com.sabit.duelloquiz.core.designsystem.component.ContentWidth
 import com.sabit.duelloquiz.core.designsystem.component.DuelloLoadingView
@@ -46,10 +48,12 @@ internal fun LicensesRoute(
     viewModel: LicensesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is LicensesEvent.OpenDetail -> onOpenDetail(event.id)
             LicensesEvent.NavigateBack -> onBack()
+            is LicensesEvent.OpenUrl -> context.openExternalUrl(event.url)
         }
     }
     LicensesScreen(uiState = uiState, onAction = viewModel::onAction)
@@ -96,6 +100,12 @@ private fun LicensesList(uiState: LicensesUiState, onAction: (LicensesAction) ->
         items(uiState.assets, key = { "asset_${it.id}" }) { row ->
             LicenseRow(row, onClick = { onAction(LicensesAction.RowClicked(row.id)) })
         }
+        if (uiState.voices.isNotEmpty()) {
+            item(key = "voices_header") { SectionHeader(stringResource(R.string.settings_licenses_section_voices)) }
+            items(uiState.voices, key = { "voice_${it.name}" }) { voice ->
+                VoiceRow(voice, onClick = { onAction(LicensesAction.VoiceClicked(voice.modelCardUrl)) })
+            }
+        }
         if (uiState.librariesError || uiState.libraries.isNotEmpty()) {
             item(key = "libraries_header") { SectionHeader(stringResource(R.string.settings_licenses_section_libraries)) }
         }
@@ -115,6 +125,32 @@ private fun LicensesList(uiState: LicensesUiState, onAction: (LicensesAction) ->
         }
         item(key = "bottom") { Spacer(Modifier.height(Spacing.xl)) }
     }
+}
+
+@Composable
+private fun VoiceRow(voice: VoiceCreditUi, onClick: () -> Unit) {
+    val supporting = stringResource(
+        R.string.settings_licenses_voice_supporting,
+        voice.licence ?: stringResource(R.string.settings_licenses_public_domain),
+    )
+    ListItem(
+        headlineContent = { Text(text = voice.name) },
+        supportingContent = { Text(text = supporting, style = MaterialTheme.typography.bodyMedium) },
+        trailingContent = { Icon(painter = painterResource(DuelloIcons.OpenInNew), contentDescription = null) },
+        colors = ListItemDefaults.colors(
+            headlineColor = MaterialTheme.colorScheme.onSurface,
+            supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = "${voice.name}, $supporting"
+                role = Role.Button
+                onClick { onClick(); true }
+            },
+    )
 }
 
 @Composable

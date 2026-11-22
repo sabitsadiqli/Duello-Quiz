@@ -11,6 +11,7 @@ import coil3.request.crossfade
 import com.sabit.duelloquiz.core.data.repository.AccountRepository
 import com.sabit.duelloquiz.core.notifications.PushRegistrar
 import com.sabit.duelloquiz.core.notifications.ReminderChannels
+import com.sabit.duelloquiz.core.notifications.exam.ExamReminderController
 import com.sabit.duelloquiz.telemetry.TelemetryUserSync
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -27,6 +28,9 @@ class DuelloApplication : Application(), SingletonImageLoader.Factory {
     @Inject
     lateinit var telemetryUserSync: TelemetryUserSync
 
+    @Inject
+    lateinit var examReminders: ExamReminderController
+
     override fun onCreate() {
         super.onCreate()
         // AUTH-07: no data of a signed-out account stays on the device.
@@ -37,6 +41,8 @@ class DuelloApplication : Application(), SingletonImageLoader.Factory {
         pushRegistrar.start()
         // OQ-101: Analytics/Crashlytics user ID = backend users.id, cleared on sign-out.
         telemetryUserSync.start()
+        // EXAM-27 / EXAM-23 (exams flag only): the background reminder and the sign-out cleanup.
+        examReminders.start(this)
     }
 
     /**

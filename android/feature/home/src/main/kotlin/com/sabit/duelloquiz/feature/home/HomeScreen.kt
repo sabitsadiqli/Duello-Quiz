@@ -73,6 +73,7 @@ import com.sabit.duelloquiz.core.designsystem.component.DuelloBanner
 import com.sabit.duelloquiz.core.designsystem.component.DuelloCompactBanner
 import com.sabit.duelloquiz.core.designsystem.component.DuelloStateView
 import com.sabit.duelloquiz.core.designsystem.component.DuelloTextButton
+import com.sabit.duelloquiz.core.designsystem.component.ExamRow
 import com.sabit.duelloquiz.core.designsystem.component.GreetingWithSquiggle
 import com.sabit.duelloquiz.core.designsystem.component.InlineProgress
 import com.sabit.duelloquiz.core.designsystem.component.SectionOverline
@@ -110,6 +111,8 @@ internal fun HomeRoute(
     onOpenDailyTab: () -> Unit,
     onOpenProfileTab: () -> Unit,
     scrollToTop: Flow<Unit>,
+    onOpenExams: () -> Unit = {},
+    onOpenExamAttempt: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -128,6 +131,8 @@ internal fun HomeRoute(
             HomeEvent.NavigateToProfileTab -> onOpenProfileTab()
             is HomeEvent.NavigateToDuel -> onOpenDuel(event.resume)
             is HomeEvent.NavigateToQuiz -> onOpenQuiz(event.categoryId, event.categoryName, event.sessionId)
+            HomeEvent.NavigateToExams -> onOpenExams()
+            is HomeEvent.NavigateToExamAttempt -> onOpenExamAttempt(event.attemptId)
             is HomeEvent.ShowMessage -> scope.launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
                 snackbarHostState.showSnackbar(
@@ -218,6 +223,7 @@ private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit, li
                 )
             }
         }
+        item(key = "exam_banner") { ExamRunningBanner(uiState.exams, onAction) }
         item(key = "verification_banner") { VerificationBanner(banner = uiState.verificationBanner, onAction = onAction) }
         item(key = "greeting") { Greeting(uiState, modifier = Modifier.padding(top = Spacing.sm)) }
         // Duel card (components.md §6): only behind the build flag (OQ-020); no placeholder, no gap.
@@ -225,6 +231,45 @@ private fun HomeContent(uiState: HomeUiState, onAction: (HomeAction) -> Unit, li
             item(key = "duel_card") { HomeDuelCard(uiState, onAction, modifier = Modifier.padding(top = Spacing.xl)) }
         }
         categoryItems(uiState, animateEnter = !listEntered, onAction = onAction)
+        // HOME-10 (OQ-D40): appended after the categories; hidden with the flag off or nothing published.
+        val exams = uiState.exams
+        if (exams != null && exams.showSection) {
+            item(key = "exams_overline") {
+                SectionOverline(
+                    text = stringResource(R.string.home_exams_overline),
+                    modifier = Modifier.padding(top = Spacing.homeSectionGap, bottom = Spacing.sm),
+                )
+            }
+            item(key = "exams_row") {
+                val supporting = exams.runningMinutes?.let {
+                    stringResource(R.string.home_exams_row_running, stringResource(R.string.exam_duration_min, it))
+                } ?: stringResource(R.string.home_exams_row_supporting)
+                ExamRow(
+                    title = stringResource(R.string.home_exams_row_title),
+                    supporting = supporting,
+                    contentDescription = stringResource(R.string.home_exams_row_cd, supporting),
+                    icon = DuelloIcons.Assignment,
+                    onClick = { onAction(HomeAction.ExamsClicked) },
+                )
+            }
+        }
+    }
+}
+
+/** HOME-10: compact info banner under the top row while a sınaq runs (works offline, from Room). */
+@Composable
+private fun ExamRunningBanner(exams: HomeExamsUi?, onAction: (HomeAction) -> Unit) {
+    val minutes = exams?.runningMinutes
+    CollapsingBanner(visible = minutes != null) {
+        if (minutes == null) return@CollapsingBanner
+        DuelloCompactBanner(
+            variant = BannerVariant.Info,
+            icon = DuelloIcons.Timer,
+            body = stringResource(R.string.home_exam_running_banner, stringResource(R.string.exam_duration_min, minutes)),
+            onExpand = { onAction(HomeAction.ExamBannerClicked) },
+            expandLabel = stringResource(R.string.exam_resume_click_cd),
+            modifier = Modifier.padding(top = Spacing.sm),
+        )
     }
 }
 

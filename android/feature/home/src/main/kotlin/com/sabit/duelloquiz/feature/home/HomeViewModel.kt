@@ -11,6 +11,9 @@ import com.sabit.duelloquiz.core.common.AppConfig
 import com.sabit.duelloquiz.core.common.HomeNotice
 import com.sabit.duelloquiz.core.common.NavResults
 import com.sabit.duelloquiz.core.common.WallClock
+import com.sabit.duelloquiz.core.data.exam.ExamRepository
+import com.sabit.duelloquiz.core.data.exam.LocalAttemptPhase
+import com.sabit.duelloquiz.core.data.exam.LocalExamAttempt
 import com.sabit.duelloquiz.core.data.repository.CategoryRepository
 import com.sabit.duelloquiz.core.data.repository.DailyRepository
 import com.sabit.duelloquiz.core.data.repository.ProfileRepository
@@ -37,6 +40,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -103,6 +108,16 @@ sealed interface CategoriesUi {
     data object Offline : CategoriesUi
 }
 
+/** HOME-10 (OQ-D40): the Sınaqlar section below the categories and the running-attempt banner. */
+@Immutable
+data class HomeExamsUi(
+    /** The section exists only with ≥ 1 published variant in the cached catalogue (EXAM-01). */
+    val showSection: Boolean,
+    /** Minutes left of the running attempt on this device; null = none. */
+    val runningMinutes: Int?,
+    val runningAttemptId: String?,
+)
+
 @Immutable
 data class HomeUiState(
     val header: ProfileHeaderUi = ProfileHeaderUi(),
@@ -122,6 +137,8 @@ data class HomeUiState(
     val questionsPerQuiz: Int = QUESTIONS_PER_QUIZ,
     /** OQ-020: the duel card exists only when the build flag is on. */
     val duelEnabled: Boolean = false,
+    /** Null with the exams flag off (EXAM-01: no row, no banner). */
+    val exams: HomeExamsUi? = null,
 )
 
 sealed interface HomeAction {
@@ -141,6 +158,12 @@ sealed interface HomeAction {
     data class CategoryClicked(val category: CategoryUi) : HomeAction
     data object ResendVerificationClicked : HomeAction
     data object DismissVerificationBanner : HomeAction
+
+    /** HOME-10: the "Sınaqlar" row → catalogue. */
+    data object ExamsClicked : HomeAction
+
+    /** HOME-10: the running banner → the attempt (resume). */
+    data object ExamBannerClicked : HomeAction
 }
 
 enum class HomeMessage {
@@ -173,6 +196,8 @@ sealed interface HomeEvent {
     /** [sessionId] null: the start is still running and the quiz loading screen takes it over. */
     data class NavigateToQuiz(val categoryId: Int, val categoryName: String, val sessionId: String?) : HomeEvent
     data class ShowMessage(val message: HomeMessage) : HomeEvent
+    data object NavigateToExams : HomeEvent
+    data class NavigateToExamAttempt(val attemptId: String) : HomeEvent
 }
 
 /**
@@ -197,6 +222,7 @@ class HomeViewModel @Inject constructor(
     private val progressRepository: ProgressRepository,
     private val dailyRepository: DailyRepository,
     private val clock: WallClock,
+    private val examRepository: ExamRepository,
 ) : ViewModel() {
 
     private data class ResendState(val isSending: Boolean = false, val countdownSeconds: Int = 0)
@@ -222,6 +248,7 @@ class HomeViewModel @Inject constructor(
     private var countdownJob: Job? = null
     private var progressJob: Job? = null
     private var dailyJob: Job? = null
+    private var examJob: Job? = null
     private var lastRefreshMs = Long.MIN_VALUE / 2
 
     private val _events = Channel<HomeEvent>(Channel.BUFFERED)
@@ -230,14 +257,33 @@ class HomeViewModel @Inject constructor(
     private val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = true)
 
+    /** Sınaqlar entry (HOME-10); minutes refresh each minute while visible. Nothing with the flag off. */
+    private val exams: Flow<HomeExamsUi?> = if (!appConfig.examsEnabled) {
+        flowOf(null)
+    } else {
+        combine(
+            examRepository.catalog,
+            examRepository.activeAttempt,
+            flow {
+                while (true) {
+                    emit(clock.nowMs())
+                    delay(EXAM_MINUTE_MS)
+                }
+            },
+        ) { catalog, attempt, now -> homeExamsUi(catalog?.variantCount ?: 0, attempt, now) }
+    }
+
     val uiState: StateFlow<HomeUiState> = combine(
         combine(authRepository.currentUser, bannerRepository.dismissedUids, ::Pair),
         combine(profileRepository.profile, categoryRepository.categories, ::Pair),
-        progressRepository.progress,
+        combine(progressRepository.progress, exams, ::Pair),
         isOnline,
         local,
-    ) { (user, dismissed), (profile, categories), progress, online, state ->
-        buildState(user, dismissed, profile, categories, progress, online, state)
+    ) { (user, dismissed), (profile, categories), (progress, exams), online, state ->
+        buildState(user, dismissed, profile, categories, progress, online, state).let { home ->
+            // Banner order: offline, running sınaq, verification; at most two (verification hides).
+            if (exams?.runningAttemptId != null) home.copy(exams = exams, verificationBanner = null) else home.copy(exams = exams)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HomeUiState(duelEnabled = appConfig.duelEnabled))
 
     init {
@@ -271,6 +317,8 @@ class HomeViewModel @Inject constructor(
             HomeAction.DismissVerificationBanner -> viewModelScope.launch {
                 authRepository.currentUser.first()?.let { bannerRepository.dismiss(it.uid) }
             }
+            HomeAction.ExamsClicked -> if (appConfig.examsEnabled) _events.trySend(HomeEvent.NavigateToExams)
+            HomeAction.ExamBannerClicked -> uiState.value.exams?.runningAttemptId?.let { _events.trySend(HomeEvent.NavigateToExamAttempt(it)) }
         }
     }
 
@@ -324,6 +372,7 @@ class HomeViewModel @Inject constructor(
         refreshProfile()
         refreshProgress()
         refreshDailyStatus()
+        if (appConfig.examsEnabled && examJob?.isActive != true) examJob = viewModelScope.launch { examRepository.refreshCatalog() }
         if (refreshJob?.isActive == true) return
         local.update { it.copy(isPullRefreshing = userInitiated, categoriesLoading = true) }
         refreshJob = viewModelScope.launch {
@@ -530,6 +579,7 @@ class HomeViewModel @Inject constructor(
         private const val ONE_SECOND_MS = 1_000L
         private const val STOP_TIMEOUT_MS = 5_000L
         private const val KEY_DUEL_RESUME_CHECKED = "duel_resume_checked"
+        private const val EXAM_MINUTE_MS = 60_000L
     }
 }
 
@@ -547,3 +597,12 @@ internal fun todayUi(nowMs: Long, duelEnabled: Boolean): TodayUi {
         seed = day.epochDay,
     )
 }
+
+/** HOME-10 (pure): the section only with published variants; the banner from the local Room attempt. */
+internal fun homeExamsUi(publishedVariants: Int, attempt: LocalExamAttempt?, nowMs: Long): HomeExamsUi {
+    val running = attempt?.takeIf { it.phase == LocalAttemptPhase.RUNNING && !it.isTimeUp(nowMs) }
+    val minutes = running?.let { ((it.remainingMs(nowMs) + MINUTE_MS - 1) / MINUTE_MS).toInt().coerceAtLeast(1) }
+    return HomeExamsUi(showSection = publishedVariants > 0, runningMinutes = minutes, runningAttemptId = running?.attemptId)
+}
+
+private const val MINUTE_MS = 60_000L

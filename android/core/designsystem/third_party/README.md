@@ -1,4 +1,4 @@
-# Bundled fonts (design tokens 3.0.0)
+# Bundled fonts (design tokens 3.1.0)
 
 Both fonts are under the SIL Open Font License 1.1 (`<font>/OFL.txt`, copied unmodified
 from github.com/google/fonts). No Reserved Font Name is declared in either file. The
@@ -30,10 +30,13 @@ Made with fontTools 4.60.2 by `build_fonts.py` (run it from a venv with `fonttoo
 `varLib.instancer.instantiateVariableFont` at the axis values above, `OS/2.usWeightClass`
 set to the weight, then `fontTools.subset` to U+0020–007E, U+00A0–024F (Latin-1, Latin
 Extended-A/B) plus U+0259, U+2026, U+2212, U+2192, U+00B7, U+2013, U+2014, U+00AB,
-U+00BB, keeping the default layout features plus `tnum`, `case`, `locl`; no hinting.
-Result: ≈ 47 KB per Fraunces file, ≈ 35 KB per Plus Jakarta Sans file.
+U+00BB, U+2116 (№, tokens 3.1.0, both families) and, for Plus Jakarta Sans only, U+2153 /
+U+2154 (⅓ ⅔, self-assessment marks; Fraunces has no such glyphs, so fractions are never set
+in the serif), keeping the default layout features plus `tnum`, `case`, `locl`; no hinting.
+Result: ≈ 47 KB per Fraunces file, ≈ 34 KB per Plus Jakarta Sans file.
 
 Coverage: the script reads the `cmap` of every produced file and fails the check line
-when any of `Ə ə Ğ ğ I ı İ i Ö ö Ü ü Ç ç Ş ş`, U+2212, U+00B7 or U+2026 is missing; all six
-files pass (2026-11-17). Plus Jakarta Sans keeps `tnum` (tabular figures); Fraunces has no
+when any of `Ə ə Ğ ğ I ı İ i Ö ö Ü ü Ç ç Ş ş`, U+2212, U+00B7, U+2026, U+2116 or U+00BD (and
+U+2153 / U+2154 for the sans) is missing; all six files pass (regenerated 2026-11-21 from the
+same upstream files, hashes above re-checked). Plus Jakarta Sans keeps `tnum` (tabular figures); Fraunces has no
 `tnum`, so it is used for static numbers only (`tokens.json`).

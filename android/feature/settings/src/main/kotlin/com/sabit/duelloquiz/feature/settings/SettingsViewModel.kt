@@ -28,6 +28,8 @@ data class SettingsUiState(
     val versionName: String = "",
     val versionCode: Long = 0,
     val showSignOutDialog: Boolean = false,
+    /** EXAM-25: the "Sınaqlar haqqında" row exists only with the exams flag on. */
+    val examsEnabled: Boolean = false,
 )
 
 sealed interface SettingsAction {
@@ -77,11 +79,16 @@ class SettingsViewModel @Inject constructor(
             versionName = appConfig.versionName,
             versionCode = appConfig.versionCode,
             showSignOutDialog = dialog,
+            examsEnabled = appConfig.examsEnabled,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        initialValue = SettingsUiState(versionName = appConfig.versionName, versionCode = appConfig.versionCode),
+        initialValue = SettingsUiState(
+            versionName = appConfig.versionName,
+            versionCode = appConfig.versionCode,
+            examsEnabled = appConfig.examsEnabled,
+        ),
     )
 
     fun onAction(action: SettingsAction) {
