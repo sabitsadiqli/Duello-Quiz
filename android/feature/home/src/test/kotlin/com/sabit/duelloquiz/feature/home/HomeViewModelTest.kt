@@ -22,6 +22,7 @@ import com.sabit.duelloquiz.core.testing.InMemoryActiveDuelStore
 import com.sabit.duelloquiz.core.testing.MainDispatcherRule
 import com.sabit.duelloquiz.core.testing.TestCategoryRepository
 import com.sabit.duelloquiz.core.testing.TestDailyRepository
+import com.sabit.duelloquiz.core.testing.TestExamRepository
 import com.sabit.duelloquiz.core.testing.TestNetworkMonitor
 import com.sabit.duelloquiz.core.testing.TestProfileRepository
 import com.sabit.duelloquiz.core.testing.TestProgressRepository
@@ -99,6 +100,7 @@ class HomeViewModelTest {
             progressRepository,
             dailyRepository,
             WallClock { testScheduler.currentTime },
+            TestExamRepository(),
         )
         backgroundScope.launch { vm.uiState.collect {} }
         return vm
@@ -174,7 +176,7 @@ class HomeViewModelTest {
         val vm = HomeViewModel(
             authRepository, bannerRepository, TestProfileRepository(initial = profile), cached,
             quizRepository, networkMonitor, savedStateHandle, appConfig, activeDuels,
-            progressRepository, dailyRepository, WallClock { testScheduler.currentTime },
+            progressRepository, dailyRepository, WallClock { testScheduler.currentTime }, TestExamRepository(),
         )
         backgroundScope.launch { vm.uiState.collect {} }
         runCurrent()
