@@ -234,7 +234,7 @@ inside the app, deletion is the in-app flow in settings.
 
 ## Mock exams "Sınaqlar"
 
-Behind the build flag `BuildConfig.EXAMS_ENABLED` of `:app` (on in debug, off in release, override
+Behind the build flag `BuildConfig.EXAMS_ENABLED` of `:app` (on in debug and release since 2026-11-23, override
 with `-PexamsEnabled=true|false`); with the flag off no route, Oyna row, banner, settings row,
 licence section or reminder exists (EXAM-01). Rules: `docs/requirements/mock-exams.md`, ADR 0002
 (data, scoring, timer) and ADR 0003 (audio).

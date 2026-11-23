@@ -46,6 +46,8 @@ into Play Console.
 | Reminder switches | `notification_settings` | Until account deletion | `V5__retention.sql` |
 | Notification send log (type, day, outcome) | `notification_log` | 90 days, or account deletion | `V5__retention.sql`, `application.conf` `logRetentionDays = 90` |
 | Daily question sets | `daily_challenges`, `daily_challenge_questions` | Kept (not personal) | `V5__retention.sql` |
+| Mock exam attempts, answers (incl. written texts), listening plays and position, self-assessed marks, install `deviceId` | `exam_attempts`, `exam_answers`, `exam_listening_plays`, `exam_self_assessments` | Until account deletion (cascade) | `V8__mock_exams.sql`, `V9__exam_listening_position.sql` |
+| Mock exam content (variants, tasks, audio) | `exam_*` content tables, media volume | Kept (not personal) | `V8__mock_exams.sql` |
 | Server logs (time, path, status, internal user ID; IP only in Caddy error entries) | Docker JSON logs on the VM | Size rotation 5 × 20 MB; not in backups | `infra/README.md`, `infra/prod/Caddyfile`, `backend/src/main/resources/logback.xml` |
 | Database + media backups | VM disk (Hetzner, Germany) + off-VM copy in Cloudflare R2, EU (OQ-103) | 14 days (script refuses > 30) | `infra/README.md` §10 |
 | Analytics events, app-instance ID, device / app info, Analytics user ID = `users.id` | Firebase Analytics | 2 months (to be set, OQ-100) | `android/app/build.gradle.kts`, `docs/requirements/auth.md` §5 |
@@ -79,7 +81,7 @@ Data types (everything not listed: **not collected**):
 | Personal info → Email address | Yes (Firebase Auth) | No | Required | App functionality, Account management | Yes | Yes |
 | Personal info → User IDs | Yes (Firebase UID, internal account ID, Google account ID on Google sign-in) | No | Required | App functionality, Account management, Analytics | Yes | Yes |
 | Personal info → Other info | Yes (Google profile photo **URL**, Google sign-in only) — or skip if Sabit treats it as part of Name/User IDs | No | Optional (Google sign-in only) | App functionality | Yes | Yes |
-| App activity → App interactions | Yes (quiz, daily and duel answers and results, rating, XP, streak; Analytics events) | No | Required | App functionality, Analytics, Fraud prevention, security and compliance | Yes | Yes (Analytics part expires after 2 months) |
+| App activity → App interactions | Yes (quiz, daily, duel and mock exam answers and results incl. written answer texts, rating, XP, streak; Analytics events) | No | Required | App functionality, Analytics, Fraud prevention, security and compliance | Yes | Yes (Analytics part expires after 2 months) |
 | App info and performance → Crash logs | Yes (Crashlytics) | No | Required | Analytics | Yes | — (expire after 90 days) |
 | App info and performance → Diagnostics | Yes (Crashlytics) | No | Required | Analytics | Yes | — (expire after 90 days) |
 | Device or other IDs | Yes (Analytics app-instance ID, FCM token / Firebase installation ID). **Not** the Advertising ID (OQ-D25) | No | Required for Analytics; FCM token only with notifications allowed | Analytics, App functionality (notifications) | Yes | Yes (token deleted with the account; Analytics IDs expire after 2 months) |
