@@ -1,1 +1,4 @@
-İlk test versiyası.
+Yeni dizayn: sadə ana səhifə, Gündəlik və Profil bölmələri.
+Yeni: Sınaqlar — DİM formatında İngilis dili buraxılış sınağı (dinləmə daxil).
+Hər kateqoriyada daha çox sual: 360-a qədər.
+Həftəlik seriya, yeni ikon və düzəlişlər.
