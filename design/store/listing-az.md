@@ -93,8 +93,8 @@ Notes:
 
 | Asset | Spec | File |
 | --- | --- | --- |
-| App icon | 512 × 512 PNG, 32-bit, from `design/brand/app-icon-full.svg` (`brand.md`) | export |
-| Feature graphic | 1024 × 500 PNG/JPEG, no alpha; export from `feature-graphic.svg` | `design/store/feature-graphic.svg` |
+| App icon | 512 × 512 PNG, 32-bit, from `design/brand/app-icon-full.svg` (`brand.md`) | `design/store/play-icon-512.png` (exported 2026-11-23) |
+| Feature graphic | 1024 × 500 PNG/JPEG, no alpha; export from `feature-graphic.svg` | `design/store/play-feature-graphic-1024x500.png` (exported 2026-11-23, no alpha) |
 | Phone screenshots | 6–8, plan and captions in `screenshots.md` | capture |
 
 Feature graphic notes (`feature-graphic.svg`, v3, OQ-D37):
