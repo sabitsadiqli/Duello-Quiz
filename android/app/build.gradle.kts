@@ -34,8 +34,8 @@ val privacyPolicyUrl: String = providers.gradleProperty("privacyPolicyUrl")
 val duelEnabledOverride: String? = providers.gradleProperty("duelEnabled").orNull
 fun duelEnabled(default: Boolean): String = (duelEnabledOverride?.toBooleanStrict() ?: default).toString()
 
-// Mock exams "Sınaqlar" flag (docs/requirements/mock-exams.md, post-MVP): on in debug, off in
-// release until Sabit schedules the feature. Override with -PexamsEnabled=true|false.
+// Mock exams "Sınaqlar" flag (docs/requirements/mock-exams.md): on in debug and, since Sabit's
+// decision of 2026-11-23, in release too. Override with -PexamsEnabled=true|false.
 val examsEnabledOverride: String? = providers.gradleProperty("examsEnabled").orNull
 fun examsEnabled(default: Boolean): String = (examsEnabledOverride?.toBooleanStrict() ?: default).toString()
 
@@ -71,7 +71,7 @@ android {
         }
         release {
             buildConfigField("boolean", "DUEL_ENABLED", duelEnabled(default = true))
-            buildConfigField("boolean", "EXAMS_ENABLED", examsEnabled(default = false))
+            buildConfigField("boolean", "EXAMS_ENABLED", examsEnabled(default = true))
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "true"
             if (releaseStoreFile != null) {
                 signingConfig = signingConfigs.getByName("release")
